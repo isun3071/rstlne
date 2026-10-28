@@ -24,6 +24,7 @@ from rstlne.engine.rules import new_game
 from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
 from rstlne.narrate import money
+from rstlne.players.bot import versions
 from rstlne.runner import GameLog, play_game
 
 SEATS = 3
@@ -121,6 +122,8 @@ def labels(entrants: Sequence[str]) -> list[str]:
 def folder_name(entrants: Sequence[str], seed: int, puzzles_path: Path, config: dict) -> str:
     """Covers everything that changes play, so a rerun resumes only an identical tournament."""
     play = {key: config.get(key) for key in ("tournament", "providers", "llm", "decision")}
+    if "bot" in entrants:  # only then, so model-only folders keep their names
+        play["bot_version"] = config.get("bot", {}).get("version")
     key = json.dumps([list(entrants), seed, Path(puzzles_path).name, play], sort_keys=True)
     return f"seed{seed}-{hashlib.sha256(key.encode()).hexdigest()[:8]}"
 
@@ -143,6 +146,8 @@ def run_tournament(
     out_dir.mkdir(parents=True, exist_ok=True)
     config, rules, spec = settings.load_config(), settings.load_rules(), settings.load_wheel()
     mode = mode or config.get("tournament", {}).get("set_permutations", "all")
+    if "bot" in entrants:
+        check_bot_versions(out_dir, versions.current(config))
     pool = settings.load_puzzles(puzzles_path)
     main_hands = deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
     bonus_hands = deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
@@ -403,6 +408,20 @@ def table(result: dict) -> list[str]:
             ci_text = "" if not ci else f" [{ci[0]:+.0%} to {ci[1]:+.0%}]"
             lines.append(f"  {p['a']} minus {p['b']}: {gap_text}{ci_text}")
     return lines
+
+
+def check_bot_versions(out_dir: Path, version: int) -> None:
+    """Refuse to resume a tournament whose finished games had a bot of another version."""
+    for path in sorted(Path(out_dir).glob("set*.jsonl")):
+        if not _finished(path):
+            continue  # unfinished games replay from scratch
+        header = json.loads(path.read_text().splitlines()[0])
+        for seat in header.get("seats", []):
+            if seat.get("kind") == "bot" and seat.get("version") != version:
+                raise ValueError(
+                    f"{path.name} was played by bot v{seat.get('version')}, but config.toml picks bot v{version}. "
+                    "A tournament never changes the bot: start a new folder, or set the version back."
+                )
 
 
 def _finished(path: Path) -> bool:

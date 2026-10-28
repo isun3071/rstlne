@@ -13,10 +13,7 @@ bonus_letters = ["R", "S", "T", "L", "N", "E"]
 bonus_consonants = 3  # plus one vowel; a held Wild Card adds one more consonant
 
 [bot]
-# Dollar values the bot counts inside its round bank B for the Mystery flip rule.
-wild_card_value = 1000     # about one extra consonant on an average wedge
-million_card_value = 6000  # 1/3 reach bonus x 1/24 envelope x 1/2 solve x $900,000 extra
-word_list_size = 50000     # most common English words from wordfreq
+version = 1  # picks the bot's code, data, and knobs; tournaments never mix versions
 
 [llm]
 # Unset, so each model plays at its own default. Claude Haiku 5.5 and GPT-6 Luna ignore

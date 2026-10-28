@@ -57,7 +57,11 @@ rstlne/
     human_cli.py
     llm.py
     decision.py    # decision seat: decision model choices, LLM solves
-    bot.py
+    bot/           # the versioned bot
+      belief.py    # Belief: per letter odds, top answers, out of vocabulary share
+      reader.py    # Reader interface: board in, Belief out
+      seed.py      # sampling seeds from a hash of the view
+      versions.py  # known versions; config.toml picks one
   llm/
     openrouter.py  # client, retries, usage tracking
     decisions.py   # Decisions API client for decision models like Jev
