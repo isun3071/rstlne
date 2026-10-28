@@ -87,9 +87,9 @@ def build_players(
         solver = LLMPlayer(
             i, decision["solver_model"], client, rules, spec, temperature, f"{session}-solver", reasoning_effort=effort
         )
-        return DecisionPlayer(
-            i, model or decision["decision_model"], decisions, solver, rules, spec, decision["solve_threshold"], session
-        )
+        model = model or decision["decision_model"]
+        threshold = decision.get("thresholds", {}).get(model, decision["solve_threshold"])
+        return DecisionPlayer(i, model, decisions, solver, rules, spec, threshold, session)
 
     return [seat(i, kind, model) for i, (kind, model) in enumerate(seats)]
 

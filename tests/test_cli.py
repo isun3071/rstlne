@@ -72,7 +72,7 @@ def test_a_decision_model_game_runs_from_the_command_line(tmp_path):
     final = cli.main(argv, client=router(board_reader), decisions=decisions)
     assert final.phase.value == "game_over"
     header = json.loads(next(tmp_path.glob("*.jsonl")).read_text().splitlines()[0])
-    assert header["seats"][0] == {"kind": "decision", "model": "typesafe/jev-1.14", "solver": "openai/gpt-6-luna", "threshold": 0.8}
+    assert header["seats"][0] == {"kind": "decision", "model": "openai/gpt-6-luna-decisions", "solver": "openai/gpt-6-luna", "threshold": 0.8}
     assert {c["session_id"] for c in decisions.calls} >= {f"{next(tmp_path.glob('*.jsonl')).stem}-seat1"}
 
 

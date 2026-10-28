@@ -68,6 +68,7 @@ rstlne/
   live.py          # --live: one fixed screen, redrawn with rich
   cli.py           # play a game in the terminal
   tournament.py    # seeded model only runs
+  calibrate.py     # picks each decision model's solve threshold from data
 puzzles/
   dev.json         # puzzles for development, committed
   private.json     # scored puzzles, gitignored

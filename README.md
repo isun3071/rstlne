@@ -38,7 +38,7 @@ Put your key in `.env` as `OPENROUTER_API_KEY=...`. Git ignores `.env`.
 uv run python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
 ```
 
-Each seat is `human`, `llm:<slug>`, or `decision`. Three model seats play a model-only game. A `decision` seat is configuration 5: a decision model such as Jev makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
+Each seat is `human`, `llm:<slug>`, or `decision`. Three model seats play a model-only game. A `decision` seat is configuration 5: a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
 
 | Option | Effect |
 |---|---|
@@ -68,6 +68,16 @@ A tournament plays `--sets` puzzle sets with duplicate scoring. Each set gets it
 | `--out PATH` | The tournament folder. The default depends on the entrants, seed, and puzzles, so rerunning the same command resumes it. |
 
 Each game writes its usual log into the tournament folder, and rerunning skips finished games and replays unfinished ones. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, how much of the board showed at a correct solve, money left on the table, invalid moves, and cost. A game's winner is the highest final total; tied leaders split the win. Our test games ran 2 to 5 minutes and 1 to 2 cents each.
+
+## Calibrating decision models
+
+Decision models put P(solvable) on different scales: Jev 1.14 gives a fully revealed board about 0.75, while GPT-6 Luna Decisions gives about 0.99. So each decision model gets its own solve threshold, picked from data:
+
+```
+uv run python -m rstlne.calibrate --models openai/gpt-6-luna-decisions,typesafe/jev-1.14 --count 50
+```
+
+The command reveals 50 seeded puzzles step by step, asks each decision model for P(solvable) at every step, and has the solver attempt each board. A model's threshold is the lowest P(solvable) where the solver's accuracy, fit as a never decreasing curve, reaches 80%. It prints the lines to paste under `[decision.thresholds]` in `config.toml` and saves every board's result in `logs/calibration/`. 50 puzzles took about 8 minutes and a few cents.
 
 ## Configuration
 

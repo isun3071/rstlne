@@ -30,9 +30,13 @@ solve_reveal_share = 0.7   # configuration 3: solve once this share of the puzzl
 
 [decision]
 # Configuration 5: a decision model makes every choice, and the solver writes the answers.
-decision_model = "typesafe/jev-1.14"  # pinned, so results don't shift with new Jev releases
+decision_model = "openai/gpt-6-luna-decisions"  # its probabilities fit the threshold; Jev's run low
 solver_model = "openai/gpt-6-luna"    # the solver LLM in every configuration
 solve_threshold = 0.8                 # solve once P(solvable) reaches this
+
+[decision.thresholds]
+# Per decision model thresholds from `uv run python -m rstlne.calibrate`, such as
+# "typesafe/jev-1.14" = 0.55
 
 [cli]
 model_pause = 1.5         # seconds after each model move, so the game reads like a show

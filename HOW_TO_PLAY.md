@@ -72,7 +72,7 @@ The highest game total plays, and a seeded draw breaks a tie. R, S, T, L, N, and
 Fill all three seats with models and the game runs by itself, start to finish. Nobody types anything. There are two kinds of model seat:
 
 - `llm:<slug>` is a chat model, such as Claude Haiku or GPT-6 Luna, that makes every move itself.
-- `decision` is a decision model, Jev by default, that picks every move from the legal options. An LLM writes its answer whenever it decides to solve. `[decision]` in `config.toml` sets both models and the solve threshold. Use `decision:<model>` to give one seat a different decision model.
+- `decision` is a decision model, GPT-6 Luna Decisions by default, that picks every move from the legal options. An LLM writes its answer whenever it decides to solve. `[decision]` in `config.toml` sets both models and the solve threshold. Use `decision:<model>` to give one seat a different decision model.
 
 Three chat models:
 
@@ -89,7 +89,7 @@ uv run python -m rstlne.cli --seats decision,llm:openai/gpt-6-luna,llm:deepseek/
 Three decision models:
 
 ```
-uv run python -m rstlne.cli --seats decision,decision:typesafe/jev-1.13,decision:openai/gpt-6-luna-decisions
+uv run python -m rstlne.cli --seats decision,decision:typesafe/jev-1.14,decision:typesafe/jev-1.13
 ```
 
 You can repeat a model, for example three `decision` seats or the same `llm:` slug twice. Each seat still plays on its own.

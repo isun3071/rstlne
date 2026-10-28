@@ -27,6 +27,20 @@ from rstlne.players.base import CallRecord, InvalidResponse, Player
 from rstlne.players.llm import LLMPlayer, intro, phase_note, rules_text
 
 SOLVABLE = "Can the puzzle be solved correctly from this board right now?"
+SOLVABLE_QUESTION = noul(
+    SOLVABLE,
+    "The board and category point to one answer that can be written out now.",
+    "More letters are needed before the answer is clear.",
+)
+
+
+def decision_state(seat: int, rules: Rules, spec: WheelSpec, view: PublicView, note: str | None = None) -> str:
+    """What a decision model sees: the rules summary and the public table."""
+    lines = [intro(seat), "", rules_text(rules, spec), "", "The table now", *table(view, seat)]
+    for extra in (phase_note(view, rules, spec), note):
+        if extra:
+            lines.append(extra)
+    return "\n".join(lines)
 
 
 class DecisionPlayer(Player):
@@ -123,11 +137,7 @@ class DecisionPlayer(Player):
         moves = [kind for kind in view.legal_actions if kind != "solve"]
         if not moves:
             return self._solve(view)
-        questions = {"solvable": noul(
-            SOLVABLE,
-            "The board and category point to one answer that can be written out now.",
-            "More letters are needed before the answer is clear.",
-        )}
+        questions = {"solvable": SOLVABLE_QUESTION}
         if len(moves) > 1:
             questions["action"] = choice("Which move should you make?", {kind: self._move_text(kind) for kind in moves})
         if "buy_vowel" in moves:
@@ -202,11 +212,7 @@ class DecisionPlayer(Player):
         return chosen
 
     def _state(self, view: PublicView, note: str | None) -> str:
-        lines = [intro(self.seat), "", rules_text(self.rules, self.spec), "", "The table now", *table(view, self.seat)]
-        for extra in (phase_note(view, self.rules, self.spec), note):
-            if extra:
-                lines.append(extra)
-        return "\n".join(lines)
+        return decision_state(self.seat, self.rules, self.spec, view, note)
 
     def _letters(self, view: PublicView, pool: frozenset[str], also_used: list[str] = ()) -> dict[str, str]:
         """Unused letters from `pool`. If every one is used, the whole pool, since a repeat is legal."""
