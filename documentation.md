@@ -139,8 +139,8 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 
 ### Objective
 
-- Rounds 1 and 2: maximize the bot's expected game total.
-- Rounds 3 and 4: maximize the chance of finishing ahead of both opponents after the 4 main rounds. Every payoff converts into the change in that chance.
+- Rounds 1 and 2: maximize the bot's expected game total, whatever the number of main rounds.
+- Rounds 3 and later: maximize the chance of finishing ahead of both opponents after the last main round. Every payoff converts into the change in that chance. A tie for first counts as a shared win, as in tournament scoring.
 - The bonus round is secondary. It enters through the Wild Card's saved value, the Million card's value, and the bonus round itself.
 - The win chance comes from a table of P(finish first | lead, rounds left), built from self-play. Lead is the bot's game total minus the highest opponent total. Until the table exists, a simple heuristic stands in: P = Φ(lead / (σ √(rounds left))), with σ a knob, and 1 or 0 once no rounds are left.
 
@@ -162,12 +162,12 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 
   V(action) = immediate gain + P(keep the wheel) × V(continue) + P(lose the wheel) × (1 − p_steal) × V(continue later)
 
-- Payoffs are dollars in rounds 1 and 2 and changes in win chance in rounds 3 and 4.
+- Payoffs are dollars in rounds 1 and 2 and changes in win chance from round 3 on.
 - B is the round bank plus held cards at their values: the Wild Card at its saved value, the Million card at its expected bonus value.
 - Spin: each wheel outcome is one branch, over the wheel as it stands. A dollar wedge pays the best consonant's p_hit × value × E[count | hit] and keeps the wheel with chance p_hit. Lose a Turn passes the wheel. Bankrupt zeroes B and passes the wheel, and counts only in that branch. Free Play, Mystery, and Express follow their own rules below.
 - Buy a vowel: −$250 plus the vowel's information value. It keeps the wheel with chance p_hit.
 - Solve: c × the payoff of banking max(B, $1,000) + (1 − c) × (1 − p_steal) × V(continue later), where c is the calibrated confidence. A solve never keeps the wheel.
-- Losing the wheel costs the round's whole value: a steal leaves the bot nothing from the round, not even the $1,000 minimum. In rounds 3 and 4, the stealer's gain also counts against the bot's win chance.
+- Losing the wheel costs the round's whole value: a steal leaves the bot nothing from the round, not even the $1,000 minimum. From round 3 on, the stealer's gain also counts against the bot's win chance.
 - V(continue) is the best action's value at the board the move leads to, looked ahead a set number of moves (a knob). Past that, it is the value of solving at that board's confidence. V(continue later) is the same, at the board expected when the wheel comes back.
 
 ### Steal odds
@@ -189,7 +189,7 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 ### Special wedges
 
 - Mystery: the value function picks keep, k × $1,000, or flip: half the time $10,000 and the bot keeps the wheel, half the time Bankrupt.
-- Express: ride while safe consonants remain, calling them, then solve.
+- Express: board only when the bot is sure enough to succeed, when the value function, counting the chance that the final solve is right, favors playing over passing. Then ride while safe consonants remain, calling them, and solve.
 - Wild Card: spend it when the extra consonant is worth more than the card's saved value, which is its value in the bonus round times P(reaching the bonus round).
 
 ### Bonus round
@@ -201,7 +201,7 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 
 - wordfreq, Wiktionary multiword entries, Wikidata labels filtered by sitelinks, the CMU Pronouncing Dictionary, a pruned Google Books 2 and 3 gram table, and fastText vectors for category fit.
 - No Wheel of Fortune puzzle archives, and never `dev.json` or `private.json`.
-- A fetch step downloads and prunes each source into numpy or SQLite files under `data/`, which git ignores. The bot loads them once per process.
+- A fetch step streams each source and prunes it into numpy or SQLite files under `data/`, which git ignores. Nothing is stored whole, and the pruned files stay under 2.5 GB in total. The bot loads them once per process.
 
 ## Self-play
 
