@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import httpx2
 
-from rstlne.llm.openrouter import Usage
+from rstlne.llm.openrouter import DeadlineExceeded, Usage, call_with_deadline
 
 DECISIONS_URL = "https://openrouter.ai/api/alpha/decisions"
 # Rate limits, server errors, upstream failures, edge timeouts, and overloaded providers.
@@ -50,6 +50,7 @@ class DecisionClient:
         base_delay: float = 1.0,
         max_delay: float = 30.0,
         sleep: Callable[[float], None] = time.sleep,
+        deadline: float = 120,  # Decisions calls take well under a second
     ):
         self.http = http if http is not None else httpx2.Client(timeout=60)
         self.api_key = api_key if api_key is not None else os.environ["OPENROUTER_API_KEY"]
@@ -57,6 +58,7 @@ class DecisionClient:
         self.base_delay = base_delay
         self.max_delay = max_delay
         self.sleep = sleep
+        self.deadline = deadline
 
     def ask(self, *, model: str, state: str, questions: dict[str, dict], session_id: str | None = None) -> Decisions:
         """Ask every question in one call, retrying transient failures with exponential backoff."""
@@ -66,8 +68,11 @@ class DecisionClient:
         for attempt in range(self.retries + 1):
             last = attempt == self.retries
             try:
-                response = self.http.post(DECISIONS_URL, json=body, headers={"Authorization": f"Bearer {self.api_key}"})
-            except httpx2.TransportError:
+                response = call_with_deadline(
+                    lambda: self.http.post(DECISIONS_URL, json=body, headers={"Authorization": f"Bearer {self.api_key}"}),
+                    self.deadline,
+                )
+            except (httpx2.TransportError, DeadlineExceeded):
                 if last:
                     raise
                 self._wait(attempt)

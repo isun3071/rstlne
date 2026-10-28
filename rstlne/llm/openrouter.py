@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import os
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import astuple, dataclass
 
+import httpx2
 import openai
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessage
@@ -16,6 +18,33 @@ CACHE = {"type": "ephemeral"}  # the default 5 minute cache
 TIMEOUT = 180  # seconds per request; the slowest real move seen, a Qwen overthink, took 118
 TIMEOUT_RETRIES = 1  # a request that timed out once will likely time out again
 MIN_TEMPERATURE, MAX_TEMPERATURE = 0.2, 0.4
+
+
+class DeadlineExceeded(Exception):
+    """A call ran past its total deadline."""
+
+
+def call_with_deadline(call: Callable, deadline: float):
+    """Run `call`, waiting at most `deadline` seconds in total. The SDK's own timeout only limits the gap
+    between bytes, and OpenRouter sends keep-alive bytes while a provider stalls, so a stalled request
+    could otherwise wait forever. A call that runs over is abandoned on a background thread."""
+    outcome: dict = {}
+    finished = threading.Event()
+
+    def run() -> None:
+        try:
+            outcome["value"] = call()
+        except BaseException as err:  # handed back to the caller below
+            outcome["error"] = err
+        finally:
+            finished.set()
+
+    threading.Thread(target=run, daemon=True).start()
+    if not finished.wait(deadline):
+        raise DeadlineExceeded(f"no response within {deadline:g} seconds")
+    if "error" in outcome:
+        raise outcome["error"]
+    return outcome["value"]
 
 
 class EmptyResponse(Exception):
@@ -78,6 +107,7 @@ class OpenRouter:
         base_delay: float = 1.0,
         max_delay: float = 30.0,
         sleep: Callable[[float], None] = time.sleep,
+        deadline: float = TIMEOUT,
     ):
         self.client = client if client is not None else OpenAI(
             base_url=BASE_URL,
@@ -89,6 +119,7 @@ class OpenRouter:
         self.base_delay = base_delay
         self.max_delay = max_delay
         self.sleep = sleep
+        self.deadline = deadline
 
     def chat(
         self,
@@ -117,14 +148,20 @@ class OpenRouter:
         timeouts = 0
         for attempt in range(self.retries + 1):
             try:
-                response = self.client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    tools=tools,
-                    tool_choice=_tool_choice(model, reasoning),
-                    parallel_tool_calls=False,
-                    **options,
-                )
+                try:
+                    response = call_with_deadline(
+                        lambda: self.client.chat.completions.create(
+                            model=model,
+                            messages=messages,
+                            tools=tools,
+                            tool_choice=_tool_choice(model, reasoning),
+                            parallel_tool_calls=False,
+                            **options,
+                        ),
+                        self.deadline,
+                    )
+                except DeadlineExceeded:
+                    raise openai.APITimeoutError(request=httpx2.Request("POST", f"{BASE_URL}/chat/completions")) from None
                 if not response.choices:
                     raise EmptyResponse(f"{model} returned no choices")
                 extra = response.model_extra or {}

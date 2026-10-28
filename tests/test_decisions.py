@@ -100,3 +100,21 @@ def test_bad_requests_are_not_retried():
     with pytest.raises(DecisionsError) as err:
         ask(decisions)
     assert err.value.status == 400 and sleeps == []
+
+
+def test_a_stalled_decisions_call_hits_the_total_deadline():
+    import threading
+
+    release = threading.Event()
+    calls = []
+
+    def handle(request):
+        calls.append(request)
+        if len(calls) == 1:
+            release.wait(5)
+        return httpx2.Response(200, json=RESPONSE)
+
+    decisions = DecisionClient(httpx2.Client(transport=httpx2.MockTransport(handle)), api_key="k", sleep=lambda s: None, deadline=0.2)
+    assert ask(decisions).answers == RESPONSE["answers"]
+    release.set()
+    assert len(calls) == 2

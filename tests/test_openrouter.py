@@ -208,3 +208,28 @@ def test_rate_limits_still_get_every_retry_after_a_timeout():
                         + [completion(("spin", {}))])
     chat(client)
     assert len(client.calls) == 5
+
+
+def test_a_request_that_never_finishes_hits_the_total_deadline():
+    """OpenRouter's keep-alive bytes reset the SDK's read timeout, so a stalled provider never times out on its own."""
+    import threading
+    import time
+
+    release = threading.Event()
+    replies = iter([lambda: release.wait(5) and completion(("solve", {"answer": "LATE"})), lambda: completion(("spin", {}))])
+    client = FakeClient(lambda request: next(replies)())
+    start = time.monotonic()
+    reply = OpenRouter(client, sleep=lambda s: None, deadline=0.2).chat(model="test/model", messages=MESSAGES, tools=TOOLS)
+    release.set()
+    assert reply.message.tool_calls[0].function.name == "spin"  # the retry, not the stalled first call
+    assert time.monotonic() - start < 2
+
+
+def test_two_stalled_requests_give_up():
+    import threading
+
+    release = threading.Event()
+    client = FakeClient(lambda request: release.wait(5) and completion(("spin", {})))
+    with pytest.raises(openai.APITimeoutError):
+        OpenRouter(client, sleep=lambda s: None, deadline=0.1).chat(model="test/model", messages=MESSAGES, tools=TOOLS)
+    release.set()
