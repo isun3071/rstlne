@@ -68,8 +68,8 @@ def test_structural_categories_are_checked_in_code(category, answer, ok):
 
 
 def test_near_duplicates_ignore_articles_case_and_spacing():
-    assert puzzlegen.dedupe_key("A Blessing  in Disguise") == puzzlegen.dedupe_key("BLESSING IN DISGUISE")
-    assert puzzlegen.dedupe_key("THE BACK PORCH") != puzzlegen.dedupe_key("BACK DOOR")
+    assert puzzlegen.near(puzzlegen.NearKey.of("A Blessing  in Disguise"), puzzlegen.NearKey.of("BLESSING IN DISGUISE"))
+    assert not puzzlegen.near(puzzlegen.NearKey.of("THE BACK PORCH"), puzzlegen.NearKey.of("BACK DOOR"))
 
 
 # Generation
@@ -380,3 +380,59 @@ def test_judges_work_in_parallel(tmp_path):
     result = puzzlegen.generate(router(reply), settings(max_requests=1, judges=2), [("Thing", 2)], [], seed=1,
                                 known=[], seen_path=tmp_path / "seen.txt")
     assert sorted(p.answer for p in result.puzzles) == ["KITCHEN SINK", "SPARE TIRE"]
+
+
+# Near repeats, contractions, and rechecking
+
+
+@pytest.mark.parametrize("a, b, near", [
+    ("IT'S RAINING CATS AND DOGS", "ITS RAINING CATS AND DOGS", True),  # punctuation
+    ("BIG BROWN BEAR", "BIG BROWN BEARS", True),  # a plural
+    ("COFFEE & TEA BREAK", "TEA & COFFEE BREAK", True),  # the same words reordered
+    ("LET SLEEPING DOGS LIE", "LET SLEEPING DOGS", True),  # a truncation
+    ("BIRDS OF A FEATHER FLOCK TOGETHER", "BIRDS OF A FEATHER", True),
+    ("THE GOLDEN GATE BRIDGE", "GOLDEN GATE", True),
+    ("SEA LIONS SUNBATHING ON THE ROCKS", "ON THE ROCKS", False),  # under half the longer one's words
+    ("APPLE PIE CHART", "CHART TOPPER", False),
+])
+def test_near_repeats(a, b, near):
+    assert puzzlegen.near(puzzlegen.NearKey.of(a), puzzlegen.NearKey.of(b)) is near
+    assert puzzlegen.near(puzzlegen.NearKey.of(b), puzzlegen.NearKey.of(a)) is near
+
+
+def test_contractions_need_their_apostrophe():
+    assert puzzlegen.missing_apostrophe("DONT JUDGE A BOOK") and puzzlegen.missing_apostrophe("ITS NOT ROCKET SCIENCE")
+    assert not puzzlegen.missing_apostrophe("DON'T JUDGE A BOOK") and not puzzlegen.missing_apostrophe("ITS OWN REWARD")
+
+
+def test_generation_rejects_near_repeats_of_anything_seen(tmp_path):
+    seen = tmp_path / "seen.txt"
+    seen.write_text("LET SLEEPING DOGS LIE\n")
+    client = fake([["Let sleeping dogs", "Dont count your chickens", "A penny saved"]])
+    result = puzzlegen.generate(client, settings(max_requests=1), [("Phrase", 3)], [], seed=1, known=[], seen_path=seen)
+    assert [p.answer for p in result.puzzles] == ["A PENNY SAVED"]
+    assert result.rejected["already used"] == 1 and result.rejected["contraction without its apostrophe"] == 1
+
+
+def test_rhyme_time_needs_the_top_familiarity(tmp_path):
+    client = fake([["Eat and meat", "Wear and tear"]], verdicts={"EAT AND MEAT": 4})
+    rhymes = {"EAT": {"IY1 T"}, "MEAT": {"IY1 T"}, "WEAR": {"EH1 R"}, "TEAR": {"EH1 R"}}
+    result = puzzlegen.generate(client, settings(max_requests=1), [("Rhyme Time", 2)], [], seed=1, known=[],
+                                seen_path=tmp_path / "seen.txt", rhymes=rhymes)
+    assert [p.answer for p in result.puzzles] == ["WEAR AND TEAR"]
+
+
+def test_recheck_drops_what_fails_the_new_checks_and_keeps_grading_apart(tmp_path):
+    tuning, grading = tmp_path / "tuning.json", tmp_path / "grading.json"
+    puzzlegen.save_pool(tuning, [Puzzle("Phrase", "BIRDS OF A FEATHER FLOCK TOGETHER"), Puzzle("Thing", "BIG BROWN BEAR"),
+                                 Puzzle("Thing", "BIG BROWN BEARS"), Puzzle("Phrase", "DONT JUDGE A BOOK"),
+                                 Puzzle("Rhyme Time", "EAT AND MEAT"), Puzzle("Rhyme Time", "WEAR AND TEAR")],
+                        settings(), seed=1, rejected={}, cost=0.0)
+    puzzlegen.save_pool(grading, [Puzzle("Phrase", "BIRDS OF A FEATHER"), Puzzle("Thing", "PAPER TOWEL")],
+                        settings(), seed=2, rejected={}, cost=0.0)
+    client = fake([], verdicts={"EAT AND MEAT": 4})
+    dropped = puzzlegen.recheck(client, settings(), tuning, against=[], known=[Puzzle("Phrase", "BIG BROWN BEAR")])
+    assert sorted(dropped) == ["BIG BROWN BEAR", "BIG BROWN BEARS", "DONT JUDGE A BOOK", "EAT AND MEAT"]
+    assert [p.answer for p in puzzlegen.load_pool(tuning)] == ["BIRDS OF A FEATHER FLOCK TOGETHER", "WEAR AND TEAR"]
+    dropped = puzzlegen.recheck(client, settings(), grading, against=[tuning], known=[])
+    assert dropped == ["BIRDS OF A FEATHER"]

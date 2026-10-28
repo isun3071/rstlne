@@ -32,6 +32,7 @@ PROMPT_VERSION = 3
 DEADLINE = 60  # seconds for one request: a batch of answers takes a few
 MAX_FAILURES = 5  # requests failing in a row before a run stops and keeps what it has
 FAMILIAR = 4  # the judge rates how familiar an answer is, 1 to 5; below this it's out
+FAMILIAR_FOR = {"Rhyme Time": 5}  # categories where made-up answers come easily need the top rating
 SEEN = project.ROOT / "puzzles" / "generated" / "seen.txt"
 _ARTICLES = {"A", "AN", "THE"}
 _AND = {"&", "AND"}
@@ -169,10 +170,69 @@ def _rhyme(a: str, b: str, rhymes: dict[str, set[str]]) -> bool:
     return a[-3:] == b[-3:]  # neither in the dictionary: the same ending will do
 
 
-def dedupe_key(answer: str) -> str:
-    """Near duplicates match: case, spacing, and articles ignored."""
-    words = normalize(answer).split(" ")
-    return " ".join(w for w in words if w not in _ARTICLES)
+_MINOR = _ARTICLES | _AND | {"OF"}  # words that don't make two answers different
+
+
+def _stem(word: str) -> str:
+    return word[:-1] if len(word) > 3 and word.endswith("S") and not word.endswith("SS") else word
+
+
+@dataclass(frozen=True)
+class NearKey:
+    """An answer's main words, without punctuation, articles, or plurals, in order."""
+
+    words: tuple[str, ...]
+
+    @classmethod
+    def of(cls, answer: str) -> NearKey:
+        words = (_stem(re.sub(r"[^A-Z]", "", w)) for w in answer.upper().split())
+        return cls(tuple(w for w in words if w and w not in _MINOR))
+
+
+def near(a: NearKey, b: NearKey) -> bool:
+    """The same main words in any order, or the shorter's words running inside the longer and covering
+    at least half of them: LET SLEEPING DOGS in LET SLEEPING DOGS LIE, but not ON THE ROCKS in
+    SEA LIONS SUNBATHING ON THE ROCKS."""
+    if not a.words or not b.words:
+        return a.words == b.words
+    if set(a.words) == set(b.words):
+        return True
+    short, long = (a, b) if len(a.words) <= len(b.words) else (b, a)
+    n = len(short.words)
+    if n < 2 or n * 2 < len(long.words):
+        return False
+    return any(long.words[i:i + n] == short.words for i in range(len(long.words) - n + 1))
+
+
+class NearIndex:
+    """Answers so far, looked up by their main words, for near repeat checks."""
+
+    def __init__(self, answers=()):
+        self.by_word: dict[str, list[NearKey]] = {}
+        for answer in answers:
+            self.add(answer)
+
+    def add(self, answer: str) -> None:
+        key = NearKey.of(answer)
+        for w in set(key.words) or {""}:
+            self.by_word.setdefault(w, []).append(key)
+
+    def has_near(self, answer: str) -> bool:
+        key = NearKey.of(answer)
+        candidates = {k for w in set(key.words) or {""} for k in self.by_word.get(w, ())}
+        return any(near(key, k) for k in candidates)
+
+
+_CONTRACTION = re.compile(
+    r"\b(DONT|CANT|WONT|ISNT|ARENT|WASNT|WERENT|DOESNT|DIDNT|HASNT|HAVENT|HADNT|WOULDNT|COULDNT|SHOULDNT|MUSTNT"
+    r"|IM|IVE|YOURE|YOUVE|YOULL|THEYRE|THEYVE|WEVE|THATS|WHATS|WHERES|THERES|HERES"
+    r"|ITS (?:NOT|A|AN|THE|ALL|RAINING|TIME|ONLY|NEVER|ALWAYS|BEEN|GOING|OKAY|LIKE|SO|TOO|JUST|REALLY|ABOUT)"
+    r"|LETS (?:GO|BE|TALK|DANCE|EAT|PLAY|SEE|GET|MAKE|DO|FACE))\b")
+
+
+def missing_apostrophe(answer: str) -> bool:
+    """A contraction written without its apostrophe, like DONT or ITS NOT."""
+    return bool(_CONTRACTION.search(answer.upper()))
 
 
 def parse_answers(text: str | None) -> list[str]:
@@ -314,8 +374,9 @@ def generate(
     rhymes = load_rhymes(data_dir() / "cmudict.dict") if rhymes is None else rhymes
     pool = ideas if ideas is not None else _idea_pool()
     seen_path.parent.mkdir(parents=True, exist_ok=True)
-    seen = set(seen_path.read_text().splitlines()) if seen_path.exists() else set()
-    taken = {dedupe_key(a) for a in seen} | {dedupe_key(p.answer) for p in known}
+    seen = seen_path.read_text().splitlines() if seen_path.exists() else []
+    prior = NearIndex([*seen, *(p.answer for p in known)])  # anything used before this run
+    this_run = NearIndex()  # this run's accepted answers
     result = Result()
     wanted_total = sum(n for _, n in main) + sum(n for _, n in bonus)
     last = [clock()]
@@ -366,23 +427,23 @@ def generate(
                     status(category, is_bonus, got, count)
                     if not answers:
                         result.rejected["reply didn't parse"] += 1
-                    pending: set[str] = set()
+                    pending = NearIndex()  # this reply's answers so far
                     candidates = []
                     for raw in answers:
-                        verdict = _check(raw, category, rows, rhymes, taken, result, 0 if is_bonus else s.main_min_letters,
-                                         pending)
+                        verdict = _check(raw, category, rows, rhymes, prior, this_run, pending, result,
+                                         0 if is_bonus else s.main_min_letters)
                         if verdict is not None:
-                            pending.add(verdict[1])
+                            pending.add(verdict)
                             candidates.append(verdict)
                     while candidates and got < count and not result.stopped:
                         chunk, candidates = candidates[:max(1, s.judges)], candidates[max(1, s.judges):]
-                        futures = [judges.submit(attempt, lambda a=a: _ask_judge(client, s, category, a)) for a, _ in chunk]
-                        for (answer, key), future in zip(chunk, futures):
+                        futures = [judges.submit(attempt, lambda a=a: _ask_judge(client, s, category, a)) for a in chunk]
+                        for answer, future in zip(chunk, futures):
                             judged = record("judge", future.result())
                             if judged is None or got == count or result.stopped:
                                 continue
                             fits, reason, common, parts = _verdict(judged.message.content)
-                            if fits and common < FAMILIAR:
+                            if fits and common < FAMILIAR_FOR.get(category, FAMILIAR):
                                 fits, reason = False, f"familiarity {common} of 5: {reason}"
                             if fits and not parts_ok(category, answer, parts):
                                 fits, reason = False, f"its parts {parts} don't rebuild the answer"
@@ -390,7 +451,7 @@ def generate(
                                 result.rejected["judge: doesn't fit the category"] += 1
                                 result.judged_out.append((category, answer, reason))
                                 continue
-                            taken.add(key)
+                            this_run.add(answer)
                             with open(seen_path, "a") as f:
                                 f.write(answer + "\n")
                             result.puzzles.append(Puzzle(category, answer, bonus=is_bonus))
@@ -401,9 +462,9 @@ def generate(
     return result
 
 
-def _check(raw: str, category: str, rows, rhymes, taken: set[str], result: Result,
-           min_letters: int = 0, pending: set[str] = frozenset()) -> tuple[str, str] | None:
-    """The answer and its dedupe key if it passes every check in code, else None with the reason counted."""
+def _check(raw: str, category: str, rows, rhymes, prior: NearIndex, this_run: NearIndex, pending: NearIndex,
+           result: Result, min_letters: int = 0) -> str | None:
+    """The answer if it passes every check in code, else None with the reason counted."""
     try:
         answer = normalize(raw)
     except ValueError:
@@ -412,10 +473,14 @@ def _check(raw: str, category: str, rows, rhymes, taken: set[str], result: Resul
     if sum(c in LETTERS for c in answer) < 2:
         result.rejected["not board text"] += 1
         return None
-    key = dedupe_key(answer)
-    if key in taken or key in pending:
-        batch = key in pending or any(dedupe_key(p.answer) == key for p in result.puzzles)
-        result.rejected["duplicate in this batch" if batch else "already used"] += 1
+    if prior.has_near(answer):
+        result.rejected["already used"] += 1
+        return None
+    if this_run.has_near(answer) or pending.has_near(answer):
+        result.rejected["duplicate in this batch"] += 1
+        return None
+    if missing_apostrophe(answer):
+        result.rejected["contraction without its apostrophe"] += 1
         return None
     if not fits_rows(answer, rows):
         result.rejected["doesn't fit the board"] += 1
@@ -426,7 +491,7 @@ def _check(raw: str, category: str, rows, rhymes, taken: set[str], result: Resul
     if not structure_ok(category, answer, rhymes):
         result.rejected[f"breaks the {category} rule"] += 1
         return None
-    return answer, key
+    return answer
 
 
 def _verdict(text: str | None) -> tuple[bool, str, int, list[str]]:
@@ -461,6 +526,39 @@ def load_pool(path: Path) -> list[Puzzle]:
     return [Puzzle.from_dict(p) for p in rows]
 
 
+def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path], known: Sequence[Puzzle],
+            say=lambda line: None) -> list[str]:
+    """Hold a batch file to the current checks: drop near repeats of `known` puzzles, of the `against` files,
+    and of earlier puzzles in the file; contractions without apostrophes; and categories whose familiarity
+    bar has risen, which get judged again. Rewrites the file, and returns what it dropped."""
+    data = json.loads(path.read_text())
+    prior = NearIndex([p.answer for p in known] + [p.answer for f in against for p in load_pool(f)])
+    kept_index, kept, dropped = NearIndex(), [], []
+    for p in load_pool(path):
+        reason = None
+        if prior.has_near(p.answer):
+            reason = "near an earlier batch or a hand-written puzzle"
+        elif kept_index.has_near(p.answer):
+            reason = "near an earlier puzzle in this file"
+        elif missing_apostrophe(p.answer):
+            reason = "contraction without its apostrophe"
+        elif p.category in FAMILIAR_FOR:
+            fits, why, common, parts = _verdict(_ask_judge(client, s, p.category, p.answer).message.content)
+            if not fits or common < FAMILIAR_FOR[p.category] or not parts_ok(p.category, p.answer, parts):
+                reason = f"judged again: familiarity {common} of 5, {why}"
+        if reason:
+            dropped.append(p.answer)
+            say(f"  dropped {p.category}: {p.answer} ({reason})")
+            continue
+        kept_index.add(p.answer)
+        kept.append(p)
+    data["puzzles"] = [{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in kept]
+    data.setdefault("rechecked", []).append({"prompt_version": PROMPT_VERSION, "dropped": dropped,
+                                             "against": [str(f) for f in against]})
+    path.write_text(json.dumps(data, indent=2) + "\n")
+    return dropped
+
+
 def known_puzzles() -> list[Puzzle]:
     """Every puzzle written by hand, which generated ones must never repeat."""
     out = []
@@ -486,13 +584,26 @@ def _client() -> OpenRouter:
 
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m rstlne.puzzlegen", description="Generate fresh, checked puzzles.")
+    parser.add_argument("--recheck", help="hold an existing batch file to the current checks, then exit")
+    parser.add_argument("--against", nargs="*", default=[], help="with --recheck: batch files it must not repeat")
     parser.add_argument("--main", type=int, default=40, help="main round puzzles")
     parser.add_argument("--bonus", type=int, default=10, help="bonus round puzzles")
-    parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--out", required=True, help="the pool file to write")
+    parser.add_argument("--seed", type=int)
+    parser.add_argument("--out", help="the pool file to write")
     args = parser.parse_args(argv)
     config = project.load_config()
     s = Settings.from_config(config)
+    if args.recheck:
+        path = Path(args.recheck)
+        print(f"Rechecking {path} against {', '.join(args.against) or 'the hand-written puzzles'}", flush=True)
+        dropped = recheck(_client(), s, path, [Path(f) for f in args.against], known_puzzles(),
+                          say=lambda line: print(line, flush=True))
+        held = load_pool(path)
+        print(f"Dropped {len(dropped)}; {path} now holds {sum(not p.bonus for p in held)} main and "
+              f"{sum(p.bonus for p in held)} bonus. Rerun its generate command to top it up.")
+        return
+    if args.seed is None or args.out is None:
+        parser.error("--seed and --out are needed to generate")
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     have = load_pool(out) if out.exists() else []  # a rerun tops the file up
