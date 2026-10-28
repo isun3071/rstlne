@@ -10,6 +10,7 @@ import hashlib
 import json
 import random
 import sys
+import time
 from collections import Counter, defaultdict
 from collections.abc import Callable, Sequence
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, ThreadPoolExecutor, wait
@@ -27,7 +28,7 @@ from rstlne.engine.state import Rules
 from rstlne.engine.wheel import WheelSpec
 from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
-from rstlne.narrate import money
+from rstlne.narrate import duration, money
 from rstlne.players.bot import versions
 from rstlne.runner import GameLog, play_game
 
@@ -191,6 +192,9 @@ def run_tournament(
     write(f"{out_dir}: {sets} sets of {len(orderings(mode))} games; {done} of {len(games)} done, ${spent:.4f} spent")
 
     stopped = False
+    began = time.monotonic()
+    done_before = done  # finished in an earlier run of this tournament
+    started_at: dict[str, float] = {}
     if processes:
         write("Bot seats: games run in separate processes.")
     with ExitStack() as stack:
@@ -210,6 +214,7 @@ def run_tournament(
                     break
                 game = todo.pop(0)
                 pending[pool_.submit(_play, job(game), *shared, progress)] = game
+                started_at[game.name] = time.monotonic()
                 seating = ", ".join(f"Seat {seat + 1} {names[e]}" for seat, e in enumerate(game.order))
                 write(f"started {game.name}: {seating}")
             if not pending:
@@ -220,22 +225,28 @@ def run_tournament(
                     f"{name} {'bonus round' if r == 'bonus' else f'round {r}'} ({moves} moves)"
                     for name, (r, moves) in sorted(list(progress.items()))
                 )
-                write(f"in progress: {running or 'starting'}  ·  {done} of {len(games)} done  ·  ${spent:.4f} spent")
+                elapsed = time.monotonic() - began
+                left = finish_estimate(elapsed, done - done_before, len(games) - done_before)
+                timing = f"  ·  {duration(elapsed)} elapsed" + (f", finish in about {duration(left)}" if left is not None else "")
+                write(f"in progress: {running or 'starting'}  ·  {done} of {len(games)} done  ·  ${spent:.4f} spent{timing}")
                 continue
             for future in ready:
                 game = pending.pop(future)
+                took = duration(time.monotonic() - started_at.pop(game.name))
                 try:
                     totals, cost = future.result()
                 except Exception as err:  # an API failure after retries; a rerun replays the game
-                    write(f"{game.name} failed: {err}. Rerun the tournament to replay it.")
+                    details = "".join(f" · {note}" for note in getattr(err, "__notes__", ()))
+                    write(f"{game.name} failed after {took}: {err}{details}. Rerun the tournament to replay it.")
                     continue
                 spent += cost
                 done += 1
                 leader = max(range(SEATS), key=lambda seat: totals[seat])
                 write(f"[{done}/{len(games)}] {game.name}: {names[game.order[leader]]} won with "
-                      f"{money(totals[leader])}  ·  ${spent:.4f} spent")
+                      f"{money(totals[leader])}  ·  {took}  ·  ${spent:.4f} spent")
             if stopped:
                 todo = []
+    write(f"Finished {done - done_before} games in {duration(time.monotonic() - began)}")
     if stopped:
         write(f"Stopped starting games at the ${max_cost} budget. Rerun with a higher --max-cost to finish.")
 
@@ -429,6 +440,11 @@ def table(result: dict) -> list[str]:
             ci_text = "" if not ci else f" [{ci[0]:+.0%} to {ci[1]:+.0%}]"
             lines.append(f"  {p['a']} minus {p['b']}: {gap_text}{ci_text}")
     return lines
+
+
+def finish_estimate(elapsed: float, done: int, total: int) -> float | None:
+    """Seconds left, from the pace so far: elapsed time per finished game, times the games left."""
+    return None if done == 0 else elapsed / done * (total - done)
 
 
 def _generated_pool(path: Path, sets: int, rounds: int, seed: int, config: dict, s, client, write) -> list[Puzzle]:

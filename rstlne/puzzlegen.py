@@ -26,6 +26,7 @@ import openai
 from rstlne import settings as project
 from rstlne.engine.puzzle import LETTERS, Puzzle, normalize
 from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage
+from rstlne.narrate import duration
 from rstlne.players.bot.lexicon import data_dir, rhyme_key
 
 PROMPT_VERSION = 3
@@ -380,12 +381,14 @@ def generate(
     result = Result()
     wanted_total = sum(n for _, n in main) + sum(n for _, n in bonus)
     last = [clock()]
+    began = last[0]
 
     def status(category: str, is_bonus: bool, got: int, count: int) -> None:
         if clock() - last[0] >= heartbeat:
             last[0] = clock()
             say(f"  {category}{' (bonus)' if is_bonus else ''}: {got} of {count} · {result.requests} requests · "
-                f"${result.usage.cost:.4f} · {len(result.puzzles)} of {wanted_total} overall")
+                f"${result.usage.cost:.4f} · {len(result.puzzles)} of {wanted_total} overall · "
+                f"{duration(last[0] - began)} elapsed")
 
     failures = [0]
 
@@ -624,6 +627,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     client = _client()
     print(f"Generating {short_main} main and {short_bonus} bonus puzzles with {s.generator}, judged by {s.judge}; "
           f"a status line every 2 minutes{f', topping up {out}' if have else ''}", flush=True)
+    began = time.monotonic()
     result = generate(
         client, s, split(short_main, main_mix, rng) if short_main else [],
         split(short_bonus, bonus_mix, rng) if short_bonus else [], args.seed * 1000 + len(have),
@@ -633,7 +637,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     save_pool(out, have + result.puzzles, s, args.seed, result.rejected, result.usage.cost, result.judged_out)
     total_main = sum(not p.bonus for p in have + result.puzzles)
     total_bonus = sum(p.bonus for p in have + result.puzzles)
-    print(f"{len(result.puzzles)} new puzzles in {result.requests} generator requests, ${result.usage.cost:.4f}; "
+    print(f"{len(result.puzzles)} new puzzles in {result.requests} generator requests and "
+          f"{duration(time.monotonic() - began)}, ${result.usage.cost:.4f}; "
           f"{out} holds {total_main} of {args.main} main and {total_bonus} of {args.bonus} bonus")
     for reason, n in result.rejected.most_common():
         print(f"  rejected {n}: {reason}")

@@ -65,6 +65,10 @@ def play_turn(state: GameState, players: Sequence[Player], log: GameLog | None =
                 log.invalid(state, player, err)
             error = str(err)
             continue
+        except Exception as err:  # an API failure: name the seat, so a tournament's failure line says who
+            where = f"round {state.round.number}" if state.round else "the bonus round"
+            err.add_note(f"Seat {state.seat + 1} ({player.label()}) failed in {where}")
+            raise
         if log:
             log.action(state, player, action, after.last)
         break

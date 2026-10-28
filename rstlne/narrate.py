@@ -14,6 +14,16 @@ _EVENTS = {
 }
 
 
+def duration(seconds: float) -> str:
+    """45s, 6m12s, 1h02m."""
+    s = int(seconds)
+    if s < 60:
+        return f"{s}s"
+    if s < 3600:
+        return f"{s // 60}m{s % 60:02d}s"
+    return f"{s // 3600}h{s % 3600 // 60:02d}m"
+
+
 def money(amount: int) -> str:
     return f"-${-amount:,}" if amount < 0 else f"${amount:,}"
 

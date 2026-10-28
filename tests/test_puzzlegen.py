@@ -448,3 +448,18 @@ def test_a_batch_file_keeps_its_history_across_rechecks_and_top_ups(tmp_path):
     assert data["rechecked"][0]["dropped"] == ["SPARE TIRE"]
     assert [run["rejected"] for run in data["runs"]] == [{"already used": 3}, {"judge": 1}]
     assert data["cost"] == pytest.approx(0.03)
+
+
+def test_puzzle_runs_show_elapsed_time(tmp_path):
+    now = [0.0]
+
+    def clock():
+        now[0] += 50
+        return now[0]
+
+    lines = []
+    client = fake([["Spare tire", "Kitchen sink", "Garden hose"], ["Paper towel", "Coffee mug", "Light bulb"]])
+    puzzlegen.generate(client, settings(max_requests=2), [("Thing", 6)], [], seed=1, known=[],
+                       seen_path=tmp_path / "seen.txt", say=lines.append, heartbeat=120, clock=clock)
+    status = [line for line in lines if "overall" in line]
+    assert status and all("elapsed" in line for line in status)

@@ -1,4 +1,5 @@
 import json
+import re
 from collections import Counter
 from itertools import permutations
 
@@ -281,3 +282,48 @@ def test_table_keeps_long_names_and_three_digit_bonus_counts_apart():
         assert header.index(column) + len(column) == {"main": row.index("$4,283") + 6,
                                                       "bonus": row.index("137/149") + 7,
                                                       "solve%": row.index("81%") + 3}[column]
+
+
+def test_a_failed_game_says_which_seat_and_why(tmp_path):
+    def reply(request):
+        if request["model"] == "b/two":
+            from fakes import status_error
+            import openai
+            raise status_error(openai.BadRequestError, 400)
+        return board_reader(request)
+    lines = []
+    run(tmp_path, client=router(reply), write=lines.append)
+    failed = [line for line in lines if " failed after " in line]
+    assert failed and all("(b/two) failed in round" in line for line in failed)
+    assert all(TIMED.search(line) and ": boom" in line for line in failed)
+
+
+TIMED = re.compile(r"\b\d+(?:h\d{2}m|m\d{2}s|s)\b")
+
+
+def test_durations_read_plainly():
+    from rstlne.narrate import duration
+    assert [duration(x) for x in (0, 45, 372, 3720, 90061)] == ["0s", "45s", "6m12s", "1h02m", "25h01m"]
+
+
+def test_runs_show_how_long_games_take_and_when_they_ll_finish(tmp_path):
+    import time
+
+    def slow(request):
+        time.sleep(0.005)
+        return board_reader(request)
+
+    lines = []
+    run(tmp_path, client=router(slow), parallel=2, write=lines.append, heartbeat=0.2)
+    results = [line for line in lines if line.startswith("[")]
+    assert results and all(TIMED.search(line.split(" won with ")[1]) for line in results)
+    status = [line for line in lines if line.startswith("in progress:")]
+    assert status and all("elapsed" in line for line in status)
+    assert any("finish in about" in line for line in status[1:] or status)  # once a game is done
+    assert any(line.startswith("Finished 6 games in ") for line in lines)
+
+
+def test_the_finish_estimate_scales_elapsed_time_by_games_left():
+    from rstlne.tournament import finish_estimate
+    assert finish_estimate(elapsed=600, done=3, total=6) == 600
+    assert finish_estimate(elapsed=600, done=0, total=6) is None

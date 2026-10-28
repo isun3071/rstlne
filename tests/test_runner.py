@@ -177,3 +177,25 @@ def test_log_lines_reach_disk_as_they_are_written(game, tmp_path):
         assert lines(path)[0]["type"] == "game"  # readable mid-game, before the log closes
         play_turn(game, players, log)
         assert lines(path)[-1]["type"] == "action"
+
+
+class Broken(Player):
+    """A seat whose model call fails the way a provider error does."""
+
+    def describe(self):
+        return {"kind": "llm", "model": "z/broken"}
+
+    def label(self):
+        return "z/broken"
+
+    def decide(self, view, error=None):
+        err = RuntimeError("Error code: 400 - Provider returned error")
+        err.add_note("Acme said: tool_choice is not supported")
+        raise err
+
+
+def test_a_failing_seat_is_named_on_its_error(rules, wheel_spec):
+    with pytest.raises(RuntimeError) as caught:
+        play_turn(start(rules, wheel_spec), [Broken(), Broken(), Broken()])
+    assert "Seat 1 (z/broken) failed in round 1" in caught.value.__notes__
+    assert "Acme said: tool_choice is not supported" in caught.value.__notes__
