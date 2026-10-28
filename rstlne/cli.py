@@ -1,6 +1,6 @@
 """Play a game in the terminal.
 
-    python -m wof.cli --seats human,llm:<slug>,decision
+    python -m rstlne.cli --seats human,llm:<slug>,decision
 """
 
 from __future__ import annotations
@@ -15,18 +15,18 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from wof import settings
-from wof.engine.puzzle import Puzzle
-from wof.engine.rules import new_game
-from wof.engine.state import GameState, Phase
-from wof.llm.decisions import DecisionClient
-from wof.llm.openrouter import OpenRouter
-from wof.narrate import describe, money, seat_name
-from wof.players.base import Player
-from wof.players.decision import DecisionPlayer
-from wof.players.human_cli import HumanPlayer
-from wof.players.llm import LLMPlayer
-from wof.runner import GameLog, play_game
+from rstlne import settings
+from rstlne.engine.puzzle import Puzzle
+from rstlne.engine.rules import new_game
+from rstlne.engine.state import GameState, Phase
+from rstlne.llm.decisions import DecisionClient
+from rstlne.llm.openrouter import OpenRouter
+from rstlne.narrate import describe, money, seat_name
+from rstlne.players.base import Player
+from rstlne.players.decision import DecisionPlayer
+from rstlne.players.human_cli import HumanPlayer
+from rstlne.players.llm import LLMPlayer
+from rstlne.runner import GameLog, play_game
 
 
 def parse_seats(text: str) -> list[tuple[str, str | None]]:
@@ -145,7 +145,7 @@ class Show:
 
 
 def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="python -m wof.cli", description="Play Wheel of Fortune in the terminal.")
+    parser = argparse.ArgumentParser(prog="python -m rstlne.cli", description="Play Wheel of Fortune in the terminal.")
     parser.add_argument("--seats", required=True, help="three seats: human, llm:<slug>, or decision, comma separated")
     parser.add_argument("--seed", type=int, help="game seed; replaying a seed with the same moves replays the game")
     parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))

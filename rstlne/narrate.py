@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from wof.engine.state import BonusPicks, BuyVowel, CallConsonant, CallLetter, PublicView, Result, Spin
-from wof.engine.wheel import Kind, Wedge
+from rstlne.engine.state import BonusPicks, BuyVowel, CallConsonant, CallLetter, PublicView, Result, Spin
+from rstlne.engine.wheel import Kind, Wedge
 
 _EVENTS = {
     "wild_card": "Claimed the Wild Card.",

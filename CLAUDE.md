@@ -2,6 +2,8 @@
 
 ## Project
 
+The repo is called rstlne, after R S T L N E, the letters the bonus round gives every player. The Python package is `rstlne`.
+
 A Wheel of Fortune game where LLMs and a human play at the same table. Three seats. Each seat holds a human, an LLM (called through OpenRouter), or a baseline bot. The game runs the show's rules, round by round, through the bonus round.
 
 The project serves two goals. Ian plays against models from the terminal for fun. The same engine runs seeded, model only tournaments that measure how well models handle letter choice, risk, and solve timing.
@@ -43,7 +45,7 @@ client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.environ["OPE
 ## Layout
 
 ```
-wof/
+rstlne/
   engine/
     wheel.py       # wedge definitions, per round overlays, seeded spins
     puzzle.py      # board, reveal logic, letter counts
@@ -96,7 +98,7 @@ documentation.md   # game specification
 ## Commands
 
 ```
-python -m wof.cli --seats human,llm:<slug>,bot
-python -m wof.tournament --models <slug1>,<slug2>,<slug3> --puzzles puzzles/private.json --seed 42
+python -m rstlne.cli --seats human,llm:<slug>,bot
+python -m rstlne.tournament --models <slug1>,<slug2>,<slug3> --puzzles puzzles/private.json --seed 42
 pytest
 ```

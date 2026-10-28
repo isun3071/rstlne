@@ -4,9 +4,9 @@ import json
 import tomllib
 from pathlib import Path
 
-from wof.engine.puzzle import Puzzle
-from wof.engine.state import Rules
-from wof.engine.wheel import WheelSpec
+from rstlne.engine.puzzle import Puzzle
+from rstlne.engine.state import Rules
+from rstlne.engine.wheel import WheelSpec
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "config.toml"

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from wof.engine.state import Action, PublicView, Result
-from wof.llm.openrouter import Usage
+from rstlne.engine.state import Action, PublicView, Result
+from rstlne.llm.openrouter import Usage
 
 
 class InvalidResponse(Exception):

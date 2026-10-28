@@ -1,6 +1,6 @@
 import pytest
 
-from wof.engine.puzzle import (
+from rstlne.engine.puzzle import (
     Puzzle,
     board,
     count,

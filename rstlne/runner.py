@@ -10,10 +10,10 @@ from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 
-from wof.engine.rules import apply, public_view
-from wof.engine.state import Action, Forfeit, GameState, IllegalAction, Phase, Result
-from wof.llm.openrouter import Usage
-from wof.players.base import InvalidResponse, Player
+from rstlne.engine.rules import apply, public_view
+from rstlne.engine.state import Action, Forfeit, GameState, IllegalAction, Phase, Result
+from rstlne.llm.openrouter import Usage
+from rstlne.players.base import InvalidResponse, Player
 
 # Engine and player error codes, as the invalid response categories in documentation.md name them.
 CATEGORIES = {

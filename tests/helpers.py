@@ -5,10 +5,10 @@ from dataclasses import replace
 
 import pytest
 
-from wof.engine import wheel
-from wof.engine.puzzle import Puzzle
-from wof.engine.rules import apply, new_game
-from wof.engine.state import IllegalAction, Solve, Spin
+from rstlne.engine import wheel
+from rstlne.engine.puzzle import Puzzle
+from rstlne.engine.rules import apply, new_game
+from rstlne.engine.state import IllegalAction, Solve, Spin
 
 PUZZLES = (
     Puzzle("Phrase", "WHEEL OF FORTUNE"),

@@ -3,9 +3,9 @@ from collections import Counter
 
 import pytest
 
-from wof import settings
-from wof.engine import wheel
-from wof.engine.wheel import Kind, Wedge, WheelSpec
+from rstlne import settings
+from rstlne.engine import wheel
+from rstlne.engine.wheel import Kind, Wedge, WheelSpec
 
 SPINS = 720_000
 TOLERANCE = 0.025  # relative, per CLAUDE.md

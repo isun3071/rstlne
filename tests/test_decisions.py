@@ -3,8 +3,8 @@ import json
 import httpx2
 import pytest
 
-from wof.llm.decisions import DECISIONS_URL, DecisionClient, DecisionsError, choice, noul
-from wof.llm.openrouter import Usage
+from rstlne.llm.decisions import DECISIONS_URL, DecisionClient, DecisionsError, choice, noul
+from rstlne.llm.openrouter import Usage
 
 QUESTIONS = {
     "solvable": noul("Can the puzzle be solved correctly from this board right now?", "yes", "no"),

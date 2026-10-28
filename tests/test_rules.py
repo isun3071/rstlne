@@ -4,8 +4,8 @@ from dataclasses import replace
 import pytest
 from helpers import BONUS, PUZZLES, illegal, set_seat, solve, spin_to, start, to_round
 
-from wof.engine.rules import apply, current_wheel, legal_actions, new_game, public_view
-from wof.engine.state import (
+from rstlne.engine.rules import apply, current_wheel, legal_actions, new_game, public_view
+from rstlne.engine.state import (
     BuyVowel,
     CallConsonant,
     CallLetter,
@@ -17,7 +17,7 @@ from wof.engine.state import (
     Spin,
     UseWild,
 )
-from wof.engine.wheel import Kind, Wedge
+from rstlne.engine.wheel import Kind, Wedge
 
 
 @pytest.fixture

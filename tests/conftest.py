@@ -1,6 +1,6 @@
 import pytest
 
-from wof import settings
+from rstlne import settings
 
 
 @pytest.fixture(scope="session")

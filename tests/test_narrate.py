@@ -1,10 +1,10 @@
 import pytest
 from helpers import start
 
-from wof.engine.rules import public_view
-from wof.engine.state import BonusPicks, BuyVowel, CallConsonant, Choose, Result, Solve, Spin
-from wof.engine.wheel import Kind, Wedge
-from wof.narrate import describe, money, table, wedge_text
+from rstlne.engine.rules import public_view
+from rstlne.engine.state import BonusPicks, BuyVowel, CallConsonant, Choose, Result, Solve, Spin
+from rstlne.engine.wheel import Kind, Wedge
+from rstlne.narrate import describe, money, table, wedge_text
 
 CASH = Wedge(3, Kind.CASH, 650)
 

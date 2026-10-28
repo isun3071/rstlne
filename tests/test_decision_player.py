@@ -4,9 +4,9 @@ import pytest
 from fakes import FakeDecisions, board_reader, completion, decide_by, router, solvable_when_full
 from helpers import set_seat, solve, spin_to, start, to_round
 
-from wof.engine.puzzle import CONSONANTS, LETTERS, VOWELS
-from wof.engine.rules import apply, public_view
-from wof.engine.state import (
+from rstlne.engine.puzzle import CONSONANTS, LETTERS, VOWELS
+from rstlne.engine.rules import apply, public_view
+from rstlne.engine.state import (
     BonusPicks,
     BonusSolve,
     BuyVowel,
@@ -18,10 +18,10 @@ from wof.engine.state import (
     Spin,
     UseWild,
 )
-from wof.players.base import InvalidResponse
-from wof.players.decision import SOLVABLE, DecisionPlayer
-from wof.players.llm import LLMPlayer
-from wof.runner import play_game
+from rstlne.players.base import InvalidResponse
+from rstlne.players.decision import SOLVABLE, DecisionPlayer
+from rstlne.players.llm import LLMPlayer
+from rstlne.runner import play_game
 
 
 @pytest.fixture

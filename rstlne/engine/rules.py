@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import replace
 
-from wof.engine import bonus, wheel
-from wof.engine.puzzle import (
+from rstlne.engine import bonus, wheel
+from rstlne.engine.puzzle import (
     LETTERS,
     VOWELS,
     Puzzle,
@@ -16,7 +16,7 @@ from wof.engine.puzzle import (
     hidden_vowels,
     solve_matches,
 )
-from wof.engine.state import (
+from rstlne.engine.state import (
     Action,
     BuyVowel,
     CallConsonant,
@@ -32,7 +32,7 @@ from wof.engine.state import (
     Solve,
     Spin,
 )
-from wof.engine.wheel import Kind, Wedge, WheelSpec
+from rstlne.engine.wheel import Kind, Wedge, WheelSpec
 
 SEATS = 3
 

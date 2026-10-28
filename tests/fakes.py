@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import httpx2  # the HTTP library under openai 3.x
 from openai.types.chat import ChatCompletion
 
-from wof.llm.openrouter import OpenRouter
+from rstlne.llm.openrouter import OpenRouter
 
 _ids = itertools.count()
 FREQUENCY = "TNSHRDLCMWFGYPBVKJXQZ"
@@ -113,8 +113,8 @@ class FakeDecisions:
         self.calls = []
 
     def ask(self, *, model, state, questions, session_id=None):
-        from wof.llm.decisions import Decisions
-        from wof.llm.openrouter import Usage
+        from rstlne.llm.decisions import Decisions
+        from rstlne.llm.openrouter import Usage
 
         self.calls.append({"model": model, "state": state, "questions": copy.deepcopy(questions), "session_id": session_id})
         usage = Usage(prompt_tokens=100, total_tokens=100, cost=0.0000042, calls=1)

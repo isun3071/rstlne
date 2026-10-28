@@ -7,8 +7,8 @@ import sys
 import time
 from collections.abc import Callable
 
-from wof.engine.puzzle import VOWELS
-from wof.engine.state import (
+from rstlne.engine.puzzle import VOWELS
+from rstlne.engine.state import (
     Action,
     BonusPicks,
     BonusSolve,
@@ -23,8 +23,8 @@ from wof.engine.state import (
     Spin,
     UseWild,
 )
-from wof.narrate import table
-from wof.players.base import Player
+from rstlne.narrate import table
+from rstlne.players.base import Player
 
 _PROMPTS = {
     Phase.CALL_CONSONANT: "Call a consonant: ",

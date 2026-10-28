@@ -4,8 +4,8 @@ import pytest
 from fakes import board_reader, completion, router
 from helpers import set_seat, solve, spin_to, start, to_round
 
-from wof.engine.rules import apply, public_view
-from wof.engine.state import (
+from rstlne.engine.rules import apply, public_view
+from rstlne.engine.state import (
     BonusPicks,
     BonusSolve,
     BuyVowel,
@@ -18,9 +18,9 @@ from wof.engine.state import (
     Spin,
     UseWild,
 )
-from wof.players.base import InvalidResponse
-from wof.players.llm import LLMPlayer, rules_prompt, to_action
-from wof.runner import play_game
+from rstlne.players.base import InvalidResponse
+from rstlne.players.llm import LLMPlayer, rules_prompt, to_action
+from rstlne.runner import play_game
 
 
 @pytest.fixture

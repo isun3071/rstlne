@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from wof.engine import wheel
-from wof.engine.puzzle import CONSONANTS, VOWELS, solve_matches
-from wof.engine.state import (
+from rstlne.engine import wheel
+from rstlne.engine.puzzle import CONSONANTS, VOWELS, solve_matches
+from rstlne.engine.state import (
     Action,
     BonusPicks,
     BonusSolve,
@@ -17,7 +17,7 @@ from wof.engine.state import (
     Phase,
     Result,
 )
-from wof.engine.wheel import WheelSpec
+from rstlne.engine.wheel import WheelSpec
 
 
 def envelopes(spec: WheelSpec, million: bool) -> tuple[int, ...]:

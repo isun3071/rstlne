@@ -1,6 +1,6 @@
 import pytest
 
-from wof.engine.state import (
+from rstlne.engine.state import (
     BonusPicks,
     BonusSolve,
     BuyVowel,
@@ -14,7 +14,7 @@ from wof.engine.state import (
     Spin,
     UseWild,
 )
-from wof.players.human_cli import HumanPlayer, parse_command
+from rstlne.players.human_cli import HumanPlayer, parse_command
 
 
 def view(phase, legal, bonus_consonants=3):

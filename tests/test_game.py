@@ -2,8 +2,8 @@ from dataclasses import fields
 
 from helpers import solve, start
 
-from wof.engine.rules import apply, public_view
-from wof.engine.state import (
+from rstlne.engine.rules import apply, public_view
+from rstlne.engine.state import (
     BonusPicks,
     BonusSolve,
     BuyVowel,

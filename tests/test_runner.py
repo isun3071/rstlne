@@ -3,10 +3,10 @@ import json
 import pytest
 from helpers import BONUS, PUZZLES, spin_to, start
 
-from wof.engine.rules import apply
-from wof.engine.state import BonusPicks, BonusSolve, BuyVowel, CallConsonant, Phase, Solve, Spin
-from wof.players.base import Player
-from wof.runner import GameLog, play_game, play_turn
+from rstlne.engine.rules import apply
+from rstlne.engine.state import BonusPicks, BonusSolve, BuyVowel, CallConsonant, Phase, Solve, Spin
+from rstlne.players.base import Player
+from rstlne.runner import GameLog, play_game, play_turn
 
 
 class Scripted(Player):

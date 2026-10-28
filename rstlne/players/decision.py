@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from wof.engine.puzzle import CONSONANTS, LETTERS, VOWELS
-from wof.engine.state import (
+from rstlne.engine.puzzle import CONSONANTS, LETTERS, VOWELS
+from rstlne.engine.state import (
     Action,
     BonusPicks,
     BuyVowel,
@@ -19,12 +19,12 @@ from wof.engine.state import (
     Spin,
     UseWild,
 )
-from wof.engine.wheel import WheelSpec
-from wof.llm.decisions import DecisionClient, choice, noul
-from wof.llm.openrouter import Usage
-from wof.narrate import money, table
-from wof.players.base import CallRecord, InvalidResponse, Player
-from wof.players.llm import LLMPlayer, intro, phase_note, rules_text
+from rstlne.engine.wheel import WheelSpec
+from rstlne.llm.decisions import DecisionClient, choice, noul
+from rstlne.llm.openrouter import Usage
+from rstlne.narrate import money, table
+from rstlne.players.base import CallRecord, InvalidResponse, Player
+from rstlne.players.llm import LLMPlayer, intro, phase_note, rules_text
 
 SOLVABLE = "Can the puzzle be solved correctly from this board right now?"
 

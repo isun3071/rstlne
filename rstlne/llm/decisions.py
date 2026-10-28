@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 import httpx2
 
-from wof.llm.openrouter import Usage
+from rstlne.llm.openrouter import Usage
 
 DECISIONS_URL = "https://openrouter.ai/api/alpha/decisions"
 # Rate limits, server errors, upstream failures, edge timeouts, and overloaded providers.

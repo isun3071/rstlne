@@ -1,9 +1,9 @@
 import pytest
 from helpers import illegal, set_seat, solve, start
 
-from wof.engine import bonus
-from wof.engine.rules import apply, legal_actions, public_view
-from wof.engine.state import BonusPicks, BonusSolve, Forfeit, Phase
+from rstlne.engine import bonus
+from rstlne.engine.rules import apply, legal_actions, public_view
+from rstlne.engine.state import BonusPicks, BonusSolve, Forfeit, Phase
 
 # The bonus puzzle in helpers is BIG CITY. RSTLNE reveals the T.
 PICKS = BonusPicks(("B", "G", "C"), "I")

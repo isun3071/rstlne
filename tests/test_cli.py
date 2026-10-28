@@ -3,7 +3,7 @@ import json
 import pytest
 from fakes import FakeDecisions, board_reader, decide_by, router, solvable_when_full
 
-from wof import cli, settings
+from rstlne import cli, settings
 
 
 def test_parse_seats():

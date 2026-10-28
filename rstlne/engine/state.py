@@ -6,8 +6,8 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import ClassVar
 
-from wof.engine.puzzle import Puzzle
-from wof.engine.wheel import Wedge, WheelSpec
+from rstlne.engine.puzzle import Puzzle
+from rstlne.engine.wheel import Wedge, WheelSpec
 
 
 @dataclass(frozen=True)

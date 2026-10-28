@@ -2,7 +2,7 @@ import openai
 import pytest
 from fakes import FakeClient, completion, status_error
 
-from wof.llm.openrouter import EmptyResponse, OpenRouter, Usage, check_temperature
+from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage, check_temperature
 
 TOOLS = [{"type": "function", "function": {"name": "spin", "parameters": {"type": "object", "properties": {}}}}]
 MESSAGES = [{"role": "user", "content": "your move"}]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from wof.engine.state import (
+from rstlne.engine.state import (
     Action,
     BonusPicks,
     BonusSolve,
@@ -20,10 +20,10 @@ from wof.engine.state import (
     Spin,
     UseWild,
 )
-from wof.engine.wheel import WEDGES, WheelSpec
-from wof.llm.openrouter import OpenRouter, Usage, check_temperature
-from wof.narrate import describe, money, table
-from wof.players.base import CallRecord, InvalidResponse, Player
+from rstlne.engine.wheel import WEDGES, WheelSpec
+from rstlne.llm.openrouter import OpenRouter, Usage, check_temperature
+from rstlne.narrate import describe, money, table
+from rstlne.players.base import CallRecord, InvalidResponse, Player
 
 LETTER = {"type": "string", "description": "One letter."}
 ANSWER = {"type": "string", "description": "The full answer, keeping its punctuation."}

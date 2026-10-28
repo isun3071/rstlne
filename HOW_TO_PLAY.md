@@ -5,7 +5,7 @@ You sit at a three-seat table, usually with two models. The game plays four roun
 ## Start a game
 
 ```
-.venv/bin/python -m wof.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:deepseek/deepseek-v4.1-flash-1017
+.venv/bin/python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:deepseek/deepseek-v4.1-flash-1017
 ```
 
 You play the seat marked `human`. Model moves print as they happen, with a short pause between them.

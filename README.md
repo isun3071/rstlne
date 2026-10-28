@@ -1,4 +1,6 @@
-# Wheel of Fortunate LLMs
+# rstlne
+
+Named after R, S, T, L, N, and E, the letters the bonus round hands every player.
 
 Wheel of Fortune in the terminal, with language models at the table. Each of the three seats is you or a model called through [OpenRouter](https://openrouter.ai). The game follows the current show's rules, including the Mystery and Express wedges, the Wild Card, the Million wedge, and the bonus round.
 
@@ -32,7 +34,7 @@ Put your key in `.env` as `OPENROUTER_API_KEY=...`. Git ignores `.env`.
 ## Play
 
 ```
-.venv/bin/python -m wof.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
+.venv/bin/python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
 ```
 
 Each seat is `human`, `llm:<slug>`, or `decision`. Three model seats play a model-only game. A `decision` seat is configuration 5: a decision model such as Jev makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
@@ -76,12 +78,12 @@ The suite runs about 310 tests in around 5 seconds. It never calls OpenRouter; a
 ## Layout
 
 ```
-wof/engine/        the rules engine: no I/O, no network, every chance outcome from the seeded wheel
-wof/players/       your seat (human_cli.py), model seats (llm.py), and decision seats (decision.py)
-wof/llm/           the OpenRouter chat and Decisions API clients, with retries and usage tracking
-wof/runner.py      the game loop: retries, forfeits, and logs
-wof/narrate.py     move text for the screen and the model prompts
-wof/cli.py         the terminal game
+rstlne/engine/        the rules engine: no I/O, no network, every chance outcome from the seeded wheel
+rstlne/players/       your seat (human_cli.py), model seats (llm.py), and decision seats (decision.py)
+rstlne/llm/           the OpenRouter chat and Decisions API clients, with retries and usage tracking
+rstlne/runner.py      the game loop: retries, forfeits, and logs
+rstlne/narrate.py     move text for the screen and the model prompts
+rstlne/cli.py         the terminal game
 documentation.md   the full game specification
 CLAUDE.md          build notes for Claude Code
 ```
