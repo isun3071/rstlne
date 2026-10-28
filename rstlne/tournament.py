@@ -247,7 +247,7 @@ def table(result: dict) -> list[str]:
             f"{e['entrant'][:35]:<36}{e['wins']:>7.1f}{pct(e['win_rate']):>6}{seats:>16}"
             f"{money(round(e['avg_total'])):>12}{money(round(e['avg_main_winnings'])):>10}"
             f"{e['bonus_won']:>3}/{e['bonus_reached']:<3}{pct(e['solve_accuracy']):>8}{pct(e['avg_board_shown']):>7}"
-            f"{money(e['money_left_per_solve'] or 0):>11}{(e['invalid_per_game'] or 0):>10.2f}{e['cost']:>9.4f}"
+            f"{money(round(e['money_left_per_solve'] or 0)):>11}{(e['invalid_per_game'] or 0):>10.2f}{e['cost']:>9.4f}"
         )
     return lines
 
