@@ -74,3 +74,22 @@ def test_a_decision_model_game_runs_from_the_command_line(tmp_path):
     header = json.loads(next(tmp_path.glob("*.jsonl")).read_text().splitlines()[0])
     assert header["seats"][0] == {"kind": "decision", "model": "typesafe/jev-1.14", "solver": "openai/gpt-6-luna", "threshold": 0.8}
     assert {c["session_id"] for c in decisions.calls} >= {f"{next(tmp_path.glob('*.jsonl')).stem}-seat1"}
+
+
+def test_show_puzzle_prints_the_table_after_every_move(tmp_path, capsys):
+    argv = ["--seats", "llm:a/one,llm:b/two,llm:c/three", "--seed", "3", "--pause", "0",
+            "--log-dir", str(tmp_path), "--show-puzzle"]
+    cli.main(argv, client=router(board_reader))
+    lines = capsys.readouterr().out.splitlines()
+    first_move = next(i for i, line in enumerate(lines) if line.startswith("Seat 1 spun"))
+    assert lines[first_move + 1].strip().startswith("Round 1. Category:")
+    assert lines[first_move + 2].strip().startswith("Board:")
+    moves = [line for line in lines if line.startswith("Seat ") and not line.startswith(("Seat 1 (", "Seat 2 (", "Seat 3 ("))]
+    boards = [line for line in lines if line.strip().startswith("Board:")]
+    assert len(boards) == len(moves) - 1  # the move that ends the game is followed by the final totals instead
+
+
+def test_without_show_puzzle_model_games_print_no_table(tmp_path, capsys):
+    argv = ["--seats", "llm:a/one,llm:b/two,llm:c/three", "--seed", "3", "--pause", "0", "--log-dir", str(tmp_path)]
+    cli.main(argv, client=router(board_reader))
+    assert not any(line.strip().startswith("Board:") for line in capsys.readouterr().out.splitlines())

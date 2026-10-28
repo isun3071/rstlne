@@ -17,11 +17,11 @@ from dotenv import load_dotenv
 
 from rstlne import settings
 from rstlne.engine.puzzle import Puzzle
-from rstlne.engine.rules import new_game
+from rstlne.engine.rules import new_game, public_view
 from rstlne.engine.state import GameState, Phase
 from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
-from rstlne.narrate import describe, money, seat_name
+from rstlne.narrate import describe, money, seat_name, table
 from rstlne.players.base import Player
 from rstlne.players.decision import DecisionPlayer
 from rstlne.players.human_cli import HumanPlayer
@@ -69,12 +69,14 @@ class Show:
         players: Sequence[Player],
         pause: float,
         thinking: bool,
+        show_puzzle: bool = False,
         write: Callable[[str], None] = print,
         sleep: Callable[[float], None] = time.sleep,
     ):
         self.players = players
         self.pause = pause
         self.thinking = thinking
+        self.show_puzzle = show_puzzle
         self.write = write
         self.sleep = sleep
         humans = [i for i, p in enumerate(players) if isinstance(p, HumanPlayer)]
@@ -108,6 +110,10 @@ class Show:
             self.write(f"The answer was {self.puzzle.answer}.")
         if "round_over" in result.events and state.phase is not Phase.GAME_OVER:
             self._banner(state)
+        if self.show_puzzle and state.phase is not Phase.GAME_OVER:
+            view = public_view(state, self.viewer if self.viewer is not None else state.seat)
+            for line in table(view, self.viewer):
+                self.write(f"    {line}")
         if model:
             self.sleep(self.pause)
 
@@ -151,6 +157,7 @@ def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))
     parser.add_argument("--pause", type=float, help="seconds to pause after each model move")
     parser.add_argument("--show-thinking", action="store_true", help="print each model's raw response")
+    parser.add_argument("--show-puzzle", action="store_true", help="print the board, letters, and banks after every move")
     parser.add_argument("--log-dir", default=str(settings.ROOT / "logs"))
     return parser.parse_args(argv)
 
@@ -195,7 +202,7 @@ def main(
 
     players = [seat(i, kind, model) for i, (kind, model) in enumerate(seats)]
     pause = args.pause if args.pause is not None else config["cli"]["model_pause"]
-    show = Show(players, pause, args.show_thinking)
+    show = Show(players, pause, args.show_thinking, args.show_puzzle)
 
     state = new_game(seed, rules, spec, puzzles, bonus)
     show.start(state)

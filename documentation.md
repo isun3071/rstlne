@@ -164,6 +164,7 @@ A model seat runs one of five configurations. Configurations 2, 3, and 5 split t
 - A human's typo or illegal move just reprompts. The three-strike rule applies to models only.
 - Show model turns as they happen, with a short pause, so the game reads like a show.
 - Add a `--show-thinking` flag that prints each model's raw response.
+- Add a `--show-puzzle` flag that prints the public table after every move: board, category, used letters, banks, totals, held cards, and wedge. It never shows the answer.
 
 ## Puzzles
 

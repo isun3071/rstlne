@@ -96,6 +96,7 @@ You can repeat a model, for example three `decision` seats or the same `llm:` sl
 
 Options worth knowing:
 
+- `--show-puzzle` prints the table after every move: the board, category, used letters, round banks, game totals, held cards, and the current wedge.
 - `--show-thinking` prints what each seat weighed before its move. For a chat model, that's its reasoning. For a decision seat, it's P(solvable) and the probability of each pick.
 - `--pause 0` removes the pause after each move, so the game runs as fast as the models answer. `--pause 3` slows it down to read along.
 - `--seed N` replays a game's spins. Every game prints its seed at the start, so you can rerun a game you liked, or give different models the same spins.

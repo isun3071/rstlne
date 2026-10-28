@@ -44,6 +44,7 @@ Each seat is `human`, `llm:<slug>`, or `decision`. Three model seats play a mode
 |---|---|
 | `--seed N` | Plays seed N. The same seed and the same moves replay the same game. Without it, the game picks a seed and prints it. |
 | `--show-thinking` | Prints each model's reasoning and message before its move. For a decision seat, it prints P(solvable) and the probability of each pick. |
+| `--show-puzzle` | Prints the board, letters, banks, cards, and wedge after every move, so you can follow a model-only game. |
 | `--pause S` | Pauses S seconds after each model move. The default is 1.5. |
 | `--puzzles PATH` | Reads puzzles from PATH. The default is `puzzles/dev.json`. |
 | `--log-dir PATH` | Writes game logs to PATH. The default is `logs/`. |
