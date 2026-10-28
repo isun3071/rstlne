@@ -181,6 +181,8 @@ A model seat runs one of five configurations. Configurations 2, 3, and 5 split t
 
 Write one JSONL file per game to `logs/`. Each line records the state before the action, the seat, the raw model output, the parsed action, the result, the wedge, and token usage.
 
+Every main round solve also records its timing: the share of letters showing, the consonants still hidden and the squares they fill, and the money left on the table, which is those squares times the round's average spin value with Bankrupt and Lose a Turn counted as $0. The game summary totals each seat's correct solves, average board shown at a correct solve, and money left.
+
 ## Phase 2 (planned)
 
 - Local web page with FastAPI, reusing the engine and player interface.

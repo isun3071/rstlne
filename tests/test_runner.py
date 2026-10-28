@@ -124,3 +124,47 @@ def test_correct_solves_are_marked_as_fitting(game, tmp_path):
         play_turn(game, players, log)
     (action,) = [r for r in lines(tmp_path / "game.jsonl") if r["type"] == "action"]
     assert action["fits_board"] is True
+
+
+def test_solves_record_their_timing_and_the_money_left_on_the_table(game, wheel_spec, tmp_path):
+    from statistics import mean
+
+    from rstlne.engine.wheel import layout
+
+    players = [Scripted(solves) for _ in range(3)]
+    with GameLog(tmp_path / "game.jsonl", game, players) as log:
+        state = play_turn(game, players, log)  # seat 1 solves WHEEL OF FORTUNE with nothing called
+        log.summary(state)
+    records = lines(tmp_path / "game.jsonl")
+    (action,) = [r for r in records if r["type"] == "action"]
+    average_spin = mean(w.value for w in layout(wheel_spec, 1))  # Bankrupt and Lose a Turn count as $0
+    assert action["solve_timing"] == {
+        "board_shown": 0.0,
+        "hidden_consonants": 7,  # W H L F R T N
+        "hidden_copies": 8,  # two Fs
+        "money_left": round(8 * average_spin),
+    }
+    assert records[-1]["solve_timing"][0] == {
+        "correct_solves": 1,
+        "avg_board_shown": 0.0,
+        "money_left": round(8 * average_spin),
+    }
+    assert records[-1]["solve_timing"][1] == {"correct_solves": 0, "avg_board_shown": None, "money_left": 0}
+
+
+def test_solve_timing_counts_what_is_already_showing(game, tmp_path):
+    state = apply(spin_to(game, 3), CallConsonant("F"))  # 2 of 14 letters showing
+    players = [Scripted(solves) for _ in range(3)]
+    with GameLog(tmp_path / "game.jsonl", state, players) as log:
+        play_turn(state, players, log)
+    (action,) = [r for r in lines(tmp_path / "game.jsonl") if r["type"] == "action"]
+    assert action["solve_timing"]["board_shown"] == round(2 / 14, 3)
+    assert action["solve_timing"]["hidden_consonants"] == 6 and action["solve_timing"]["hidden_copies"] == 6
+
+
+def test_other_moves_have_no_solve_timing(game, tmp_path):
+    players = [Scripted(lambda view: Spin()), Scripted(solves), Scripted(solves)]
+    with GameLog(tmp_path / "game.jsonl", game, players) as log:
+        play_turn(game, players, log)
+    (action,) = [r for r in lines(tmp_path / "game.jsonl") if r["type"] == "action"]
+    assert "solve_timing" not in action

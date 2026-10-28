@@ -9,9 +9,11 @@ from dataclasses import fields, is_dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+from statistics import mean
 
 from rstlne.engine.rules import apply, public_view
-from rstlne.engine.puzzle import fits_board
+from rstlne.engine import wheel
+from rstlne.engine.puzzle import CONSONANTS, LETTERS, fits_board
 from rstlne.engine.state import Action, BonusSolve, Forfeit, GameState, IllegalAction, Phase, Result, Solve
 from rstlne.llm.openrouter import Usage
 from rstlne.players.base import InvalidResponse, Player
@@ -84,6 +86,7 @@ class GameLog:
         self.file = self.path.open("w")
         self.invalid_counts = [Counter() for _ in players]
         self.usage = [Usage() for _ in players]
+        self.solves = [[] for _ in players]  # solve_timing of each correct solve, per seat
         self._write(
             type="game",
             started=datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -109,6 +112,9 @@ class GameLog:
         fits = _fits(before, action)
         if fits is False:
             self.invalid_counts[result.seat][MISFIT] += 1
+        timing = _solve_timing(before, action)
+        if timing and result.outcome == "solved":
+            self.solves[result.seat].append(timing)
         self._write(
             type="action",
             seat=result.seat,
@@ -119,6 +125,7 @@ class GameLog:
             wedge=jsonable(result.wedge),
             usage=jsonable(call.usage) if call else None,
             **({} if fits is None else {"fits_board": fits}),
+            **({} if timing is None else {"solve_timing": timing}),
         )
 
     def invalid(self, before: GameState, player: Player, error: IllegalAction | InvalidResponse) -> None:
@@ -144,6 +151,14 @@ class GameLog:
             usage=jsonable(sum(self.usage, Usage())),
             usage_by_seat=jsonable(self.usage),
             invalid=[dict(c) for c in self.invalid_counts],
+            solve_timing=[
+                {
+                    "correct_solves": len(solves),
+                    "avg_board_shown": round(mean(s["board_shown"] for s in solves), 3) if solves else None,
+                    "money_left": sum(s["money_left"] for s in solves),
+                }
+                for solves in self.solves
+            ],
         )
         self.file.flush()
 
@@ -161,6 +176,23 @@ def _fits(before: GameState, action: Action) -> bool | None:
         return None
     stage = before.round or before.bonus
     return fits_board(stage.puzzle.answer, action.answer, stage.used)
+
+
+def _solve_timing(before: GameState, action: Action) -> dict | None:
+    """How early a main round solve came, and the money its unrevealed consonants could still have
+    earned: hidden copies times the round's average spin value (Bankrupt and Lose a Turn count as $0)."""
+    if not isinstance(action, Solve) or before.round is None:
+        return None
+    r = before.round
+    letters = [c for c in r.puzzle.answer if c in LETTERS]
+    hidden = [c for c in letters if c in CONSONANTS and c not in r.used]
+    average_spin = mean(w.value for w in wheel.layout(before.wheel, r.number))
+    return {
+        "board_shown": round(sum(c in r.used for c in letters) / len(letters), 3),
+        "hidden_consonants": len(set(hidden)),
+        "hidden_copies": len(hidden),
+        "money_left": round(len(hidden) * average_spin),
+    }
 
 
 def _state(state: GameState) -> dict:
