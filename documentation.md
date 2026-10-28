@@ -94,11 +94,17 @@ Bonus puzzles carry `"bonus": true` in the puzzle file. Keep them short, like th
 ## Seeding
 
 - Derive every spin from `(game_seed, round_index, spin_index)`. Two games with the same seed and the same decisions produce identical spins.
-- Tournament mode plays each puzzle set three times with the seats rotated, so every model sits in every position against the same spins. This is duplicate bridge scoring. It strips most of the luck out of model comparisons.
-- `python -m rstlne.tournament --seats <seat>,<seat>,<seat> --sets N --seed S` plays N puzzle sets, 3N games. Seats use the CLI's forms (`llm:<slug>`, `decision[:<model>]`), and `--models a,b,c` is short for three `llm:` seats. Each set draws its game seed and puzzles from the tournament seed and is played three times, with the entrants rotated so each sits in every seat once.
+- Tournament mode plays each puzzle set once for every ordering of the players across the seats, against the same spins. This is duplicate bridge scoring. It strips most of the luck out of model comparisons.
+- `python -m rstlne.tournament --seats <seat>,<seat>,<seat> --sets N --seed S` plays N puzzle sets. Seats use the CLI's forms (`llm:<slug>`, `decision[:<model>]`), and `--models a,b,c` is short for three `llm:` seats. `--sets 1` is the trial run for checking cost.
+- With `set_permutations = "all"` in `config.toml`, the default, a set is 6 games, one for each ordering of the 3 entrants across the 3 seats. Each entrant sits in each seat twice per set and directly follows each other entrant 3 times, counting turn order around the table, where Seat 3 passes to Seat 1. `"cyclic"` plays the 3 rotations instead, where each entrant sits in each seat once but always follows the same entrant.
+- All games in a set share the set's seed, derived from the tournament seed and the set index, and the set's puzzles.
+- Puzzles are dealt across sets without replacement. The main and bonus pools are each shuffled from the tournament seed and dealt 4 main puzzles and 1 bonus puzzle per set. When a pool runs out, it is reshuffled and dealing continues. A set that straddles a reshuffle skips puzzles it already holds, which stay in the new pile for later sets, so no set repeats a puzzle.
+- Each game log is tagged with its set index, its ordering, and the entrant in each seat.
 - A game's winner is the seat with the highest final total, bonus included. Seats tied for the highest total split the win evenly.
 - Games run in parallel (`--parallel`, default 4). Each writes its usual log into the tournament's folder. Rerunning a tournament skips finished games and replays unfinished ones. `--max-cost` stops starting new games once spending reaches a limit.
-- The report gives, per entrant: games, win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, average board shown at a correct solve, money left on the table, invalid moves by category, and tokens and cost. Runs on `dev.json` are marked as development runs; scored runs use `private.json`.
+- The report gives, per entrant: games, win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, average board shown at a correct solve, money left on the table, invalid moves by category, and tokens and cost. It also gives each set's wins and average totals per entrant, and how many sets used each puzzle. Runs on `dev.json` are marked as development runs; scored runs use `private.json`.
+- Confidence intervals come from bootstrapping over sets, not games, since the games in a set share puzzles and spins and are not independent: 10,000 seeded resamples of the sets, 95% percentile intervals, for each entrant's win rate, average final total, average main round winnings, and solve accuracy, and for the win rate gap between each pair of entrants.
+- A tournament's default folder name covers its entrants, seed, puzzle file, `set_permutations`, and the settings that change play (provider pins, LLM settings, decision settings), so a rerun resumes only an identical tournament.
 
 ## LLM player
 

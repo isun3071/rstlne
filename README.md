@@ -55,19 +55,23 @@ The slugs in `config.toml` are the models picked so far: Claude Haiku 5.5, GPT-6
 ## Tournaments
 
 ```
-uv run python -m rstlne.tournament --seats llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna,decision --sets 100 --seed 42
+uv run python -m rstlne.tournament --models anthropic/claude-haiku-5.5,openai/gpt-6-luna,deepseek/deepseek-v4.1-flash-1017 --sets 50 --seed 42
 ```
 
-A tournament plays `--sets` puzzle sets with duplicate scoring. Each set gets its own seed and puzzles and is played three times, with the entrants rotated so each sits in every seat against the same spins. `--sets 100` is 300 games. `--models a,b,c` is short for three `llm:` seats.
+A tournament plays `--sets` puzzle sets with duplicate scoring. A set is 6 games, one for every ordering of the 3 entrants across the seats, all with the set's seed and puzzles. So within a set, each entrant sits in each seat twice and plays right after each other entrant 3 times, against the same spins. `--sets 50` is 300 games, and `--sets 1` is a 6 game trial for checking cost. `--models a,b,c` is short for three `llm:` seats. Setting `set_permutations = "cyclic"` in `config.toml` plays the old 3 seat rotations instead.
+
+Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, and reshuffled when the pool runs out, so no set repeats a puzzle.
 
 | Option | Effect |
 |---|---|
 | `--parallel N` | Plays N games at once. The default is 4. |
 | `--max-cost D` | Stops starting new games once spending reaches D dollars. |
 | `--puzzles PATH` | The default is `puzzles/dev.json`, which marks the run as development. Scored runs use `puzzles/private.json`. |
-| `--out PATH` | The tournament folder. The default depends on the entrants, seed, and puzzles, so rerunning the same command resumes it. |
+| `--out PATH` | The tournament folder. The default covers the entrants, seed, puzzles, and every setting that changes play, so rerunning the same command resumes it, and changing a setting starts a fresh folder. |
 
-Each game writes its usual log into the tournament folder, and rerunning skips finished games and replays unfinished ones. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, how much of the board showed at a correct solve, money left on the table, invalid moves, and cost. A game's winner is the highest final total; tied leaders split the win. Our test games ran 2 to 5 minutes and 1 to 2 cents each.
+Each game writes its usual log into the tournament folder, and rerunning skips finished games and replays unfinished ones. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, how much of the board showed at a correct solve, money left on the table, invalid moves, and cost. The report also lists each set's results and how many sets used each puzzle.
+
+Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total; tied leaders split the win. Our test games ran 2 to 5 minutes and 1 to 2 cents each.
 
 ## Calibrating decision models
 
