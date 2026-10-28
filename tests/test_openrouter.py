@@ -144,3 +144,22 @@ def test_temperature_inside_the_range_is_accepted(temperature):
 def test_temperature_outside_the_range_is_rejected(temperature):
     with pytest.raises(ValueError):
         check_temperature(temperature)
+
+
+def test_claude_models_get_their_adaptive_thinking_turned_on():
+    assert request_for("anthropic/claude-haiku-5.5")["extra_body"]["reasoning"] == {"enabled": True}
+
+
+def test_one_reasoning_effort_applies_to_every_model():
+    for model in ("anthropic/claude-haiku-5.5", "openai/gpt-6-luna", "deepseek/deepseek-v4.1-flash-1017"):
+        client = FakeClient([completion(("spin", {}))])
+        OpenRouter(client).chat(model=model, messages=MESSAGES, tools=TOOLS, reasoning_effort="low")
+        assert client.calls[0]["extra_body"]["reasoning"] == {"effort": "low"}
+
+
+def test_thinking_claude_models_choose_their_tool_since_forcing_one_turns_thinking_off():
+    assert request_for("anthropic/claude-haiku-5.5")["tool_choice"] == "auto"
+    assert request_for("openai/gpt-6-luna")["tool_choice"] == "required"
+    client = FakeClient([completion(("spin", {}))])
+    OpenRouter(client).chat(model="anthropic/claude-haiku-5.5", messages=MESSAGES, tools=TOOLS, reasoning_effort="none")
+    assert client.calls[0]["tool_choice"] == "required"

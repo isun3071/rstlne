@@ -202,7 +202,9 @@ def test_reasoning_stays_in_history(rules, wheel_spec, game):
     state = spin_to(game, 3)
     observe_all([llm], state)
     llm.decide(public_view(state, 0))
-    assert client.calls[1]["messages"][2]["reasoning_details"] == details
+    assistant = client.calls[1]["messages"][2]
+    assert assistant["reasoning_details"] == details
+    assert "reasoning" not in assistant  # the detailed blocks are enough, and some providers want them exactly
 
 
 def test_log_records_which_provider_served_the_call(rules, wheel_spec, game):
@@ -221,7 +223,30 @@ def test_unset_temperature_uses_the_model_default(rules, wheel_spec, game):
     llm, client = player(rules, wheel_spec, [completion(("spin", {}))], temperature=None)
     llm.decide(public_view(game, 0))
     assert "temperature" not in client.calls[0]
-    assert llm.describe() == {"kind": "llm", "model": "test/model", "temperature": None}
+    assert llm.describe() == {"kind": "llm", "model": "test/model", "temperature": None, "reasoning_effort": None}
+
+
+def test_solve_tools_say_the_answer_must_match_the_board(rules, wheel_spec):
+    from rstlne.players.llm import tool_specs
+
+    tools = tool_specs(rules, wheel_spec)
+    for name in ("solve", "bonus_solve"):
+        description = tools[name]["function"]["description"]
+        assert "whole puzzle" in description and "word lengths" in description and "punctuation" in description
+
+
+def test_board_pattern_reaches_the_model(rules, wheel_spec, game):
+    llm, client = player(rules, wheel_spec, [completion(("spin", {}))])
+    llm.decide(public_view(game, 0))
+    assert "Pattern: _____ __ _______ (word lengths 5, 2, 7)" in client.calls[0]["messages"][-1]["content"]
+
+
+def test_reasoning_effort_reaches_every_request(rules, wheel_spec, game):
+    client = router([completion(("spin", {}))])
+    llm = LLMPlayer(0, "openai/gpt-6-luna", client, rules, wheel_spec, reasoning_effort="low")
+    llm.decide(public_view(game, 0))
+    assert client.client.calls[0]["extra_body"]["reasoning"] == {"effort": "low"}
+    assert llm.describe()["reasoning_effort"] == "low"
 
 
 def test_session_id_reaches_every_request(rules, wheel_spec, game):

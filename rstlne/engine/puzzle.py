@@ -57,6 +57,32 @@ def hidden_vowels(answer: str, revealed: frozenset[str]) -> frozenset[str]:
     return frozenset(c for c in answer if c in VOWELS) - revealed
 
 
+def compact(spaced: str) -> str:
+    """A spaced board as one compact pattern with word lengths: `A ____ TAN_ (word lengths 1, 4, 4)`."""
+    words = ["".join(word.split(" ")) for word in spaced.split("   ")]
+    return f"{' '.join(words)} (word lengths {', '.join(str(len(w)) for w in words)})"
+
+
+def pattern(answer: str, revealed: frozenset[str]) -> str:
+    return compact(board(answer, revealed))
+
+
+def fits_board(answer: str, attempt: str, used: frozenset[str]) -> bool:
+    """Whether an attempt could be the answer given the board: the same words and word lengths,
+    every revealed letter and punctuation mark in place, and only unused letters in hidden squares."""
+    guess, words = _clean(attempt).split(" "), answer.split(" ")
+    if len(guess) != len(words):
+        return False
+    for g, word in zip(guess, words):
+        if len(g) != len(word):
+            return False
+        for a, c in zip(g, word):
+            shown = c not in LETTERS or c in used
+            if (shown and a != c) or (not shown and (a not in LETTERS or a in used)):
+                return False
+    return True
+
+
 def solve_matches(answer: str, attempt: str) -> bool:
     """Letters, word breaks, and punctuation must match. Case and extra spaces don't."""
     return _clean(attempt) == answer

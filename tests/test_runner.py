@@ -104,3 +104,23 @@ def test_every_player_observes_every_result(game):
     players = [Scripted(solves) for _ in range(3)]
     play_game(game, players)
     assert {len(p.seen) for p in players} == {6}  # four solves, the bonus picks, and the bonus solve
+
+
+@pytest.mark.parametrize("attempt, fits", [("SPILL", False), ("WHEEL OF FORTUNA", True)])
+def test_wrong_solves_record_whether_they_fit_the_board(game, tmp_path, attempt, fits):
+    players = [Scripted(lambda view: Solve(attempt)), Scripted(solves), Scripted(solves)]
+    with GameLog(tmp_path / "game.jsonl", game, players) as log:
+        state = play_turn(game, players, log)
+        log.summary(state)
+    records = lines(tmp_path / "game.jsonl")
+    (action,) = [r for r in records if r["type"] == "action"]
+    assert action["result"]["outcome"] == "wrong_solve" and action["fits_board"] is fits
+    assert records[-1]["invalid"][0] == ({} if fits else {"solve doesn't fit the board": 1})
+
+
+def test_correct_solves_are_marked_as_fitting(game, tmp_path):
+    players = [Scripted(solves) for _ in range(3)]
+    with GameLog(tmp_path / "game.jsonl", game, players) as log:
+        play_turn(game, players, log)
+    (action,) = [r for r in lines(tmp_path / "game.jsonl") if r["type"] == "action"]
+    assert action["fits_board"] is True

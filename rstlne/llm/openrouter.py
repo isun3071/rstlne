@@ -95,6 +95,7 @@ class OpenRouter:
         tools: list[dict],
         temperature: float | None = None,
         session_id: str | None = None,
+        reasoning_effort: str | None = None,
     ) -> Reply:
         """One required tool call's worth of completion, retried on transient failures.
 
@@ -104,6 +105,9 @@ class OpenRouter:
         messages, extra = _caching(model, messages)
         if session_id:
             extra["session_id"] = session_id
+        reasoning = _reasoning(model, reasoning_effort)
+        if reasoning:
+            extra["reasoning"] = reasoning
         options = {} if temperature is None else {"temperature": temperature}
         if extra:
             options["extra_body"] = extra
@@ -113,7 +117,7 @@ class OpenRouter:
                     model=model,
                     messages=messages,
                     tools=tools,
-                    tool_choice="required",
+                    tool_choice=_tool_choice(model, reasoning),
                     parallel_tool_calls=False,
                     **options,
                 )
@@ -127,6 +131,23 @@ class OpenRouter:
                     raise
                 self.sleep(min(self.base_delay * 2**attempt, self.max_delay))
         raise AssertionError("unreachable")
+
+
+def _reasoning(model: str, effort: str | None) -> dict | None:
+    """One effort for every model when set. Otherwise each model's default: Claude models think only
+    when asked, so they get thinking turned on with no effort, which runs their adaptive thinking."""
+    if effort is not None:
+        return {"effort": effort}
+    if model.startswith("anthropic/"):
+        return {"enabled": True}
+    return None
+
+
+def _tool_choice(model: str, reasoning: dict | None) -> str:
+    """Require a tool call, except from a thinking Claude model: forcing one switches its thinking off.
+    A Claude reply without a tool call gets the usual reprompt."""
+    thinking = reasoning is not None and reasoning.get("effort") != "none"
+    return "auto" if model.startswith("anthropic/") and thinking else "required"
 
 
 def _caching(model: str, messages: list[dict]) -> tuple[list[dict], dict]:

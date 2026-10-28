@@ -23,6 +23,10 @@ solve_reveal_share = 0.7   # configuration 3: solve once this share of the puzzl
 # Unset, so each model plays at its own default. Claude Haiku 5.5 and GPT-6 Luna ignore
 # temperature anyway. To set one, uncomment this; it must be 0.2 to 0.4 and is logged.
 # temperature = 0.3
+# Unset, so each model reasons at its own default effort; Claude models get their adaptive
+# thinking switched on, since OpenRouter leaves it off unless asked. Set one level for every
+# model with "none", "low", "medium", "high", "xhigh", or "max".
+# reasoning_effort = "medium"
 
 [decision]
 # Configuration 5: a decision model makes every choice, and the solver writes the answers.

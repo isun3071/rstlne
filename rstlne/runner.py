@@ -11,7 +11,8 @@ from enum import Enum
 from pathlib import Path
 
 from rstlne.engine.rules import apply, public_view
-from rstlne.engine.state import Action, Forfeit, GameState, IllegalAction, Phase, Result
+from rstlne.engine.puzzle import fits_board
+from rstlne.engine.state import Action, BonusSolve, Forfeit, GameState, IllegalAction, Phase, Result, Solve
 from rstlne.llm.openrouter import Usage
 from rstlne.players.base import InvalidResponse, Player
 
@@ -28,6 +29,7 @@ CATEGORIES = {
     "bad_decision": "bad decision",
 }
 REPEATED = "repeated letter"
+MISFIT = "solve doesn't fit the board"
 _FIXED = {"rules", "wheel", "puzzles", "bonus_puzzle"}  # logged once, in the header
 
 
@@ -104,6 +106,9 @@ class GameLog:
         self._add_usage(result.seat, call)
         if result.outcome == "repeated":
             self.invalid_counts[result.seat][REPEATED] += 1
+        fits = _fits(before, action)
+        if fits is False:
+            self.invalid_counts[result.seat][MISFIT] += 1
         self._write(
             type="action",
             seat=result.seat,
@@ -113,6 +118,7 @@ class GameLog:
             result=jsonable(result),
             wedge=jsonable(result.wedge),
             usage=jsonable(call.usage) if call else None,
+            **({} if fits is None else {"fits_board": fits}),
         )
 
     def invalid(self, before: GameState, player: Player, error: IllegalAction | InvalidResponse) -> None:
@@ -147,6 +153,14 @@ class GameLog:
 
     def _write(self, **record) -> None:
         self.file.write(json.dumps(record) + "\n")
+
+
+def _fits(before: GameState, action: Action) -> bool | None:
+    """For a solve, whether the attempt fits the board it was made on. None for other moves."""
+    if not isinstance(action, (Solve, BonusSolve)) or not isinstance(action.answer, str):
+        return None
+    stage = before.round or before.bonus
+    return fits_board(stage.puzzle.answer, action.answer, stage.used)
 
 
 def _state(state: GameState) -> dict:

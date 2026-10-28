@@ -84,6 +84,7 @@ def test_table_shows_the_public_view(rules, wheel_spec):
     assert lines == [
         "Round 1. Category: Phrase",
         "Board: _ _ _ _ _   _ _   _ _ _ _ _ _ _",
+        "Pattern: _____ __ _______ (word lengths 5, 2, 7)",
         "Used letters: none",
         "Round banks: You $1,200 | Seat 2 $0 | Seat 3 $0",
         "Game totals: You $0 | Seat 2 $0 | Seat 3 $3,000",

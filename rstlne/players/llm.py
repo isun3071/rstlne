@@ -26,7 +26,11 @@ from rstlne.narrate import describe, money, table
 from rstlne.players.base import CallRecord, InvalidResponse, Player
 
 LETTER = {"type": "string", "description": "One letter."}
-ANSWER = {"type": "string", "description": "The full answer, keeping its punctuation."}
+ANSWER = {"type": "string", "description": "The whole puzzle, every word, with its punctuation."}
+MATCH = (
+    "Type the whole puzzle, every word. It must match the board: the same number of words, the same "
+    "word lengths, every revealed letter in place, and the punctuation shown."
+)
 
 
 def _tool(name: str, description: str, **parameters: dict) -> dict:
@@ -45,7 +49,7 @@ def tool_specs(rules: Rules, spec: WheelSpec) -> dict[str, dict]:
     return {
         "spin": _tool("spin", "Spin the wheel. On a letter wedge you then call a consonant for its value."),
         "buy_vowel": _tool("buy_vowel", "Buy a vowel (A, E, I, O, or U) from your round bank.", letter=LETTER),
-        "solve": _tool("solve", "Solve the puzzle.", answer=ANSWER),
+        "solve": _tool("solve", f"Solve the puzzle. {MATCH} A wrong solve costs your turn.", answer=ANSWER),
         "call_consonant": _tool("call_consonant", "Call a consonant.", letter=LETTER),
         "call_letter": _tool(
             "call_letter",
@@ -73,7 +77,7 @@ def tool_specs(rules: Rules, spec: WheelSpec) -> dict[str, dict]:
             consonants={"type": "array", "items": LETTER},
             vowel=LETTER,
         ),
-        "bonus_solve": _tool("bonus_solve", "Your one bonus solve attempt.", answer=ANSWER),
+        "bonus_solve": _tool("bonus_solve", f"Your one bonus solve attempt. {MATCH}", answer=ANSWER),
     }
 
 
@@ -269,6 +273,7 @@ class LLMPlayer(Player):
         spec: WheelSpec,
         temperature: float | None = None,  # None keeps the model's own default
         session_id: str | None = None,  # keeps this seat on one provider so its cache stays warm
+        reasoning_effort: str | None = None,  # None keeps each model's own default
     ):
         self.seat = seat
         self.model = model
@@ -277,6 +282,7 @@ class LLMPlayer(Player):
         self.spec = spec
         self.temperature = None if temperature is None else check_temperature(temperature)
         self.session_id = session_id
+        self.reasoning_effort = reasoning_effort
         self.tools = tool_specs(rules, spec)
         self.system = rules_prompt(rules, spec, seat)
         self.usage = Usage()
@@ -287,7 +293,7 @@ class LLMPlayer(Player):
         self.notes: list[str] = []  # what happened since this seat's last request
 
     def describe(self) -> dict:
-        return {"kind": "llm", "model": self.model, "temperature": self.temperature}
+        return {"kind": "llm", "model": self.model, "temperature": self.temperature, "reasoning_effort": self.reasoning_effort}
 
     def label(self) -> str:
         return self.model
@@ -313,6 +319,7 @@ class LLMPlayer(Player):
             tools=[self.tools[kind] for kind in view.legal_actions],
             temperature=self.temperature,
             session_id=self.session_id,
+            reasoning_effort=self.reasoning_effort,
         )
         self.usage += reply.usage
         message = reply.message
@@ -320,9 +327,11 @@ class LLMPlayer(Player):
 
         assistant: dict = {"role": "assistant", "content": message.content}
         extra = message.model_extra or {}
-        for key in ("reasoning", "reasoning_details"):  # some providers need reasoning handed back
-            if extra.get(key):
-                assistant[key] = extra[key]
+        # Hand reasoning back so the model keeps its thinking. Claude needs its detailed blocks exactly as sent.
+        if extra.get("reasoning_details"):
+            assistant["reasoning_details"] = extra["reasoning_details"]
+        elif extra.get("reasoning"):
+            assistant["reasoning"] = extra["reasoning"]
         calls = message.tool_calls or []
         if calls:
             first = calls[0]

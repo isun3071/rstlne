@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from rstlne.engine.puzzle import compact
 from rstlne.engine.state import BonusPicks, BuyVowel, CallConsonant, CallLetter, PublicView, Result, Spin
 from rstlne.engine.wheel import Kind, Wedge
 
@@ -44,6 +45,7 @@ def table(view: PublicView, viewer: int | None = None) -> list[str]:
     lines = [
         f"{heading}. Category: {view.category}",
         f"Board: {view.board}",
+        f"Pattern: {compact(view.board)}",
         f"Used letters: {' '.join(view.used_letters) or 'none'}",
         "Round banks: " + " | ".join(f"{n} {money(b)}" for n, b in zip(names, view.banks)),
         "Game totals: " + " | ".join(f"{n} {money(t)}" for n, t in zip(names, view.totals)),

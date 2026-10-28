@@ -102,6 +102,7 @@ def main(
         decisions = DecisionClient()
 
     temperature = config["llm"].get("temperature")
+    effort = config["llm"].get("reasoning_effort")
     decision = config["decision"]
 
     def seat(i: int, kind: str, model: str | None) -> Player:
@@ -109,8 +110,10 @@ def main(
         if kind == "human":
             return HumanPlayer(i, seconds=config["cli"]["bonus_solve_seconds"])
         if kind == "llm":
-            return LLMPlayer(i, model, client, rules, spec, temperature, session)
-        solver = LLMPlayer(i, decision["solver_model"], client, rules, spec, temperature, f"{session}-solver")
+            return LLMPlayer(i, model, client, rules, spec, temperature, session, reasoning_effort=effort)
+        solver = LLMPlayer(
+            i, decision["solver_model"], client, rules, spec, temperature, f"{session}-solver", reasoning_effort=effort
+        )
         return DecisionPlayer(
             i, model or decision["decision_model"], decisions, solver, rules, spec, decision["solve_threshold"], session
         )

@@ -3,6 +3,8 @@ import pytest
 from rstlne.engine.puzzle import (
     Puzzle,
     board,
+    fits_board,
+    pattern,
     count,
     hidden_consonants,
     hidden_vowels,
@@ -68,3 +70,31 @@ def test_solve_requires_apostrophes_and_commas():
     assert not solve_matches("DON'T STOP", "DONT STOP")
     assert solve_matches("YES, SIR", "yes, sir")
     assert not solve_matches("YES, SIR", "YES SIR")
+
+
+@pytest.mark.parametrize(
+    "attempt, fits",
+    [
+        ("A FULL TANK OF GAS", True),
+        ("a  full tank of gas", True),
+        ("A BULL TANK OF GAS", True),  # wrong, but it fits the board
+        ("ANTIQUE ...", False),  # 2 words where the board has 5
+        ("A FULL TANKS OF GAS", False),  # a 5 letter word in a 4 letter slot
+        ("A FULL BANK OF GAS", False),  # changes a revealed T
+        ("A FUNL TANK OF GAS", False),  # puts a used N in a hidden square
+    ],
+)
+def test_fits_board(attempt, fits):
+    assert fits_board("A FULL TANK OF GAS", attempt, frozenset("TAN")) is fits
+
+
+def test_fits_board_checks_punctuation():
+    assert fits_board("DON'T STOP", "WON'T STOP", frozenset())
+    assert not fits_board("DON'T STOP", "DON-T STOP", frozenset())
+    assert not fits_board("DON'T STOP", "DONT STOP", frozenset())
+    assert not fits_board("BOWLING & GOLF BALL", "BOWLING AND GOLF BALL", frozenset())
+
+
+def test_pattern_is_compact_with_word_lengths():
+    assert pattern("A FULL TANK OF GAS", frozenset("TAN")) == "A ____ TAN_ __ _A_ (word lengths 1, 4, 4, 2, 3)"
+    assert pattern("DON'T STOP", frozenset("T")) == "___'T _T__ (word lengths 5, 4)"
