@@ -257,3 +257,19 @@ def test_a_generated_batch_file_loads_like_any_puzzle_file(tmp_path):
     pool = [Puzzle("Thing", "SPARE TIRE"), Puzzle("Food & Drink", "HOT COCOA", bonus=True)]
     puzzlegen.save_pool(path, pool, settings(), seed=4, rejected={}, cost=0.0)
     assert project.load_puzzles(path) == pool
+
+
+def test_long_runs_print_a_status_line_every_so_often(tmp_path):
+    now = [0.0]
+
+    def clock():
+        now[0] += 50  # every call to the clock is 50 seconds later
+        return now[0]
+
+    lines = []
+    client = fake([["Spare tire", "Kitchen sink", "Garden hose"], ["Paper towel", "Coffee mug", "Light bulb"]])
+    puzzlegen.generate(client, settings(max_requests=2), [("Thing", 6)], [], seed=1, known=[],
+                       seen_path=tmp_path / "seen.txt", say=lines.append, heartbeat=120, clock=clock)
+    status = [line for line in lines if "requests" in line and "overall" in line]
+    assert status and all(" of 6" in line and "$" in line for line in status)
+    assert lines[-1].strip().startswith("Thing: 6 of 6")

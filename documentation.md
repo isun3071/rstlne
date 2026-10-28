@@ -257,7 +257,7 @@ Each seat is one of four kinds.
 
 ### Generated puzzles
 
-- `python -m rstlne.puzzlegen` writes fresh puzzles on demand, and `--puzzles generate` makes a tournament's whole pool before its first game.
+- `python -m rstlne.puzzlegen` writes fresh puzzles on demand, and `--puzzles generate` makes a tournament's whole pool before its first game. It prints a line when it starts, a line per category as each fills, a status line every 2 minutes (the category's progress, requests, cost so far, and puzzles accepted overall), and a summary of rejections at the end.
 - A generator model writes the answers and a judge model checks each one. Both are cheap, and both come from labs apart from every player model: Mistral Small 3.2 generates and Gemma 3 27B judges, set in `[puzzlegen]` in `config.toml`.
 - Every request stands alone: a short system prompt and one request, never a growing conversation. The prompts never mention the show. A request names the category in plain terms, asks for a batch of answers as JSON, and carries a few seeded everyday topics for variety, which it may ignore.
 - The category mix follows `dev.json`'s proportions, set in `config.toml`.

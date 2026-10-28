@@ -289,8 +289,11 @@ def generate(
     rhymes: dict[str, set[str]] | None = None,
     ideas: list[str] | None = None,
     say=lambda line: None,
+    heartbeat: float = 120.0,
+    clock=time.monotonic,
 ) -> Result:
-    """Puzzles for each (category, count), checked and judged. Accepted answers join the seen registry."""
+    """Puzzles for each (category, count), checked and judged. Accepted answers join the seen registry.
+    Every `heartbeat` seconds, `say` gets a status line."""
     rng = random.Random(f"puzzlegen:{seed}")
     seen_path = SEEN if seen_path is None else seen_path
     rhymes = load_rhymes(data_dir() / "cmudict.dict") if rhymes is None else rhymes
@@ -299,6 +302,15 @@ def generate(
     seen = set(seen_path.read_text().splitlines()) if seen_path.exists() else set()
     taken = {dedupe_key(a) for a in seen} | {dedupe_key(p.answer) for p in known}
     result = Result()
+    wanted_total = sum(n for _, n in main) + sum(n for _, n in bonus)
+    last = [clock()]
+
+    def status(category: str, is_bonus: bool, got: int, count: int) -> None:
+        if clock() - last[0] >= heartbeat:
+            last[0] = clock()
+            say(f"  {category}{' (bonus)' if is_bonus else ''}: {got} of {count} · {result.requests} requests · "
+                f"${result.usage.cost:.4f} · {len(result.puzzles)} of {wanted_total} overall")
+
     for is_bonus, wanted in ((False, main), (True, bonus)):
         rows = s.bonus_rows if is_bonus else s.rows
         for category, count in wanted:
@@ -309,6 +321,7 @@ def generate(
                 result.usage += reply.usage
                 answers = parse_answers(reply.message.content)
                 rng.shuffle(answers)  # the first answer is the most typical; a shuffle keeps the pick varied
+                status(category, is_bonus, got, count)
                 if not answers:
                     result.rejected["reply didn't parse"] += 1
                 for raw in answers:
@@ -334,6 +347,7 @@ def generate(
                         f.write(answer + "\n")
                     result.puzzles.append(Puzzle(category, answer, bonus=is_bonus))
                     got += 1
+                    status(category, is_bonus, got, count)
             say(f"  {category}{' (bonus)' if is_bonus else ''}: {got} of {count}")
     return result
 
@@ -427,8 +441,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     rng = random.Random(f"mix:{args.seed}")
     main_mix, bonus_mix = mix(config)
     client, _ = clients({"llm"}, None, None)
+    print(f"Generating {args.main} main and {args.bonus} bonus puzzles with {s.generator}, judged by {s.judge}; "
+          "a status line every 2 minutes", flush=True)
     result = generate(client, s, split(args.main, main_mix, rng), split(args.bonus, bonus_mix, rng), args.seed,
-                      known_puzzles(), say=print)
+                      known_puzzles(), say=lambda line: print(line, flush=True))
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     save_pool(out, result.puzzles, s, args.seed, result.rejected, result.usage.cost, result.judged_out)
