@@ -13,18 +13,23 @@ import argparse
 import json
 import random
 import re
+import sys
 import time
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import openai
+
 from rstlne import settings as project
 from rstlne.engine.puzzle import LETTERS, Puzzle, normalize
-from rstlne.llm.openrouter import OpenRouter, Usage
+from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage
 from rstlne.players.bot.lexicon import data_dir, rhyme_key
 
 PROMPT_VERSION = 3
+DEADLINE = 60  # seconds for one request: a batch of answers takes a few
+MAX_FAILURES = 5  # requests failing in a row before a run stops and keeps what it has
 FAMILIAR = 4  # the judge rates how familiar an answer is, 1 to 5; below this it's out
 SEEN = project.ROOT / "puzzles" / "generated" / "seen.txt"
 _ARTICLES = {"A", "AN", "THE"}
@@ -91,6 +96,7 @@ class Result:
     judged_out: list[tuple[str, str, str]] = field(default_factory=list)  # (category, answer, the judge's reason)
     usage: Usage = field(default_factory=Usage)
     requests: int = 0
+    stopped: bool = False  # too many requests failed in a row
 
 
 # Checks in code
@@ -291,9 +297,11 @@ def generate(
     say=lambda line: None,
     heartbeat: float = 120.0,
     clock=time.monotonic,
+    on_accept=lambda puzzles: None,
 ) -> Result:
     """Puzzles for each (category, count), checked and judged. Accepted answers join the seen registry.
-    Every `heartbeat` seconds, `say` gets a status line."""
+    Every `heartbeat` seconds, `say` gets a status line, and `on_accept` hears every accepted puzzle at once.
+    A failed request is skipped; after MAX_FAILURES in a row, the run stops and returns what it has."""
     rng = random.Random(f"puzzlegen:{seed}")
     seen_path = SEEN if seen_path is None else seen_path
     rhymes = load_rhymes(data_dir() / "cmudict.dict") if rhymes is None else rhymes
@@ -311,28 +319,49 @@ def generate(
             say(f"  {category}{' (bonus)' if is_bonus else ''}: {got} of {count} · {result.requests} requests · "
                 f"${result.usage.cost:.4f} · {len(result.puzzles)} of {wanted_total} overall")
 
+    failures = [0]
+
+    def ask(kind: str, call):
+        """One request, or None if it failed after the client's own retries."""
+        try:
+            reply = call()
+        except (openai.APIError, EmptyResponse) as err:
+            failures[0] += 1
+            result.rejected[f"{kind} request failed"] += 1
+            if failures[0] >= MAX_FAILURES:
+                result.stopped = True
+                say(f"Stopping: {MAX_FAILURES} requests in a row failed, the last with {err}. "
+                    "Rerun the same command to top up.")
+            return None
+        failures[0] = 0
+        result.usage += reply.usage
+        return reply
+
     for is_bonus, wanted in ((False, main), (True, bonus)):
         rows = s.bonus_rows if is_bonus else s.rows
         for category, count in wanted:
             got = 0
-            while got < count and result.requests < s.max_requests:
+            while got < count and result.requests < s.max_requests and not result.stopped:
                 result.requests += 1
-                reply = _ask_generator(client, s, category, is_bonus, _ideas(rng, pool), max(s.batch, count - got))
-                result.usage += reply.usage
+                reply = ask("generator", lambda: _ask_generator(client, s, category, is_bonus, _ideas(rng, pool),
+                                                                max(s.batch, count - got)))
+                if reply is None:
+                    continue
                 answers = parse_answers(reply.message.content)
                 rng.shuffle(answers)  # the first answer is the most typical; a shuffle keeps the pick varied
                 status(category, is_bonus, got, count)
                 if not answers:
                     result.rejected["reply didn't parse"] += 1
                 for raw in answers:
-                    if got == count:
+                    if got == count or result.stopped:
                         break
                     verdict = _check(raw, category, rows, rhymes, taken, result, 0 if is_bonus else s.main_min_letters)
                     if verdict is None:
                         continue
                     answer, key = verdict
-                    judged = _ask_judge(client, s, category, answer)
-                    result.usage += judged.usage
+                    judged = ask("judge", lambda: _ask_judge(client, s, category, answer))
+                    if judged is None:
+                        continue
                     fits, reason, common, parts = _verdict(judged.message.content)
                     if fits and common < FAMILIAR:
                         fits, reason = False, f"familiarity {common} of 5: {reason}"
@@ -346,6 +375,7 @@ def generate(
                     with open(seen_path, "a") as f:
                         f.write(answer + "\n")
                     result.puzzles.append(Puzzle(category, answer, bonus=is_bonus))
+                    on_accept(result.puzzles)
                     got += 1
                     status(category, is_bonus, got, count)
             say(f"  {category}{' (bonus)' if is_bonus else ''}: {got} of {count}")
@@ -427,9 +457,15 @@ def mix(config: dict) -> tuple[dict[str, float], dict[str, float]]:
     return dict(c["main_mix"]), dict(c["bonus_mix"])
 
 
-def main(argv: Sequence[str] | None = None) -> None:
+def _client() -> OpenRouter:
     from rstlne.cli import clients
 
+    client, _ = clients({"llm"}, None, None)
+    client.deadline = DEADLINE
+    return client
+
+
+def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m rstlne.puzzlegen", description="Generate fresh, checked puzzles.")
     parser.add_argument("--main", type=int, default=40, help="main round puzzles")
     parser.add_argument("--bonus", type=int, default=10, help="bonus round puzzles")
@@ -438,21 +474,36 @@ def main(argv: Sequence[str] | None = None) -> None:
     args = parser.parse_args(argv)
     config = project.load_config()
     s = Settings.from_config(config)
-    rng = random.Random(f"mix:{args.seed}")
-    main_mix, bonus_mix = mix(config)
-    client, _ = clients({"llm"}, None, None)
-    print(f"Generating {args.main} main and {args.bonus} bonus puzzles with {s.generator}, judged by {s.judge}; "
-          "a status line every 2 minutes", flush=True)
-    result = generate(client, s, split(args.main, main_mix, rng), split(args.bonus, bonus_mix, rng), args.seed,
-                      known_puzzles(), say=lambda line: print(line, flush=True))
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    save_pool(out, result.puzzles, s, args.seed, result.rejected, result.usage.cost, result.judged_out)
-    print(f"{len(result.puzzles)} puzzles in {result.requests} generator requests, ${result.usage.cost:.4f}")
+    have = load_pool(out) if out.exists() else []  # a rerun tops the file up
+    short_main = max(0, args.main - sum(not p.bonus for p in have))
+    short_bonus = max(0, args.bonus - sum(p.bonus for p in have))
+    if not short_main and not short_bonus:
+        print(f"{out} already holds {args.main} main and {args.bonus} bonus puzzles")
+        return
+    rng = random.Random(f"mix:{args.seed}:{len(have)}")
+    main_mix, bonus_mix = mix(config)
+    client = _client()
+    print(f"Generating {short_main} main and {short_bonus} bonus puzzles with {s.generator}, judged by {s.judge}; "
+          f"a status line every 2 minutes{f', topping up {out}' if have else ''}", flush=True)
+    result = generate(
+        client, s, split(short_main, main_mix, rng) if short_main else [],
+        split(short_bonus, bonus_mix, rng) if short_bonus else [], args.seed * 1000 + len(have),
+        known_puzzles() + have, say=lambda line: print(line, flush=True),
+        on_accept=lambda puzzles: save_pool(out, have + puzzles, s, args.seed, {}, 0.0),
+    )
+    save_pool(out, have + result.puzzles, s, args.seed, result.rejected, result.usage.cost, result.judged_out)
+    total_main = sum(not p.bonus for p in have + result.puzzles)
+    total_bonus = sum(p.bonus for p in have + result.puzzles)
+    print(f"{len(result.puzzles)} new puzzles in {result.requests} generator requests, ${result.usage.cost:.4f}; "
+          f"{out} holds {total_main} of {args.main} main and {total_bonus} of {args.bonus} bonus")
     for reason, n in result.rejected.most_common():
         print(f"  rejected {n}: {reason}")
     for category, answer, reason in result.judged_out:
         print(f"  judged out: {category}: {answer} ({reason})")
+    if total_main < args.main or total_bonus < args.bonus:
+        sys.exit(f"Short of the {args.main} main and {args.bonus} bonus asked for: rerun the same command to top up.")
 
 
 if __name__ == "__main__":

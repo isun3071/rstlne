@@ -273,3 +273,71 @@ def test_long_runs_print_a_status_line_every_so_often(tmp_path):
     status = [line for line in lines if "requests" in line and "overall" in line]
     assert status and all(" of 6" in line and "$" in line for line in status)
     assert lines[-1].strip().startswith("Thing: 6 of 6")
+
+
+# Failures mid-run
+
+
+import openai  # noqa: E402
+import httpx2  # noqa: E402
+
+
+def timeout():
+    return openai.APITimeoutError(request=httpx2.Request("POST", "https://openrouter.ai/api/v1/chat/completions"))
+
+
+def flaky(replies):
+    """Hands out `replies` in turn: a list of answers is a generator reply, None a stall, True a yes from the judge."""
+    replies = iter(replies)
+
+    def reply(request):
+        if request["model"] == JUDGE:
+            return completion(content=json.dumps({"fits": True, "reason": "ok", "common": 5, "parts": []}))
+        r = next(replies)
+        if r is None:
+            raise timeout()
+        return completion(content=json.dumps({"answers": r}))
+    return router(reply, retries=0)
+
+
+def test_a_failed_request_is_skipped_and_the_run_goes_on(tmp_path):
+    client = flaky([None, ["Spare tire", "Kitchen sink"]])
+    result = puzzlegen.generate(client, settings(max_requests=5), [("Thing", 2)], [], seed=1, known=[],
+                                seen_path=tmp_path / "seen.txt")
+    assert sorted(p.answer for p in result.puzzles) == ["KITCHEN SINK", "SPARE TIRE"]
+    assert result.rejected["generator request failed"] == 1
+
+
+def test_too_many_failures_in_a_row_stop_the_run_with_what_it_has(tmp_path):
+    client = flaky([["Spare tire"], None, None, None, None, None, ["Kitchen sink"]])
+    lines = []
+    result = puzzlegen.generate(client, settings(max_requests=20), [("Thing", 3)], [], seed=1, known=[],
+                                seen_path=tmp_path / "seen.txt", say=lines.append)
+    assert [p.answer for p in result.puzzles] == ["SPARE TIRE"] and result.stopped
+    assert any("5 requests in a row failed" in line for line in lines)
+
+
+def test_every_accepted_puzzle_reaches_the_file_at_once(tmp_path):
+    saved = []
+    client = flaky([["Spare tire", "Kitchen sink"]])
+    puzzlegen.generate(client, settings(max_requests=1), [("Thing", 2)], [], seed=1, known=[],
+                       seen_path=tmp_path / "seen.txt", on_accept=lambda puzzles: saved.append(len(puzzles)))
+    assert saved == [1, 2]
+
+
+def test_rerunning_the_command_tops_the_file_up(tmp_path, monkeypatch):
+    out = tmp_path / "batch.json"
+    monkeypatch.setattr(puzzlegen, "SEEN", tmp_path / "seen.txt")
+    first = [Puzzle("Thing", "SPARE TIRE"), Puzzle("Food & Drink", "HOT COCOA", bonus=True)]
+    puzzlegen.save_pool(out, first, settings(), seed=7, rejected={}, cost=0.0)
+    calls = []
+
+    def fake_generate(client, s, main, bonus, seed, known, **options):
+        calls.append((main, bonus, [p.answer for p in known]))
+        return puzzlegen.Result(puzzles=[Puzzle("Thing", "KITCHEN SINK")])
+    monkeypatch.setattr(puzzlegen, "generate", fake_generate)
+    monkeypatch.setattr(puzzlegen, "_client", lambda: None)
+    puzzlegen.main(["--main", "2", "--bonus", "1", "--seed", "7", "--out", str(out)])
+    (main, bonus, known), = calls
+    assert sum(n for _, n in main) == 1 and bonus == [] and "SPARE TIRE" in known
+    assert [p.answer for p in puzzlegen.load_pool(out)] == ["SPARE TIRE", "HOT COCOA", "KITCHEN SINK"]
