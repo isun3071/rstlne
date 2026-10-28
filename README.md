@@ -16,7 +16,7 @@ The same engine is built to run seeded, model-only tournaments that compare how 
 | Your seat in the terminal | Done |
 | Game logs | Done |
 | Baseline bot | Not started |
-| Tournament runner | Not started |
+| Tournament runner | Done |
 | Local web page | Planned for phase 2 |
 
 ## Setup
@@ -51,6 +51,23 @@ Each seat is `human`, `llm:<slug>`, or `decision`. Three model seats play a mode
 | `--log-dir PATH` | Writes game logs to PATH. The default is `logs/`. |
 
 The slugs in `config.toml` are the models picked so far: Claude Haiku 5.5, GPT-6 Luna, and DeepSeek V4.1 Flash, with Qwen 3.8 Flash and GLM 5.3 Flash as backups.
+
+## Tournaments
+
+```
+uv run python -m rstlne.tournament --seats llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna,decision --sets 100 --seed 42
+```
+
+A tournament plays `--sets` puzzle sets with duplicate scoring. Each set gets its own seed and puzzles and is played three times, with the entrants rotated so each sits in every seat against the same spins. `--sets 100` is 300 games. `--models a,b,c` is short for three `llm:` seats.
+
+| Option | Effect |
+|---|---|
+| `--parallel N` | Plays N games at once. The default is 4. |
+| `--max-cost D` | Stops starting new games once spending reaches D dollars. |
+| `--puzzles PATH` | The default is `puzzles/dev.json`, which marks the run as development. Scored runs use `puzzles/private.json`. |
+| `--out PATH` | The tournament folder. The default depends on the entrants, seed, and puzzles, so rerunning the same command resumes it. |
+
+Each game writes its usual log into the tournament folder, and rerunning skips finished games and replays unfinished ones. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, how much of the board showed at a correct solve, money left on the table, invalid moves, and cost. A game's winner is the highest final total; tied leaders split the win. Our test games ran 2 to 5 minutes and 1 to 2 cents each.
 
 ## Configuration
 

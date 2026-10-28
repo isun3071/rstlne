@@ -80,7 +80,7 @@ def play_turn(state: GameState, players: Sequence[Player], log: GameLog | None =
 class GameLog:
     """One JSONL file per game: a header, a line per action or invalid response, and a summary."""
 
-    def __init__(self, path: Path, state: GameState, players: Sequence[Player]):
+    def __init__(self, path: Path, state: GameState, players: Sequence[Player], header: dict | None = None):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.file = self.path.open("w")
@@ -96,6 +96,7 @@ class GameLog:
             wheel=jsonable(state.wheel),
             puzzles=jsonable(state.puzzles),
             bonus_puzzle=jsonable(state.bonus_puzzle),
+            **(header or {}),
         )
 
     def __enter__(self) -> GameLog:

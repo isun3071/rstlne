@@ -95,6 +95,10 @@ Bonus puzzles carry `"bonus": true` in the puzzle file. Keep them short, like th
 
 - Derive every spin from `(game_seed, round_index, spin_index)`. Two games with the same seed and the same decisions produce identical spins.
 - Tournament mode plays each puzzle set three times with the seats rotated, so every model sits in every position against the same spins. This is duplicate bridge scoring. It strips most of the luck out of model comparisons.
+- `python -m rstlne.tournament --seats <seat>,<seat>,<seat> --sets N --seed S` plays N puzzle sets, 3N games. Seats use the CLI's forms (`llm:<slug>`, `decision[:<model>]`), and `--models a,b,c` is short for three `llm:` seats. Each set draws its game seed and puzzles from the tournament seed and is played three times, with the entrants rotated so each sits in every seat once.
+- A game's winner is the seat with the highest final total, bonus included. Seats tied for the highest total split the win evenly.
+- Games run in parallel (`--parallel`, default 4). Each writes its usual log into the tournament's folder. Rerunning a tournament skips finished games and replays unfinished ones. `--max-cost` stops starting new games once spending reaches a limit.
+- The report gives, per entrant: games, win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, average board shown at a correct solve, money left on the table, invalid moves by category, and tokens and cost. Runs on `dev.json` are marked as development runs; scored runs use `private.json`.
 
 ## LLM player
 

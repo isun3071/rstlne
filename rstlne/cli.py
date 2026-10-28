@@ -51,6 +51,49 @@ def parse_seats(text: str) -> list[tuple[str, str | None]]:
     return seats
 
 
+def clients(
+    kinds: set[str], client: OpenRouter | None, decisions: DecisionClient | None
+) -> tuple[OpenRouter | None, DecisionClient | None]:
+    """The API clients these seat kinds need, reading the key from .env. Clients passed in are kept."""
+    if kinds & {"llm", "decision"}:
+        load_dotenv(settings.ROOT / ".env")
+        if client is None:
+            client = OpenRouter()
+    if decisions is None and "decision" in kinds:
+        decisions = DecisionClient()
+    return client, decisions
+
+
+def build_players(
+    seats: list[tuple[str, str | None]],
+    rules,
+    spec,
+    config: dict,
+    client: OpenRouter | None,
+    decisions: DecisionClient | None,
+    session_prefix: str,
+) -> list[Player]:
+    """A player per (kind, model) seat. Each model seat gets its own session, `<prefix>-seat<n>`."""
+    temperature = config["llm"].get("temperature")
+    effort = config["llm"].get("reasoning_effort")
+    decision = config["decision"]
+
+    def seat(i: int, kind: str, model: str | None) -> Player:
+        session = f"{session_prefix}-seat{i + 1}"
+        if kind == "human":
+            return HumanPlayer(i, seconds=config["cli"]["bonus_solve_seconds"])
+        if kind == "llm":
+            return LLMPlayer(i, model, client, rules, spec, temperature, session, reasoning_effort=effort)
+        solver = LLMPlayer(
+            i, decision["solver_model"], client, rules, spec, temperature, f"{session}-solver", reasoning_effort=effort
+        )
+        return DecisionPlayer(
+            i, model or decision["decision_model"], decisions, solver, rules, spec, decision["solve_threshold"], session
+        )
+
+    return [seat(i, kind, model) for i, (kind, model) in enumerate(seats)]
+
+
 def pick_puzzles(puzzles: Sequence[Puzzle], rounds: int, seed: int) -> tuple[list[Puzzle], Puzzle]:
     """A seeded draw of main round puzzles, with no repeats, and one bonus puzzle."""
     rng = random.Random(f"puzzles:{seed}")
@@ -94,31 +137,8 @@ def main(
     if args.live and "human" in kinds:
         sys.exit("--live is for model-only games, since a redrawing screen can't take typed moves. "
                  "Drop the human seat, or use --show-puzzle.")
-    if kinds & {"llm", "decision"}:
-        load_dotenv(settings.ROOT / ".env")
-    if client is None and kinds & {"llm", "decision"}:
-        client = OpenRouter()
-    if decisions is None and "decision" in kinds:
-        decisions = DecisionClient()
-
-    temperature = config["llm"].get("temperature")
-    effort = config["llm"].get("reasoning_effort")
-    decision = config["decision"]
-
-    def seat(i: int, kind: str, model: str | None) -> Player:
-        session = f"{path.stem}-seat{i + 1}"
-        if kind == "human":
-            return HumanPlayer(i, seconds=config["cli"]["bonus_solve_seconds"])
-        if kind == "llm":
-            return LLMPlayer(i, model, client, rules, spec, temperature, session, reasoning_effort=effort)
-        solver = LLMPlayer(
-            i, decision["solver_model"], client, rules, spec, temperature, f"{session}-solver", reasoning_effort=effort
-        )
-        return DecisionPlayer(
-            i, model or decision["decision_model"], decisions, solver, rules, spec, decision["solve_threshold"], session
-        )
-
-    players = [seat(i, kind, model) for i, (kind, model) in enumerate(seats)]
+    client, decisions = clients(kinds, client, decisions)
+    players = build_players(seats, rules, spec, config, client, decisions, path.stem)
     pause = args.pause if args.pause is not None else config["cli"]["model_pause"]
     show: Show | LiveShow
     if args.live and sys.stdout.isatty():

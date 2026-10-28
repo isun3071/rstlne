@@ -101,6 +101,6 @@ documentation.md   # game specification
 
 ```
 uv run python -m rstlne.cli --seats human,llm:<slug>,bot
-uv run python -m rstlne.tournament --models <slug1>,<slug2>,<slug3> --puzzles puzzles/private.json --seed 42
+uv run python -m rstlne.tournament --models <slug1>,<slug2>,<slug3> --sets 100 --puzzles puzzles/private.json --seed 42
 uv run pytest
 ```
