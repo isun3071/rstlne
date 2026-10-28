@@ -15,11 +15,11 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, ThreadPoolExecutor, wait
 from contextlib import ExitStack
 from multiprocessing import Manager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import combinations, permutations
 from pathlib import Path
 
-from rstlne import settings
+from rstlne import puzzlegen, settings
 from rstlne.cli import build_players, clients, parse_seats
 from rstlne.engine.puzzle import Puzzle
 from rstlne.engine.rules import new_game
@@ -35,6 +35,7 @@ SEATS = 3
 RESAMPLES = 10_000
 PARALLEL = 6  # a whole set of 6 games at once
 HEARTBEAT = 120  # seconds between status lines while games run
+GENERATE = "generate"  # --puzzles generate: fresh puzzles, made for this tournament
 
 
 @dataclass(frozen=True)
@@ -128,6 +129,8 @@ def folder_name(entrants: Sequence[str], seed: int, puzzles_path: Path, config: 
     play = {key: config.get(key) for key in ("tournament", "providers", "llm", "decision")}
     if "bot" in entrants:  # only then, so model-only folders keep their names
         play["bot_version"] = config.get("bot", {}).get("version")
+    if str(puzzles_path) == GENERATE:
+        play["puzzlegen"] = config.get("puzzlegen")
     key = json.dumps([list(entrants), seed, Path(puzzles_path).name, play], sort_keys=True)
     return f"seed{seed}-{hashlib.sha256(key.encode()).hexdigest()[:8]}"
 
@@ -145,6 +148,7 @@ def run_tournament(
     mode: str | None = None,
     write: Callable[[str], None] = print,
     heartbeat: float = HEARTBEAT,
+    generation_requests: int | None = None,
 ) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -152,10 +156,21 @@ def run_tournament(
     mode = mode or config.get("tournament", {}).get("set_permutations", "all")
     if "bot" in entrants:
         check_bot_versions(out_dir, versions.current(config))
-    pool = settings.load_puzzles(puzzles_path)
+    kinds = {kind for kind, _ in parse_seats(",".join(entrants))}
+    generating = str(puzzles_path) == GENERATE
+    if generating:
+        client, decisions = clients(kinds | {"llm"}, client, decisions)
+        s = puzzlegen.Settings.from_config(config)
+        if generation_requests is not None:
+            s = replace(s, max_requests=generation_requests)
+        puzzles_path = out_dir / "puzzles.json"
+        pool = _generated_pool(puzzles_path, sets, rules.main_rounds, seed, config, s, client, write)
+        generated_by = {"generator": s.generator, "judge": s.judge}
+    else:
+        pool = settings.load_puzzles(puzzles_path)
+        generated_by = None
     main_hands = deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
     bonus_hands = deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
-    kinds = {kind for kind, _ in parse_seats(",".join(entrants))}
     processes = "bot" in kinds and client is None and decisions is None  # the bot computes, so it needs its own cores
     client, decisions = clients(kinds, client, decisions)
     names = labels(entrants)
@@ -164,6 +179,7 @@ def run_tournament(
         header = {"tournament": {
             "set": game.set, "permutation": game.permutation, "entrants": list(game.order), "names": names,
             "puzzles": str(puzzles_path), "set_permutations": mode,
+            **({"generated_by": generated_by} if generated_by else {}),
         }}
         return _Job(game, tuple(entrants), tuple(main_hands[game.set]), bonus_hands[game.set][0], out_dir, header,
                     config, rules, spec)
@@ -251,11 +267,13 @@ def report(out_dir: Path) -> dict:
     set_puzzles: dict[int, list[str]] = {}
     names: list[str] = []
     puzzles = ""
+    generated = None
     for path in logs:
         rows = [json.loads(line) for line in path.read_text().splitlines()]
         header, summary = rows[0], rows[-1]
         tournament = header["tournament"]
         names, puzzles = tournament["names"], tournament["puzzles"]
+        generated = tournament.get("generated_by")
         set_puzzles[tournament["set"]] = [p["answer"] for p in header["puzzles"]] + [header["bonus_puzzle"]["answer"]]
         wins = split_wins(summary["totals"])
         bonus = summary["bonus"]
@@ -358,7 +376,8 @@ def report(out_dir: Path) -> dict:
         "games": len(logs),
         "sets": len(per_set),
         "puzzles": puzzles,
-        "dev_run": Path(puzzles).name != "private.json",
+        "dev_run": not generated and Path(puzzles).name != "private.json",
+        "generated_by": generated,
         "entrants": entrants,
         "pairwise": pairwise,
         "per_set": [
@@ -386,7 +405,9 @@ def table(result: dict) -> list[str]:
     lines = [
         "",
         f"{result['games']} games in {result['sets']} sets"
-        + ("  ·  development run on dev.json, not a scored result" if result["dev_run"] else ""),
+        + ("  ·  development run on dev.json, not a scored result" if result["dev_run"] else "")
+        + (f"  ·  puzzles generated by {result['generated_by']['generator']}, judged by {result['generated_by']['judge']}"
+           if result.get("generated_by") else ""),
         f"{'entrant':<40}{'wins':>7}{'win% [95% CI]':>18}{'by seat':>16}{'avg total':>12}{'main':>10}{'bonus':>9}"
         f"{'solve%':>8}{'shown':>7}{'left/solve':>11}{'invalid/g':>10}{'cost':>9}",
     ]
@@ -408,6 +429,34 @@ def table(result: dict) -> list[str]:
             ci_text = "" if not ci else f" [{ci[0]:+.0%} to {ci[1]:+.0%}]"
             lines.append(f"  {p['a']} minus {p['b']}: {gap_text}{ci_text}")
     return lines
+
+
+def _generated_pool(path: Path, sets: int, rounds: int, seed: int, config: dict, s, client, write) -> list[Puzzle]:
+    """The tournament's generated puzzles: made once, saved in its folder, topped up if a run came up short."""
+    have = puzzlegen.load_pool(path) if path.exists() else []
+    need_main, need_bonus = sets * rounds, sets
+    short_main = need_main - sum(not p.bonus for p in have)
+    short_bonus = need_bonus - sum(p.bonus for p in have)
+    if short_main > 0 or short_bonus > 0:
+        main_mix, bonus_mix = puzzlegen.mix(config)
+        rng = random.Random(f"mix:{seed}:{len(have)}")
+        write(f"Generating {max(short_main, 0)} main and {max(short_bonus, 0)} bonus puzzles with {s.generator}, "
+              f"judged by {s.judge}")
+        result = puzzlegen.generate(
+            client, s,
+            puzzlegen.split(short_main, main_mix, rng) if short_main > 0 else [],
+            puzzlegen.split(short_bonus, bonus_mix, rng) if short_bonus > 0 else [],
+            seed=seed * 1000 + len(have), known=puzzlegen.known_puzzles() + have, say=write,
+        )
+        have += result.puzzles
+        puzzlegen.save_pool(path, have, s, seed, result.rejected, result.usage.cost, result.judged_out)
+        rejected = ", ".join(f"{n} {reason}" for reason, n in result.rejected.most_common()) or "none"
+        write(f"  {len(result.puzzles)} new puzzles, ${result.usage.cost:.4f}; rejected: {rejected}")
+    got_main, got_bonus = sum(not p.bonus for p in have), sum(p.bonus for p in have)
+    if got_main < need_main or got_bonus < need_bonus:
+        raise ValueError(f"generated {got_main} of {need_main} main and {got_bonus} of {need_bonus} bonus puzzles; "
+                         "rerun to generate the rest, since puzzles are never reused")
+    return have
 
 
 @dataclass(frozen=True)
@@ -481,7 +530,8 @@ def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--sets", type=int, required=True,
                         help="puzzle sets to play; each is 6 games, or 3 with set_permutations = \"cyclic\". --sets 1 is a trial run")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))
+    parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"),
+                        help="a puzzle file, or generate for fresh puzzles made for this tournament")
     parser.add_argument("--parallel", type=int, default=PARALLEL, help="games to play at once")
     parser.add_argument("--max-cost", type=float, help="stop starting new games once spending reaches this many dollars")
     parser.add_argument("--out", help="tournament folder; the default covers everything that changes play, so a rerun resumes")

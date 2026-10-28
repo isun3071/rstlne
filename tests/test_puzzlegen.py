@@ -1,0 +1,252 @@
+import json
+import random
+
+import pytest
+from fakes import completion, router
+
+from rstlne import puzzlegen
+from rstlne.engine.puzzle import Puzzle
+
+GEN, JUDGE = "mistralai/gen", "google/judge"
+ROWS, BONUS_ROWS = (12, 14, 14, 12), (14, 14)
+
+
+def fake(batches, verdicts=None):
+    """A generator that hands out `batches` in turn, and a judge that says yes unless `verdicts` names the answer."""
+    batches = iter(batches)
+    verdicts = verdicts or {}
+
+    def reply(request):
+        if request["model"] == GEN:
+            return completion(content=json.dumps({"answers": next(batches)}))
+        answer = json.loads(request["messages"][-1]["content"].rsplit("\n", 1)[-1])["answer"]
+        verdict = verdicts.get(answer, True)
+        fits, common = (verdict, 5) if isinstance(verdict, bool) else (True, verdict)
+        return completion(content=json.dumps({"fits": fits, "reason": "ok" if fits else "not that kind of thing",
+                                              "common": common, "parts": []}))
+    return router(reply)
+
+
+def settings(**changes):
+    base = dict(generator=GEN, judge=JUDGE, batch=3, rows=ROWS, bonus_rows=BONUS_ROWS, max_requests=10, main_min_letters=6)
+    return puzzlegen.Settings(**{**base, **changes})
+
+
+# Checks in code
+
+
+@pytest.mark.parametrize("answer, rows, fits", [
+    ("A BLESSING IN DISGUISE", ROWS, True),
+    ("SUPERCALIFRAGILISTIC", ROWS, False),  # 20 letters: no row holds it
+    ("ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN ELEVEN TWELVE", ROWS, False),
+    ("HOT COCOA", BONUS_ROWS, True),
+    ("A VERY LONG BONUS PUZZLE THAT RUNS ON", BONUS_ROWS, False),
+])
+def test_answers_must_fit_the_board_without_splitting_a_word(answer, rows, fits):
+    assert puzzlegen.fits_rows(answer, rows) is fits
+
+
+@pytest.mark.parametrize("category, answer, ok", [
+    ("Same Letter", "FRESH FRUIT FROM FLORIDA", True),
+    ("Same Letter", "FRESH APPLES FROM FLORIDA", False),
+    ("Same Letter", "CRAZY CRAZY CRAZY", False),  # one word, said three times
+    ("Rhyme Time", "WEAR AND TEAR", True),
+    ("Rhyme Time", "WEAR AND SHIRT", False),
+    ("Same Name", "BIRTHDAY & WEDDING CAKE", True),
+    ("Same Name", "WEDDING CAKE", False),
+    ("Same Name", "MELANIE & SULLIVAN", False),  # nothing after the & for the halves to share
+    ("Before & After", "PIECE OF CAKE WALK", True),
+    ("Before & After", "CAKE WALK", False),
+    ("What Are You Doing?", "WALKING THE DOG", True),
+    ("What Are You Doing?", "THE DOG WALK", False),
+    ("Thing", "A ROUND TABLE", True),
+])
+def test_structural_categories_are_checked_in_code(category, answer, ok):
+    rhymes = {"WEAR": {"EH1 R"}, "TEAR": {"EH1 R"}, "SHIRT": {"ER1 T"}}
+    assert puzzlegen.structure_ok(category, answer, rhymes) is ok
+
+
+def test_near_duplicates_ignore_articles_case_and_spacing():
+    assert puzzlegen.dedupe_key("A Blessing  in Disguise") == puzzlegen.dedupe_key("BLESSING IN DISGUISE")
+    assert puzzlegen.dedupe_key("THE BACK PORCH") != puzzlegen.dedupe_key("BACK DOOR")
+
+
+# Generation
+
+
+def test_generated_puzzles_pass_every_check_and_are_never_reused(tmp_path):
+    seen = tmp_path / "seen.txt"
+    seen.write_text("BACK PORCH\n")
+    known = [Puzzle("Phrase", "BETTER LATE THAN NEVER")]
+    client = fake([
+        ["Better late than never", "a back porch", "Rainy day fund", "rainy day fund", "SUPERCALIFRAGILISTICEXPIALIDOCIOUS"],
+        ["Round table", "Spare tire", "Kitchen sink"],
+    ], verdicts={"ROUND TABLE": False})
+    result = puzzlegen.generate(client, settings(max_requests=2), [("Thing", 4)], [], seed=1, known=known, seen_path=seen)
+    answers = [p.answer for p in result.puzzles]
+    assert sorted(answers) == ["KITCHEN SINK", "RAINY DAY FUND", "SPARE TIRE"]  # three of the four asked for: the requests ran out
+    assert result.rejected == {"already used": 2, "duplicate in this batch": 1, "doesn't fit the board": 1,
+                               "judge: doesn't fit the category": 1}
+    assert result.judged_out == [("Thing", "ROUND TABLE", "not that kind of thing")]
+    assert seen.read_text().splitlines()[0] == "BACK PORCH"
+    assert sorted(seen.read_text().splitlines()[1:]) == ["KITCHEN SINK", "RAINY DAY FUND", "SPARE TIRE"]
+
+
+def test_bonus_puzzles_are_marked_and_held_to_the_bonus_rows(tmp_path):
+    client = fake([["Hot cocoa", "A very long bonus puzzle that runs on"]])
+    result = puzzlegen.generate(client, settings(max_requests=1), [], [("Food & Drink", 1)], seed=2, known=[],
+                                seen_path=tmp_path / "seen.txt")
+    assert result.puzzles == [Puzzle("Food & Drink", "HOT COCOA", bonus=True)]
+
+
+def test_every_request_stands_alone_and_never_names_the_show(tmp_path):
+    client = fake([["Spare tire", "Kitchen sink", "Garden hose"]])
+    puzzlegen.generate(client, settings(), [("Thing", 3)], [], seed=3, known=[], seen_path=tmp_path / "seen.txt")
+    for call in client.client.calls:
+        text = json.dumps(call["messages"]).upper()
+        assert "WHEEL OF FORTUNE" not in text and "WHEEL" not in text
+        assert len(call["messages"]) == 2  # a system prompt and one request, nothing carried over
+        assert call["response_format"]["type"] == "json_schema"
+    judged = [c for c in client.client.calls if c["model"] == JUDGE]
+    assert len(judged) == 3
+
+
+def test_requests_carry_seeded_inspiration_words(tmp_path):
+    prompts = []
+    for _ in range(2):
+        client = fake([["Spare tire", "Kitchen sink", "Garden hose"]])
+        puzzlegen.generate(client, settings(), [("Thing", 3)], [], seed=9, known=[], seen_path=tmp_path / f"s{_}.txt")
+        prompts.append(next(c for c in client.client.calls if c["model"] == GEN)["messages"][-1]["content"])
+    assert prompts[0] == prompts[1] and "may suggest topics, but never force them in" in prompts[0]
+    topics = prompts[0].split("never force them in: ")[1].split(".")[0].split(", ")
+    assert set(topics) <= {t.upper() for t in puzzlegen.TOPICS}  # everyday topics, never random rare words
+
+
+def test_replies_parse_through_code_fences_and_stray_text():
+    assert puzzlegen.parse_answers('Sure!\n```json\n{"answers": ["Spare tire"]}\n```') == ["Spare tire"]
+    assert puzzlegen.parse_answers("not json at all") == []
+
+
+def test_the_category_mix_splits_a_count_by_weight():
+    mix = puzzlegen.split(10, {"Phrase": 3, "Thing": 1, "Place": 1}, random.Random(0))
+    assert sum(n for _, n in mix) == 10 and dict(mix)["Phrase"] >= 5
+
+
+def test_a_pool_file_records_how_it_was_made(tmp_path):
+    path = tmp_path / "puzzles.json"
+    pool = [Puzzle("Thing", "SPARE TIRE"), Puzzle("Food & Drink", "HOT COCOA", bonus=True)]
+    puzzlegen.save_pool(path, pool, settings(), seed=4, rejected={"already used": 1}, cost=0.002)
+    data = json.loads(path.read_text())
+    assert data["generator"] == GEN and data["judge"] == JUDGE and data["seed"] == 4
+    assert puzzlegen.load_pool(path) == pool
+
+
+# Tournaments with generated puzzles
+
+
+from fakes import board_reader  # noqa: E402
+
+from rstlne import settings as project  # noqa: E402
+from rstlne.tournament import run_tournament  # noqa: E402
+
+CONFIG = project.load_config()["puzzlegen"]
+
+
+def table_client(fresh):
+    """Plays games like board_reader, writes puzzles from `fresh`, and approves every one."""
+    def reply(request):
+        if request["model"] == CONFIG["generator"]:
+            text = request["messages"][-1]["content"]
+            category = text.split("\n")[0].removeprefix("Category: ")
+            words = {"Same Letter": ["BIG BLUE BUBBLES"], "Rhyme Time": ["FAT CAT NAP"], "Same Name": ["APPLE & PUMPKIN PIE"],
+                     "Before & After": ["PIECE OF CAKE WALK"], "What Are You Doing?": ["WALKING THE DOG"]}
+            special = words.get(category, [])
+            return completion(content=json.dumps({"answers": [next(fresh) for _ in range(3)] + special}))
+        if request["model"] == CONFIG["judge"]:
+            answer = json.loads(request["messages"][-1]["content"].rsplit("\n", 1)[-1])["answer"]
+            parts = {"PIECE OF CAKE WALK": ["PIECE OF CAKE", "CAKE WALK"],
+                     "APPLE & PUMPKIN PIE": ["APPLE PIE", "PUMPKIN PIE"]}.get(answer, [])
+            return completion(content=json.dumps({"fits": True, "reason": "fine", "common": 5, "parts": parts}))
+        return board_reader(request)
+    return router(reply)
+
+
+@pytest.fixture
+def seen(tmp_path, monkeypatch):
+    path = tmp_path / "seen.txt"
+    monkeypatch.setattr(puzzlegen, "SEEN", path)
+    return path
+
+
+def test_a_tournament_generates_its_puzzles_once_and_records_how(tmp_path, seen):
+    fresh = iter(f"{a} {b}" for a in ("CRIMSON", "COBALT", "GOLDEN", "SCARLET", "SILVER", "VIOLET", "AMBER", "COPPER", "MAROON", "INDIGO")
+                 for b in ("BARN", "DOOR", "KITE", "LAMP", "MUG", "SOCK", "VASE", "YARN", "BELL", "COAT"))
+    out = tmp_path / "t"
+    client = table_client(fresh)
+    lines = []
+    result = run_tournament(["llm:a/one", "llm:b/two", "llm:c/three"], sets=1, seed=5, puzzles_path="generate",
+                            out_dir=out, parallel=3, client=client, write=lines.append, heartbeat=600)
+    pool = json.loads((out / "puzzles.json").read_text())
+    assert pool["generator"] == CONFIG["generator"] and pool["judge"] == CONFIG["judge"]
+    assert len([p for p in pool["puzzles"] if not p["bonus"]]) == 4 and len([p for p in pool["puzzles"] if p["bonus"]]) == 1
+    header = json.loads(next(out.glob("set000-perm0.jsonl")).read_text().splitlines()[0])
+    assert header["tournament"]["generated_by"] == {"generator": CONFIG["generator"], "judge": CONFIG["judge"]}
+    assert not result["dev_run"] and result["generated_by"]["generator"] == CONFIG["generator"]
+    assert any("Generating 4 main and 1 bonus" in line for line in lines)
+    assert len(seen.read_text().splitlines()) == 5
+    calls = len(client.client.calls)
+    run_tournament(["llm:a/one", "llm:b/two", "llm:c/three"], sets=1, seed=5, puzzles_path="generate",
+                   out_dir=out, parallel=3, client=client, write=lines.append, heartbeat=600)
+    assert len(client.client.calls) == calls  # a rerun reuses the pool and the finished games
+
+
+def test_a_short_pool_stops_before_any_game_and_tops_up_on_rerun(tmp_path, seen, monkeypatch):
+    out = tmp_path / "t"
+    stingy = iter(["CRIMSON BARN", "COBALT DOOR"])
+    def reply(request):
+        if request["model"] == CONFIG["generator"]:
+            return completion(content=json.dumps({"answers": [next(stingy, "CRIMSON BARN")]}))
+        return completion(content=json.dumps({"fits": True, "reason": "fine", "common": 5, "parts": []}))
+    with pytest.raises(ValueError, match="2 of 4 main and 0 of 1 bonus"):
+        run_tournament(["llm:a/one", "llm:b/two", "llm:c/three"], sets=1, seed=5, puzzles_path="generate",
+                       out_dir=out, parallel=3, client=router(reply), write=lambda line: None, heartbeat=600,
+                       generation_requests=4)
+    assert not list(out.glob("set*.jsonl"))
+    assert len(puzzlegen.load_pool(out / "puzzles.json")) == 2  # kept, so the rerun only tops up
+
+
+@pytest.mark.parametrize("category, answer, parts, ok", [
+    ("Before & After", "PIECE OF CAKE WALK", ["PIECE OF CAKE", "CAKE WALK"], True),
+    ("Before & After", "JACK THE LADDER UP", ["JACK THE", "LADDER UP"], False),  # no shared word
+    ("Before & After", "PIECE OF CAKE WALK", ["PIECE OF PIE", "PIE WALK"], False),  # doesn't rebuild the answer
+    ("Same Name", "BIRTHDAY & WEDDING CAKE", ["BIRTHDAY CAKE", "WEDDING CAKE"], True),
+    ("Same Name", "BIRTHDAY & WEDDING CAKE", ["BIRTHDAY PARTY", "WEDDING CAKE"], False),
+    ("Thing", "COFFEE MUG", [], True),
+])
+def test_the_judge_names_the_two_phrases_and_code_checks_they_join(category, answer, parts, ok):
+    assert puzzlegen.parts_ok(category, answer, parts) is ok
+
+
+def test_answers_in_a_batch_are_tried_in_a_seeded_shuffle(tmp_path):
+    picked = []
+    for seed in (1, 2, 3, 4):
+        client = fake([[f"ITEM {c}" for c in "ABCDEFGHIJ"]])
+        result = puzzlegen.generate(client, settings(batch=10, max_requests=1, main_min_letters=0), [("Thing", 1)], [], seed=seed, known=[],
+                                    seen_path=tmp_path / f"s{seed}.txt")
+        picked.append(result.puzzles[0].answer)
+    assert len(set(picked)) > 1  # not always the first, most typical answer
+
+
+def test_the_judge_rates_how_familiar_an_answer_is_and_the_bar_is_four(tmp_path):
+    client = fake([["Dreamy salad", "Garden salad"]], verdicts={"DREAMY SALAD": 2})
+    result = puzzlegen.generate(client, settings(max_requests=1), [("Food & Drink", 2)], [], seed=1, known=[],
+                                seen_path=tmp_path / "seen.txt")
+    assert [p.answer for p in result.puzzles] == ["GARDEN SALAD"]
+    assert result.judged_out[0][:2] == ("Food & Drink", "DREAMY SALAD") and "familiarity 2" in result.judged_out[0][2]
+
+
+def test_main_puzzles_need_enough_letters(tmp_path):
+    client = fake([["Pig", "Golden retriever"]])
+    result = puzzlegen.generate(client, settings(max_requests=1, main_min_letters=8), [("Living Thing", 2)], [], seed=1,
+                                known=[], seen_path=tmp_path / "seen.txt")
+    assert [p.answer for p in result.puzzles] == ["GOLDEN RETRIEVER"] and result.rejected["too short for a main puzzle"] == 1

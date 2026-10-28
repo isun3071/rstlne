@@ -103,7 +103,7 @@ Bonus puzzles carry `"bonus": true` in the puzzle file. Keep them short, like th
 - Each game log is tagged with its set index, its ordering, and the entrant in each seat.
 - A game's winner is the seat with the highest final total, bonus included. Seats tied for the highest total split the win evenly.
 - Games run in parallel (`--parallel`, default 6, a whole set at once). Each game prints a line when it starts and when it ends, and every 2 minutes a status line lists the games in progress with their round and move count. Each writes its usual log into the tournament's folder. Rerunning a tournament skips finished games and replays unfinished ones. `--max-cost` stops starting new games once spending reaches a limit. Tournaments with a bot seat play each game in its own process, since the bot computes rather than waits.
-- The report gives, per entrant: games, win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, average board shown at a correct solve, money left on the table, invalid moves by category, and tokens and cost. It also gives each set's wins and average totals per entrant, and how many sets used each puzzle. Runs on `dev.json` are marked as development runs; scored runs use `private.json`.
+- The report gives, per entrant: games, win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, average board shown at a correct solve, money left on the table, invalid moves by category, and tokens and cost. It also gives each set's wins and average totals per entrant, and how many sets used each puzzle. Runs on `dev.json` are marked as development runs; scored runs use `private.json` or generated puzzles, and a generated run names its generator and judge.
 - Confidence intervals come from bootstrapping over sets, not games, since the games in a set share puzzles and spins and are not independent: 10,000 seeded resamples of the sets, 95% percentile intervals, for each entrant's win rate, average final total, average main round winnings, and solve accuracy, and for the win rate gap between each pair of entrants.
 - A tournament's default folder name covers its entrants, seed, puzzle file, `set_permutations`, and the settings that change play (provider pins, LLM settings, decision settings, the bot version), so a rerun resumes only an identical tournament.
 
@@ -252,8 +252,22 @@ Each seat is one of four kinds.
 ## Puzzles
 
 - Store puzzles as `{"category": "...", "answer": "...", "bonus": false}`.
-- Real show puzzles likely sit in model training data. Use them only in `dev.json`. Score tournaments on `private.json`, written fresh by Ian.
+- Real show puzzles likely sit in model training data. Use them only in `dev.json`. Score tournaments on `private.json`, written fresh by Ian, or on generated puzzles.
 - Normalize answers to uppercase letters, spaces, and basic punctuation. Punctuation shows on the board from the start.
+
+### Generated puzzles
+
+- `python -m rstlne.puzzlegen` writes fresh puzzles on demand, and `--puzzles generate` makes a tournament's whole pool before its first game.
+- A generator model writes the answers and a judge model checks each one. Both are cheap, and both come from labs apart from every player model: Mistral Small 3.2 generates and Gemma 3 27B judges, set in `[puzzlegen]` in `config.toml`.
+- Every request stands alone: a short system prompt and one request, never a growing conversation. The prompts never mention the show. A request names the category in plain terms, asks for a batch of answers as JSON, and carries a few seeded everyday topics for variety, which it may ignore.
+- The category mix follows `dev.json`'s proportions, set in `config.toml`.
+- Code checks every answer before the judge sees it:
+  - it normalizes to board text
+  - a main puzzle wraps into the board's rows of 12, 14, 14, and 12 squares without splitting a word, and has enough letters; a bonus puzzle fits its smaller rows (the bonus size and the main minimum are provisional in `config.toml`)
+  - Same Letter words all start with one letter, and aren't one word repeated; Rhyme Time has two words that rhyme; Same Name has a shared ending after the &; Before & After has at least three words; What Are You Doing? has an ING word
+  - it repeats no puzzle in `dev.json`, `private.json`, the batch, or any earlier generated set, ignoring case, spacing, and articles. Every accepted answer joins `puzzles/generated/seen.txt`, so no puzzle ever comes back.
+- The judge must say the answer fits its category and rate its familiarity at least 4 of 5. For Before & After and Same Name it names the two phrases, and code checks they rebuild the answer.
+- A tournament's generated pool is saved in its folder with the generator, judge, prompt version, seed, rejections, and cost, and a rerun reuses it. A pool that comes up short stops the tournament before any game, and the rerun tops it up: puzzles are never reused. Generated puzzles stay out of git, in `puzzles/generated/`, like `private.json`.
 
 ## Logging
 

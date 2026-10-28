@@ -126,13 +126,15 @@ class OpenRouter:
         *,
         model: str,
         messages: list[dict],
-        tools: list[dict],
+        tools: list[dict] | None,
         temperature: float | None = None,
         session_id: str | None = None,
         reasoning_effort: str | None = None,
         provider: str | None = None,
+        response_format: dict | None = None,
     ) -> Reply:
         """One required tool call's worth of completion, retried on transient failures.
+        With tools=None and a response_format, a plain JSON reply instead.
 
         With no temperature, the request leaves it out and the model uses its own default.
         A session_id keeps one seat's calls on one provider, where its cache lives.
@@ -146,6 +148,10 @@ class OpenRouter:
         if provider:  # one host only, so every game runs on the same build of the model
             extra["provider"] = {"order": [provider], "allow_fallbacks": False}
         options = {} if temperature is None else {"temperature": temperature}
+        if tools is None:
+            options["response_format"] = response_format or {"type": "json_object"}
+        else:
+            options.update(tools=tools, tool_choice=_tool_choice(model, reasoning), parallel_tool_calls=False)
         if extra:
             options["extra_body"] = extra
         timeouts = 0
@@ -156,9 +162,6 @@ class OpenRouter:
                         lambda: self.client.chat.completions.create(
                             model=model,
                             messages=messages,
-                            tools=tools,
-                            tool_choice=_tool_choice(model, reasoning),
-                            parallel_tool_calls=False,
                             **options,
                         ),
                         self.deadline,

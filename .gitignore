@@ -5,6 +5,7 @@
  
 # scored puzzles and game logs
 puzzles/private.json
+puzzles/generated/
 logs/
  
 # python

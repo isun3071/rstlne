@@ -83,9 +83,11 @@ rstlne/
   tournament.py    # seeded model only runs
   calibrate.py     # picks each decision model's solve threshold from data
   data.py          # fetches the bot's word data into data/, streamed and pruned
+  puzzlegen.py     # fresh puzzles: a generator writes, code checks, a judge confirms, nothing reused
 puzzles/
   dev.json         # puzzles for development, committed
   private.json     # scored puzzles, gitignored
+  generated/       # generated puzzles and seen.txt, the registry that keeps them from repeating; gitignored
 logs/              # JSONL per game, gitignored
 data/              # the bot's fetched word data, gitignored
 tests/

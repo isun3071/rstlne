@@ -54,6 +54,8 @@ The slugs in `config.toml` are the models picked so far: Claude Haiku 5.5, GPT-6
 
 ## Tournaments
 
+Add `--puzzles generate` to play on fresh puzzles made for the tournament: a generator model writes them, code checks them, and a judge model from another lab confirms each one. `documentation.md` has the details; a 50-set pool costs about a cent. `python -m rstlne.puzzlegen --main 40 --bonus 10 --seed 7 --out puzzles/generated/batch.json` makes a batch on its own.
+
 ```
 uv run python -m rstlne.tournament --models anthropic/claude-haiku-5.5,openai/gpt-6-luna,deepseek/deepseek-v4.1-flash-1017 --sets 50 --seed 42
 ```
