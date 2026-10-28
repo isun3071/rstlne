@@ -13,8 +13,8 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest>=8"]
+[dependency-groups]
+dev = ["pytest>=8"]  # uv installs this group by default
 
 [tool.setuptools.packages.find]
 include = ["rstlne*"]

@@ -5,7 +5,7 @@ You sit at a three-seat table, usually with two models. The game plays four roun
 ## Start a game
 
 ```
-.venv/bin/python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:deepseek/deepseek-v4.1-flash-1017
+uv run python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:deepseek/deepseek-v4.1-flash-1017
 ```
 
 You play the seat marked `human`. Model moves print as they happen, with a short pause between them.
@@ -77,19 +77,19 @@ Fill all three seats with models and the game runs by itself, start to finish. N
 Three chat models:
 
 ```
-.venv/bin/python -m rstlne.cli --seats llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna,llm:deepseek/deepseek-v4.1-flash-1017
+uv run python -m rstlne.cli --seats llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna,llm:deepseek/deepseek-v4.1-flash-1017
 ```
 
 A decision model against two chat models:
 
 ```
-.venv/bin/python -m rstlne.cli --seats decision,llm:openai/gpt-6-luna,llm:deepseek/deepseek-v4.1-flash-1017
+uv run python -m rstlne.cli --seats decision,llm:openai/gpt-6-luna,llm:deepseek/deepseek-v4.1-flash-1017
 ```
 
 Three decision models:
 
 ```
-.venv/bin/python -m rstlne.cli --seats decision,decision:typesafe/jev-1.13,decision:openai/gpt-6-luna-decisions
+uv run python -m rstlne.cli --seats decision,decision:typesafe/jev-1.13,decision:openai/gpt-6-luna-decisions
 ```
 
 You can repeat a model, for example three `decision` seats or the same `llm:` slug twice. Each seat still plays on its own.

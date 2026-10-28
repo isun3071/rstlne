@@ -21,20 +21,21 @@ The same engine is built to run seeded, model-only tournaments that compare how 
 
 ## Setup
 
-You need Python 3.11 or newer and an OpenRouter API key.
+You need [uv](https://docs.astral.sh/uv/) and an OpenRouter API key. uv sets up Python 3.11 or newer if your machine doesn't have it.
 
 ```
-python3 -m venv .venv
-.venv/bin/pip install -e ".[dev]"
+uv sync
 cp .env.example .env
 ```
+
+`uv sync` builds `.venv` with the exact package versions in `uv.lock`, so every game and tournament runs on the same code. After changing dependencies in `pyproject.toml`, run `uv lock` and commit the new `uv.lock`.
 
 Put your key in `.env` as `OPENROUTER_API_KEY=...`. Git ignores `.env`.
 
 ## Play
 
 ```
-.venv/bin/python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
+uv run python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
 ```
 
 Each seat is `human`, `llm:<slug>`, or `decision`. Three model seats play a model-only game. A `decision` seat is configuration 5: a decision model such as Jev makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
@@ -70,7 +71,7 @@ Token use includes how many prompt tokens each provider read from its cache. Mod
 ## Tests
 
 ```
-.venv/bin/pytest
+uv run pytest
 ```
 
 The suite runs about 310 tests in around 5 seconds. It never calls OpenRouter; a fake client stands in.

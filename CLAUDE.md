@@ -25,7 +25,7 @@ Build the CLI first. A local web page comes in phase 2 and reuses the engine unt
 - `openai` Python SDK pointed at OpenRouter
 - `pytest` for tests
 - `python-dotenv` for the API key
-- Dependencies live in `pyproject.toml`
+- `uv` for the environment. Dependencies live in `pyproject.toml`, and `uv.lock` pins their exact versions. Commit `uv.lock` with every dependency change.
 
 ## OpenRouter
 
@@ -98,7 +98,7 @@ documentation.md   # game specification
 ## Commands
 
 ```
-python -m rstlne.cli --seats human,llm:<slug>,bot
-python -m rstlne.tournament --models <slug1>,<slug2>,<slug3> --puzzles puzzles/private.json --seed 42
-pytest
+uv run python -m rstlne.cli --seats human,llm:<slug>,bot
+uv run python -m rstlne.tournament --models <slug1>,<slug2>,<slug3> --puzzles puzzles/private.json --seed 42
+uv run pytest
 ```
