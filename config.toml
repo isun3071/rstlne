@@ -22,6 +22,7 @@ generator = "mistralai/mistral-small-3.2-24b-instruct"
 judge = "google/gemma-3-27b-it"
 batch = 10            # answers per generator request
 max_requests = 200    # generator requests per run, a cost guard
+judges = 4            # judge calls in flight at once
 rows = [12, 14, 14, 12]   # a main puzzle wraps into these board rows, never splitting a word
 bonus_rows = [14, 14]     # a bonus puzzle fits these rows: shorter than main puzzles, and harder
 main_min_letters = 8      # a main puzzle needs at least this many letters, so none is trivial
@@ -67,6 +68,8 @@ solve_pause = 10          # seconds to hold a solved board before the next round
 # DeepSeek's own servers are blocked by this account's privacy setting (they may train on paid prompts).
 # DeepInfra serves the model at FP8 and caches; the default cheapest host served FP4 and stalled.
 "deepseek/deepseek-v4.1-flash-1017" = "deepinfra/fp8"
+"mistralai/mistral-small-3.2-24b-instruct" = "deepinfra/fp8"  # the puzzle generator: cheapest host, up 100%
+"google/gemma-3-27b-it" = "deepinfra/fp8"  # the puzzle judge; some of its other hosts stall
 
 [models]
 # OpenRouter slugs, picked from GET https://openrouter.ai/api/v1/models

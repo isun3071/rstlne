@@ -28,7 +28,8 @@ def fake(batches, verdicts=None):
 
 
 def settings(**changes):
-    base = dict(generator=GEN, judge=JUDGE, batch=3, rows=ROWS, bonus_rows=BONUS_ROWS, max_requests=10, main_min_letters=6)
+    base = dict(generator=GEN, judge=JUDGE, batch=3, rows=ROWS, bonus_rows=BONUS_ROWS, max_requests=10, main_min_letters=6,
+                judges=1)
     return puzzlegen.Settings(**{**base, **changes})
 
 
@@ -341,3 +342,41 @@ def test_rerunning_the_command_tops_the_file_up(tmp_path, monkeypatch):
     (main, bonus, known), = calls
     assert sum(n for _, n in main) == 1 and bonus == [] and "SPARE TIRE" in known
     assert [p.answer for p in puzzlegen.load_pool(out)] == ["SPARE TIRE", "HOT COCOA", "KITCHEN SINK"]
+
+
+# Request size, hosts, and parallel judging
+
+
+import threading  # noqa: E402
+
+
+def test_each_request_asks_for_one_batch_with_fresh_topics(tmp_path):
+    client = fake([["Spare tire", "Kitchen sink", "Garden hose"], ["Paper towel", "Coffee mug", "Light bulb"]])
+    puzzlegen.generate(client, settings(batch=3, max_requests=2), [("Thing", 6)], [], seed=1, known=[],
+                       seen_path=tmp_path / "seen.txt")
+    asks = [c["messages"][-1]["content"] for c in client.client.calls if c["model"] == GEN]
+    assert len(asks) == 2 and all("Write 3 different answers" in a for a in asks)
+    topics = [a.split("never force them in: ")[1] for a in asks]
+    assert topics[0] != topics[1]
+
+
+def test_requests_go_to_the_pinned_host(tmp_path):
+    client = fake([["Spare tire"]])
+    pins = {GEN: "deepinfra/fp8", JUDGE: "deepinfra/fp8"}
+    puzzlegen.generate(client, settings(max_requests=1, providers=pins), [("Thing", 1)], [], seed=1, known=[],
+                       seen_path=tmp_path / "seen.txt")
+    for call in client.client.calls:
+        assert call["extra_body"]["provider"] == {"order": ["deepinfra/fp8"], "allow_fallbacks": False}
+
+
+def test_judges_work_in_parallel(tmp_path):
+    together = threading.Barrier(2, timeout=5)  # two judge calls must be in flight at once, or this breaks
+
+    def reply(request):
+        if request["model"] == GEN:
+            return completion(content=json.dumps({"answers": ["Spare tire", "Kitchen sink"]}))
+        together.wait()
+        return completion(content=json.dumps({"fits": True, "reason": "ok", "common": 5, "parts": []}))
+    result = puzzlegen.generate(router(reply), settings(max_requests=1, judges=2), [("Thing", 2)], [], seed=1,
+                                known=[], seen_path=tmp_path / "seen.txt")
+    assert sorted(p.answer for p in result.puzzles) == ["KITCHEN SINK", "SPARE TIRE"]

@@ -17,6 +17,7 @@ import sys
 import time
 from collections import Counter
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -81,12 +82,16 @@ class Settings:
     bonus_rows: tuple[int, ...] = (14, 14)  # rows a bonus puzzle must fit in
     max_requests: int = 200  # generator requests per run, so a weak generator can't run up a bill
     main_min_letters: int = 8  # a main puzzle needs at least this many letters
+    judges: int = 4  # judge calls in flight at once
+    providers: dict[str, str] = field(default_factory=dict)  # model -> the one host it runs on, from [providers]
 
     @classmethod
     def from_config(cls, config: dict) -> Settings:
         c = config["puzzlegen"]
+        pins = config.get("providers", {})
         return cls(c["generator"], c["judge"], c.get("batch", 10), tuple(c["rows"]), tuple(c["bonus_rows"]),
-                   c.get("max_requests", 200), c.get("main_min_letters", 8))
+                   c.get("max_requests", 200), c.get("main_min_letters", 8), c.get("judges", 4),
+                   {m: pins[m] for m in (c["generator"], c["judge"]) if m in pins})
 
 
 @dataclass
@@ -242,7 +247,8 @@ def _ask_generator(client: OpenRouter, s: Settings, category: str, bonus: bool, 
         'Reply as JSON: {"answers": ["...", "..."]}',
     ])
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": request}]
-    return client.chat(model=s.generator, messages=messages, tools=None, response_format=_ANSWERS)
+    return client.chat(model=s.generator, messages=messages, tools=None, response_format=_ANSWERS,
+                       provider=s.providers.get(s.generator))
 
 
 def _ask_judge(client: OpenRouter, s: Settings, category: str, answer: str):
@@ -255,7 +261,8 @@ def _ask_judge(client: OpenRouter, s: Settings, category: str, answer: str):
         json.dumps({"category": category, "means": DESCRIPTIONS.get(category, category), "answer": answer}),
     ])
     messages = [{"role": "system", "content": JUDGE_SYSTEM}, {"role": "user", "content": request}]
-    return client.chat(model=s.judge, messages=messages, tools=None, response_format=_VERDICT)
+    return client.chat(model=s.judge, messages=messages, tools=None, response_format=_VERDICT,
+                       provider=s.providers.get(s.judge))
 
 
 def _ideas(rng: random.Random, pool: list[str], n: int = 6) -> list[str]:
@@ -321,69 +328,81 @@ def generate(
 
     failures = [0]
 
-    def ask(kind: str, call):
-        """One request, or None if it failed after the client's own retries."""
-        try:
-            reply = call()
-        except (openai.APIError, EmptyResponse) as err:
+    def record(kind: str, outcome):
+        """Count a reply or a failure. Returns the reply, or None if the request failed."""
+        if isinstance(outcome, BaseException):
+            if not isinstance(outcome, (openai.APIError, EmptyResponse)):
+                raise outcome
             failures[0] += 1
             result.rejected[f"{kind} request failed"] += 1
             if failures[0] >= MAX_FAILURES:
                 result.stopped = True
-                say(f"Stopping: {MAX_FAILURES} requests in a row failed, the last with {err}. "
+                say(f"Stopping: {MAX_FAILURES} requests in a row failed, the last with {outcome}. "
                     "Rerun the same command to top up.")
             return None
         failures[0] = 0
-        result.usage += reply.usage
-        return reply
+        result.usage += outcome.usage
+        return outcome
 
-    for is_bonus, wanted in ((False, main), (True, bonus)):
-        rows = s.bonus_rows if is_bonus else s.rows
-        for category, count in wanted:
-            got = 0
-            while got < count and result.requests < s.max_requests and not result.stopped:
-                result.requests += 1
-                reply = ask("generator", lambda: _ask_generator(client, s, category, is_bonus, _ideas(rng, pool),
-                                                                max(s.batch, count - got)))
-                if reply is None:
-                    continue
-                answers = parse_answers(reply.message.content)
-                rng.shuffle(answers)  # the first answer is the most typical; a shuffle keeps the pick varied
-                status(category, is_bonus, got, count)
-                if not answers:
-                    result.rejected["reply didn't parse"] += 1
-                for raw in answers:
-                    if got == count or result.stopped:
-                        break
-                    verdict = _check(raw, category, rows, rhymes, taken, result, 0 if is_bonus else s.main_min_letters)
-                    if verdict is None:
+    def attempt(call):
+        try:
+            return call()
+        except Exception as err:  # handed to record on the main thread
+            return err
+
+    with ThreadPoolExecutor(max_workers=max(1, s.judges)) as judges:
+        for is_bonus, wanted in ((False, main), (True, bonus)):
+            rows = s.bonus_rows if is_bonus else s.rows
+            for category, count in wanted:
+                got = 0
+                while got < count and result.requests < s.max_requests and not result.stopped:
+                    result.requests += 1
+                    ideas = _ideas(rng, pool)
+                    reply = record("generator", attempt(lambda: _ask_generator(client, s, category, is_bonus, ideas, s.batch)))
+                    if reply is None:
                         continue
-                    answer, key = verdict
-                    judged = ask("judge", lambda: _ask_judge(client, s, category, answer))
-                    if judged is None:
-                        continue
-                    fits, reason, common, parts = _verdict(judged.message.content)
-                    if fits and common < FAMILIAR:
-                        fits, reason = False, f"familiarity {common} of 5: {reason}"
-                    if fits and not parts_ok(category, answer, parts):
-                        fits, reason = False, f"its parts {parts} don't rebuild the answer"
-                    if not fits:
-                        result.rejected["judge: doesn't fit the category"] += 1
-                        result.judged_out.append((category, answer, reason))
-                        continue
-                    taken.add(key)
-                    with open(seen_path, "a") as f:
-                        f.write(answer + "\n")
-                    result.puzzles.append(Puzzle(category, answer, bonus=is_bonus))
-                    on_accept(result.puzzles)
-                    got += 1
+                    answers = parse_answers(reply.message.content)
+                    rng.shuffle(answers)  # the first answer is the most typical; a shuffle keeps the pick varied
                     status(category, is_bonus, got, count)
-            say(f"  {category}{' (bonus)' if is_bonus else ''}: {got} of {count}")
+                    if not answers:
+                        result.rejected["reply didn't parse"] += 1
+                    pending: set[str] = set()
+                    candidates = []
+                    for raw in answers:
+                        verdict = _check(raw, category, rows, rhymes, taken, result, 0 if is_bonus else s.main_min_letters,
+                                         pending)
+                        if verdict is not None:
+                            pending.add(verdict[1])
+                            candidates.append(verdict)
+                    while candidates and got < count and not result.stopped:
+                        chunk, candidates = candidates[:max(1, s.judges)], candidates[max(1, s.judges):]
+                        futures = [judges.submit(attempt, lambda a=a: _ask_judge(client, s, category, a)) for a, _ in chunk]
+                        for (answer, key), future in zip(chunk, futures):
+                            judged = record("judge", future.result())
+                            if judged is None or got == count or result.stopped:
+                                continue
+                            fits, reason, common, parts = _verdict(judged.message.content)
+                            if fits and common < FAMILIAR:
+                                fits, reason = False, f"familiarity {common} of 5: {reason}"
+                            if fits and not parts_ok(category, answer, parts):
+                                fits, reason = False, f"its parts {parts} don't rebuild the answer"
+                            if not fits:
+                                result.rejected["judge: doesn't fit the category"] += 1
+                                result.judged_out.append((category, answer, reason))
+                                continue
+                            taken.add(key)
+                            with open(seen_path, "a") as f:
+                                f.write(answer + "\n")
+                            result.puzzles.append(Puzzle(category, answer, bonus=is_bonus))
+                            on_accept(result.puzzles)
+                            got += 1
+                            status(category, is_bonus, got, count)
+                say(f"  {category}{' (bonus)' if is_bonus else ''}: {got} of {count}")
     return result
 
 
 def _check(raw: str, category: str, rows, rhymes, taken: set[str], result: Result,
-           min_letters: int = 0) -> tuple[str, str] | None:
+           min_letters: int = 0, pending: set[str] = frozenset()) -> tuple[str, str] | None:
     """The answer and its dedupe key if it passes every check in code, else None with the reason counted."""
     try:
         answer = normalize(raw)
@@ -394,8 +413,8 @@ def _check(raw: str, category: str, rows, rhymes, taken: set[str], result: Resul
         result.rejected["not board text"] += 1
         return None
     key = dedupe_key(answer)
-    if key in taken:
-        batch = any(dedupe_key(p.answer) == key for p in result.puzzles)
+    if key in taken or key in pending:
+        batch = key in pending or any(dedupe_key(p.answer) == key for p in result.puzzles)
         result.rejected["duplicate in this batch" if batch else "already used"] += 1
         return None
     if not fits_rows(answer, rows):
