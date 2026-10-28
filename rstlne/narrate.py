@@ -39,6 +39,22 @@ def wedge_text(wedge: Wedge) -> str:
     return "Lose a Turn"
 
 
+def wheel_text(view: PublicView) -> str | None:
+    """The special wedges still on the wheel, which every contestant can see."""
+    if not view.wheel:
+        return None
+    wedges = view.wheel[1::3]  # the middle third of each wedge; the Million wedge's is its center
+    parts = [f"the Wild Card on wedge {w.number}" for w in wedges if w.wild]
+    parts += [f"the Million wedge on wedge {w.number}" for w in wedges if w.kind is Kind.MILLION]
+    mystery = [str(w.number) for w in wedges if w.kind is Kind.MYSTERY]
+    if mystery:
+        parts.append(f"Mystery wedge{'s' if len(mystery) > 1 else ''} {' and '.join(mystery)}")
+    if view.mystery_flipped is not None:
+        parts.append(f"Mystery wedge {view.mystery_flipped} already flipped, so the other plays as plain cash")
+    parts += [f"the Express on wedge {w.number}" for w in wedges if w.kind is Kind.EXPRESS]
+    return "Wheel: " + ("; ".join(parts) if parts else "no special wedges") + "."
+
+
 def table(view: PublicView, viewer: int | None = None) -> list[str]:
     names = [seat_name(i, viewer) for i in range(len(view.banks))]
     heading = f"Round {view.round_number}" if view.round_number else "Bonus round"
@@ -58,6 +74,9 @@ def table(view: PublicView, viewer: int | None = None) -> list[str]:
     ]
     if cards:
         lines.append("Cards: " + "; ".join(cards) + ".")
+    wheel = wheel_text(view)
+    if wheel:
+        lines.append(wheel)
     if view.wedge is not None:
         lines.append(f"Wedge: {wedge_text(view.wedge)}")
     return lines
