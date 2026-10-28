@@ -64,14 +64,14 @@ Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, a
 
 | Option | Effect |
 |---|---|
-| `--parallel N` | Plays N games at once. The default is 4. |
+| `--parallel N` | Plays N games at once. The default is 6, a whole set. |
 | `--max-cost D` | Stops starting new games once spending reaches D dollars. |
 | `--puzzles PATH` | The default is `puzzles/dev.json`, which marks the run as development. Scored runs use `puzzles/private.json`. |
 | `--out PATH` | The tournament folder. The default covers the entrants, seed, puzzles, and every setting that changes play, so rerunning the same command resumes it, and changing a setting starts a fresh folder. |
 
 Each game writes its usual log into the tournament folder, and rerunning skips finished games and replays unfinished ones. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, how much of the board showed at a correct solve, money left on the table, invalid moves, and cost. The report also lists each set's results and how many sets used each puzzle.
 
-Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total; tied leaders split the win. Our test games ran 2 to 5 minutes and 1 to 2 cents each.
+Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total; tied leaders split the win. With Claude Haiku thinking, a game takes about 6 to 7 minutes and 1 to 2 cents, so 50 sets (300 games) at 6 games at once take about 5 hours.
 
 ## Calibrating decision models
 

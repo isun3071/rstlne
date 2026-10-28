@@ -28,6 +28,8 @@ from rstlne.runner import GameLog, play_game
 
 SEATS = 3
 RESAMPLES = 10_000
+PARALLEL = 6  # a whole set of 6 games at once
+HEARTBEAT = 120  # seconds between status lines while games run
 
 
 @dataclass(frozen=True)
@@ -129,12 +131,13 @@ def run_tournament(
     seed: int,
     puzzles_path: Path,
     out_dir: Path,
-    parallel: int = 4,
+    parallel: int = PARALLEL,
     max_cost: float | None = None,
     client: OpenRouter | None = None,
     decisions: DecisionClient | None = None,
     mode: str | None = None,
     write: Callable[[str], None] = print,
+    heartbeat: float = HEARTBEAT,
 ) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -145,6 +148,7 @@ def run_tournament(
     bonus_hands = deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
     client, decisions = clients({kind for kind, _ in parse_seats(",".join(entrants))}, client, decisions)
     names = labels(entrants)
+    progress: dict[str, list] = {}  # running game name -> [round, moves], updated by the game threads
 
     def play(game: Game) -> tuple[list[int], float]:
         seats = parse_seats(",".join(entrants[e] for e in game.order))
@@ -155,8 +159,18 @@ def run_tournament(
             "puzzles": str(puzzles_path), "set_permutations": mode,
         }}
         path = out_dir / f"{game.name}.jsonl"
-        with GameLog(path, state, players, header) as log:
-            final = play_game(state, players, log)
+        progress[game.name] = [1, 0]
+
+        def track(now) -> None:
+            entry = progress[game.name]
+            entry[0] = now.round.number if now.round else "bonus"
+            entry[1] += 1
+
+        try:
+            with GameLog(path, state, players, header) as log:
+                final = play_game(state, players, log, on_result=track)
+        finally:
+            progress.pop(game.name, None)
         return [s.total for s in final.seats], _cost(path)
 
     games = schedule(sets, seed, mode)
@@ -175,9 +189,18 @@ def run_tournament(
                     break
                 game = todo.pop(0)
                 pending[pool_.submit(play, game)] = game
+                seating = ", ".join(f"Seat {seat + 1} {names[e]}" for seat, e in enumerate(game.order))
+                write(f"started {game.name}: {seating}")
             if not pending:
                 break
-            ready, _ = wait(pending, return_when=FIRST_COMPLETED)
+            ready, _ = wait(pending, timeout=heartbeat, return_when=FIRST_COMPLETED)
+            if not ready:
+                running = ", ".join(
+                    f"{name} {'bonus round' if r == 'bonus' else f'round {r}'} ({moves} moves)"
+                    for name, (r, moves) in sorted(list(progress.items()))
+                )
+                write(f"in progress: {running or 'starting'}  ·  {done} of {len(games)} done  ·  ${spent:.4f} spent")
+                continue
             for future in ready:
                 game = pending.pop(future)
                 try:
@@ -401,7 +424,7 @@ def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
                         help="puzzle sets to play; each is 6 games, or 3 with set_permutations = \"cyclic\". --sets 1 is a trial run")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))
-    parser.add_argument("--parallel", type=int, default=4, help="games to play at once")
+    parser.add_argument("--parallel", type=int, default=PARALLEL, help="games to play at once")
     parser.add_argument("--max-cost", type=float, help="stop starting new games once spending reaches this many dollars")
     parser.add_argument("--out", help="tournament folder; the default covers everything that changes play, so a rerun resumes")
     return parser.parse_args(argv)

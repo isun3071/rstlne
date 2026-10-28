@@ -25,12 +25,13 @@ ENTRANTS = ["llm:a/one", "llm:b/two", "decision"]
 DEV = settings.ROOT / "puzzles" / "dev.json"
 
 
-def run(tmp_path, sets=1, parallel=3, max_cost=None, client=None, mode="all"):
+def run(tmp_path, sets=1, parallel=3, max_cost=None, client=None, mode="all", write=None, heartbeat=120):
     client = client or router(board_reader)
     decisions = FakeDecisions(decide_by(solvable_when_full))
     result = run_tournament(
         ENTRANTS, sets=sets, seed=42, puzzles_path=DEV, out_dir=tmp_path, parallel=parallel,
-        max_cost=max_cost, client=client, decisions=decisions, mode=mode, write=lambda line: None,
+        max_cost=max_cost, client=client, decisions=decisions, mode=mode,
+        write=write or (lambda line: None), heartbeat=heartbeat,
     )
     return result, client
 
@@ -234,3 +235,31 @@ def test_command_line_trial_set(tmp_path):
     assert [e["entrant"] for e in result["entrants"]] == ["llm:a/one", "llm:b/two", "llm:c/three"]
     with pytest.raises(SystemExit, match="human"):
         tournament.main(["--seats", "human,llm:a,llm:b", "--sets", "1"])
+
+
+def test_games_announce_when_they_start(tmp_path):
+    lines = []
+    run(tmp_path, write=lines.append)
+    starts = [line for line in lines if line.startswith("started ")]
+    assert len(starts) == 6
+    assert starts[0] == "started set000-perm0: Seat 1 llm:a/one, Seat 2 llm:b/two, Seat 3 decision"
+
+
+def test_status_lines_report_games_in_progress(tmp_path):
+    import time
+
+    def slow(request):
+        time.sleep(0.005)
+        return board_reader(request)
+
+    lines = []
+    run(tmp_path, client=router(slow), parallel=6, write=lines.append, heartbeat=0.2)
+    status = [line for line in lines if line.startswith("in progress:")]
+    assert status, "expected at least one status line while the games ran"
+    assert "set000-perm" in status[0] and "moves)" in status[0] and "spent" in status[0]
+
+
+def test_six_games_run_at_once_by_default():
+    import inspect
+
+    assert inspect.signature(run_tournament).parameters["parallel"].default == 6
