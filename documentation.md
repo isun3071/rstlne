@@ -212,6 +212,8 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 ## Self-play
 
 - `python -m rstlne.selfplay` plays bot-only games. It tunes the knobs, builds the win chance table, fits the steal prior, and fits the reader's confidence calibration.
+- Every job splits into shards (`--shard i/n`) so several machines can share it, writes compact JSONL, resumes where it stopped, and prints a status line every 2 minutes with an estimated finish. No job calls an API.
+- `reads` reveals each puzzle in English letter frequency order, calling every letter, hit or miss, and stops once each tenth of the board shows. At each stop it records the reader's best answer, its confidence, whether it was right, and the probability it gave the true answer. Bonus puzzles are read the way the bot meets them: R S T L N E and its own picks. `summary` reports accuracy by confidence across every shard.
 - It never tunes on `dev.json` or `private.json`. It tunes on boards generated from the phrase sources and grades on held out seeds.
 
 ## Seats

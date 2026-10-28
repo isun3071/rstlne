@@ -84,6 +84,7 @@ rstlne/
   calibrate.py     # picks each decision model's solve threshold from data
   data.py          # fetches the bot's word data into data/, streamed and pruned
   puzzlegen.py     # fresh puzzles: a generator writes, code checks, a judge confirms, nothing reused
+  selfplay.py      # bot self-play and tuning on a server: sharded, resumable, no API calls
 puzzles/
   dev.json         # puzzles for development, committed
   private.json     # scored puzzles, gitignored
