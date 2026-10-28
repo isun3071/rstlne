@@ -141,7 +141,8 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 
 - Rounds 1 and 2: maximize the bot's expected game total, whatever the number of main rounds.
 - Rounds 3 and later: maximize the chance of finishing ahead of both opponents after the last main round. Every payoff converts into the change in that chance. A tie for first counts as a shared win, as in tournament scoring.
-- The bonus round is secondary. It enters through the Wild Card's saved value, the Million card's value, and the bonus round itself.
+- From round 3 on, only finishing first counts: winning by $100 is as good as winning by 10 times second place.
+- The bonus round is secondary. It matters through the Wild Card's saved value, the Million card's value, and the bonus round itself. In rounds 1 and 2 those values count in dollars. From round 3 on, they only break ties: moves whose win chances sit within a set margin of the best (a knob) count as tied, and the tied move with the most bonus value wins.
 - The win chance comes from a table of P(finish first | lead, rounds left), built from self-play. Lead is the bot's game total minus the highest opponent total. Until the table exists, a simple heuristic stands in: P = Φ(lead / (σ √(rounds left))), with σ a knob, and 1 or 0 once no rounds are left.
 
 ### Reader
