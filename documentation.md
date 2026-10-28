@@ -268,7 +268,7 @@ Each seat is one of four kinds.
   - it doesn't come near any puzzle in `dev.json`, `private.json`, the batch, or any earlier generated set. Near means the same main words in any order, ignoring case, punctuation, articles, and plurals (IT'S RAINING and ITS RAINING; BIG BROWN BEAR and BEARS), or one answer's main words running inside another's and covering at least half of them (LET SLEEPING DOGS in LET SLEEPING DOGS LIE, but not ON THE ROCKS in SEA LIONS SUNBATHING ON THE ROCKS). Every accepted answer joins `puzzles/generated/seen.txt`, so no puzzle ever comes back.
   - a contraction keeps its apostrophe: DONT and ITS NOT fail
 - The judge must say the answer fits its category and rate its familiarity at least 4 of 5, or 5 of 5 for Rhyme Time, where made-up pairs come easily. For Before & After and Same Name it names the two phrases, and code checks they rebuild the answer.
-- A tournament's generated pool is saved in its folder with the generator, judge, prompt version, seed, rejections, and cost, and a rerun reuses it. A pool that comes up short stops the tournament before any game, and the rerun tops it up: puzzles are never reused. Generated puzzles stay out of git, in `puzzles/generated/`, like `private.json`.
+- A batch file keeps its history: one entry per run, with its rejections, the judge's reasons, and its cost, and every recheck with what it dropped. A tournament's generated pool is saved in its folder the same way, and a rerun reuses it. A pool that comes up short stops the tournament before any game, and the rerun tops it up: puzzles are never reused. Generated puzzles stay out of git, in `puzzles/generated/`, like `private.json`.
 
 ## Logging
 

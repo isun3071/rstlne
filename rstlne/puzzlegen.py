@@ -511,11 +511,18 @@ def _verdict(text: str | None) -> tuple[bool, str, int, list[str]]:
 
 
 def save_pool(path: Path, puzzles: Sequence[Puzzle], s: Settings, seed: int, rejected: dict, cost: float,
-              judged_out: Sequence[tuple[str, str, str]] = ()) -> None:
+              judged_out: Sequence[tuple[str, str, str]] = (), final: bool = True) -> None:
+    """Write the batch file. Its history stays: every recheck, and one entry per finished run.
+    `final=False` saves puzzles mid-run without logging a run."""
+    old = json.loads(path.read_text()) if path.exists() else {}
+    runs = list(old.get("runs", []))
+    if final:
+        runs.append({"created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "prompt_version": PROMPT_VERSION,
+                     "rejected": dict(rejected), "cost": cost,
+                     "judged_out": [{"category": c, "answer": a, "reason": r} for c, a, r in judged_out]})
     path.write_text(json.dumps({
         "generator": s.generator, "judge": s.judge, "prompt_version": PROMPT_VERSION, "seed": seed,
-        "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "rejected": dict(rejected), "cost": cost,
-        "judged_out": [{"category": c, "answer": a, "reason": r} for c, a, r in judged_out],
+        "cost": sum(run["cost"] for run in runs), "runs": runs, "rechecked": old.get("rechecked", []),
         "puzzles": [{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in puzzles],
     }, indent=2) + "\n")
 
@@ -621,7 +628,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         client, s, split(short_main, main_mix, rng) if short_main else [],
         split(short_bonus, bonus_mix, rng) if short_bonus else [], args.seed * 1000 + len(have),
         known_puzzles() + have, say=lambda line: print(line, flush=True),
-        on_accept=lambda puzzles: save_pool(out, have + puzzles, s, args.seed, {}, 0.0),
+        on_accept=lambda puzzles: save_pool(out, have + puzzles, s, args.seed, {}, 0.0, final=False),
     )
     save_pool(out, have + result.puzzles, s, args.seed, result.rejected, result.usage.cost, result.judged_out)
     total_main = sum(not p.bonus for p in have + result.puzzles)

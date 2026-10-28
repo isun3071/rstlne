@@ -436,3 +436,15 @@ def test_recheck_drops_what_fails_the_new_checks_and_keeps_grading_apart(tmp_pat
     assert [p.answer for p in puzzlegen.load_pool(tuning)] == ["BIRDS OF A FEATHER FLOCK TOGETHER", "WEAR AND TEAR"]
     dropped = puzzlegen.recheck(client, settings(), grading, against=[tuning], known=[])
     assert dropped == ["BIRDS OF A FEATHER"]
+
+
+def test_a_batch_file_keeps_its_history_across_rechecks_and_top_ups(tmp_path):
+    path = tmp_path / "batch.json"
+    puzzlegen.save_pool(path, [Puzzle("Thing", "SPARE TIRE")], settings(), seed=4, rejected={"already used": 3}, cost=0.01)
+    client = fake([])
+    puzzlegen.recheck(client, settings(), path, against=[], known=[Puzzle("Thing", "SPARE TIRES")])
+    puzzlegen.save_pool(path, [Puzzle("Thing", "KITCHEN SINK")], settings(), seed=4, rejected={"judge": 1}, cost=0.02)
+    data = json.loads(path.read_text())
+    assert data["rechecked"][0]["dropped"] == ["SPARE TIRE"]
+    assert [run["rejected"] for run in data["runs"]] == [{"already used": 3}, {"judge": 1}]
+    assert data["cost"] == pytest.approx(0.03)

@@ -447,7 +447,7 @@ def _generated_pool(path: Path, sets: int, rounds: int, seed: int, config: dict,
             puzzlegen.split(short_main, main_mix, rng) if short_main > 0 else [],
             puzzlegen.split(short_bonus, bonus_mix, rng) if short_bonus > 0 else [],
             seed=seed * 1000 + len(have), known=puzzlegen.known_puzzles() + have, say=write,
-            on_accept=lambda puzzles: puzzlegen.save_pool(path, have + puzzles, s, seed, {}, 0.0),
+            on_accept=lambda puzzles: puzzlegen.save_pool(path, have + puzzles, s, seed, {}, 0.0, final=False),
         )
         have += result.puzzles
         puzzlegen.save_pool(path, have, s, seed, result.rejected, result.usage.cost, result.judged_out)
