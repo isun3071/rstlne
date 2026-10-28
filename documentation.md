@@ -200,7 +200,7 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 
 ### Data
 
-- wordfreq, Wiktionary multiword entries, Wikidata labels filtered by sitelinks, the CMU Pronouncing Dictionary, a pruned Google Books 2 and 3 gram table, and fastText vectors for category fit.
+- wordfreq, Wiktionary multiword entries, Wikidata labels filtered by sitelinks, the CMU Pronouncing Dictionary, word pair counts from Tatoeba's English sentences and Simple English Wikipedia, and fastText vectors for category fit. Google Books n-grams were dropped: their 2-gram files alone stream about 233 GB.
 - No Wheel of Fortune puzzle archives, and never `dev.json` or `private.json`.
 - A fetch step streams each source and prunes it into numpy or SQLite files under `data/`, which git ignores. Nothing is stored whole, and the pruned files stay under 2.5 GB in total. The bot loads them once per process.
 

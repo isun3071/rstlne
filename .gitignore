@@ -21,3 +21,6 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+
+# fetched word data, built by python -m rstlne.data fetch
+data/

@@ -73,6 +73,25 @@ Each game writes its usual log into the tournament folder, and rerunning skips f
 
 Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total; tied leaders split the win. With Claude Haiku thinking, a game takes about 6 to 7 minutes and 1 to 2 cents, so 50 sets (300 games) at 6 games at once take about 5 hours.
 
+## The bot's word data
+
+```
+uv run python -m rstlne.data fetch
+uv run python -m rstlne.data status
+```
+
+`fetch` streams each source and keeps only pruned tables in `data/`, which git ignores, under a 2.5 GB cap; it took about 8 minutes and keeps about 0.2 GB. `status` lists what's fetched, its size, and its license. `data/manifest.json` records each file's hash, so a bot version can pin its data. Sources, with thanks:
+
+| source | used for | license |
+|---|---|---|
+| [wordfreq](https://github.com/rspeer/wordfreq) | the word list and word frequencies | data CC BY-SA 4.0, code MIT |
+| [Wiktionary](https://www.wiktionary.org), extracted by [wiktextract](https://github.com/tatuylonen/wiktextract) at [kaikki.org](https://kaikki.org) | multiword entries: idioms, proverbs, phrases | CC BY-SA 4.0 and GFDL |
+| [Wikidata](https://www.wikidata.org), queried through [QLever](https://qlever.dev) | names of people, places, landmarks, foods, titles, animals | CC0 |
+| [CMU Pronouncing Dictionary](https://github.com/cmusphinx/cmudict) | rhymes for Rhyme Time | BSD 2-clause |
+| [Tatoeba](https://tatoeba.org) | word pair counts from everyday sentences | CC BY 2.0 FR |
+| [Simple English Wikipedia](https://simple.wikipedia.org) | word pair counts from encyclopedia text | CC BY-SA 4.0 |
+| [fastText](https://fasttext.cc/docs/en/crawl-vectors.html) | word vectors, for how well a word fits a category | CC BY-SA 3.0 |
+
 ## Calibrating decision models
 
 Decision models put P(solvable) on different scales: Jev 1.14 gives a fully revealed board about 0.75, while GPT-6 Luna Decisions gives about 0.99. So each decision model gets its own solve threshold, picked from data:
