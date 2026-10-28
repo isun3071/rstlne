@@ -20,7 +20,7 @@ FREQUENCY = "TNSHRDLCMWFGYPBVKJXQZ"
 VIEW_FIELDS = {
     "seat", "phase", "round_number", "category", "board", "used_letters", "banks", "totals",
     "wild_cards", "million_cards", "turn", "wedge", "express", "legal_actions",
-    "bonus_consonants", "envelope",
+    "bonus_consonants", "envelope", "wheel", "mystery_flipped",
 }
 
 

@@ -21,7 +21,7 @@ def test_parse_seats():
 
 @pytest.mark.parametrize("seats, message", [
     ("human,human", "three seats"),
-    ("bot,human,human", "bot"),
+    ("bot:v2,human,human", "bot:v2"),
     ("human,llm:,human", "slug"),
     ("human,robot,human", "robot"),
 ])

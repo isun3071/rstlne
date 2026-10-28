@@ -69,10 +69,11 @@ The highest game total plays, and a seeded draw breaks a tie. R, S, T, L, N, and
 
 ## Watch the models play
 
-Fill all three seats with models and the game runs by itself, start to finish. Nobody types anything. There are two kinds of model seat:
+Fill all three seats with models or bots and the game runs by itself, start to finish. Nobody types anything. There are three kinds of seat besides yours:
 
 - `llm:<slug>` is a chat model, such as Claude Haiku or GPT-6 Luna, that makes every move itself.
 - `decision` is a decision model, GPT-6 Luna Decisions by default, that picks every move from the legal options. An LLM writes its answer whenever it decides to solve. `[decision]` in `config.toml` sets both models and the solve threshold. Use `decision:<model>` to give one seat a different decision model.
+- `bot` is the project's own player. It makes no API calls and costs nothing. `[bot] version` in `config.toml` picks which version plays.
 
 Three chat models:
 

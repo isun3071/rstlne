@@ -89,4 +89,5 @@ def test_table_shows_the_public_view(rules, wheel_spec):
         "Round banks: You $1,200 | Seat 2 $0 | Seat 3 $0",
         "Game totals: You $0 | Seat 2 $0 | Seat 3 $3,000",
         "Cards: You hold the Wild Card.",
+        "Wheel: the Wild Card on wedge 2; the Million wedge on wedge 9.",
     ]

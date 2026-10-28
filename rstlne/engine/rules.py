@@ -144,6 +144,8 @@ def public_view(state: GameState, seat: int) -> PublicView:
         used_letters=tuple(sorted(r.used)),
         wedge=r.wedge,
         express=r.express,
+        wheel=current_wheel(state),
+        mystery_flipped=r.mystery_flipped,
     )
 
 

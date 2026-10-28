@@ -1,4 +1,4 @@
-"""Configuration 5: a decision model makes every choice, and an LLM writes the solves."""
+"""Decision seats: a decision model makes every choice, and an LLM writes the solves."""
 
 from __future__ import annotations
 

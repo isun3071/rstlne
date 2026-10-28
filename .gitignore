@@ -5,6 +5,7 @@
  
 # scored puzzles and game logs
 puzzles/private.json
+puzzles/generated/
 logs/
  
 # python
@@ -21,3 +22,6 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+
+# fetched word data, built by python -m rstlne.data fetch
+data/

@@ -12,24 +12,30 @@ import random
 import sys
 from collections import Counter, defaultdict
 from collections.abc import Callable, Sequence
-from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from dataclasses import dataclass
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, ThreadPoolExecutor, wait
+from contextlib import ExitStack
+from multiprocessing import Manager
+from dataclasses import dataclass, replace
 from itertools import combinations, permutations
 from pathlib import Path
 
-from rstlne import settings
+from rstlne import puzzlegen, settings
 from rstlne.cli import build_players, clients, parse_seats
 from rstlne.engine.puzzle import Puzzle
 from rstlne.engine.rules import new_game
+from rstlne.engine.state import Rules
+from rstlne.engine.wheel import WheelSpec
 from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
 from rstlne.narrate import money
+from rstlne.players.bot import versions
 from rstlne.runner import GameLog, play_game
 
 SEATS = 3
 RESAMPLES = 10_000
 PARALLEL = 6  # a whole set of 6 games at once
 HEARTBEAT = 120  # seconds between status lines while games run
+GENERATE = "generate"  # --puzzles generate: fresh puzzles, made for this tournament
 
 
 @dataclass(frozen=True)
@@ -121,6 +127,10 @@ def labels(entrants: Sequence[str]) -> list[str]:
 def folder_name(entrants: Sequence[str], seed: int, puzzles_path: Path, config: dict) -> str:
     """Covers everything that changes play, so a rerun resumes only an identical tournament."""
     play = {key: config.get(key) for key in ("tournament", "providers", "llm", "decision")}
+    if "bot" in entrants:  # only then, so model-only folders keep their names
+        play["bot_version"] = config.get("bot", {}).get("version")
+    if str(puzzles_path) == GENERATE:
+        play["puzzlegen"] = config.get("puzzlegen")
     key = json.dumps([list(entrants), seed, Path(puzzles_path).name, play], sort_keys=True)
     return f"seed{seed}-{hashlib.sha256(key.encode()).hexdigest()[:8]}"
 
@@ -138,40 +148,41 @@ def run_tournament(
     mode: str | None = None,
     write: Callable[[str], None] = print,
     heartbeat: float = HEARTBEAT,
+    generation_requests: int | None = None,
 ) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     config, rules, spec = settings.load_config(), settings.load_rules(), settings.load_wheel()
     mode = mode or config.get("tournament", {}).get("set_permutations", "all")
-    pool = settings.load_puzzles(puzzles_path)
+    if "bot" in entrants:
+        check_bot_versions(out_dir, versions.current(config))
+    kinds = {kind for kind, _ in parse_seats(",".join(entrants))}
+    generating = str(puzzles_path) == GENERATE
+    if generating:
+        client, decisions = clients(kinds | {"llm"}, client, decisions)
+        s = puzzlegen.Settings.from_config(config)
+        if generation_requests is not None:
+            s = replace(s, max_requests=generation_requests)
+        puzzles_path = out_dir / "puzzles.json"
+        pool = _generated_pool(puzzles_path, sets, rules.main_rounds, seed, config, s, client, write)
+        generated_by = {"generator": s.generator, "judge": s.judge}
+    else:
+        pool = settings.load_puzzles(puzzles_path)
+        generated_by = None
     main_hands = deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
     bonus_hands = deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
-    client, decisions = clients({kind for kind, _ in parse_seats(",".join(entrants))}, client, decisions)
+    processes = "bot" in kinds and client is None and decisions is None  # the bot computes, so it needs its own cores
+    client, decisions = clients(kinds, client, decisions)
     names = labels(entrants)
-    progress: dict[str, list] = {}  # running game name -> [round, moves], updated by the game threads
 
-    def play(game: Game) -> tuple[list[int], float]:
-        seats = parse_seats(",".join(entrants[e] for e in game.order))
-        players = build_players(seats, rules, spec, config, client, decisions, f"{out_dir.name}-{game.name}")
-        state = new_game(game.seed, rules, spec, main_hands[game.set], bonus_hands[game.set][0])
+    def job(game: Game) -> _Job:
         header = {"tournament": {
             "set": game.set, "permutation": game.permutation, "entrants": list(game.order), "names": names,
             "puzzles": str(puzzles_path), "set_permutations": mode,
+            **({"generated_by": generated_by} if generated_by else {}),
         }}
-        path = out_dir / f"{game.name}.jsonl"
-        progress[game.name] = [1, 0]
-
-        def track(now) -> None:
-            entry = progress[game.name]
-            entry[0] = now.round.number if now.round else "bonus"
-            entry[1] += 1
-
-        try:
-            with GameLog(path, state, players, header) as log:
-                final = play_game(state, players, log, on_result=track)
-        finally:
-            progress.pop(game.name, None)
-        return [s.total for s in final.seats], _cost(path)
+        return _Job(game, tuple(entrants), tuple(main_hands[game.set]), bonus_hands[game.set][0], out_dir, header,
+                    config, rules, spec)
 
     games = schedule(sets, seed, mode)
     todo = [g for g in games if not _finished(out_dir / f"{g.name}.jsonl")]
@@ -180,7 +191,17 @@ def run_tournament(
     write(f"{out_dir}: {sets} sets of {len(orderings(mode))} games; {done} of {len(games)} done, ${spent:.4f} spent")
 
     stopped = False
-    with ThreadPoolExecutor(max_workers=parallel) as pool_:
+    if processes:
+        write("Bot seats: games run in separate processes.")
+    with ExitStack() as stack:
+        if processes:
+            progress = stack.enter_context(Manager()).dict()  # running game name -> (round, moves)
+            pool_ = stack.enter_context(ProcessPoolExecutor(max_workers=parallel))
+            shared = (None, None)  # each process opens its own clients
+        else:
+            progress = {}
+            pool_ = stack.enter_context(ThreadPoolExecutor(max_workers=parallel))
+            shared = (client, decisions)
         pending = {}
         while todo or pending:
             while todo and len(pending) < parallel:
@@ -188,7 +209,7 @@ def run_tournament(
                     stopped = True
                     break
                 game = todo.pop(0)
-                pending[pool_.submit(play, game)] = game
+                pending[pool_.submit(_play, job(game), *shared, progress)] = game
                 seating = ", ".join(f"Seat {seat + 1} {names[e]}" for seat, e in enumerate(game.order))
                 write(f"started {game.name}: {seating}")
             if not pending:
@@ -246,11 +267,13 @@ def report(out_dir: Path) -> dict:
     set_puzzles: dict[int, list[str]] = {}
     names: list[str] = []
     puzzles = ""
+    generated = None
     for path in logs:
         rows = [json.loads(line) for line in path.read_text().splitlines()]
         header, summary = rows[0], rows[-1]
         tournament = header["tournament"]
         names, puzzles = tournament["names"], tournament["puzzles"]
+        generated = tournament.get("generated_by")
         set_puzzles[tournament["set"]] = [p["answer"] for p in header["puzzles"]] + [header["bonus_puzzle"]["answer"]]
         wins = split_wins(summary["totals"])
         bonus = summary["bonus"]
@@ -353,7 +376,8 @@ def report(out_dir: Path) -> dict:
         "games": len(logs),
         "sets": len(per_set),
         "puzzles": puzzles,
-        "dev_run": Path(puzzles).name != "private.json",
+        "dev_run": not generated and Path(puzzles).name != "private.json",
+        "generated_by": generated,
         "entrants": entrants,
         "pairwise": pairwise,
         "per_set": [
@@ -381,16 +405,18 @@ def table(result: dict) -> list[str]:
     lines = [
         "",
         f"{result['games']} games in {result['sets']} sets"
-        + ("  ·  development run on dev.json, not a scored result" if result["dev_run"] else ""),
-        f"{'entrant':<36}{'wins':>7}{'win% [95% CI]':>18}{'by seat':>16}{'avg total':>12}{'main':>10}{'bonus':>7}"
+        + ("  ·  development run on dev.json, not a scored result" if result["dev_run"] else "")
+        + (f"  ·  puzzles generated by {result['generated_by']['generator']}, judged by {result['generated_by']['judge']}"
+           if result.get("generated_by") else ""),
+        f"{'entrant':<40}{'wins':>7}{'win% [95% CI]':>18}{'by seat':>16}{'avg total':>12}{'main':>10}{'bonus':>9}"
         f"{'solve%':>8}{'shown':>7}{'left/solve':>11}{'invalid/g':>10}{'cost':>9}",
     ]
     for e in result["entrants"]:
         seats = "/".join(pct(x) for x in e["win_rate_by_seat"])
         lines.append(
-            f"{e['entrant'][:35]:<36}{e['wins']:>7.1f}{pct(e['win_rate']) + span(e['ci95']['win_rate']):>18}{seats:>16}"
+            f"{e['entrant'][:39]:<40}{e['wins']:>7.1f}{pct(e['win_rate']) + span(e['ci95']['win_rate']):>18}{seats:>16}"
             f"{money(round(e['avg_total'])):>12}{money(round(e['avg_main_winnings'])):>10}"
-            f"{e['bonus_won']:>3}/{e['bonus_reached']:<3}{pct(e['solve_accuracy']):>8}{pct(e['avg_board_shown']):>7}"
+            f"{str(e['bonus_won']) + '/' + str(e['bonus_reached']):>9}{pct(e['solve_accuracy']):>8}{pct(e['avg_board_shown']):>7}"
             f"{money(round(e['money_left_per_solve'] or 0)):>11}{(e['invalid_per_game'] or 0):>10.2f}{e['cost']:>9.4f}"
         )
     if result["pairwise"]:
@@ -403,6 +429,87 @@ def table(result: dict) -> list[str]:
             ci_text = "" if not ci else f" [{ci[0]:+.0%} to {ci[1]:+.0%}]"
             lines.append(f"  {p['a']} minus {p['b']}: {gap_text}{ci_text}")
     return lines
+
+
+def _generated_pool(path: Path, sets: int, rounds: int, seed: int, config: dict, s, client, write) -> list[Puzzle]:
+    """The tournament's generated puzzles: made once, saved in its folder, topped up if a run came up short."""
+    have = puzzlegen.load_pool(path) if path.exists() else []
+    need_main, need_bonus = sets * rounds, sets
+    short_main = need_main - sum(not p.bonus for p in have)
+    short_bonus = need_bonus - sum(p.bonus for p in have)
+    if short_main > 0 or short_bonus > 0:
+        main_mix, bonus_mix = puzzlegen.mix(config)
+        rng = random.Random(f"mix:{seed}:{len(have)}")
+        write(f"Generating {max(short_main, 0)} main and {max(short_bonus, 0)} bonus puzzles with {s.generator}, "
+              f"judged by {s.judge}")
+        result = puzzlegen.generate(
+            client, s,
+            puzzlegen.split(short_main, main_mix, rng) if short_main > 0 else [],
+            puzzlegen.split(short_bonus, bonus_mix, rng) if short_bonus > 0 else [],
+            seed=seed * 1000 + len(have), known=puzzlegen.known_puzzles() + have, say=write,
+        )
+        have += result.puzzles
+        puzzlegen.save_pool(path, have, s, seed, result.rejected, result.usage.cost, result.judged_out)
+        rejected = ", ".join(f"{n} {reason}" for reason, n in result.rejected.most_common()) or "none"
+        write(f"  {len(result.puzzles)} new puzzles, ${result.usage.cost:.4f}; rejected: {rejected}")
+    got_main, got_bonus = sum(not p.bonus for p in have), sum(p.bonus for p in have)
+    if got_main < need_main or got_bonus < need_bonus:
+        raise ValueError(f"generated {got_main} of {need_main} main and {got_bonus} of {need_bonus} bonus puzzles; "
+                         "rerun to generate the rest, since puzzles are never reused")
+    return have
+
+
+@dataclass(frozen=True)
+class _Job:
+    """One tournament game, with everything a worker process needs to play it."""
+
+    game: Game
+    entrants: tuple[str, ...]
+    puzzles: tuple[Puzzle, ...]
+    bonus: Puzzle
+    out_dir: Path
+    header: dict
+    config: dict
+    rules: Rules
+    spec: WheelSpec
+
+
+def _play(job: _Job, client: OpenRouter | None, decisions: DecisionClient | None, progress) -> tuple[list[int], float]:
+    game = job.game
+    seats = parse_seats(",".join(job.entrants[e] for e in game.order))
+    if client is None and decisions is None:
+        client, decisions = clients({kind for kind, _ in seats}, None, None)
+    players = build_players(seats, job.rules, job.spec, job.config, client, decisions, f"{job.out_dir.name}-{game.name}")
+    state = new_game(game.seed, job.rules, job.spec, job.puzzles, job.bonus)
+    path = job.out_dir / f"{game.name}.jsonl"
+    moves = 0
+    progress[game.name] = (1, 0)
+
+    def track(now) -> None:
+        nonlocal moves
+        moves += 1
+        progress[game.name] = (now.round.number if now.round else "bonus", moves)
+
+    try:
+        with GameLog(path, state, players, job.header) as log:
+            final = play_game(state, players, log, on_result=track)
+    finally:
+        progress.pop(game.name, None)
+    return [s.total for s in final.seats], _cost(path)
+
+
+def check_bot_versions(out_dir: Path, version: int) -> None:
+    """Refuse to resume a tournament whose finished games had a bot of another version."""
+    for path in sorted(Path(out_dir).glob("set*.jsonl")):
+        if not _finished(path):
+            continue  # unfinished games replay from scratch
+        header = json.loads(path.read_text().splitlines()[0])
+        for seat in header.get("seats", []):
+            if seat.get("kind") == "bot" and seat.get("version") != version:
+                raise ValueError(
+                    f"{path.name} was played by bot v{seat.get('version')}, but config.toml picks bot v{version}. "
+                    "A tournament never changes the bot: start a new folder, or set the version back."
+                )
 
 
 def _finished(path: Path) -> bool:
@@ -418,12 +525,13 @@ def _cost(path: Path) -> float:
 
 def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="python -m rstlne.tournament", description="Run a seeded model-only tournament.")
-    parser.add_argument("--seats", help="three model seats: llm:<slug> or decision[:<model>], comma separated")
+    parser.add_argument("--seats", help="three seats: llm:<slug>, decision[:<model>], or bot, comma separated")
     parser.add_argument("--models", help="three OpenRouter slugs, short for llm:<slug> seats")
     parser.add_argument("--sets", type=int, required=True,
                         help="puzzle sets to play; each is 6 games, or 3 with set_permutations = \"cyclic\". --sets 1 is a trial run")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))
+    parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"),
+                        help="a puzzle file, or generate for fresh puzzles made for this tournament")
     parser.add_argument("--parallel", type=int, default=PARALLEL, help="games to play at once")
     parser.add_argument("--max-cost", type=float, help="stop starting new games once spending reaches this many dollars")
     parser.add_argument("--out", help="tournament folder; the default covers everything that changes play, so a rerun resumes")

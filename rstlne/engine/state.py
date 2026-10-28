@@ -223,3 +223,5 @@ class PublicView:
     legal_actions: tuple[str, ...]  # empty unless it is this seat's move
     bonus_consonants: int = 0  # consonants the bonus picks need
     envelope: int | None = None  # shown once the game is over
+    wheel: tuple[Wedge, ...] = ()  # the 72 thirds as they stand; empty in the bonus round
+    mystery_flipped: int | None = None  # the Mystery wedge already flipped this round

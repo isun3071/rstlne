@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, replace
+from functools import lru_cache
 from enum import StrEnum
 
 WEDGES = 24
@@ -113,6 +114,7 @@ class WheelSpec:
         return [o for o in self.overlays if o.from_round <= round_number][-1]
 
 
+@lru_cache(maxsize=256)  # pure, and every view of every seat asks for it
 def layout(
     spec: WheelSpec,
     round_number: int,

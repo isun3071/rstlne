@@ -13,11 +13,21 @@ bonus_letters = ["R", "S", "T", "L", "N", "E"]
 bonus_consonants = 3  # plus one vowel; a held Wild Card adds one more consonant
 
 [bot]
-# Dollar values the bot counts inside its round bank B for the Mystery flip rule.
-wild_card_value = 1000     # about one extra consonant on an average wedge
-million_card_value = 6000  # 1/3 reach bonus x 1/24 envelope x 1/2 solve x $900,000 extra
-word_list_size = 50000     # most common English words from wordfreq
-solve_reveal_share = 0.7   # configuration 3: solve once this share of the puzzle's letters shows
+version = 1  # picks the bot's code, data, and knobs; tournaments never mix versions
+
+[puzzlegen]
+# Fresh puzzles: a generator writes them, code checks them, and a judge from another lab confirms the
+# category. Both are cheap, from labs apart from every player model. Requests stand alone, so input stays small.
+generator = "mistralai/mistral-small-3.2-24b-instruct"
+judge = "google/gemma-3-27b-it"
+batch = 10            # answers per generator request
+max_requests = 200    # generator requests per run, a cost guard
+rows = [12, 14, 14, 12]   # a main puzzle wraps into these board rows, never splitting a word
+bonus_rows = [14, 14]     # a bonus puzzle fits these rows: shorter than main puzzles, and harder
+main_min_letters = 8      # a main puzzle needs at least this many letters, so none is trivial
+# Category mix, by weight: dev.json's proportions, for the categories with a plain description
+main_mix = { "Phrase" = 23, "Food & Drink" = 8, "Place" = 8, "Thing" = 7, "What Are You Doing?" = 7, "Event" = 6, "Before & After" = 6, "Same Name" = 4, "Rhyme Time" = 4, "Living Thing" = 3, "Person" = 3, "Fun & Games" = 3, "Around the House" = 3, "What Are You Wearing?" = 3, "Same Letter" = 3, "Occupation" = 2, "Living Things" = 2, "In the Kitchen" = 2, "On the Map" = 2, "Landmark" = 2, "Character" = 2, "Show Biz" = 2, "Things" = 1, "Title" = 1 }
+bonus_mix = { "Thing" = 7, "Phrase" = 7, "Place" = 4, "Food & Drink" = 4, "Living Thing" = 3, "What Are You Doing?" = 2, "What Are You Wearing?" = 1, "Around the House" = 1, "Rhyme Time" = 1 }
 
 [llm]
 # Unset, so each model plays at its own default. Claude Haiku 5.5 and GPT-6 Luna ignore
@@ -29,9 +39,9 @@ solve_reveal_share = 0.7   # configuration 3: solve once this share of the puzzl
 # reasoning_effort = "medium"
 
 [decision]
-# Configuration 5: a decision model makes every choice, and the solver writes the answers.
+# Decision seats: a decision model makes every choice, and the solver writes the answers.
 decision_model = "openai/gpt-6-luna-decisions"  # its probabilities fit the threshold; Jev's run low
-solver_model = "openai/gpt-6-luna"    # the solver LLM in every configuration
+solver_model = "openai/gpt-6-luna"    # writes the decision seat's solves
 solve_threshold = 0.8                 # solve once P(solvable) reaches this
 
 [decision.thresholds]

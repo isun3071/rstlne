@@ -4,7 +4,7 @@
 
 The repo is called rstlne, after R S T L N E, the letters the bonus round gives every player. The Python package is `rstlne`.
 
-A Wheel of Fortune game where LLMs and a human play at the same table. Three seats. Each seat holds a human, an LLM (called through OpenRouter), or a baseline bot. The game runs the show's rules, round by round, through the bonus round.
+A Wheel of Fortune game where LLMs and a human play at the same table. Three seats. Each seat holds a human, an LLM (called through OpenRouter), a decision model, or the bot. The game runs the show's rules, round by round, through the bonus round.
 
 The project serves two goals. Ian plays against models from the terminal for fun. The same engine runs seeded, model only tournaments that measure how well models handle letter choice, risk, and solve timing.
 
@@ -12,7 +12,7 @@ Build the CLI first. A local web page comes in phase 2 and reuses the engine unt
 
 ## Read first
 
-`documentation.md` holds the full game specification: the wheel, every special wedge, turn rules, the bonus round, seeding, the LLM player protocol, the baseline bot, the CLI, puzzles, and logging.
+`documentation.md` holds the full game specification: the wheel, every special wedge, turn rules, the bonus round, seeding, the LLM player protocol, the bot, the CLI, puzzles, and logging.
 
 - Read `documentation.md` before you write or change anything in `engine/`, `players/`, `cli.py`, or `tournament.py`.
 - Build gameplay exactly as `documentation.md` states it.
@@ -56,8 +56,21 @@ rstlne/
     base.py        # Player interface: decide(view) -> Action
     human_cli.py
     llm.py
-    decision.py    # configuration 5: decision model choices, LLM solves
-    bot.py
+    decision.py    # decision seat: decision model choices, LLM solves
+    bot/           # the versioned bot
+      player.py    # BotPlayer: one decision per phase, steal odds from observed play
+      belief.py    # Belief: per letter odds, top answers, out of vocabulary share
+      reader.py    # readers: letter frequency, and sampled whole answers from a word list
+      full.py      # the full reader: a chain of words, phrases, and names over the slots
+      lexicon.py   # the full reader's data, loaded once per process from a compiled cache
+      info.py      # how a reveal moves the chance the best guess is right
+      objective.py # dollars in rounds 1 and 2, win chance from round 3, card values, ties
+      steal.py     # steal odds per opponent, in sequence around the table
+      value.py     # the one value function for every move
+      planner.py   # the known answer planner
+      bonus.py     # bonus round picks and solve
+      seed.py      # sampling seeds from a hash of the view
+      versions.py  # versions and their frozen knobs; config.toml picks one
   llm/
     openrouter.py  # client, retries, usage tracking
     decisions.py   # Decisions API client for decision models like Jev
@@ -69,10 +82,14 @@ rstlne/
   cli.py           # play a game in the terminal
   tournament.py    # seeded model only runs
   calibrate.py     # picks each decision model's solve threshold from data
+  data.py          # fetches the bot's word data into data/, streamed and pruned
+  puzzlegen.py     # fresh puzzles: a generator writes, code checks, a judge confirms, nothing reused
 puzzles/
   dev.json         # puzzles for development, committed
   private.json     # scored puzzles, gitignored
+  generated/       # generated puzzles and seen.txt, the registry that keeps them from repeating; gitignored
 logs/              # JSONL per game, gitignored
+data/              # the bot's fetched word data, gitignored
 tests/
 wheel.toml         # wheel template, round overlays, bonus envelopes
 config.toml        # model slugs, round count, card values
@@ -85,7 +102,7 @@ documentation.md   # game specification
 
 - Keep the engine pure. `engine/` does no I/O, no printing, no network calls, and no randomness outside the seeded wheel.
 - `rules.apply(state, action)` returns a new state. Never mutate state in place.
-- Players see a public view only. A view contains the category, the spaced board, used letters, all three banks, held cards, whose turn it is, the current wedge, and the list of legal actions. A view never contains the answer or a hidden Mystery side or bonus envelope.
+- Players see a public view only. A view contains the category, the spaced board, used letters, all three banks, held cards, whose turn it is, the current wedge, the wheel as it stands, and the list of legal actions. A view never contains the answer or a hidden Mystery side or bonus envelope.
 - Every action goes through `rules.legal_actions`. The engine rejects illegal actions and never trusts a player.
 - Load wheel layouts and envelope values from `wheel.toml`. Never hardcode wedge values.
 
@@ -97,6 +114,7 @@ documentation.md   # game specification
 - Test every special wedge path: keep, flip to $10,000, flip to Bankrupt, the second Mystery after a flip, Express pass, Express solve, Express bust, Wild use, and held cards lost to Bankrupt across rounds.
 - Test the bonus round: qualification, tie draw, RSTLNE reveal, pick validation, the Wild Card's extra consonant, the Million envelope swap, and correct and wrong solves.
 - Mock OpenRouter in every test. Tests never make network calls.
+- Tests never read `data/`. Tests that need the real word data are marked `slow` and run with `uv run pytest -m slow`.
 
 ## Commands
 
