@@ -67,9 +67,39 @@ Case doesn't matter. After a typo or an illegal move, the game just asks again.
 
 The highest game total plays, and a seeded draw breaks a tie. R, S, T, L, N, and E are revealed. Pick 3 consonants and 1 vowel, or 4 consonants if you hold the Wild Card, typed like `B G H I`. Then you have 10 seconds for one solve. A correct solve wins the envelope, which holds $40,000 to $55,000, or $100,000. With the Million card, the $100,000 envelope becomes $1,000,000.
 
-## Watching the models
+## Watch the models play
 
-- `--show-thinking` prints each model's reasoning before its move.
-- `--pause 0` removes the pause after model moves, and `--pause 3` slows them down.
-- `--seed N` replays a game's spins. Every game prints its seed at the start.
-- A `decision` seat, like `--seats human,decision,llm:openai/gpt-6-luna`, plays a decision model such as Jev. It picks every move from the legal options, and an LLM writes its solves.
+Fill all three seats with models and the game runs by itself, start to finish. Nobody types anything. There are two kinds of model seat:
+
+- `llm:<slug>` is a chat model, such as Claude Haiku or GPT-6 Luna, that makes every move itself.
+- `decision` is a decision model, Jev by default, that picks every move from the legal options. An LLM writes its answer whenever it decides to solve. `[decision]` in `config.toml` sets both models and the solve threshold. Use `decision:<model>` to give one seat a different decision model.
+
+Three chat models:
+
+```
+.venv/bin/python -m rstlne.cli --seats llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna,llm:deepseek/deepseek-v4.1-flash-1017
+```
+
+A decision model against two chat models:
+
+```
+.venv/bin/python -m rstlne.cli --seats decision,llm:openai/gpt-6-luna,llm:deepseek/deepseek-v4.1-flash-1017
+```
+
+Three decision models:
+
+```
+.venv/bin/python -m rstlne.cli --seats decision,decision:typesafe/jev-1.13,decision:openai/gpt-6-luna-decisions
+```
+
+You can repeat a model, for example three `decision` seats or the same `llm:` slug twice. Each seat still plays on its own.
+
+Options worth knowing:
+
+- `--show-thinking` prints what each seat weighed before its move. For a chat model, that's its reasoning. For a decision seat, it's P(solvable) and the probability of each pick.
+- `--pause 0` removes the pause after each move, so the game runs as fast as the models answer. `--pause 3` slows it down to read along.
+- `--seed N` replays a game's spins. Every game prints its seed at the start, so you can rerun a game you liked, or give different models the same spins.
+
+At the end you see the bonus answer, each seat's final total, and each model's calls, tokens, and cost. Our test games each cost about 1 to 2 cents. Every move also goes to a log in `logs/`. Press Ctrl+C to stop a game early; the log keeps every move up to that point.
+
+A single game is one sample, not a fair comparison. Seat order matters, and each seat sees different spins.
