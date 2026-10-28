@@ -101,7 +101,8 @@ def calibrate(
 
     def solve(board: Board) -> bool:
         solver = LLMPlayer(0, solver_model, client, rules, spec, config["llm"].get("temperature"),
-                           reasoning_effort=config["llm"].get("reasoning_effort"))
+                           reasoning_effort=config["llm"].get("reasoning_effort"),
+                           provider=config.get("providers", {}).get(solver_model))
         try:
             action = solver.decide(replace(view_of(board), legal_actions=("solve",)))
         except InvalidResponse:

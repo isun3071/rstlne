@@ -103,6 +103,7 @@ Bonus puzzles carry `"bonus": true` in the puzzle file. Keep them short, like th
 ## LLM player
 
 - Use only models that support tool calling: their `supported_parameters` on OpenRouter include `tools`.
+- `[providers]` in `config.toml` can pin a model to one OpenRouter provider with no fallback, so every game runs on the same build of the model. Each game log records the pinned provider. DeepSeek V4.1 Flash is pinned to DeepInfra's FP8 build; DeepSeek's own servers are blocked by the account's privacy setting, and the cheapest host served an FP4 build that stalled requests.
 - Send the rules once in the system prompt. Send the public view each turn, with a short recap of what the other seats did since the model's last move.
 - Render the board with spaces between characters: `_ _ E _ L   _ _ _`. Show word boundaries with three spaces.
 - Also show the board as a compact pattern with each word's length, such as `Pattern: A ____ TAN_ __ _A_ (word lengths 1, 4, 4, 2, 3)`, so models don't have to count spaced tiles.

@@ -46,6 +46,13 @@ model_pause = 1.5         # seconds after each model move, so the game reads lik
 bonus_solve_seconds = 10  # a human's clock for the bonus solve
 solve_pause = 10          # seconds to hold a solved board before the next round; --pause 0 skips it
 
+[providers]
+# Pin a model to one OpenRouter provider, by the tag on its endpoints page, so every game runs on
+# the same build. No fallback: if that provider is down, calls fail after the usual retries.
+# DeepSeek's own servers are blocked by this account's privacy setting (they may train on paid prompts).
+# DeepInfra serves the model at FP8 and caches; the default cheapest host served FP4 and stalled.
+"deepseek/deepseek-v4.1-flash-1017" = "deepinfra/fp8"
+
 [models]
 # OpenRouter slugs, picked from GET https://openrouter.ai/api/v1/models
 slugs = [

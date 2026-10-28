@@ -77,15 +77,20 @@ def build_players(
     temperature = config["llm"].get("temperature")
     effort = config["llm"].get("reasoning_effort")
     decision = config["decision"]
+    providers = config.get("providers", {})
 
     def seat(i: int, kind: str, model: str | None) -> Player:
         session = f"{session_prefix}-seat{i + 1}"
         if kind == "human":
             return HumanPlayer(i, seconds=config["cli"]["bonus_solve_seconds"])
         if kind == "llm":
-            return LLMPlayer(i, model, client, rules, spec, temperature, session, reasoning_effort=effort)
+            return LLMPlayer(
+                i, model, client, rules, spec, temperature, session, reasoning_effort=effort, provider=providers.get(model)
+            )
+        solver_model = decision["solver_model"]
         solver = LLMPlayer(
-            i, decision["solver_model"], client, rules, spec, temperature, f"{session}-solver", reasoning_effort=effort
+            i, solver_model, client, rules, spec, temperature, f"{session}-solver",
+            reasoning_effort=effort, provider=providers.get(solver_model),
         )
         model = model or decision["decision_model"]
         threshold = decision.get("thresholds", {}).get(model, decision["solve_threshold"])

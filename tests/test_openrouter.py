@@ -233,3 +233,10 @@ def test_two_stalled_requests_give_up():
     with pytest.raises(openai.APITimeoutError):
         OpenRouter(client, sleep=lambda s: None, deadline=0.1).chat(model="test/model", messages=MESSAGES, tools=TOOLS)
     release.set()
+
+
+def test_a_pinned_model_goes_only_to_its_provider():
+    client = FakeClient([completion(("spin", {}))])
+    OpenRouter(client).chat(model="deepseek/deepseek-v4.1-flash-1017", messages=MESSAGES, tools=TOOLS, provider="deepseek")
+    assert client.calls[0]["extra_body"]["provider"] == {"order": ["deepseek"], "allow_fallbacks": False}
+    assert "provider" not in request_for("deepseek/deepseek-v4.1-flash-1017").get("extra_body", {})

@@ -130,6 +130,7 @@ class OpenRouter:
         temperature: float | None = None,
         session_id: str | None = None,
         reasoning_effort: str | None = None,
+        provider: str | None = None,
     ) -> Reply:
         """One required tool call's worth of completion, retried on transient failures.
 
@@ -142,6 +143,8 @@ class OpenRouter:
         reasoning = _reasoning(model, reasoning_effort)
         if reasoning:
             extra["reasoning"] = reasoning
+        if provider:  # one host only, so every game runs on the same build of the model
+            extra["provider"] = {"order": [provider], "allow_fallbacks": False}
         options = {} if temperature is None else {"temperature": temperature}
         if extra:
             options["extra_body"] = extra

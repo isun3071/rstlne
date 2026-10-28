@@ -274,6 +274,7 @@ class LLMPlayer(Player):
         temperature: float | None = None,  # None keeps the model's own default
         session_id: str | None = None,  # keeps this seat on one provider so its cache stays warm
         reasoning_effort: str | None = None,  # None keeps each model's own default
+        provider: str | None = None,  # an OpenRouter provider tag to pin this model to
     ):
         self.seat = seat
         self.model = model
@@ -283,6 +284,7 @@ class LLMPlayer(Player):
         self.temperature = None if temperature is None else check_temperature(temperature)
         self.session_id = session_id
         self.reasoning_effort = reasoning_effort
+        self.provider = provider
         self.tools = tool_specs(rules, spec)
         self.system = rules_prompt(rules, spec, seat)
         self.usage = Usage()
@@ -293,7 +295,13 @@ class LLMPlayer(Player):
         self.notes: list[str] = []  # what happened since this seat's last request
 
     def describe(self) -> dict:
-        return {"kind": "llm", "model": self.model, "temperature": self.temperature, "reasoning_effort": self.reasoning_effort}
+        return {
+            "kind": "llm",
+            "model": self.model,
+            "temperature": self.temperature,
+            "reasoning_effort": self.reasoning_effort,
+            "provider": self.provider,
+        }
 
     def label(self) -> str:
         return self.model
@@ -320,6 +328,7 @@ class LLMPlayer(Player):
             temperature=self.temperature,
             session_id=self.session_id,
             reasoning_effort=self.reasoning_effort,
+            provider=self.provider,
         )
         self.usage += reply.usage
         message = reply.message

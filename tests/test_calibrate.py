@@ -74,3 +74,12 @@ def test_decision_seats_use_their_calibrated_threshold(rules, wheel_spec):
     players = build_players(seats, rules, wheel_spec, config, router([]), FakeDecisions(decide_by()), "game")
     assert players[0].threshold == 0.55
     assert players[1].model == "openai/gpt-6-luna-decisions" and players[1].threshold == config["decision"]["solve_threshold"]
+
+
+def test_providers_in_config_pin_model_seats(rules, wheel_spec):
+    config = {**settings.load_config(), "providers": {"deepseek/deepseek-v4.1-flash-1017": "deepseek"}}
+    seats = [("llm", "deepseek/deepseek-v4.1-flash-1017"), ("llm", "openai/gpt-6-luna"), ("decision", None)]
+    players = build_players(seats, rules, wheel_spec, config, router([]), FakeDecisions(decide_by()), "game")
+    assert players[0].provider == "deepseek"
+    assert players[1].provider is None
+    assert players[2].solver.provider is None

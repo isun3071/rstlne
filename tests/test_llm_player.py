@@ -223,7 +223,7 @@ def test_unset_temperature_uses_the_model_default(rules, wheel_spec, game):
     llm, client = player(rules, wheel_spec, [completion(("spin", {}))], temperature=None)
     llm.decide(public_view(game, 0))
     assert "temperature" not in client.calls[0]
-    assert llm.describe() == {"kind": "llm", "model": "test/model", "temperature": None, "reasoning_effort": None}
+    assert llm.describe() == {"kind": "llm", "model": "test/model", "temperature": None, "reasoning_effort": None, "provider": None}
 
 
 def test_solve_tools_say_the_answer_must_match_the_board(rules, wheel_spec):
@@ -267,3 +267,11 @@ def test_three_fake_models_finish_a_game(rules, wheel_spec, game):
     final = play_game(game, players)
     assert final.phase is Phase.GAME_OVER
     assert sum(p.usage.calls for p in players) == len(client.client.calls)
+
+
+def test_a_pinned_provider_reaches_every_request_and_the_log(rules, wheel_spec, game):
+    client = router([completion(("spin", {}))])
+    llm = LLMPlayer(0, "deepseek/deepseek-v4.1-flash-1017", client, rules, wheel_spec, provider="deepseek")
+    llm.decide(public_view(game, 0))
+    assert client.client.calls[0]["extra_body"]["provider"]["order"] == ["deepseek"]
+    assert llm.describe()["provider"] == "deepseek"
