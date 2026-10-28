@@ -24,3 +24,5 @@ include = ["rstlne*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["slow: reads the real word data in data/; run with -m slow"]
+addopts = "-m 'not slow'"

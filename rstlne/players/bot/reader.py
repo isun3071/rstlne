@@ -90,9 +90,7 @@ class WordListReader:
         slots = [self._slot(pattern, used, open_square) for pattern in text.split(" ")]
         rng = random.Random(view_seed(view))
         n = self.knobs.samples
-        answers: Counter = Counter()
-        samples = []
-        unknown = 0
+        samples, unknown = [], []
         for _ in range(n):
             words, oov = [], False
             for pattern, (options, weights) in zip(text.split(" "), slots):
@@ -101,18 +99,9 @@ class WordListReader:
                     oov = True
                     word = "".join(rng.choices(pool, pool_weights)[0] if c == "_" else c for c in pattern)
                 words.append(word)
-            answer = " ".join(words)
-            samples.append(answer)
-            if oov:
-                unknown += 1
-            else:
-                answers[answer] += 1
-        top = sorted(answers.items(), key=lambda a: (-a[1], a[0]))[: self.knobs.top_answers]
-        return Belief(
-            letters=self._letters(samples, text, pool),
-            answers=tuple((a, k / n) for a, k in top),
-            oov=unknown / n,
-        )
+            samples.append(" ".join(words))
+            unknown.append(oov)
+        return summarize(samples, unknown, text, pool, self.knobs)
 
     def _slot(self, pattern: str, used: set[str], open_square: float) -> tuple[list, list[float]]:
         """One word slot's candidates and weights, the unknown word included."""
@@ -129,15 +118,19 @@ class WordListReader:
             weights.append(self.knobs.unknown_word * fit if options[:-1] else 1.0)
         return options, weights
 
-    def _letters(self, samples: list[str], text: str, pool: list[str]) -> dict[str, LetterStats]:
-        hidden = [i for i, c in enumerate(text) if c == "_"]
-        letters = {}
-        for c in pool:
-            patterns = Counter(tuple(i for i in hidden if s[i] == c) for s in samples)
-            hits = [s for s in samples if any(s[i] == c for i in hidden)]
-            if not hits:
-                continue
-            count = sum(sum(s[i] == c for i in hidden) for s in hits) / len(hits)
-            letters[c] = LetterStats(p_hit=len(hits) / len(samples), count=count,
-                                     entropy=_entropy(patterns, len(samples)))
-        return letters
+
+def summarize(samples: list[str], unknown: list[bool], text: str, pool: list[str], knobs: Knobs) -> Belief:
+    """A Belief from sampled whole answers. Answers with an unknown word count toward the oov share only."""
+    n = len(samples)
+    answers = Counter(a for a, oov in zip(samples, unknown) if not oov)
+    top = sorted(answers.items(), key=lambda a: (-a[1], a[0]))[: knobs.top_answers]
+    hidden = [i for i, c in enumerate(text) if c == "_"]
+    letters = {}
+    for c in pool:
+        patterns = Counter(tuple(i for i in hidden if s[i] == c) for s in samples)
+        hits = [s for s in samples if any(s[i] == c for i in hidden)]
+        if not hits:
+            continue
+        count = sum(sum(s[i] == c for i in hidden) for s in hits) / len(hits)
+        letters[c] = LetterStats(p_hit=len(hits) / n, count=count, entropy=_entropy(patterns, n))
+    return Belief(letters=letters, answers=tuple((a, k / n) for a, k in top), oov=sum(unknown) / n)

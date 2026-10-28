@@ -61,6 +61,8 @@ rstlne/
       player.py    # BotPlayer: one decision per phase, steal odds from observed play
       belief.py    # Belief: per letter odds, top answers, out of vocabulary share
       reader.py    # readers: letter frequency, and sampled whole answers from a word list
+      full.py      # the full reader: a chain of words, phrases, and names over the slots
+      lexicon.py   # the full reader's data, loaded once per process from a compiled cache
       info.py      # how a reveal moves the chance the best guess is right
       objective.py # dollars in rounds 1 and 2, win chance from round 3, card values, ties
       steal.py     # steal odds per opponent, in sequence around the table
@@ -110,6 +112,7 @@ documentation.md   # game specification
 - Test every special wedge path: keep, flip to $10,000, flip to Bankrupt, the second Mystery after a flip, Express pass, Express solve, Express bust, Wild use, and held cards lost to Bankrupt across rounds.
 - Test the bonus round: qualification, tie draw, RSTLNE reveal, pick validation, the Wild Card's extra consonant, the Million envelope swap, and correct and wrong solves.
 - Mock OpenRouter in every test. Tests never make network calls.
+- Tests never read `data/`. Tests that need the real word data are marked `slow` and run with `uv run pytest -m slow`.
 
 ## Commands
 

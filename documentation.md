@@ -151,7 +151,12 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
   - for every letter: p_hit, the chance it appears; E[count | hit]; and the entropy of where it would show
   - the top whole answers with their probabilities
   - an explicit out of vocabulary share: the chance the answer holds a word or name the reader doesn't know
-- Candidates fill each word slot: words from the vocabulary, and multiword entries that span several slots. Their weights combine word frequency, word n-grams with backoff, category fit from word vectors, and category priors: ING words for What Are You Doing?, one starting letter for Same Letter, a shared middle word for Before & After, a shared word for Same Name, and rhymes from the CMU Pronouncing Dictionary for Rhyme Time.
+- The board splits into word slots at spaces and hyphens, with punctuation kept in place. Each slot holds one of three kinds of state:
+  - a free word from the vocabulary that fits the slot, weighted by its frequency and its category fit from word vectors, and linked to the free word before it by word pair counts (Witten-Bell smoothed, so a pair never seen after a well-attested word costs more)
+  - an unknown word, whose letters come from letter frequency
+  - a position inside a known phrase or name that fits a run of slots, which may start part way into the board (A + BLESSING IN DISGUISE)
+- A run of slots is a known phrase with prior odds against free words (knobs: higher when the phrase's kind fits the category, much lower for a one-word name), times the free words' total frequency over those lengths, times the phrase's share of popularity among phrases of the same shape. Popularity is its sitelinks or sense count times how often its rarest word pair appears in text. Wiktionary placeholders like ONE'S also read as YOUR, HIS, HER, MY, THEIR, and OUR.
+- Category rules: ING words for What Are You Doing?; neighbors sharing a first letter for Same Letter; rhymes from the CMU Pronouncing Dictionary for Rhyme Time; two phrases overlapping on a shared word for Before & After (PIECE OF CAKE + CAKE WALK). For Same Name (BIRTHDAY & WEDDING CAKE) and for rhymes that skip a word (WEAR AND TEAR), the sampled answers are reweighted as a whole. Categories that name a shape rather than a topic (Before & After, Same Name, Rhyme Time, Same Letter, Megaword) let a phrase of any kind fit.
 - p_hit, E[count | hit], and entropy come from whole answers sampled across the slots by forward filtering, backward sampling.
 - Confidence in the top answer is calibrated with an isotonic curve fit on held out boards from self-play.
 - When nothing in the vocabulary fits, the reader falls back to plain English letter frequency.

@@ -23,8 +23,9 @@ from rstlne.engine.state import (
 from rstlne.engine.wheel import Kind, WheelSpec
 from rstlne.llm.openrouter import Usage
 from rstlne.players.base import CallRecord, Player
-from rstlne.players.bot import bonus, info, planner, versions
+from rstlne.players.bot import bonus, info, lexicon, planner, versions
 from rstlne.players.bot.belief import Belief
+from rstlne.players.bot.full import FullReader
 from rstlne.players.bot.objective import Objective
 from rstlne.players.bot.reader import FREQUENCY, FrequencyReader, Reader, board_text
 from rstlne.players.bot.steal import Steal
@@ -34,8 +35,13 @@ _OPPORTUNITIES = ("spin", "buy_vowel", "solve")  # moves made when the seat coul
 
 
 def make_reader(knobs: versions.Knobs) -> Reader:
-    """The reader a version plays with. Until the word data is fetched, letter frequency alone."""
-    return FrequencyReader()
+    """The full reader when the word data is fetched, or letter frequency alone until it is."""
+    root = lexicon.data_dir()
+    if not lexicon.available(root):
+        return FrequencyReader()
+    reader = FullReader(lexicon.load(str(root), knobs.vocabulary), knobs)
+    reader.fingerprint = lexicon.fingerprint(root, knobs.vocabulary)
+    return reader
 
 
 def share_revealed(board: str) -> float:
@@ -75,6 +81,8 @@ class BotPlayer(Player):
 
     def describe(self) -> dict:
         info = {"kind": "bot", "version": self.version, "reader": self.reader.name}
+        if getattr(self.reader, "fingerprint", None):
+            info["data"] = self.reader.fingerprint  # which fetched data the reader read
         return {**info, "experiment": True} if self.experiment else info
 
     def label(self) -> str:
