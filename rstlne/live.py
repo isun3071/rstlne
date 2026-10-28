@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import re
 from collections import deque
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -23,6 +24,16 @@ from rstlne.show import Show
 
 TILES_PER_ROW = 14  # the widest row on the show's board
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def board_rows(board: str) -> list[list[str]]:
+    """Split a spaced board into rows of tiles, breaking only between words. " " is a gap tile."""
+    rows: list[list[str]] = [[]]
+    for word in (w.split(" ") for w in board.split("   ")):
+        if rows[-1] and len(rows[-1]) + 1 + len(word) > TILES_PER_ROW:
+            rows.append([])
+        rows[-1] += ([" "] if rows[-1] else []) + word
+    return rows
 
 
 class LiveShow:
@@ -53,10 +64,17 @@ class LiveShow:
         self.moves.append(describe(result))
         thoughts = self.players[result.seat].thoughts()
         if thoughts:
-            self.thoughts[result.seat] = thoughts[-1].splitlines()[0]
+            self.thoughts[result.seat] = self.clean(thoughts[-1])
         if self.live:
             self.live.update(self.render(state), refresh=True)
         self.sleep(self.pause)
+
+    @staticmethod
+    def clean(thought: str) -> str:
+        """The first line of a thought, without its "reasoning:" label or markdown emphasis."""
+        line = thought.strip().splitlines()[0] if thought.strip() else ""
+        line = re.sub(r"^(reasoning|content):\s*", "", line)
+        return line.replace("**", "").replace("__", "").strip()
 
     def stop(self) -> None:
         if self.live:
@@ -91,13 +109,10 @@ class LiveShow:
         return Text.assemble(("rstlne", "bold magenta"), f"  ·  {stage}  ·  {view.category}{seed}")
 
     def _board(self, view: PublicView) -> Panel:
-        rows: list[list[str]] = [[]]
-        for word in (w.split(" ") for w in view.board.split("   ")):
-            if rows[-1] and len(rows[-1]) + 1 + len(word) > TILES_PER_ROW:
-                rows.append([])
-            rows[-1] += ([" "] if rows[-1] else []) + word
-        lines = []
-        for row in rows:
+        lines: list[RenderableType] = []
+        for row in board_rows(view.board):
+            if lines:
+                lines.append(Text(""))  # a blank line keeps rows from merging into columns
             line = Text()
             for c in row:
                 if c == " ":
@@ -105,7 +120,7 @@ class LiveShow:
                 elif c == "_":
                     line.append("   ", style="on green")
                 elif c.isalpha():
-                    line.append(f" {c} ", style="bold black on white")
+                    line.append(f" {c} ", style="bold black on bright_white")
                 else:
                     line.append(f" {c} ", style="bold")
                 line.append(" ")

@@ -109,3 +109,35 @@ def test_live_without_a_terminal_falls_back_to_plain_lines(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "--live needs a terminal" in out
     assert "Final totals" in out
+
+
+def test_board_rows_wrap_at_word_breaks_within_the_row_width():
+    from rstlne.engine.puzzle import board
+    from rstlne.live import TILES_PER_ROW, board_rows
+
+    rows = board_rows(board("DON'T COUNT YOUR CHICKENS BEFORE THEY HATCH", frozenset()))
+    assert all(len(row) <= TILES_PER_ROW for row in rows)
+    assert ["".join(row).replace("_", "x") for row in rows][0] == "xxx'x xxxxx"
+    assert len(rows) == 4
+
+
+def test_board_rows_have_space_between_them(rules, wheel_spec, players):
+    from dataclasses import replace
+
+    from rstlne.engine.puzzle import Puzzle
+
+    state = start(rules, wheel_spec)
+    puzzle = Puzzle("Phrase", "DON'T COUNT YOUR CHICKENS BEFORE THEY HATCH")
+    state = replace(state, round=replace(state.round, puzzle=puzzle, used=frozenset("TC")))
+    screen = text(LiveShow(players, pause=0, console=console()), state)
+    inside = screen.split("Phrase ─")[1].split("Wedge:")[0].splitlines()[1:]
+    tiles = [i for i, line in enumerate(inside) if "T" in line or "C" in line or "'" in line]
+    assert len(tiles) >= 3
+    assert all(inside[i + 1].strip("│ ") == "" for i in tiles[:-1])
+
+
+def test_thinking_drops_labels_and_markdown(rules, wheel_spec, players):
+    live = LiveShow(players, pause=0, console=console())
+    assert live.clean("reasoning: **Solving punctuation issues**\nmore") == "Solving punctuation issues"
+    assert live.clean("content: I'll spin.") == "I'll spin."
+    assert live.clean("P(solvable) 0.12, action spin (0.90)") == "P(solvable) 0.12, action spin (0.90)"
