@@ -250,3 +250,10 @@ def test_main_puzzles_need_enough_letters(tmp_path):
     result = puzzlegen.generate(client, settings(max_requests=1, main_min_letters=8), [("Living Thing", 2)], [], seed=1,
                                 known=[], seen_path=tmp_path / "seen.txt")
     assert [p.answer for p in result.puzzles] == ["GOLDEN RETRIEVER"] and result.rejected["too short for a main puzzle"] == 1
+
+
+def test_a_generated_batch_file_loads_like_any_puzzle_file(tmp_path):
+    path = tmp_path / "batch.json"
+    pool = [Puzzle("Thing", "SPARE TIRE"), Puzzle("Food & Drink", "HOT COCOA", bonus=True)]
+    puzzlegen.save_pool(path, pool, settings(), seed=4, rejected={}, cost=0.0)
+    assert project.load_puzzles(path) == pool

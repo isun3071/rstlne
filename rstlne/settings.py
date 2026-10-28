@@ -30,4 +30,6 @@ def load_rules(path: Path = CONFIG) -> Rules:
 
 
 def load_puzzles(path: Path) -> list[Puzzle]:
-    return [Puzzle.from_dict(p) for p in json.loads(Path(path).read_text())]
+    """A puzzle file: a plain list, or a generated batch with its puzzles under "puzzles"."""
+    data = json.loads(Path(path).read_text())
+    return [Puzzle.from_dict(p) for p in (data["puzzles"] if isinstance(data, dict) else data)]
