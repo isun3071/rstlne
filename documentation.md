@@ -95,7 +95,7 @@ Bonus puzzles carry `"bonus": true` in the puzzle file. Keep them short, like th
 
 - Derive every spin from `(game_seed, round_index, spin_index)`. Two games with the same seed and the same decisions produce identical spins.
 - Tournament mode plays each puzzle set once for every ordering of the players across the seats, against the same spins. This is duplicate bridge scoring. It strips most of the luck out of model comparisons.
-- `python -m rstlne.tournament --seats <seat>,<seat>,<seat> --sets N --seed S` plays N puzzle sets. Seats use the CLI's forms (`llm:<slug>`, `decision[:<model>]`), and `--models a,b,c` is short for three `llm:` seats. `--sets 1` is the trial run for checking cost.
+- `python -m rstlne.tournament --seats <seat>,<seat>,<seat> --sets N --seed S` plays N puzzle sets. Seats use the CLI's model forms (`llm:<slug>`, `decision[:<model>]`, `bot`), and `--models a,b,c` is short for three `llm:` seats. `--sets 1` is the trial run for checking cost.
 - With `set_permutations = "all"` in `config.toml`, the default, a set is 6 games, one for each ordering of the 3 entrants across the 3 seats. Each entrant sits in each seat twice per set and directly follows each other entrant 3 times, counting turn order around the table, where Seat 3 passes to Seat 1. `"cyclic"` plays the 3 rotations instead, where each entrant sits in each seat once but always follows the same entrant.
 - All games in a set share the set's seed, derived from the tournament seed and the set index, and the set's puzzles.
 - Puzzles are dealt across sets without replacement. The main and bonus pools are each shuffled from the tournament seed and dealt 4 main puzzles and 1 bonus puzzle per set. When a pool runs out, it is reshuffled and dealing continues. A set that straddles a reshuffle skips puzzles it already holds, which stay in the new pile for later sets, so no set repeats a puzzle.
@@ -132,42 +132,38 @@ The bot gives every model a floor to beat.
 - Call consonants in English frequency order, skipping used letters. On Free Play, call the next consonant in that order.
 - Buy a vowel when the bank allows it and no consonant has been revealed in the last 2 turns at the table, counting every seat's turns. Buy vowels in the order E, A, O, I, U, skipping used ones.
 - Load the 50,000 most common English words from the `wordfreq` package. Set the count in `config.toml`. A candidate phrase is a phrase of list words that fits the board: every revealed letter in place, and no used letter in a hidden spot. The best candidate is the one whose words are most common.
-- Solve when the board matches exactly one candidate phrase. Otherwise keep spinning. This solve rule applies in configuration 4; see Player configurations.
+- Solve when the board matches exactly one candidate phrase. Otherwise keep spinning.
 - When a spin risks a large round bank, apply the threshold rule: stop when the expected spin gain is below P(Bankrupt) times the bank.
   - Expected spin gain = (average spin value) × P(hit) × E[count].
   - The average spin value is the mean over the round's wheel in `wheel.toml`, with Bankrupt and Lose a Turn counted as $0. Recompute it each round.
   - P(hit) is the share of candidate phrases that contain the bot's next consonant. E[count] is that consonant's average count in the candidates that contain it.
   - P(Bankrupt) is 1/9 in rounds 1 to 3 and 1/12 from round 4 on, the Bankrupt share of each round's wheel as it starts.
-  - On a stop, the bot buys a vowel if it can. Otherwise it solves with its best candidate, and with no candidate it spins anyway. In configurations 2 and 3 it never solves on a stop: it buys a vowel if it can, and spins otherwise.
+  - On a stop, the bot buys a vowel if it can. Otherwise it solves with its best candidate, and with no candidate it spins anyway.
 - On Mystery, flip when the round bank B satisfies B < 10000 − 2000k, where k is the letter count. Count the Wild Card and Million card inside B at a value set in `config.toml`.
 - On Express, play only when the board matches exactly one candidate phrase.
 - In the bonus round, pick the consonants and vowel that appear in the most surviving candidates, then answer with the best candidate.
 - Keep the Wild Card for the bonus round. Never spend it in a main round.
 
-## Player configurations
+## Seats
 
-A model seat runs one of five configurations. Configurations 2, 3, and 5 split the seat's decisions between two players.
+Each seat is one of four kinds.
 
-| configuration | letters, vowels, and risk choices | when to solve | the solve itself |
-|---|---|---|---|
-| 1 | model | model | model |
-| 2 | bot | model | model |
-| 3 | bot | bot | model |
-| 4 | bot | bot | bot |
-| 5 | decision model | decision model | model |
+| seat | moves and risk choices | the solve itself |
+|---|---|---|
+| `human` | the player at the terminal | the player |
+| `llm:<slug>` | the model | the model |
+| `decision[:<model>]` | a decision model | an LLM, the solver |
+| `bot` | the bot | the bot |
 
-- **Configuration 1:** the model plays every move, as the LLM player section describes.
-- **Configuration 2:** the bot plays every move except solving. At each point in the seat's own turn where solving is legal and the board has changed since the model last declined, the model gets one call with two tools, `solve(answer)` and `keep_playing`. When solving is the only legal move, it gets `solve` alone.
-- **Configuration 3:** the bot plays every move and decides when to solve, ignoring its word list for that choice. It solves when at least 70% of the puzzle's letters are revealed, or when no consonants remain, whichever comes first. Set the 70% in `config.toml`. The model then gets one call with the `solve(answer)` tool and writes the answer.
-- **Configuration 4:** the bot plays alone and solves by the rule in the Baseline bot section.
-- In the bonus round, the bot picks the letters in configurations 2 to 4. The seat that writes solves in that configuration writes the bonus solve.
-- **Configuration 5:** a decision model, called through OpenRouter's Decisions API, makes every choice except the answer text: spin, buy a vowel, or solve; which consonant; which vowel; keep or flip on Mystery; pass or play on Express; whether to spend the Wild Card; and the bonus round letter picks. An LLM writes the solve answer, and only when the decision model triggers a solve.
+- **`llm:<slug>`:** the model plays every move, as the LLM player section describes.
+- **`bot`:** the bot plays every move and solves by the rules in the Baseline bot section, bonus round included.
+- **`decision`:** a decision model, called through OpenRouter's Decisions API, makes every choice except the answer text: spin, buy a vowel, or solve; which consonant; which vowel; keep or flip on Mystery; pass or play on Express; whether to spend the Wild Card; and the bonus round letter picks. An LLM writes the solve answer, and only when the decision model triggers a solve. `decision:<model>` names the decision model for one seat.
   - **Solve trigger:** every turn, before any other choice, ask the decision model a yes or no question: "Can the puzzle be solved correctly from this board right now?" If P(yes) is at or above `solve_threshold`, the LLM writes the answer. A wrong answer passes the turn as usual. Otherwise, ask which action to take, with the options restricted to legal non-solve actions. Ask both questions in one call. When buying a vowel is legal, ask which vowel in the same call, and during Express mode ask which consonant too, so the pick is ready if that action wins. After each action that keeps the turn, ask again before the next action.
   - **Nothing to choose:** when only one non-solve action is legal, skip the action question and still ask whether to solve. When solving is the only legal move, skip both questions and the LLM writes the answer.
   - **Choices:** every question offers only legal options. Consonant questions list only unused consonants, and vowel questions list only unused vowels. On Free Play, the letter question lists every unused letter, consonants and vowels together.
   - **Bonus round:** ask for the 3 consonants one at a time, removing RSTLNE and each pick from the options, then the vowel, then a 4th consonant if the player holds the Wild Card. Then the LLM writes the bonus solve.
   - **State:** send the public view as the decision model's state: category, spaced board, used letters, all banks, held cards, round, current wedge, and the rules summary.
-  - **Config:** set `decision_model` (any Decisions API model ID, default `openai/gpt-6-luna-decisions`), `solver_model` (any OpenRouter chat model slug, default `openai/gpt-6-luna`, the solver in every configuration), and `solve_threshold` (default 0.8) in `config.toml`. `[decision.thresholds]` overrides the threshold for named decision models, because their probabilities run on different scales: Jev 1.14 gives a fully revealed board about 0.75 on average, while GPT-6 Luna Decisions gives about 0.99.
+  - **Config:** set `decision_model` (any Decisions API model ID, default `openai/gpt-6-luna-decisions`), `solver_model` (any OpenRouter chat model slug, default `openai/gpt-6-luna`), and `solve_threshold` (default 0.8) in `config.toml`. `[decision.thresholds]` overrides the threshold for named decision models, because their probabilities run on different scales: Jev 1.14 gives a fully revealed board about 0.75 on average, while GPT-6 Luna Decisions gives about 0.99.
   - **Calibration:** `python -m rstlne.calibrate --models <id>,<id>` picks each decision model's threshold from data. It samples main round puzzles with a seed, reveals each one in English letter frequency order (E T A O I N S H R D L C U M W F G Y P B V K J X Q Z), and stops at several points from an empty board to a full one. At each board, every decision model gives P(solvable) from the same state and question it gets in a game, and the solver gets one solve attempt with the same view and tool, shared across the models. A model's threshold is the lowest P(solvable) at which the calibration curve reaches 80%: the solver's accuracy, fit as a never-decreasing function of P(solvable). At least 5 boards must sit at or above the threshold. The command prints the `[decision.thresholds]` lines and saves every board's results.
   - **Logging:** log the full probability distribution returned for every question, the chosen option, and the threshold. For every triggered solve, log P(yes) and whether the answer was correct, so calibration can be plotted later.
 

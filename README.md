@@ -12,7 +12,7 @@ The same engine is built to run seeded, model-only tournaments that compare how 
 |---|---|
 | Game engine, covering every rule in `documentation.md` | Done |
 | Model seats, which move by tool calls | Done |
-| Decision model seats (configuration 5) | Done |
+| Decision model seats | Done |
 | Your seat in the terminal | Done |
 | Game logs | Done |
 | Baseline bot | Not started |
@@ -38,7 +38,7 @@ Put your key in `.env` as `OPENROUTER_API_KEY=...`. Git ignores `.env`.
 uv run python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
 ```
 
-Each seat is `human`, `llm:<slug>`, or `decision`. Three model seats play a model-only game. A `decision` seat is configuration 5: a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
+Each seat is `human`, `llm:<slug>`, `decision`, or `bot`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A `bot` seat plays by the fixed rules in `documentation.md`; it isn't built yet. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
 
 | Option | Effect |
 |---|---|
