@@ -1,6 +1,6 @@
 """Play a game in the terminal.
 
-    python -m rstlne.cli --seats human,llm:<slug>,decision
+    python -m rstlne.cli --seats human,llm:<slug>,bot
 """
 
 from __future__ import annotations
@@ -22,6 +22,8 @@ from rstlne.live import LiveShow
 from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
 from rstlne.players.base import Player
+from rstlne.players.bot import versions
+from rstlne.players.bot.player import BotPlayer, make_reader
 from rstlne.players.decision import DecisionPlayer
 from rstlne.players.human_cli import HumanPlayer
 from rstlne.players.llm import LLMPlayer
@@ -30,13 +32,13 @@ from rstlne.show import Show
 
 
 def parse_seats(text: str) -> list[tuple[str, str | None]]:
-    """`human`, `llm:<slug>`, or `decision[:<model>]` seats as (kind, model) pairs."""
+    """`human`, `llm:<slug>`, `decision[:<model>]`, or `bot` seats as (kind, model) pairs."""
     seats: list[tuple[str, str | None]] = []
     for part in (p.strip() for p in text.split(",")):
         if part == "human":
             seats.append(("human", None))
         elif part == "bot":
-            raise ValueError("the bot isn't built yet. Use human, llm:<slug>, or decision.")
+            seats.append(("bot", None))
         elif part.startswith("llm:"):
             slug = part.removeprefix("llm:").strip()
             if not slug:
@@ -45,7 +47,7 @@ def parse_seats(text: str) -> list[tuple[str, str | None]]:
         elif part == "decision" or part.startswith("decision:"):
             seats.append(("decision", part.removeprefix("decision").removeprefix(":").strip() or None))
         else:
-            raise ValueError(f"unknown seat {part!r}. Use human, llm:<slug>, or decision.")
+            raise ValueError(f"unknown seat {part!r}. Use human, llm:<slug>, decision, or bot.")
     if len(seats) != 3:
         raise ValueError(f"a game needs three seats, got {len(seats)}")
     return seats
@@ -83,6 +85,9 @@ def build_players(
         session = f"{session_prefix}-seat{i + 1}"
         if kind == "human":
             return HumanPlayer(i, seconds=config["cli"]["bonus_solve_seconds"])
+        if kind == "bot":
+            version = versions.current(config)
+            return BotPlayer(i, rules, spec, make_reader(versions.knobs(version)), version=version)
         if kind == "llm":
             return LLMPlayer(
                 i, model, client, rules, spec, temperature, session, reasoning_effort=effort, provider=providers.get(model)
@@ -111,7 +116,7 @@ def pick_puzzles(puzzles: Sequence[Puzzle], rounds: int, seed: int) -> tuple[lis
 
 def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="python -m rstlne.cli", description="Play Wheel of Fortune in the terminal.")
-    parser.add_argument("--seats", required=True, help="three seats: human, llm:<slug>, or decision, comma separated")
+    parser.add_argument("--seats", required=True, help="three seats: human, llm:<slug>, decision, or bot, comma separated")
     parser.add_argument("--seed", type=int, help="game seed; replaying a seed with the same moves replays the game")
     parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))
     parser.add_argument("--pause", type=float, help="seconds to pause after each model move")

@@ -12,7 +12,9 @@ import random
 import sys
 from collections import Counter, defaultdict
 from collections.abc import Callable, Sequence
-from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, ThreadPoolExecutor, wait
+from contextlib import ExitStack
+from multiprocessing import Manager
 from dataclasses import dataclass
 from itertools import combinations, permutations
 from pathlib import Path
@@ -21,6 +23,8 @@ from rstlne import settings
 from rstlne.cli import build_players, clients, parse_seats
 from rstlne.engine.puzzle import Puzzle
 from rstlne.engine.rules import new_game
+from rstlne.engine.state import Rules
+from rstlne.engine.wheel import WheelSpec
 from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
 from rstlne.narrate import money
@@ -151,32 +155,18 @@ def run_tournament(
     pool = settings.load_puzzles(puzzles_path)
     main_hands = deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
     bonus_hands = deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
-    client, decisions = clients({kind for kind, _ in parse_seats(",".join(entrants))}, client, decisions)
+    kinds = {kind for kind, _ in parse_seats(",".join(entrants))}
+    processes = "bot" in kinds and client is None and decisions is None  # the bot computes, so it needs its own cores
+    client, decisions = clients(kinds, client, decisions)
     names = labels(entrants)
-    progress: dict[str, list] = {}  # running game name -> [round, moves], updated by the game threads
 
-    def play(game: Game) -> tuple[list[int], float]:
-        seats = parse_seats(",".join(entrants[e] for e in game.order))
-        players = build_players(seats, rules, spec, config, client, decisions, f"{out_dir.name}-{game.name}")
-        state = new_game(game.seed, rules, spec, main_hands[game.set], bonus_hands[game.set][0])
+    def job(game: Game) -> _Job:
         header = {"tournament": {
             "set": game.set, "permutation": game.permutation, "entrants": list(game.order), "names": names,
             "puzzles": str(puzzles_path), "set_permutations": mode,
         }}
-        path = out_dir / f"{game.name}.jsonl"
-        progress[game.name] = [1, 0]
-
-        def track(now) -> None:
-            entry = progress[game.name]
-            entry[0] = now.round.number if now.round else "bonus"
-            entry[1] += 1
-
-        try:
-            with GameLog(path, state, players, header) as log:
-                final = play_game(state, players, log, on_result=track)
-        finally:
-            progress.pop(game.name, None)
-        return [s.total for s in final.seats], _cost(path)
+        return _Job(game, tuple(entrants), tuple(main_hands[game.set]), bonus_hands[game.set][0], out_dir, header,
+                    config, rules, spec)
 
     games = schedule(sets, seed, mode)
     todo = [g for g in games if not _finished(out_dir / f"{g.name}.jsonl")]
@@ -185,7 +175,17 @@ def run_tournament(
     write(f"{out_dir}: {sets} sets of {len(orderings(mode))} games; {done} of {len(games)} done, ${spent:.4f} spent")
 
     stopped = False
-    with ThreadPoolExecutor(max_workers=parallel) as pool_:
+    if processes:
+        write("Bot seats: games run in separate processes.")
+    with ExitStack() as stack:
+        if processes:
+            progress = stack.enter_context(Manager()).dict()  # running game name -> (round, moves)
+            pool_ = stack.enter_context(ProcessPoolExecutor(max_workers=parallel))
+            shared = (None, None)  # each process opens its own clients
+        else:
+            progress = {}
+            pool_ = stack.enter_context(ThreadPoolExecutor(max_workers=parallel))
+            shared = (client, decisions)
         pending = {}
         while todo or pending:
             while todo and len(pending) < parallel:
@@ -193,7 +193,7 @@ def run_tournament(
                     stopped = True
                     break
                 game = todo.pop(0)
-                pending[pool_.submit(play, game)] = game
+                pending[pool_.submit(_play, job(game), *shared, progress)] = game
                 seating = ", ".join(f"Seat {seat + 1} {names[e]}" for seat, e in enumerate(game.order))
                 write(f"started {game.name}: {seating}")
             if not pending:
@@ -410,6 +410,45 @@ def table(result: dict) -> list[str]:
     return lines
 
 
+@dataclass(frozen=True)
+class _Job:
+    """One tournament game, with everything a worker process needs to play it."""
+
+    game: Game
+    entrants: tuple[str, ...]
+    puzzles: tuple[Puzzle, ...]
+    bonus: Puzzle
+    out_dir: Path
+    header: dict
+    config: dict
+    rules: Rules
+    spec: WheelSpec
+
+
+def _play(job: _Job, client: OpenRouter | None, decisions: DecisionClient | None, progress) -> tuple[list[int], float]:
+    game = job.game
+    seats = parse_seats(",".join(job.entrants[e] for e in game.order))
+    if client is None and decisions is None:
+        client, decisions = clients({kind for kind, _ in seats}, None, None)
+    players = build_players(seats, job.rules, job.spec, job.config, client, decisions, f"{job.out_dir.name}-{game.name}")
+    state = new_game(game.seed, job.rules, job.spec, job.puzzles, job.bonus)
+    path = job.out_dir / f"{game.name}.jsonl"
+    moves = 0
+    progress[game.name] = (1, 0)
+
+    def track(now) -> None:
+        nonlocal moves
+        moves += 1
+        progress[game.name] = (now.round.number if now.round else "bonus", moves)
+
+    try:
+        with GameLog(path, state, players, job.header) as log:
+            final = play_game(state, players, log, on_result=track)
+    finally:
+        progress.pop(game.name, None)
+    return [s.total for s in final.seats], _cost(path)
+
+
 def check_bot_versions(out_dir: Path, version: int) -> None:
     """Refuse to resume a tournament whose finished games had a bot of another version."""
     for path in sorted(Path(out_dir).glob("set*.jsonl")):
@@ -437,7 +476,7 @@ def _cost(path: Path) -> float:
 
 def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="python -m rstlne.tournament", description="Run a seeded model-only tournament.")
-    parser.add_argument("--seats", help="three model seats: llm:<slug> or decision[:<model>], comma separated")
+    parser.add_argument("--seats", help="three seats: llm:<slug>, decision[:<model>], or bot, comma separated")
     parser.add_argument("--models", help="three OpenRouter slugs, short for llm:<slug> seats")
     parser.add_argument("--sets", type=int, required=True,
                         help="puzzle sets to play; each is 6 games, or 3 with set_permutations = \"cyclic\". --sets 1 is a trial run")

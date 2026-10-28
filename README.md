@@ -15,7 +15,7 @@ The same engine is built to run seeded, model-only tournaments that compare how 
 | Decision model seats | Done |
 | Your seat in the terminal | Done |
 | Game logs | Done |
-| Bot (v1) | Not started |
+| Bot (v1) | Decisions built; it reads by letter frequency until its word data is fetched |
 | Tournament runner | Done |
 | Local web page | Planned for phase 2 |
 
@@ -38,7 +38,7 @@ Put your key in `.env` as `OPENROUTER_API_KEY=...`. Git ignores `.env`.
 uv run python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
 ```
 
-Each seat is `human`, `llm:<slug>`, `decision`, or `bot`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A `bot` seat is the project's own versioned player: it reads the board with word and phrase lists and scores every move with one value function, as `documentation.md` describes. It isn't built yet. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
+Each seat is `human`, `llm:<slug>`, `decision`, or `bot`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A `bot` seat is the project's own versioned player: it reads the board with word and phrase lists and scores every move with one value function, as `documentation.md` describes. Until its word data is fetched, it reads the board by letter frequency alone, so it solves only once the board gives the answer away. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
 
 | Option | Effect |
 |---|---|
@@ -113,7 +113,7 @@ The suite runs about 390 tests in under 20 seconds. It never calls OpenRouter; a
 
 ```
 rstlne/engine/        the rules engine: no I/O, no network, every chance outcome from the seeded wheel
-rstlne/players/       your seat (human_cli.py), model seats (llm.py), and decision seats (decision.py)
+rstlne/players/       your seat (human_cli.py), model seats (llm.py), decision seats (decision.py), and the bot (bot/)
 rstlne/llm/           the OpenRouter chat and Decisions API clients, with retries and usage tracking
 rstlne/runner.py      the game loop: retries, forfeits, and logs
 rstlne/narrate.py     move text for the screen and the model prompts

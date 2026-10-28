@@ -167,9 +167,9 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 - B is the round bank plus held cards at their values: the Wild Card at its saved value, the Million card at its expected bonus value.
 - Spin: each wheel outcome is one branch, over the wheel as it stands. A dollar wedge pays the best consonant's p_hit × value × E[count | hit] and keeps the wheel with chance p_hit. Lose a Turn passes the wheel. Bankrupt zeroes B and passes the wheel, and counts only in that branch. Free Play, Mystery, and Express follow their own rules below.
 - Buy a vowel: −$250 plus the vowel's information value. It keeps the wheel with chance p_hit.
-- Solve: c × the payoff of banking max(B, $1,000) + (1 − c) × (1 − p_steal) × V(continue later), where c is the calibrated confidence. A solve never keeps the wheel.
+- Solve: c × the payoff of banking max(B, $1,000) + (1 − c) × (1 − p_steal) × V(continue later), where c is the calibrated confidence. A solve never keeps the wheel. With no candidate answer at all, the bot doesn't guess unless solving is its only legal move.
 - Losing the wheel costs the round's whole value: a steal leaves the bot nothing from the round, not even the $1,000 minimum. From round 3 on, the stealer's gain also counts against the bot's win chance.
-- V(continue) is the best action's value at the board the move leads to, looked ahead a set number of moves (a knob). Past that, it is the value of solving at that board's confidence. V(continue later) is the same, at the board expected when the wheel comes back.
+- V(continue) is a race from the board the move leads to. Each turn the bot holds the wheel, it takes the round with chance t: its confidence c, or while c is low, the chance any seat solves on its turn at that board (the steal prior), since holding the wheel lets it reveal more. Between its turns the opponents get their steal odds, so the bot takes the round with chance t / (t + (1 − t) × p_steal), and the payoff follows. V(continue later) is the same race once the wheel comes back.
 
 ### Steal odds
 

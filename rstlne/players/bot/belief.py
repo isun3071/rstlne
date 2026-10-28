@@ -32,7 +32,7 @@ class Belief:
                 raise ValueError(f"{letter!r} is not an uppercase letter")
             if not 0 <= s.p_hit <= 1:
                 raise ValueError(f"{letter}: p_hit {s.p_hit} is outside 0 to 1")
-            if s.p_hit > 0 and s.count < 1 or s.p_hit == 0 and s.count != 0:
+            if s.p_hit > 0 and s.count < 1 - _TOLERANCE or s.p_hit == 0 and s.count != 0:
                 raise ValueError(f"{letter}: count {s.count} must be at least 1 when the letter can hit, else 0")
             if s.entropy < 0:
                 raise ValueError(f"{letter}: entropy {s.entropy} is negative")

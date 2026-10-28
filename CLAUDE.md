@@ -58,10 +58,17 @@ rstlne/
     llm.py
     decision.py    # decision seat: decision model choices, LLM solves
     bot/           # the versioned bot
+      player.py    # BotPlayer: one decision per phase, steal odds from observed play
       belief.py    # Belief: per letter odds, top answers, out of vocabulary share
-      reader.py    # Reader interface: board in, Belief out
+      reader.py    # readers: letter frequency, and sampled whole answers from a word list
+      info.py      # how a reveal moves the chance the best guess is right
+      objective.py # dollars in rounds 1 and 2, win chance from round 3, card values, ties
+      steal.py     # steal odds per opponent, in sequence around the table
+      value.py     # the one value function for every move
+      planner.py   # the known answer planner
+      bonus.py     # bonus round picks and solve
       seed.py      # sampling seeds from a hash of the view
-      versions.py  # known versions; config.toml picks one
+      versions.py  # versions and their frozen knobs; config.toml picks one
   llm/
     openrouter.py  # client, retries, usage tracking
     decisions.py   # Decisions API client for decision models like Jev
