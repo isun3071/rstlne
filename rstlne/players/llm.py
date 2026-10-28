@@ -289,6 +289,9 @@ class LLMPlayer(Player):
     def describe(self) -> dict:
         return {"kind": "llm", "model": self.model, "temperature": self.temperature}
 
+    def label(self) -> str:
+        return self.model
+
     def observe(self, view: PublicView, result: Result) -> None:
         self.notes.append(describe(result, viewer=self.seat))
 

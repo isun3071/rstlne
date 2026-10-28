@@ -38,6 +38,10 @@ class Player:
     def describe(self) -> dict:
         return {"kind": type(self).__name__}
 
+    def label(self) -> str:
+        """Who plays this seat, for the screen."""
+        return self.describe()["kind"]
+
     def thoughts(self) -> list[str]:
         """What the seat weighed for its latest move, for --show-thinking."""
         return []

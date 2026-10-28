@@ -59,6 +59,9 @@ class DecisionPlayer(Player):
     def describe(self) -> dict:
         return {"kind": "decision", "model": self.model, "solver": self.solver.model, "threshold": self.threshold}
 
+    def label(self) -> str:
+        return f"{self.model} + {self.solver.model}"
+
     def observe(self, view: PublicView, result: Result) -> None:
         self.solver.observe(view, result)
 

@@ -64,6 +64,8 @@ rstlne/
   settings.py      # loads wheel.toml and config.toml, so engine/ stays free of I/O
   runner.py        # game loop shared by cli and tournament: retries, forfeits, JSONL logs
   narrate.py       # plain-English text for the table and results, for the CLI and model prompts
+  show.py          # line-by-line game printout
+  live.py          # --live: one fixed screen, redrawn with rich
   cli.py           # play a game in the terminal
   tournament.py    # seeded model only runs
 puzzles/
