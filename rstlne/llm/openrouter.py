@@ -13,6 +13,8 @@ from openai.types.chat import ChatCompletionMessage
 
 BASE_URL = "https://openrouter.ai/api/v1"
 CACHE = {"type": "ephemeral"}  # the default 5 minute cache
+TIMEOUT = 180  # seconds per request; the slowest real move seen, a Qwen overthink, took 118
+TIMEOUT_RETRIES = 1  # a request that timed out once will likely time out again
 MIN_TEMPERATURE, MAX_TEMPERATURE = 0.2, 0.4
 
 
@@ -81,6 +83,7 @@ class OpenRouter:
             base_url=BASE_URL,
             api_key=os.environ["OPENROUTER_API_KEY"],
             max_retries=0,  # retries happen here, so every one is counted and backed off the same way
+            timeout=TIMEOUT,
         )
         self.retries = retries
         self.base_delay = base_delay
@@ -111,6 +114,7 @@ class OpenRouter:
         options = {} if temperature is None else {"temperature": temperature}
         if extra:
             options["extra_body"] = extra
+        timeouts = 0
         for attempt in range(self.retries + 1):
             try:
                 response = self.client.chat.completions.create(
@@ -126,11 +130,23 @@ class OpenRouter:
                 extra = response.model_extra or {}
                 usage = Usage.of(response.usage, extra.get("cache_discount"))
                 return Reply(response.choices[0].message, usage, extra.get("provider"))
-            except _RETRYABLE:
-                if attempt == self.retries:
+            except _RETRYABLE as err:
+                if isinstance(err, openai.APITimeoutError):
+                    timeouts += 1
+                if attempt == self.retries or timeouts > TIMEOUT_RETRIES:
                     raise
                 self.sleep(min(self.base_delay * 2**attempt, self.max_delay))
+            except openai.APIStatusError as err:
+                _note_provider(err)
+                raise
         raise AssertionError("unreachable")
+
+
+def _note_provider(err: openai.APIStatusError) -> None:
+    """OpenRouter reports a provider's rejection as "Provider returned error". Add the provider's own words."""
+    metadata = (err.body or {}).get("metadata") if isinstance(err.body, dict) else None
+    if metadata and metadata.get("raw"):
+        err.add_note(f"{metadata.get('provider_name', 'The provider')} said: {metadata['raw']}")
 
 
 def _reasoning(model: str, effort: str | None) -> dict | None:
@@ -144,10 +160,14 @@ def _reasoning(model: str, effort: str | None) -> dict | None:
 
 
 def _tool_choice(model: str, reasoning: dict | None) -> str:
-    """Require a tool call, except from a thinking Claude model: forcing one switches its thinking off.
-    A Claude reply without a tool call gets the usual reprompt."""
-    thinking = reasoning is not None and reasoning.get("effort") != "none"
-    return "auto" if model.startswith("anthropic/") and thinking else "required"
+    """Require a tool call, except from thinking models whose providers won't think under a forced call:
+    Claude quietly stops thinking, and Qwen's provider rejects the request. Those choose their own tool,
+    and a reply without a tool call gets the usual reprompt. Qwen thinks unless told not to."""
+    if reasoning is not None and reasoning.get("effort") == "none":
+        return "required"
+    if model.startswith("qwen/") or (model.startswith("anthropic/") and reasoning is not None):
+        return "auto"
+    return "required"
 
 
 def _caching(model: str, messages: list[dict]) -> tuple[list[dict], dict]:

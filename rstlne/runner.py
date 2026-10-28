@@ -83,7 +83,7 @@ class GameLog:
     def __init__(self, path: Path, state: GameState, players: Sequence[Player], header: dict | None = None):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.file = self.path.open("w")
+        self.file = self.path.open("w", buffering=1)  # line buffered: a running game's log is readable
         self.invalid_counts = [Counter() for _ in players]
         self.usage = [Usage() for _ in players]
         self.solves = [[] for _ in players]  # solve_timing of each correct solve, per seat

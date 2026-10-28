@@ -168,3 +168,12 @@ def test_other_moves_have_no_solve_timing(game, tmp_path):
         play_turn(game, players, log)
     (action,) = [r for r in lines(tmp_path / "game.jsonl") if r["type"] == "action"]
     assert "solve_timing" not in action
+
+
+def test_log_lines_reach_disk_as_they_are_written(game, tmp_path):
+    players = [Scripted(solves) for _ in range(3)]
+    path = tmp_path / "game.jsonl"
+    with GameLog(path, game, players) as log:
+        assert lines(path)[0]["type"] == "game"  # readable mid-game, before the log closes
+        play_turn(game, players, log)
+        assert lines(path)[-1]["type"] == "action"

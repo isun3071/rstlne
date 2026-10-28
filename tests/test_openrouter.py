@@ -163,3 +163,48 @@ def test_thinking_claude_models_choose_their_tool_since_forcing_one_turns_thinki
     client = FakeClient([completion(("spin", {}))])
     OpenRouter(client).chat(model="anthropic/claude-haiku-5.5", messages=MESSAGES, tools=TOOLS, reasoning_effort="none")
     assert client.calls[0]["tool_choice"] == "required"
+
+
+def test_qwen_chooses_its_tool_since_its_provider_refuses_a_forced_call_while_thinking():
+    assert request_for("qwen/qwen3.8-flash")["tool_choice"] == "auto"
+    for model in ("z-ai/glm-5.3-flash", "deepseek/deepseek-v4.1-flash-1017"):
+        assert request_for(model)["tool_choice"] == "required"
+
+
+def test_a_provider_rejection_carries_the_provider_message():
+    import httpx2
+
+    request = httpx2.Request("POST", "https://openrouter.ai/api/v1/chat/completions")
+    raw = '{"error":{"message":"The tool_choice parameter does not support being set to required in thinking mode"}}'
+    body = {"message": "Provider returned error", "code": 400, "metadata": {"provider_name": "Alibaba", "raw": raw}}
+    error = openai.BadRequestError("Provider returned error", response=httpx2.Response(400, request=request), body=body)
+    with pytest.raises(openai.BadRequestError) as caught:
+        chat(FakeClient([error]))
+    notes = " ".join(getattr(caught.value, "__notes__", []))
+    assert "Alibaba" in notes and "thinking mode" in notes
+
+
+def test_requests_time_out_after_three_minutes(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    assert OpenRouter().client.timeout == 180
+
+
+def test_a_timed_out_request_is_retried_only_once():
+    import httpx2
+
+    request = httpx2.Request("POST", "https://openrouter.ai/api/v1/chat/completions")
+    sleeps = []
+    client = FakeClient([openai.APITimeoutError(request=request)] * 3 + [completion(("spin", {}))])
+    with pytest.raises(openai.APITimeoutError):
+        chat(client, sleeps)
+    assert len(client.calls) == 2 and sleeps == [1.0]
+
+
+def test_rate_limits_still_get_every_retry_after_a_timeout():
+    import httpx2
+
+    request = httpx2.Request("POST", "https://openrouter.ai/api/v1/chat/completions")
+    client = FakeClient([openai.APITimeoutError(request=request)] + [status_error(openai.RateLimitError, 429)] * 3
+                        + [completion(("spin", {}))])
+    chat(client)
+    assert len(client.calls) == 5
