@@ -15,7 +15,7 @@ The same engine is built to run seeded, model-only tournaments that compare how 
 | Decision model seats | Done |
 | Your seat in the terminal | Done |
 | Game logs | Done |
-| Baseline bot | Not started |
+| Bot (v1) | Not started |
 | Tournament runner | Done |
 | Local web page | Planned for phase 2 |
 
@@ -38,7 +38,7 @@ Put your key in `.env` as `OPENROUTER_API_KEY=...`. Git ignores `.env`.
 uv run python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
 ```
 
-Each seat is `human`, `llm:<slug>`, `decision`, or `bot`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A `bot` seat plays by the fixed rules in `documentation.md`; it isn't built yet. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
+Each seat is `human`, `llm:<slug>`, `decision`, or `bot`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A `bot` seat is the project's own versioned player: it reads the board with word and phrase lists and scores every move with one value function, as `documentation.md` describes. It isn't built yet. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
 
 | Option | Effect |
 |---|---|
@@ -86,7 +86,7 @@ The command reveals 50 seeded puzzles step by step, asks each decision model for
 ## Configuration
 
 - `wheel.toml` holds the 24 wedges, what each round adds to the wheel, the special wedge values, and the bonus envelopes.
-- `config.toml` holds the decision seat's models and solve threshold, the round count, vowel cost, solve minimum, round turn cap, model slugs, an optional temperature, the CLI pause and bonus timer, and the bot's card values.
+- `config.toml` holds the decision seat's models and solve threshold, the round count, vowel cost, solve minimum, round turn cap, model slugs, an optional temperature, the CLI pause and bonus timer, and the bot version.
 - `puzzles/dev.json` holds development puzzles. Scored tournament puzzles go in `puzzles/private.json`, which git ignores, because puzzles from the show are likely in model training data.
 
 A puzzle looks like `{"category": "Phrase", "answer": "BETTER LATE THAN NEVER", "bonus": false}`.
@@ -107,7 +107,7 @@ Token use includes how many prompt tokens each provider read from its cache. Mod
 uv run pytest
 ```
 
-The suite runs about 310 tests in around 5 seconds. It never calls OpenRouter; a fake client stands in.
+The suite runs about 390 tests in under 20 seconds. It never calls OpenRouter; a fake client stands in.
 
 ## Layout
 

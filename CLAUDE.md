@@ -4,7 +4,7 @@
 
 The repo is called rstlne, after R S T L N E, the letters the bonus round gives every player. The Python package is `rstlne`.
 
-A Wheel of Fortune game where LLMs and a human play at the same table. Three seats. Each seat holds a human, an LLM (called through OpenRouter), or a baseline bot. The game runs the show's rules, round by round, through the bonus round.
+A Wheel of Fortune game where LLMs and a human play at the same table. Three seats. Each seat holds a human, an LLM (called through OpenRouter), a decision model, or the bot. The game runs the show's rules, round by round, through the bonus round.
 
 The project serves two goals. Ian plays against models from the terminal for fun. The same engine runs seeded, model only tournaments that measure how well models handle letter choice, risk, and solve timing.
 
@@ -12,7 +12,7 @@ Build the CLI first. A local web page comes in phase 2 and reuses the engine unt
 
 ## Read first
 
-`documentation.md` holds the full game specification: the wheel, every special wedge, turn rules, the bonus round, seeding, the LLM player protocol, the baseline bot, the CLI, puzzles, and logging.
+`documentation.md` holds the full game specification: the wheel, every special wedge, turn rules, the bonus round, seeding, the LLM player protocol, the bot, the CLI, puzzles, and logging.
 
 - Read `documentation.md` before you write or change anything in `engine/`, `players/`, `cli.py`, or `tournament.py`.
 - Build gameplay exactly as `documentation.md` states it.
@@ -56,7 +56,7 @@ rstlne/
     base.py        # Player interface: decide(view) -> Action
     human_cli.py
     llm.py
-    decision.py    # configuration 5: decision model choices, LLM solves
+    decision.py    # decision seat: decision model choices, LLM solves
     bot.py
   llm/
     openrouter.py  # client, retries, usage tracking
@@ -85,7 +85,7 @@ documentation.md   # game specification
 
 - Keep the engine pure. `engine/` does no I/O, no printing, no network calls, and no randomness outside the seeded wheel.
 - `rules.apply(state, action)` returns a new state. Never mutate state in place.
-- Players see a public view only. A view contains the category, the spaced board, used letters, all three banks, held cards, whose turn it is, the current wedge, and the list of legal actions. A view never contains the answer or a hidden Mystery side or bonus envelope.
+- Players see a public view only. A view contains the category, the spaced board, used letters, all three banks, held cards, whose turn it is, the current wedge, the wheel as it stands, and the list of legal actions. A view never contains the answer or a hidden Mystery side or bonus envelope.
 - Every action goes through `rules.legal_actions`. The engine rejects illegal actions and never trusts a player.
 - Load wheel layouts and envelope values from `wheel.toml`. Never hardcode wedge values.
 
