@@ -28,7 +28,7 @@ from rstlne.engine.puzzle import LETTERS, Puzzle
 from rstlne.engine.rules import new_game, public_view
 from rstlne.engine.state import Phase, PublicView, Rules
 from rstlne.engine.wheel import WheelSpec
-from rstlne.narrate import duration
+from rstlne.narrate import duration, line_output
 from rstlne.players.bot import bonus, versions
 from rstlne.players.bot.reader import Reader
 
@@ -223,6 +223,7 @@ def _make_reader(knobs: versions.Knobs) -> Reader:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
+    line_output()
     parser = argparse.ArgumentParser(prog="python -m rstlne.selfplay", description="Bot self-play and tuning.")
     jobs = parser.add_subparsers(dest="job", required=True)
     reads = jobs.add_parser("reads", help="reveal puzzles step by step and record what the reader makes of each board")

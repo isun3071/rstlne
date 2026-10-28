@@ -33,6 +33,7 @@ import numpy as np
 
 from rstlne import settings
 from rstlne.engine.puzzle import LETTERS, PUNCTUATION, normalize
+from rstlne.narrate import line_output
 
 DATA = settings.ROOT / "data"
 CAP = 2.5e9  # bytes for everything under data/
@@ -413,6 +414,7 @@ def total_bytes(data_dir: Path = DATA) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
+    line_output()
     parser = argparse.ArgumentParser(prog="python -m rstlne.data", description="Fetch the bot's word data.")
     commands = parser.add_subparsers(dest="command", required=True)
     get = commands.add_parser("fetch", help="stream and prune sources into data/")

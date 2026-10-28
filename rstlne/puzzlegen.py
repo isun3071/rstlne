@@ -26,7 +26,7 @@ import openai
 from rstlne import settings as project
 from rstlne.engine.puzzle import LETTERS, Puzzle, normalize
 from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage
-from rstlne.narrate import duration
+from rstlne.narrate import duration, line_output
 from rstlne.players.bot.lexicon import data_dir, rhyme_key
 
 PROMPT_VERSION = 3
@@ -593,6 +593,7 @@ def _client() -> OpenRouter:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
+    line_output()
     parser = argparse.ArgumentParser(prog="python -m rstlne.puzzlegen", description="Generate fresh, checked puzzles.")
     parser.add_argument("--recheck", help="hold an existing batch file to the current checks, then exit")
     parser.add_argument("--against", nargs="*", default=[], help="with --recheck: batch files it must not repeat")

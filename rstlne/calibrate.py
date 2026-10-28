@@ -22,6 +22,7 @@ from rstlne.engine.rules import new_game, public_view
 from rstlne.engine.state import PublicView, Solve
 from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
+from rstlne.narrate import line_output
 from rstlne.players.base import InvalidResponse
 from rstlne.players.decision import SOLVABLE_QUESTION, decision_state
 from rstlne.players.llm import LLMPlayer
@@ -155,6 +156,7 @@ def calibrate(
 
 
 def main(argv: Sequence[str] | None = None) -> dict:
+    line_output()
     parser = argparse.ArgumentParser(prog="python -m rstlne.calibrate", description="Pick decision model solve thresholds from data.")
     parser.add_argument("--models", required=True, help="decision model IDs, comma separated")
     parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))

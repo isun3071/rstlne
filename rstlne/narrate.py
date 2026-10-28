@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from rstlne.engine.puzzle import compact
 from rstlne.engine.state import BonusPicks, BuyVowel, CallConsonant, CallLetter, PublicView, Result, Spin
 from rstlne.engine.wheel import Kind, Wedge
@@ -12,6 +14,14 @@ _EVENTS = {
     "turn_passed": "Turn passes.",
     "turn_cap": "The round hit its turn limit with no solver.",
 }
+
+
+def line_output() -> None:
+    """Send each printed line through at once, even into a pipe like `| tee`, where Python would
+    otherwise hold output back in blocks of a few kilobytes."""
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure:
+        reconfigure(line_buffering=True)
 
 
 def duration(seconds: float) -> str:

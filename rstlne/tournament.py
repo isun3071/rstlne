@@ -28,7 +28,7 @@ from rstlne.engine.state import Rules
 from rstlne.engine.wheel import WheelSpec
 from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
-from rstlne.narrate import duration, money
+from rstlne.narrate import duration, line_output, money
 from rstlne.players.bot import versions
 from rstlne.runner import GameLog, play_game
 
@@ -556,6 +556,7 @@ def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None, client: OpenRouter | None = None, decisions: DecisionClient | None = None) -> dict:
+    line_output()
     args = _arguments(argv)
     try:
         entrants = parse_entrants(args.seats, args.models)
