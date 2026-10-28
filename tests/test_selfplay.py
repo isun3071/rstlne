@@ -150,3 +150,37 @@ def test_the_report_checks_the_curve_against_what_happened(tmp_path, rules, whee
     assert saved["by_model"]["a/one"]["a"] is None  # never solved, so no curve of its own
     assert any(line.startswith("a ") or "steal_prior" in line for line in lines)
     assert (tmp_path / "out" / "steal-points.jsonl").exists()
+
+
+# Tuning the reader
+
+
+def test_a_setting_is_scored_by_the_log_probability_on_true_answers(rules, wheel_spec):
+    score = selfplay.evaluate(PUZZLES, KNOBS, reader, rules, wheel_spec)
+    assert score["boards"] > 0 and score["log_score"] <= 0 and 0 <= score["accuracy"] <= 1
+    worse = selfplay.evaluate(PUZZLES, replace(KNOBS, unknown_word=0.9), reader, rules, wheel_spec)
+    assert worse["log_score"] < score["log_score"]  # betting on unknown words throws probability away
+
+
+def test_tuning_keeps_the_best_setting_of_each_knob_and_checks_it_on_held_out_puzzles(tmp_path, rules, wheel_spec):
+    grid = {"unknown_word": [0.0, 0.02, 0.6]}
+    held_out = [Puzzle("Thing", "BIG BACK PORCH")]
+    lines = []
+    best = selfplay.tune_reader(PUZZLES, held_out, tmp_path, rules, wheel_spec, replace(KNOBS, unknown_word=0.6), reader,
+                                grid=grid, passes=2, say=lines.append)
+    scores = {v: selfplay.evaluate(PUZZLES, replace(KNOBS, unknown_word=v), reader, rules, wheel_spec)["log_score"]
+              for v in grid["unknown_word"]}
+    assert best.unknown_word == max(scores, key=scores.get)
+    saved = json.loads((tmp_path / "reader-tune.json").read_text())
+    assert saved["best"]["unknown_word"] == best.unknown_word
+    assert {"tuned", "untuned"} <= set(saved["held_out"])
+    assert any("held out" in line for line in lines)
+    evaluated = len((tmp_path / "evaluations.jsonl").read_text().splitlines())
+    selfplay.tune_reader(PUZZLES, held_out, tmp_path, rules, wheel_spec, replace(KNOBS, unknown_word=0.6), reader,
+                         grid=grid, passes=2, say=lines.append)
+    assert len((tmp_path / "evaluations.jsonl").read_text().splitlines()) == evaluated  # nothing scored twice
+
+
+def test_paired_knobs_move_together():
+    changes = selfplay.setting(versions.knobs(1), "phrase_odds", 2.0)
+    assert changes == {"phrase_odds": 2.0, "phrase_odds_other": 0.2}

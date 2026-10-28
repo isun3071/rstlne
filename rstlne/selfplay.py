@@ -6,6 +6,10 @@ Every job splits into shards (`--shard i/n`) so several machines can share it, w
 resumes where it stopped, and prints a status line every 2 minutes with an estimated finish.
 No job calls an API: the bot reads boards and plays games on its own.
 
+tune-reader: tune the reader's knobs one at a time, scoring each setting by the average log probability
+the reader puts on the true answer across every board of the tuning puzzles, then check the tuned knobs
+against the untuned ones on held out puzzles.
+
 steal: fit the steal curve, q = 1 / (1 + e^-(a + b * shown + c * confidence)), the chance a player solves
 correctly on a turn, from tournament logs: every main round turn where a player could have solved, with
 the share of the board showing and the reader's confidence on that board.
@@ -201,6 +205,113 @@ def summarize_reads(out: Path) -> dict:
         "mean_seconds": sum(r["seconds"] for r in rows) / len(rows) if rows else None,
         "by_confidence": bins,
     }
+
+
+# Tuning the reader
+
+READER_GRID = {
+    "phrase_odds": [0.25, 0.5, 1.0, 2.0, 4.0],
+    "name_odds": [0.0125, 0.025, 0.05, 0.1, 0.2],
+    "fit_weight": [0.0, 2.0, 4.0, 6.0, 8.0],
+    "pair_weight": [0.5, 0.8, 0.95, 0.99],
+}
+_PAIRED = {"phrase_odds": "phrase_odds_other", "name_odds": "name_odds_other"}  # move together, keeping their ratio
+
+
+def setting(knobs: versions.Knobs, name: str, value: float) -> dict:
+    """The knob changes for one grid value: a paired knob keeps its ratio to its partner."""
+    changes = {name: value}
+    if name in _PAIRED:
+        other = _PAIRED[name]
+        changes[other] = round(value * getattr(knobs, other) / getattr(knobs, name), 12)
+    return changes
+
+
+def _score(rows: Sequence[dict], samples: int) -> dict:
+    """Average log probability on the true answer, floored at half a sample, with accuracy alongside."""
+    floor = 1 / (2 * samples)
+    n = len(rows)
+    return {
+        "boards": n,
+        "log_score": float(np.mean([np.log(max(r["p_true"], floor)) for r in rows])) if n else float("-inf"),
+        "accuracy": sum(r["correct"] for r in rows) / n if n else 0.0,
+        "mean_p_true": float(np.mean([r["p_true"] for r in rows])) if n else 0.0,
+    }
+
+
+def evaluate(puzzles: Sequence[Puzzle], knobs: versions.Knobs, make_reader, rules: Rules, spec: WheelSpec,
+             workers: int = 1) -> dict:
+    """Read every board of `puzzles` with these knobs, and score the reading."""
+    if workers > 1:
+        with ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(make_reader, knobs, rules, spec)) as pool:
+            rows = [row for rows in pool.map(_read_in_worker, puzzles, chunksize=4) for row in rows]
+    else:
+        reader = make_reader(knobs)
+        rows = [row for p in puzzles for row in read_puzzle(p, reader, rules, spec)]
+    return _score(rows, knobs.samples)
+
+
+def _knob_dict(knobs: versions.Knobs) -> dict:
+    return {f.name: list(v) if isinstance(v := getattr(knobs, f.name), tuple) else v for f in fields(knobs)}
+
+
+def tune_reader(puzzles: Sequence[Puzzle], held_out: Sequence[Puzzle], out: Path, rules: Rules, spec: WheelSpec,
+                knobs: versions.Knobs, make_reader, grid: dict | None = None, passes: int = 2, workers: int = 1,
+                say=print) -> versions.Knobs:
+    """Coordinate search over the reader's knobs. Every setting's score goes to evaluations.jsonl, so a rerun
+    skips what's done; the result, with its check on held out puzzles, goes to reader-tune.json."""
+    grid = READER_GRID if grid is None else grid
+    out.mkdir(parents=True, exist_ok=True)
+    log = out / "evaluations.jsonl"
+    done = {json.dumps(r["knobs"], sort_keys=True): r["score"] for r in _rows(log)}
+    total = 1 + sum(len(v) for v in grid.values()) * passes
+    began = time.monotonic()
+    say(f"Tuning {', '.join(grid)} on {len(puzzles)} puzzles, up to {passes} passes, {workers} "
+        f"worker{'s' if workers != 1 else ''}; {len(done)} settings already scored")
+
+    def score_of(k: versions.Knobs, label: str) -> dict:
+        key = json.dumps(_knob_dict(k), sort_keys=True)
+        if key not in done:
+            started = time.monotonic()
+            done[key] = evaluate(puzzles, k, make_reader, rules, spec, workers)
+            with open(log, "a") as f:
+                f.write(json.dumps({"knobs": _knob_dict(k), "score": done[key]}) + "\n")
+            n = len(done)
+            elapsed = time.monotonic() - began
+            say(f"  {label}: log score {done[key]['log_score']:.3f}, accuracy {done[key]['accuracy']:.1%} "
+                f"· {duration(time.monotonic() - started)} · {n} scored, {duration(elapsed)} elapsed, "
+                f"at most about {duration(elapsed / max(n, 1) * max(total - n, 0))} more")
+        return done[key]
+
+    current, best = knobs, score_of(knobs, "starting knobs")["log_score"]
+    for p in range(1, passes + 1):
+        changed = False
+        for name, values in grid.items():
+            for value in values:
+                candidate = replace(current, **setting(current, name, value))
+                s = score_of(candidate, f"pass {p}, {name} = {value}")["log_score"]
+                if s > best + 1e-12:
+                    current, best, changed = candidate, s, True
+            say(f"  pass {p}: {name} = {getattr(current, name)}, log score {best:.3f}")
+        if not changed:
+            break
+
+    untuned_score = score_of(knobs, "starting knobs")
+    tuned_score = score_of(current, "tuned knobs")
+    say(f"Checking on {len(held_out)} held out puzzles")
+    held = {"untuned": evaluate(held_out, knobs, make_reader, rules, spec, workers),
+            "tuned": evaluate(held_out, current, make_reader, rules, spec, workers)}
+    changes = {k: getattr(current, k) for k in _knob_dict(current) if getattr(current, k) != getattr(knobs, k)}
+    result = {"start": _knob_dict(knobs), "best": _knob_dict(current), "changes": changes,
+              "tuning": {"untuned": untuned_score, "tuned": tuned_score}, "held_out": held,
+              "evaluations": len(done), "minutes": round((time.monotonic() - began) / 60, 1)}
+    (out / "reader-tune.json").write_text(json.dumps(result, indent=2) + "\n")
+    say(f"Tuned knobs: {changes or 'no change'}")
+    say(f"  tuning puzzles: log score {untuned_score['log_score']:.3f} -> {tuned_score['log_score']:.3f}, "
+        f"accuracy {untuned_score['accuracy']:.1%} -> {tuned_score['accuracy']:.1%}")
+    say(f"  held out puzzles: log score {held['untuned']['log_score']:.3f} -> {held['tuned']['log_score']:.3f}, "
+        f"accuracy {held['untuned']['accuracy']:.1%} -> {held['tuned']['accuracy']:.1%}")
+    return current
 
 
 # The steal curve
@@ -419,6 +530,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     reads.add_argument("--shard", default="1/1", help="i/n: this machine's share of the puzzles")
     reads.add_argument("--workers", type=int, default=4, help="processes, one per core")
     reads.add_argument("--knob", action="append", default=[], help="name=value, to read with other knobs")
+    tune = jobs.add_parser("tune-reader", help="tune the reader's knobs on board reads, then check them on held out puzzles")
+    tune.add_argument("--puzzles", required=True, help="the tuning batch")
+    tune.add_argument("--held-out", required=True, help="the grading batch, never tuned on")
+    tune.add_argument("--out", required=True, help="the folder for evaluations.jsonl and reader-tune.json")
+    tune.add_argument("--workers", type=int, default=4, help="processes, one per core")
+    tune.add_argument("--passes", type=int, default=2)
+    tune.add_argument("--knob", action="append", default=[], help="name=value, to start from other knobs")
     fit = jobs.add_parser("steal", help="fit the steal curve from tournament logs")
     fit.add_argument("--logs", nargs="+", required=True, help="tournament folders")
     fit.add_argument("--out", required=True, help="the folder for steal-fit.json and steal-points.jsonl")
@@ -435,6 +553,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     rules, spec = settings.load_rules(), settings.load_wheel()
     config = settings.load_config()
     knobs = override(versions.knobs(versions.current(config)), args.knob)
+    if args.job == "tune-reader":
+        tune_reader(settings.load_puzzles(Path(args.puzzles)), settings.load_puzzles(Path(args.held_out)), Path(args.out),
+                    rules, spec, knobs, _make_reader, passes=args.passes, workers=args.workers, say=print)
+        return
     if args.job == "steal":
         steal([Path(f) for f in args.logs], Path(args.out), rules, spec, knobs, _make_reader, args.workers,
               args.resamples, say=print)
