@@ -97,6 +97,7 @@ You can repeat a model, for example three `decision` seats or the same `llm:` sl
 Options worth knowing:
 
 - `--live` turns the terminal into one fixed screen that redraws after every move: the board as tiles, the letters still available, each seat's bank, total, cards, and latest thinking, and the last 10 moves. It needs a real terminal and works only when no human is seated. Combine it with `--pause 3` to follow along.
+- After a correct solve, the solved board stays up for 10 seconds before the next round starts (`solve_pause` in `config.toml`). `--pause 0` skips that wait too.
 - `--show-puzzle` prints the table after every move: the board, category, used letters, round banks, game totals, held cards, and the current wedge.
 - `--show-thinking` prints what each seat weighed before its move. For a chat model, that's its reasoning. For a decision seat, it's P(solvable) and the probability of each pick.
 - `--pause 0` removes the pause after each move, so the game runs as fast as the models answer. `--pause 3` slows it down to read along.

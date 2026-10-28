@@ -141,3 +141,56 @@ def test_thinking_drops_labels_and_markdown(rules, wheel_spec, players):
     assert live.clean("reasoning: **Solving punctuation issues**\nmore") == "Solving punctuation issues"
     assert live.clean("content: I'll spin.") == "I'll spin."
     assert live.clean("P(solvable) 0.12, action spin (0.90)") == "P(solvable) 0.12, action spin (0.90)"
+
+
+def solved_round_one(rules, wheel_spec):
+    """Seat 1 calls F, then solves WHEEL OF FORTUNE."""
+    from helpers import solve
+
+    state = apply(spin_to(start(rules, wheel_spec), 3), CallConsonant("F"))
+    return state, solve(state)
+
+
+def test_live_holds_the_solved_board_before_the_next_round(rules, wheel_spec, players):
+    before, after = solved_round_one(rules, wheel_spec)
+    sleeps, frames = [], []
+    live = LiveShow(players, pause=1.5, console=console(), sleep=sleeps.append, solve_pause=10)
+    live.start(before)
+    live._show = frames.append
+    live.result(after)
+    live.stop()
+    solved, next_round = (text_of(frame) for frame in frames)
+    assert "W   H   E   E   L" in solved and "Solved" in solved
+    assert "Round 1 of 4" in solved
+    assert "Round 2 of 4" in next_round and "W   H   E" not in next_round
+    assert sleeps == [10, 1.5]
+
+
+def test_no_hold_when_pauses_are_off(rules, wheel_spec, players):
+    before, after = solved_round_one(rules, wheel_spec)
+    sleeps = []
+    live = LiveShow(players, pause=0, console=console(), sleep=sleeps.append, solve_pause=10)
+    live.start(before)
+    live.result(after)
+    live.stop()
+    assert 10 not in sleeps
+
+
+def test_plain_show_puzzle_prints_the_solved_board_and_holds_it(rules, wheel_spec, players):
+    from rstlne.show import Show
+
+    before, after = solved_round_one(rules, wheel_spec)
+    lines, sleeps = [], []
+    show = Show(players, 1.5, False, show_puzzle=True, solve_pause=10, write=lines.append, sleep=sleeps.append)
+    show.start(before)
+    show.result(after)
+    printed = "\n".join(lines)
+    assert "Board: W H E E L   O F   F O R T U N E" in printed
+    assert printed.index("Board: W H E E L") < printed.index("=== Round 2 ===")
+    assert sleeps == [10, 1.5]
+
+
+def text_of(renderable):
+    out = console()
+    out.print(renderable)
+    return out.export_text()

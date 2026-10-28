@@ -119,11 +119,11 @@ def main(
     pause = args.pause if args.pause is not None else config["cli"]["model_pause"]
     show: Show | LiveShow
     if args.live and sys.stdout.isatty():
-        show = LiveShow(players, pause)
+        show = LiveShow(players, pause, solve_pause=config["cli"]["solve_pause"])
     else:
         if args.live:
             print("--live needs a terminal; showing plain output instead.")
-        show = Show(players, pause, args.show_thinking, args.show_puzzle)
+        show = Show(players, pause, args.show_thinking, args.show_puzzle, config["cli"]["solve_pause"])
 
     state = new_game(seed, rules, spec, puzzles, bonus)
     show.start(state)

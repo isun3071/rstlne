@@ -86,7 +86,8 @@ def test_show_puzzle_prints_the_table_after_every_move(tmp_path, capsys):
     assert lines[first_move + 2].strip().startswith("Board:")
     moves = [line for line in lines if line.startswith("Seat ") and not line.startswith(("Seat 1 (", "Seat 2 (", "Seat 3 ("))]
     boards = [line for line in lines if line.strip().startswith("Board:")]
-    assert len(boards) == len(moves) - 1  # the move that ends the game is followed by the final totals instead
+    solves = [line for line in moves if " solved it: " in line]  # each also prints the solved board
+    assert len(boards) == len(moves) - 1 + len(solves)  # the move that ends the game is followed by the final totals instead
 
 
 def test_without_show_puzzle_model_games_print_no_table(tmp_path, capsys):

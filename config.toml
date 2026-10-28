@@ -33,6 +33,7 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 [cli]
 model_pause = 1.5         # seconds after each model move, so the game reads like a show
 bonus_solve_seconds = 10  # a human's clock for the bonus solve
+solve_pause = 10          # seconds to hold a solved board before the next round; --pause 0 skips it
 
 [models]
 # OpenRouter slugs, picked from GET https://openrouter.ai/api/v1/models
