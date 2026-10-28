@@ -382,15 +382,15 @@ def table(result: dict) -> list[str]:
         "",
         f"{result['games']} games in {result['sets']} sets"
         + ("  ·  development run on dev.json, not a scored result" if result["dev_run"] else ""),
-        f"{'entrant':<36}{'wins':>7}{'win% [95% CI]':>18}{'by seat':>16}{'avg total':>12}{'main':>10}{'bonus':>7}"
+        f"{'entrant':<40}{'wins':>7}{'win% [95% CI]':>18}{'by seat':>16}{'avg total':>12}{'main':>10}{'bonus':>9}"
         f"{'solve%':>8}{'shown':>7}{'left/solve':>11}{'invalid/g':>10}{'cost':>9}",
     ]
     for e in result["entrants"]:
         seats = "/".join(pct(x) for x in e["win_rate_by_seat"])
         lines.append(
-            f"{e['entrant'][:35]:<36}{e['wins']:>7.1f}{pct(e['win_rate']) + span(e['ci95']['win_rate']):>18}{seats:>16}"
+            f"{e['entrant'][:39]:<40}{e['wins']:>7.1f}{pct(e['win_rate']) + span(e['ci95']['win_rate']):>18}{seats:>16}"
             f"{money(round(e['avg_total'])):>12}{money(round(e['avg_main_winnings'])):>10}"
-            f"{e['bonus_won']:>3}/{e['bonus_reached']:<3}{pct(e['solve_accuracy']):>8}{pct(e['avg_board_shown']):>7}"
+            f"{str(e['bonus_won']) + '/' + str(e['bonus_reached']):>9}{pct(e['solve_accuracy']):>8}{pct(e['avg_board_shown']):>7}"
             f"{money(round(e['money_left_per_solve'] or 0)):>11}{(e['invalid_per_game'] or 0):>10.2f}{e['cost']:>9.4f}"
         )
     if result["pairwise"]:

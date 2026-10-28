@@ -19,6 +19,7 @@ from rstlne.tournament import (
     run_tournament,
     schedule,
     split_wins,
+    table,
 )
 
 ENTRANTS = ["llm:a/one", "llm:b/two", "decision"]
@@ -263,3 +264,20 @@ def test_six_games_run_at_once_by_default():
     import inspect
 
     assert inspect.signature(run_tournament).parameters["parallel"].default == 6
+
+
+def test_table_keeps_long_names_and_three_digit_bonus_counts_apart():
+    entrant = {
+        "entrant": "llm:deepseek/deepseek-v4.1-flash-1017", "wins": 149.5, "win_rate": 0.5,
+        "ci95": {"win_rate": [0.43, 0.57]}, "win_rate_by_seat": [0.59, 0.55, 0.37], "avg_total": 28612,
+        "avg_main_winnings": 4283, "bonus_won": 137, "bonus_reached": 149, "solve_accuracy": 0.81,
+        "avg_board_shown": 0.29, "money_left_per_solve": 5535, "invalid_per_game": 0.19, "cost": 1.5603,
+    }
+    lines = table({"games": 298, "sets": 50, "dev_run": True, "entrants": [entrant], "pairwise": []})
+    header, row = lines[2], lines[3]
+    assert row.startswith("llm:deepseek/deepseek-v4.1-flash-1017 ")
+    assert "$4,283 " in row and " 137/149 " in row
+    for column in ("main", "bonus", "solve%"):  # each value ends under its header
+        assert header.index(column) + len(column) == {"main": row.index("$4,283") + 6,
+                                                      "bonus": row.index("137/149") + 7,
+                                                      "solve%": row.index("81%") + 3}[column]
