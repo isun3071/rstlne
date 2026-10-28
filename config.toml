@@ -1,0 +1,46 @@
+# Game settings. Wedge values and envelopes live in wheel.toml.
+
+[game]
+main_rounds = 4
+bonus_round = true
+max_turns_per_round = 200
+
+[rules]
+vowel_cost = 250
+express_vowel_cost = 250
+solve_minimum = 1000
+bonus_letters = ["R", "S", "T", "L", "N", "E"]
+bonus_consonants = 3  # plus one vowel; a held Wild Card adds one more consonant
+
+[bot]
+# Dollar values the bot counts inside its round bank B for the Mystery flip rule.
+wild_card_value = 1000     # about one extra consonant on an average wedge
+million_card_value = 6000  # 1/3 reach bonus x 1/24 envelope x 1/2 solve x $900,000 extra
+word_list_size = 50000     # most common English words from wordfreq
+solve_reveal_share = 0.7   # configuration 3: solve once this share of the puzzle's letters shows
+
+[llm]
+# Unset, so each model plays at its own default. Claude Haiku 5.5 and GPT-6 Luna ignore
+# temperature anyway. To set one, uncomment this; it must be 0.2 to 0.4 and is logged.
+# temperature = 0.3
+
+[decision]
+# Configuration 5: a decision model makes every choice, and the solver writes the answers.
+decision_model = "typesafe/jev-1.14"  # pinned, so results don't shift with new Jev releases
+solver_model = "openai/gpt-6-luna"    # the solver LLM in every configuration
+solve_threshold = 0.8                 # solve once P(solvable) reaches this
+
+[cli]
+model_pause = 1.5         # seconds after each model move, so the game reads like a show
+bonus_solve_seconds = 10  # a human's clock for the bonus solve
+
+[models]
+# OpenRouter slugs, picked from GET https://openrouter.ai/api/v1/models
+slugs = [
+    "anthropic/claude-haiku-5.5",
+    "openai/gpt-6-luna",
+    "deepseek/deepseek-v4.1-flash-1017",
+    # backups
+    "qwen/qwen3.8-flash",
+    "z-ai/glm-5.3-flash",
+]

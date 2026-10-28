@@ -1,0 +1,53 @@
+# Wheel layouts, special wedge values, and bonus envelopes.
+# documentation.md describes how each wedge plays. Edit values here, never in code.
+
+# The 24 equal wedges, clockwise. Position 1 in this list is wedge 1.
+# A number is a cash wedge. "TOP" takes the round's top value from [[rounds]].
+base = [
+    "TOP", 800, 600, 700, 600, 650, 500, 700, 800, 600, 550, 500,
+    600, "BANKRUPT", 650, "FREE_PLAY", 700, "LOSE_A_TURN", 800, 500, 650, 500, 900, "BANKRUPT",
+]
+
+[values]
+free_play = 500        # per correct consonant on Free Play
+million_center = 500   # per correct consonant on the Million wedge's center third
+mystery_face = 1000    # per correct consonant on a Mystery wedge
+mystery_prize = 10000  # flat amount behind one of the two Mystery wedges
+express = 1000         # per correct consonant on the Express wedge and while riding it
+
+# Per round overlays. A round uses the last block whose from_round is at or below it.
+# Wedge numbers count from 1. Each overlay must sit on a cash wedge.
+[[rounds]]
+from_round = 1
+top = 2500
+wild = 2
+million = 9
+
+[[rounds]]
+from_round = 2
+top = 3500
+wild = 2
+million = 9
+mystery = [5, 17]
+
+[[rounds]]
+from_round = 3
+top = 3500
+wild = 2
+million = 9
+express = 12
+
+[[rounds]]
+from_round = 4
+top = 5000
+
+[bonus]
+envelopes = [
+    { value = 40000, count = 6 },
+    { value = 45000, count = 6 },
+    { value = 50000, count = 6 },
+    { value = 55000, count = 5 },
+    { value = 100000, count = 1 },
+]
+# A player holding the Million card has this envelope swapped before the spin.
+million_swap = { replace = 100000, with = 1000000 }

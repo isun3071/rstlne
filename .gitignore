@@ -1,0 +1,23 @@
+# secrets
+.env
+.env.*
+!.env.example
+ 
+# scored puzzles and game logs
+puzzles/private.json
+logs/
+ 
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+build/
+dist/
+ 
+# editors and os
+.vscode/
+.idea/
+.DS_Store
