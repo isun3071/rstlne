@@ -6,6 +6,10 @@ Every job splits into shards (`--shard i/n`) so several machines can share it, w
 resumes where it stopped, and prints a status line every 2 minutes with an estimated finish.
 No job calls an API: the bot reads boards and plays games on its own.
 
+steal: fit the steal curve, q = 1 / (1 + e^-(a + b * shown + c * confidence)), the chance a player solves
+correctly on a turn, from tournament logs: every main round turn where a player could have solved, with
+the share of the board showing and the reader's confidence on that board.
+
 reads: reveal each puzzle in English letter frequency order, calling every letter, hit or miss, and
 stop once each tenth of the board shows. At each stop, record the reader's best answer, its confidence,
 whether it was right, and the probability it gave the true answer. Bonus puzzles are read the way the
@@ -22,6 +26,8 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, fields, replace
 from pathlib import Path
+
+import numpy as np
 
 from rstlne import settings
 from rstlne.engine.puzzle import LETTERS, Puzzle
@@ -197,6 +203,187 @@ def summarize_reads(out: Path) -> dict:
     }
 
 
+# The steal curve
+
+
+_TURN_PHASES = ("turn", "express")
+_TURN_KINDS = ("spin", "buy_vowel", "solve")  # what a player does when solving is on offer
+
+
+def collect_turns(folders: Sequence[Path]) -> list[dict]:
+    """Every main round turn in finished games where a player had the wheel and could have solved."""
+    turns = []
+    for folder in folders:
+        for path in sorted(Path(folder).glob("set*.jsonl")):
+            rows = _rows(path)
+            if not rows or rows[-1].get("type") != "summary":
+                continue
+            models = [seat.get("model") or seat.get("kind") for seat in rows[0]["seats"]]
+            set_index = rows[0].get("tournament", {}).get("set", 0)
+            for r in rows[1:]:
+                state = r.get("state") or {}
+                if r.get("type") != "action" or state.get("phase") not in _TURN_PHASES or not state.get("round"):
+                    continue
+                if r["action"]["kind"] not in _TURN_KINDS:
+                    continue
+                puzzle = state["round"]["puzzle"]
+                letters = [c for c in puzzle["answer"] if c in LETTERS]
+                used = frozenset(state["round"]["used"])
+                turns.append({
+                    "set": f"{folder}:{set_index}", "game": path.stem, "model": models[r["seat"]],
+                    "answer": puzzle["answer"], "category": puzzle["category"], "used": "".join(sorted(used)),
+                    "shown": sum(c in used for c in letters) / len(letters), "kind": r["action"]["kind"],
+                    "solved": int(r["action"]["kind"] == "solve" and r["result"]["outcome"] == "solved"),
+                })
+    return turns
+
+
+def _confidence(board: tuple[str, str, str]) -> float:
+    answer, category, used = board
+    view = view_of(Puzzle(category, answer), frozenset(used), _worker["rules"], _worker["spec"])
+    return _worker["reader"].read(view).confidence
+
+
+def confidences(boards: Sequence[tuple[str, str, str]], make_reader, knobs, rules, spec, workers: int = 1,
+                say=lambda line: None, heartbeat: float = HEARTBEAT) -> dict:
+    """The reader's confidence on each distinct board, read once."""
+    if workers > 1:
+        pool = ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(make_reader, knobs, rules, spec))
+        results = pool.map(_confidence, boards, chunksize=16)
+    else:
+        pool = None
+        _start_worker(make_reader, knobs, rules, spec)
+        results = map(_confidence, boards)
+    out, began, last = {}, time.monotonic(), time.monotonic()
+    try:
+        for k, (board, c) in enumerate(zip(boards, results), 1):
+            out[board] = c
+            now = time.monotonic()
+            if now - last >= heartbeat:
+                last = now
+                say(f"  read {k} of {len(boards)} boards · {duration(now - began)} elapsed, "
+                    f"finish in about {duration((now - began) / k * (len(boards) - k))}")
+    finally:
+        if pool:
+            pool.shutdown()
+    return out
+
+
+def steal_points(folders: Sequence[Path], reader: Reader, rules: Rules, spec: WheelSpec) -> list[dict]:
+    """Turns with the reader's confidence filled in, in this process."""
+    turns = collect_turns(folders)
+    boards = sorted({(t["answer"], t["category"], t["used"]) for t in turns})
+    _worker.update(reader=reader, rules=rules, spec=spec)
+    seen = {b: _confidence(b) for b in boards}
+    return [{**t, "confidence": seen[(t["answer"], t["category"], t["used"])]} for t in turns]
+
+
+def _logistic(x: np.ndarray, y: np.ndarray, start: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """Maximum likelihood weights by Newton's method, and the inverse Hessian for standard errors."""
+    w = np.zeros(x.shape[1]) if start is None else start.copy()
+    hessian = np.eye(x.shape[1])
+    for _ in range(100):
+        p = 1 / (1 + np.exp(-(x @ w)))
+        gradient = x.T @ (y - p)
+        hessian = (x * (p * (1 - p))[:, None]).T @ x + 1e-9 * np.eye(x.shape[1])
+        step = np.linalg.solve(hessian, gradient)
+        w += step
+        if np.abs(step).max() < 1e-9:
+            break
+    return w, np.linalg.inv(hessian)
+
+
+def fit_steal(points: Sequence[dict], resamples: int = 1000, seed: int = 0) -> dict:
+    """a, b, c with standard errors, and 95% intervals from resampling whole sets: the games of a set
+    share puzzles, so they aren't independent."""
+    x = np.array([[1.0, p["shown"], p["confidence"]] for p in points])
+    y = np.array([float(p["solved"]) for p in points])
+    w, inverse = _logistic(x, y)
+    out = {"a": float(w[0]), "b": float(w[1]), "c": float(w[2]),
+           "se": dict(zip("abc", (float(v) for v in np.sqrt(np.diag(inverse)))))}
+    if resamples:
+        groups: dict = {}
+        for k, p in enumerate(points):
+            groups.setdefault(p.get("set", k), []).append(k)
+        keys = list(groups)
+        rng = np.random.default_rng(seed)
+        draws = []
+        for _ in range(resamples):
+            rows = np.concatenate([groups[keys[i]] for i in rng.integers(0, len(keys), len(keys))])
+            draws.append(_logistic(x[rows], y[rows], start=w)[0])
+        draws = np.array(draws)
+        out["ci95"] = {name: [float(np.percentile(draws[:, i], 2.5)), float(np.percentile(draws[:, i], 97.5))]
+                       for i, name in enumerate("abc")}
+    return out
+
+
+def steal_q(fit: dict, shown: float, confidence: float) -> float:
+    return 1 / (1 + np.exp(-(fit["a"] + fit["b"] * shown + fit["c"] * confidence)))
+
+
+def _spread(values: Sequence[float]) -> dict:
+    v = np.array(values) if len(values) else np.zeros(1)
+    return {"p25": float(np.percentile(v, 25)), "median": float(np.median(v)), "p75": float(np.percentile(v, 75))}
+
+
+def steal(folders, out: Path, rules: Rules, spec: WheelSpec, knobs: versions.Knobs, make_reader,
+          workers: int = 1, resamples: int = 1000, say=print) -> dict:
+    """Fit the steal curve from tournament logs, and save the fit and its data points under `out`."""
+    folders = [Path(f) for f in (folders if isinstance(folders, (list, tuple)) else [folders])]
+    turns = collect_turns(folders)
+    boards = sorted({(t["answer"], t["category"], t["used"]) for t in turns})
+    games = len({(t["set"], t["game"]) for t in turns})
+    say(f"Fitting the steal curve from {len(turns)} turns in {games} games; reading {len(boards)} distinct boards "
+        f"with {workers} worker{'s' if workers != 1 else ''}")
+    began = time.monotonic()
+    seen = confidences(boards, make_reader, knobs, rules, spec, workers, say)
+    points = [{**t, "confidence": seen[(t["answer"], t["category"], t["used"])]} for t in turns]
+    fit = fit_steal(points, resamples)
+    calibration = []
+    for lo, hi in ((0, 0.02), (0.02, 0.05), (0.05, 0.1), (0.1, 0.2), (0.2, 0.4), (0.4, 1.01)):
+        inside = [p for p in points if lo <= steal_q(fit, p["shown"], p["confidence"]) < hi]
+        if inside:
+            calibration.append({"predicted": f"{lo:.0%}-{min(hi, 1):.0%}", "turns": len(inside),
+                                "mean_predicted": float(np.mean([steal_q(fit, p["shown"], p["confidence"]) for p in inside])),
+                                "observed": sum(p["solved"] for p in inside) / len(inside)})
+    attempts = [p for p in points if p["kind"] == "solve"]
+    by_model = {}
+    for model in sorted({p["model"] for p in points}):
+        mine = [p for p in points if p["model"] == model]
+        solves = sum(p["solved"] for p in mine)
+        entry = {"turns": len(mine), "solves": solves, "a": None, "b": None, "c": None}
+        if 0 < solves < len(mine):  # a curve needs both outcomes
+            m = fit_steal(mine, resamples=0)
+            entry.update(a=m["a"], b=m["b"], c=m["c"])
+        by_model[model] = entry
+    result = {
+        **fit, "points": len(points), "solves": sum(p["solved"] for p in points), "games": games,
+        "logs": [str(f) for f in folders], "knobs": {f.name: getattr(knobs, f.name) for f in fields(knobs)},
+        "calibration": calibration, "by_model": by_model,
+        "solve_attempts": {"count": len(attempts), "shown": _spread([p["shown"] for p in attempts]),
+                           "confidence": _spread([p["confidence"] for p in attempts]),
+                           "right": sum(p["solved"] for p in attempts)},
+    }
+    out.mkdir(parents=True, exist_ok=True)
+    with open(out / "steal-points.jsonl", "w") as f:
+        for p in points:
+            f.write(json.dumps(p) + "\n")
+    (out / "steal-fit.json").write_text(json.dumps(result, indent=2) + "\n")
+    ci = fit.get("ci95", {})
+    for name in "abc":
+        span = f" [{ci[name][0]:.2f} to {ci[name][1]:.2f}]" if name in ci else ""
+        say(f"{name} = {fit[name]:.2f}{span}")
+    say(f"steal_prior = ({fit['a']:.2f}, {fit['b']:.2f}, {fit['c']:.2f})  ·  {len(points)} turns, "
+        f"{result['solves']} correct solves, in {duration(time.monotonic() - began)}")
+    for row in calibration:
+        say(f"  predicted {row['predicted']:>8s}: {row['turns']:5d} turns, solved {row['observed']:.1%} "
+            f"(curve says {row['mean_predicted']:.1%})")
+    s = result["solve_attempts"]
+    say(f"  solve attempts: {s['count']}, {s['right']} right; board shown median {s['shown']['median']:.0%} "
+        f"(middle half {s['shown']['p25']:.0%}-{s['shown']['p75']:.0%}), confidence median {s['confidence']['median']:.2f}")
+    return result
+
+
 # Knobs
 
 
@@ -232,6 +419,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     reads.add_argument("--shard", default="1/1", help="i/n: this machine's share of the puzzles")
     reads.add_argument("--workers", type=int, default=4, help="processes, one per core")
     reads.add_argument("--knob", action="append", default=[], help="name=value, to read with other knobs")
+    fit = jobs.add_parser("steal", help="fit the steal curve from tournament logs")
+    fit.add_argument("--logs", nargs="+", required=True, help="tournament folders")
+    fit.add_argument("--out", required=True, help="the folder for steal-fit.json and steal-points.jsonl")
+    fit.add_argument("--workers", type=int, default=4, help="processes, one per core")
+    fit.add_argument("--resamples", type=int, default=1000, help="for the 95%% intervals")
+    fit.add_argument("--knob", action="append", default=[], help="name=value, to read with other knobs")
     summary = jobs.add_parser("summary", help="accuracy by confidence across every shard of a reads folder")
     summary.add_argument("folder")
     args = parser.parse_args(argv)
@@ -242,6 +435,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     rules, spec = settings.load_rules(), settings.load_wheel()
     config = settings.load_config()
     knobs = override(versions.knobs(versions.current(config)), args.knob)
+    if args.job == "steal":
+        steal([Path(f) for f in args.logs], Path(args.out), rules, spec, knobs, _make_reader, args.workers,
+              args.resamples, say=print)
+        return
     try:
         shard_spec = parse_shard(args.shard)
     except ValueError as err:

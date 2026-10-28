@@ -78,3 +78,75 @@ def test_knob_overrides_parse_to_their_types():
     assert knobs.phrase_odds == 0.5 and knobs.samples == 100 and knobs.steal_prior == (-3.0, 3.0, 2.0)
     with pytest.raises(ValueError, match="no knob"):
         selfplay.override(versions.knobs(1), ["nonsense=1"])
+
+
+# The steal curve
+
+
+import math  # noqa: E402
+import random  # noqa: E402
+
+import numpy as np  # noqa: E402
+
+
+def game_log(path, turns, set_index=0, models=("a/one", "b/two", "c/three"), finished=True):
+    """A tournament log with main round turns: (seat, phase, kind, outcome, used letters, answer)."""
+    rows = [{"type": "game", "seats": [{"kind": "llm", "model": m} for m in models],
+             "tournament": {"set": set_index}}]
+    for seat, phase, kind, outcome, used, answer in turns:
+        rows.append({"type": "action", "seat": seat, "action": {"kind": kind},
+                     "result": {"outcome": outcome},
+                     "state": {"phase": phase, "round": {"number": 1, "used": sorted(used),
+                                                        "puzzle": {"category": "Thing", "answer": answer}}}})
+    if finished:
+        rows.append({"type": "summary"})
+    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+
+
+def test_every_turn_a_player_could_solve_becomes_a_data_point(tmp_path, rules, wheel_spec):
+    game_log(tmp_path / "set000-perm0.jsonl", [
+        (0, "turn", "spin", "landed", "", "BACK PORCH"),
+        (0, "call_consonant", "call_consonant", "correct", "", "BACK PORCH"),  # not a turn: no solve on offer
+        (1, "turn", "buy_vowel", "correct", "C", "BACK PORCH"),
+        (2, "turn", "solve", "wrong_solve", "CA", "BACK PORCH"),
+        (0, "turn", "solve", "solved", "CAK", "BACK PORCH"),
+    ])
+    game_log(tmp_path / "set000-perm1.jsonl", [(0, "turn", "spin", "landed", "", "BACK PORCH")], finished=False)
+    points = selfplay.steal_points([tmp_path], reader(KNOBS), rules, wheel_spec)
+    assert [p["solved"] for p in points] == [0, 0, 0, 1]  # the unfinished game is left out
+    assert [p["model"] for p in points] == ["a/one", "b/two", "c/three", "a/one"]
+    assert points[0]["shown"] == 0 and points[3]["shown"] == pytest.approx(4 / 9)  # C shows twice
+    assert all(0 <= p["confidence"] <= 1 for p in points) and points[3]["set"].endswith(":0")  # sets are per tournament
+
+
+def test_the_fit_recovers_a_known_curve():
+    rng = random.Random(4)
+    a, b, c = -4.0, 3.0, 5.0
+    points = []
+    for i in range(6000):
+        shown, confidence = rng.random(), rng.random() ** 2
+        q = 1 / (1 + math.exp(-(a + b * shown + c * confidence)))
+        points.append({"shown": shown, "confidence": confidence, "solved": int(rng.random() < q), "set": i % 60})
+    fit = selfplay.fit_steal(points, resamples=200)
+    assert fit["a"] == pytest.approx(a, abs=0.35) and fit["b"] == pytest.approx(b, abs=0.35)
+    assert fit["c"] == pytest.approx(c, abs=0.4)
+    for name, truth in (("a", a), ("b", b), ("c", c)):
+        lo, hi = fit["ci95"][name]
+        assert lo < truth < hi
+
+
+def test_the_report_checks_the_curve_against_what_happened(tmp_path, rules, wheel_spec):
+    turns = []
+    for k in range(12):
+        turns += [(0, "turn", "spin", "landed", "", "BACK PORCH"), (1, "turn", "solve", "solved", "CAK", "BACK PORCH")]
+    for s in range(3):
+        game_log(tmp_path / f"set00{s}-perm0.jsonl", turns, set_index=s)
+    lines = []
+    fit = selfplay.steal(tmp_path, tmp_path / "out", rules, wheel_spec, KNOBS, reader, resamples=50, say=lines.append)
+    saved = json.loads((tmp_path / "out" / "steal-fit.json").read_text())
+    assert saved["a"] == fit["a"] and set(saved["by_model"]) == {"a/one", "b/two"}
+    assert saved["points"] == 72 and saved["solves"] == 36
+    assert saved["solve_attempts"]["shown"]["median"] == pytest.approx(4 / 9)
+    assert saved["by_model"]["a/one"]["a"] is None  # never solved, so no curve of its own
+    assert any(line.startswith("a ") or "steal_prior" in line for line in lines)
+    assert (tmp_path / "out" / "steal-points.jsonl").exists()
