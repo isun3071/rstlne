@@ -23,8 +23,8 @@ judge = "google/gemma-3-27b-it"
 batch = 10            # answers per generator request
 max_requests = 200    # generator requests per run, a cost guard
 rows = [12, 14, 14, 12]   # a main puzzle wraps into these board rows, never splitting a word
-bonus_rows = [14, 14]     # a bonus puzzle fits these rows. Provisional: Ian to confirm the bonus size
-main_min_letters = 8      # a main puzzle needs at least this many letters. Provisional: Ian to confirm
+bonus_rows = [14, 14]     # a bonus puzzle fits these rows: shorter than main puzzles, and harder
+main_min_letters = 8      # a main puzzle needs at least this many letters, so none is trivial
 # Category mix, by weight: dev.json's proportions, for the categories with a plain description
 main_mix = { "Phrase" = 23, "Food & Drink" = 8, "Place" = 8, "Thing" = 7, "What Are You Doing?" = 7, "Event" = 6, "Before & After" = 6, "Same Name" = 4, "Rhyme Time" = 4, "Living Thing" = 3, "Person" = 3, "Fun & Games" = 3, "Around the House" = 3, "What Are You Wearing?" = 3, "Same Letter" = 3, "Occupation" = 2, "Living Things" = 2, "In the Kitchen" = 2, "On the Map" = 2, "Landmark" = 2, "Character" = 2, "Show Biz" = 2, "Things" = 1, "Title" = 1 }
 bonus_mix = { "Thing" = 7, "Phrase" = 7, "Place" = 4, "Food & Drink" = 4, "Living Thing" = 3, "What Are You Doing?" = 2, "What Are You Wearing?" = 1, "Around the House" = 1, "Rhyme Time" = 1 }

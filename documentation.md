@@ -263,7 +263,7 @@ Each seat is one of four kinds.
 - The category mix follows `dev.json`'s proportions, set in `config.toml`.
 - Code checks every answer before the judge sees it:
   - it normalizes to board text
-  - a main puzzle wraps into the board's rows of 12, 14, 14, and 12 squares without splitting a word, and has enough letters; a bonus puzzle fits its smaller rows (the bonus size and the main minimum are provisional in `config.toml`)
+  - a main puzzle wraps into the board's rows of 12, 14, 14, and 12 squares without splitting a word, and has enough letters; a bonus puzzle fits 2 rows of 14 squares, shorter than a main puzzle and harder; a main puzzle has at least 8 letters, so none is trivial (both set in `config.toml`)
   - Same Letter words all start with one letter, and aren't one word repeated; Rhyme Time has two words that rhyme; Same Name has a shared ending after the &; Before & After has at least three words; What Are You Doing? has an ING word
   - it repeats no puzzle in `dev.json`, `private.json`, the batch, or any earlier generated set, ignoring case, spacing, and articles. Every accepted answer joins `puzzles/generated/seen.txt`, so no puzzle ever comes back.
 - The judge must say the answer fits its category and rate its familiarity at least 4 of 5. For Before & After and Same Name it names the two phrases, and code checks they rebuild the answer.
