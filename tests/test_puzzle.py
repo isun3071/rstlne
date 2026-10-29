@@ -4,6 +4,7 @@ from rstlne.engine.puzzle import (
     Puzzle,
     board,
     fits_board,
+    fits_shown,
     pattern,
     count,
     hidden_consonants,
@@ -93,6 +94,26 @@ def test_fits_board_checks_punctuation():
     assert not fits_board("DON'T STOP", "DON-T STOP", frozenset())
     assert not fits_board("DON'T STOP", "DONT STOP", frozenset())
     assert not fits_board("BOWLING & GOLF BALL", "BOWLING AND GOLF BALL", frozenset())
+
+
+@pytest.mark.parametrize(
+    "attempt, fits",
+    [
+        ("A FULL TANK OF GAS", True),
+        ("A BULL TANK OF GAS", True),
+        ("A FULL TANKS OF GAS", False),
+        ("A FULL BANK OF GAS", False),
+        ("A FUNL TANK OF GAS", False),
+        ("", False),
+    ],
+)
+def test_fits_shown_checks_against_the_public_board(attempt, fits):
+    assert fits_shown("A ____ TAN_ __ _A_", attempt, frozenset("TAN")) is fits
+
+
+def test_fits_shown_checks_punctuation():
+    assert fits_shown("___'T STOP", "WON'T STOP", frozenset("STP"))
+    assert not fits_shown("___'T STOP", "DONT STOP", frozenset("STP"))
 
 
 def test_pattern_is_compact_with_word_lengths():

@@ -84,7 +84,8 @@ class FullReader:
         self.lexicon = lexicon
         self.knobs = knobs
 
-    def read(self, view: PublicView, refuted: frozenset[str] = frozenset()) -> Belief:
+    def read(self, view: PublicView, refuted: frozenset[str] = frozenset(),
+             suggested: tuple[str, float] | None = None) -> Belief:
         text = board_text(view.board)
         if "_" not in text:
             return Belief(letters={}, answers=((text, 1.0),), oov=0.0)
@@ -100,7 +101,7 @@ class FullReader:
         if "SAME NAME" in category or "RHYME" in category:
             samples, unknown = self._reweight(samples, unknown, category, rng)
         answers = [self._join(s, seps) for s in samples]
-        return summarize(answers, unknown, text, pool, self.knobs, refuted)
+        return summarize(answers, unknown, text, pool, self.knobs, refuted, suggested)
 
     # Slots and phrase matches
 

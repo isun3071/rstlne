@@ -128,12 +128,19 @@ def labels(entrants: Sequence[str]) -> list[str]:
 def folder_name(entrants: Sequence[str], seed: int, puzzles_path: Path, config: dict) -> str:
     """Covers everything that changes play, so a rerun resumes only an identical tournament."""
     play = {key: config.get(key) for key in ("tournament", "providers", "llm", "decision")}
-    if "bot" in entrants:  # only then, so model-only folders keep their names
+    if any(_plays_bot(e) for e in entrants):  # only then, so model-only folders keep their names
         play["bot_version"] = config.get("bot", {}).get("version")
+    if any(e.startswith("hybrid:") for e in entrants):
+        play["hybrid"] = config.get("hybrid")
     if str(puzzles_path) == GENERATE:
         play["puzzlegen"] = config.get("puzzlegen")
     key = json.dumps([list(entrants), seed, Path(puzzles_path).name, play], sort_keys=True)
     return f"seed{seed}-{hashlib.sha256(key.encode()).hexdigest()[:8]}"
+
+
+def _plays_bot(entrant: str) -> bool:
+    """The bot plays in `bot` seats and in `hybrid:<slug>` seats."""
+    return entrant == "bot" or entrant.startswith("hybrid:")
 
 
 def run_tournament(
@@ -155,7 +162,7 @@ def run_tournament(
     out_dir.mkdir(parents=True, exist_ok=True)
     config, rules, spec = settings.load_config(), settings.load_rules(), settings.load_wheel()
     mode = mode or config.get("tournament", {}).get("set_permutations", "all")
-    if "bot" in entrants:
+    if any(_plays_bot(e) for e in entrants):
         check_bot_versions(out_dir, versions.current(config))
     kinds = {kind for kind, _ in parse_seats(",".join(entrants))}
     generating = str(puzzles_path) == GENERATE
@@ -172,7 +179,7 @@ def run_tournament(
         generated_by = settings.puzzle_makers(puzzles_path)
     main_hands = deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
     bonus_hands = deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
-    processes = "bot" in kinds and client is None and decisions is None  # the bot computes, so it needs its own cores
+    processes = bool(kinds & {"bot", "hybrid"}) and client is None and decisions is None  # the bot computes, so it needs its own cores
     client, decisions = clients(kinds, client, decisions)
     names = labels(entrants)
 
@@ -522,7 +529,7 @@ def check_bot_versions(out_dir: Path, version: int) -> None:
             continue  # unfinished games replay from scratch
         header = json.loads(path.read_text().splitlines()[0])
         for seat in header.get("seats", []):
-            if seat.get("kind") == "bot" and seat.get("version") != version:
+            if seat.get("kind") in ("bot", "hybrid") and seat.get("version") != version:
                 raise ValueError(
                     f"{path.name} was played by bot v{seat.get('version')}, but config.toml picks bot v{version}. "
                     "A tournament never changes the bot: start a new folder, or set the version back."
@@ -542,7 +549,7 @@ def _cost(path: Path) -> float:
 
 def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="python -m rstlne.tournament", description="Run a seeded model-only tournament.")
-    parser.add_argument("--seats", help="three seats: llm:<slug>, decision[:<model>], or bot, comma separated")
+    parser.add_argument("--seats", help="three seats: llm:<slug>, decision[:<model>], bot, or hybrid:<slug>, comma separated")
     parser.add_argument("--models", help="three OpenRouter slugs, short for llm:<slug> seats")
     parser.add_argument("--sets", type=int, required=True,
                         help="puzzle sets to play; each is 6 games, or 3 with set_permutations = \"cyclic\". --sets 1 is a trial run")

@@ -110,7 +110,7 @@ class BotPlayer(Player):
         self._before = view
 
     def decide(self, view: PublicView, error: str | None = None) -> Action:
-        belief = self._read(view)
+        belief = self._belief(view)
         self._record = {"version": self.version, "confidence": belief.confidence, "best": belief.best,
                         "oov": belief.oov, "p_steal": None, "values": {}}
         try:
@@ -167,19 +167,28 @@ class BotPlayer(Player):
                 return UseWild(s.wild(view.wedge))
         raise ValueError(f"the bot has no move for {view.phase}")
 
+    def _belief(self, view: PublicView) -> Belief:
+        """What the bot believes when it decides. The hybrid seat mixes in its model's answer here."""
+        return self._read(view)
+
+    def _steal_belief(self, view: PublicView, belief: Belief) -> Belief:
+        """The belief steal odds read: the one the steal curve was fit on."""
+        return belief
+
     def _situation(self, view: PublicView, belief: Belief) -> Situation:
         share = share_revealed(view.board)
         letters = len(board_text(view.board).replace(" ", ""))
         # The next seat's likely call: the consonant with the most expected squares
-        consonants = [c for c in belief.letters if c not in "AEIOU"]
+        seen = self._steal_belief(view, belief)
+        consonants = [c for c in seen.letters if c not in "AEIOU"]
         if consonants:
-            top = max(consonants, key=lambda c: (belief.stats(c).p_hit * belief.stats(c).count, c))
-            stats, after = belief.stats(top), info.after(belief, top)
+            top = max(consonants, key=lambda c: (seen.stats(c).p_hit * seen.stats(c).count, c))
+            stats, after = seen.stats(top), info.after(seen, top)
             share_after = min(1.0, share + stats.p_hit * stats.count / max(letters, 1))
             confidence_after = stats.p_hit * after.hit + (1 - stats.p_hit) * after.miss
         else:
-            share_after, confidence_after = share, belief.confidence
-        odds = self.steal.odds(share, belief.confidence, share_after, confidence_after)
+            share_after, confidence_after = share, seen.confidence
+        odds = self.steal.odds(share, seen.confidence, share_after, confidence_after)
         self._record["p_steal"] = odds.total
         goal = Objective(view, self.rules, self.spec, self.knobs)
         prior = self.steal.prior

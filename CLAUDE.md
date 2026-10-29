@@ -57,6 +57,7 @@ rstlne/
     human_cli.py
     llm.py
     decision.py    # decision seat: decision model choices, LLM solves
+    hybrid.py      # hybrid seat: the bot plays, a model reads the board on the bot's turns
     bot/           # the versioned bot
       player.py    # BotPlayer: one decision per phase, steal odds from observed play
       belief.py    # Belief: per letter odds, top answers, out of vocabulary share

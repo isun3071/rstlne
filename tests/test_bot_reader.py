@@ -91,3 +91,38 @@ def test_the_same_view_reads_the_same_way(rules, wheel_spec):
     reader = WordListReader(LEXICON, KNOBS)
     view = view_for(rules, wheel_spec, "CAT DOG")
     assert reader.read(view) == reader.read(view)
+
+
+# A suggested answer, mixed in with a share
+
+
+def test_a_suggested_answer_takes_its_share_of_the_reader_samples(rules, wheel_spec):
+    knobs = replace(KNOBS, samples=20_000, unknown_word=0.0)
+    reader = WordListReader(LEXICON, knobs)
+    view = view_for(rules, wheel_spec, "CAT", used="T")
+    alone = reader.read(view)
+    mixed = reader.read(view, suggested=("COT", 0.8))
+    p_cot = dict(alone.answers)["COT"]
+    assert mixed.best == "COT" and mixed.confidence == pytest.approx(0.8 + 0.2 * p_cot)
+    assert mixed.stats("O").p_hit == pytest.approx(0.8 + 0.2 * alone.stats("O").p_hit)
+    assert mixed.stats("A").p_hit == pytest.approx(0.2 * alone.stats("A").p_hit)
+    assert sum(p for _, p in mixed.answers) + mixed.oov == pytest.approx(1.0)
+
+
+def test_an_answer_the_reader_never_sampled_gets_exactly_its_share(rules, wheel_spec):
+    reader = WordListReader(LEXICON, replace(KNOBS, unknown_word=0.0))
+    mixed = reader.read(view_for(rules, wheel_spec, "CAT", used="T"), suggested=("CIT", 0.6))
+    assert mixed.best == "CIT" and mixed.confidence == pytest.approx(0.6)
+    assert mixed.stats("I").p_hit == pytest.approx(0.6) and mixed.stats("I").count == pytest.approx(1.0)
+
+
+def test_with_every_sampled_answer_refuted_the_suggestion_is_the_only_answer(rules, wheel_spec):
+    reader = WordListReader({"CAT": 1}, replace(KNOBS, unknown_word=0.0))
+    mixed = reader.read(view_for(rules, wheel_spec, "CUT", used="T"), frozenset({"CAT"}), suggested=("CUT", 0.7))
+    assert mixed.answers == (("CUT", pytest.approx(0.7)),) and mixed.oov == pytest.approx(0.3)
+
+
+def test_no_suggestion_reads_exactly_as_before(rules, wheel_spec):
+    reader = WordListReader(LEXICON, KNOBS)
+    view = view_for(rules, wheel_spec, "CAT DOG", used="T")
+    assert reader.read(view, frozenset(), None) == reader.read(view)

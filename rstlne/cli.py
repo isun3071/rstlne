@@ -1,6 +1,7 @@
 """Play a game in the terminal.
 
     python -m rstlne.cli --seats human,llm:<slug>,bot
+    python -m rstlne.cli --seats hybrid:<slug>,llm:<slug>,llm:<slug>
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from rstlne.players.base import Player
 from rstlne.players.bot import versions
 from rstlne.players.bot.player import BotPlayer, make_reader
 from rstlne.players.decision import DecisionPlayer
+from rstlne.players.hybrid import HybridPlayer
 from rstlne.players.human_cli import HumanPlayer
 from rstlne.players.llm import LLMPlayer
 from rstlne.runner import GameLog, play_game
@@ -32,22 +34,22 @@ from rstlne.show import Show
 
 
 def parse_seats(text: str) -> list[tuple[str, str | None]]:
-    """`human`, `llm:<slug>`, `decision[:<model>]`, or `bot` seats as (kind, model) pairs."""
+    """`human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slug>` seats as (kind, model) pairs."""
     seats: list[tuple[str, str | None]] = []
     for part in (p.strip() for p in text.split(",")):
         if part == "human":
             seats.append(("human", None))
         elif part == "bot":
             seats.append(("bot", None))
-        elif part.startswith("llm:"):
-            slug = part.removeprefix("llm:").strip()
-            if not slug:
-                raise ValueError("llm seats need a model slug, like llm:openai/gpt-4o")
-            seats.append(("llm", slug))
+        elif part.startswith(("llm:", "hybrid:")):
+            kind, _, slug = part.partition(":")
+            if not slug.strip():
+                raise ValueError(f"{kind} seats need a model slug, like {kind}:openai/gpt-4o")
+            seats.append((kind, slug.strip()))
         elif part == "decision" or part.startswith("decision:"):
             seats.append(("decision", part.removeprefix("decision").removeprefix(":").strip() or None))
         else:
-            raise ValueError(f"unknown seat {part!r}. Use human, llm:<slug>, decision, or bot.")
+            raise ValueError(f"unknown seat {part!r}. Use human, llm:<slug>, decision, bot, or hybrid:<slug>.")
     if len(seats) != 3:
         raise ValueError(f"a game needs three seats, got {len(seats)}")
     return seats
@@ -57,7 +59,7 @@ def clients(
     kinds: set[str], client: OpenRouter | None, decisions: DecisionClient | None
 ) -> tuple[OpenRouter | None, DecisionClient | None]:
     """The API clients these seat kinds need, reading the key from .env. Clients passed in are kept."""
-    if kinds & {"llm", "decision"}:
+    if kinds & {"llm", "decision", "hybrid"}:
         load_dotenv(settings.ROOT / ".env")
         if client is None:
             client = OpenRouter()
@@ -80,6 +82,7 @@ def build_players(
     effort = config["llm"].get("reasoning_effort")
     decision = config["decision"]
     providers = config.get("providers", {})
+    hybrid = config.get("hybrid", {})
 
     def seat(i: int, kind: str, model: str | None) -> Player:
         session = f"{session_prefix}-seat{i + 1}"
@@ -88,6 +91,17 @@ def build_players(
         if kind == "bot":
             version = versions.current(config)
             return BotPlayer(i, rules, spec, make_reader(versions.knobs(version)), version=version)
+        if kind == "hybrid":
+            trust, steal = hybrid.get("trust", {}).get(model), hybrid.get("steal", {}).get(model)
+            if trust is None or steal is None:
+                raise ValueError(f"{model} has no trust and steal curves in [hybrid] in config.toml, so it can't sit in a "
+                                 f"hybrid seat. Measure them with: python -m rstlne.calibrate trust --models {model}")
+            version = versions.current(config)
+            return HybridPlayer(
+                i, model, client, tuple(trust), tuple(steal), rules, spec, make_reader(versions.knobs(version)),
+                version=version, temperature=temperature, session_id=session, reasoning_effort=effort,
+                provider=providers.get(model),
+            )
         if kind == "llm":
             return LLMPlayer(
                 i, model, client, rules, spec, temperature, session, reasoning_effort=effort, provider=providers.get(model)
@@ -116,7 +130,7 @@ def pick_puzzles(puzzles: Sequence[Puzzle], rounds: int, seed: int) -> tuple[lis
 
 def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="python -m rstlne.cli", description="Play Wheel of Fortune in the terminal.")
-    parser.add_argument("--seats", required=True, help="three seats: human, llm:<slug>, decision, or bot, comma separated")
+    parser.add_argument("--seats", required=True, help="three seats: human, llm:<slug>, decision, bot, or hybrid:<slug>, comma separated")
     parser.add_argument("--seed", type=int, help="game seed; replaying a seed with the same moves replays the game")
     parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))
     parser.add_argument("--pause", type=float, help="seconds to pause after each model move")

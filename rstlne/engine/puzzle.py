@@ -67,6 +67,22 @@ def pattern(answer: str, revealed: frozenset[str]) -> str:
     return compact(board(answer, revealed))
 
 
+def fits_shown(shown: str, attempt: str, used: frozenset[str]) -> bool:
+    """Whether an attempt could be the answer to the board players see: `shown` is its words with `_`
+    in every hidden square, like `WH__L _F`. Revealed letters and punctuation must match, and hidden
+    squares take only unused letters."""
+    guess, words = _clean(attempt).split(" "), shown.split(" ")
+    if len(guess) != len(words):
+        return False
+    for g, word in zip(guess, words):
+        if len(g) != len(word):
+            return False
+        for a, c in zip(g, word):
+            if (c != "_" and a != c) or (c == "_" and (a not in LETTERS or a in used)):
+                return False
+    return True
+
+
 def fits_board(answer: str, attempt: str, used: frozenset[str]) -> bool:
     """Whether an attempt could be the answer given the board: the same words and word lengths,
     every revealed letter and punctuation mark in place, and only unused letters in hidden squares."""

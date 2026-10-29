@@ -32,7 +32,8 @@ _UNKNOWN = None  # marks an unknown word in a slot
 
 
 class Reader(Protocol):
-    def read(self, view: PublicView, refuted: frozenset[str] = frozenset()) -> Belief: ...
+    def read(self, view: PublicView, refuted: frozenset[str] = frozenset(),
+             suggested: tuple[str, float] | None = None) -> Belief: ...
 
 
 def board_text(board: str) -> str:
@@ -44,10 +45,38 @@ def _entropy(counts: Counter, total: int) -> float:
     return -sum(n / total * math.log2(n / total) for n in counts.values() if n)
 
 
+def _mixed(samples: list[str], unknown: list[bool], text: str, pool: list[str], knobs: Knobs,
+           answer: str, share: float) -> Belief:
+    """summarize, with the samples carrying 1 - share between them and `answer` carrying `share`."""
+    n = len(samples)
+    rows = [(s, oov, (1 - share) / n) for s, oov in zip(samples, unknown)] + [(answer, False, share)]
+    answers: dict[str, float] = defaultdict(float)
+    for s, oov, w in rows:
+        if not oov:
+            answers[s] += w
+    top = sorted(answers.items(), key=lambda a: (-a[1], a[0]))[: knobs.top_answers]
+    hidden = [i for i, c in enumerate(text) if c == "_"]
+    letters = {}
+    for c in pool:
+        patterns: dict[tuple, float] = defaultdict(float)
+        hit = copies = 0.0
+        for s, _, w in rows:
+            where = tuple(i for i in hidden if s[i] == c)
+            patterns[where] += w
+            if where:
+                hit += w
+                copies += w * len(where)
+        if hit > 0:
+            letters[c] = LetterStats(p_hit=min(1.0, hit), count=max(1.0, copies / hit), entropy=max(0.0, _entropy(patterns, 1.0)))
+    return Belief(letters=letters, answers=tuple((a, min(1.0, p)) for a, p in top), oov=sum(w for _, oov, w in rows if oov))
+
+
 class FrequencyReader:
     name = "frequency"
 
-    def read(self, view: PublicView, refuted: frozenset[str] = frozenset()) -> Belief:
+    def read(self, view: PublicView, refuted: frozenset[str] = frozenset(),
+             suggested: tuple[str, float] | None = None) -> Belief:
+        """Letter frequency has no sampled answers, so a suggestion has nothing to mix into."""
         text = board_text(view.board)
         hidden = text.count("_")
         if hidden == 0:
@@ -80,7 +109,8 @@ class WordListReader:
         total = sum(smoothed.values())
         self.length_share = {n: m / total for n, m in smoothed.items()}
 
-    def read(self, view: PublicView, refuted: frozenset[str] = frozenset()) -> Belief:
+    def read(self, view: PublicView, refuted: frozenset[str] = frozenset(),
+             suggested: tuple[str, float] | None = None) -> Belief:
         text = board_text(view.board)
         if "_" not in text:
             return Belief(letters={}, answers=((text, 1.0),), oov=0.0)
@@ -102,7 +132,7 @@ class WordListReader:
                 words.append(word)
             samples.append(" ".join(words))
             unknown.append(oov)
-        return summarize(samples, unknown, text, pool, self.knobs, refuted)
+        return summarize(samples, unknown, text, pool, self.knobs, refuted, suggested)
 
     def _slot(self, pattern: str, used: set[str], open_square: float) -> tuple[list, list[float]]:
         """One word slot's candidates and weights, the unknown word included."""
@@ -121,13 +151,19 @@ class WordListReader:
 
 
 def summarize(samples: list[str], unknown: list[bool], text: str, pool: list[str], knobs: Knobs,
-              refuted: frozenset[str] = frozenset()) -> Belief:
+              refuted: frozenset[str] = frozenset(), suggested: tuple[str, float] | None = None) -> Belief:
     """A Belief from sampled whole answers. Answers with an unknown word count toward the oov share only.
-    Answers a wrong solve refuted are dropped first; if none is left standing, the answer is unknown."""
+    Answers a wrong solve refuted are dropped first; if none is left standing, the answer is unknown.
+    A suggested (answer, share) is mixed in: the answer carries the share, the samples the rest."""
     keep = [i for i, (s, oov) in enumerate(zip(samples, unknown)) if oov or s not in refuted]
     if not keep:
-        return replace(summarize(samples, unknown, text, pool, knobs), answers=(), oov=1.0)
-    samples, unknown = [samples[i] for i in keep], [unknown[i] for i in keep]
+        if suggested is None:
+            return replace(summarize(samples, unknown, text, pool, knobs), answers=(), oov=1.0)
+        unknown = [True] * len(samples)  # refuted answers still speak to letters, but not as answers
+    else:
+        samples, unknown = [samples[i] for i in keep], [unknown[i] for i in keep]
+    if suggested is not None:
+        return _mixed(samples, unknown, text, pool, knobs, *suggested)
     n = len(samples)
     answers = Counter(a for a, oov in zip(samples, unknown) if not oov)
     top = sorted(answers.items(), key=lambda a: (-a[1], a[0]))[: knobs.top_answers]
