@@ -47,10 +47,10 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 
 [decision.thresholds]
 # Per decision model thresholds from `uv run python -m rstlne.calibrate`.
-# Calibrated 2026-10-27 on 50 dev.json puzzles (295 boards), solver openai/gpt-6-luna:
-# logs/calibration/calibration-20261027-223934.json
-"openai/gpt-6-luna-decisions" = 0.23
-"typesafe/jev-1.14" = 0.28
+# Calibrated 2026-10-28 on 50 fresh puzzles from tuning-101 (291 boards), solver openai/gpt-6-luna:
+# logs/calibration/calibration-20261028-231259.json. On dev.json they were 0.23 and 0.28.
+"openai/gpt-6-luna-decisions" = 0.12
+"typesafe/jev-1.14" = 0.31
 
 [tournament]
 # "all": a set is 6 games, every ordering of the 3 entrants across the seats.
