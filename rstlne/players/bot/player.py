@@ -125,6 +125,9 @@ class BotPlayer(Player):
         s = self._situation(view, belief)
         match view.phase:
             case Phase.TURN:
+                eager = self.knobs.eager_solve
+                if eager is not None and belief.best and "solve" in legal and s.c >= eager:
+                    return Solve(guess(belief, view))
                 if s.c >= self.knobs.known_answer:
                     kind = planner.decide(s, legal)
                 else:

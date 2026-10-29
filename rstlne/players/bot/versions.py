@@ -33,6 +33,8 @@ class Knobs:
     same_name_boost: float = 50.0  # Same Name: both halves name a known phrase with the shared ending
     # Confidence correction: (raw confidence, how often it was right) points; none means no change
     calibration: tuple[tuple[float, float], ...] = ()
+    # Self-play only: solve as soon as calibrated confidence reaches this, like an LLM. None plays normally.
+    eager_solve: float | None = None
 
 
 VERSIONS = {1: Knobs()}  # v1 is in development until self-play freezes it

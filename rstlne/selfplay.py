@@ -6,6 +6,9 @@ Every job splits into shards (`--shard i/n`) so several machines can share it, w
 resumes where it stopped, and prints a status line every 2 minutes with an estimated finish.
 No job calls an API: the bot reads boards and plays games on its own.
 
+games: bot-only games with duplicate scoring, between bot variants (a name and knob changes), one compact
+line per game: who sat where, final totals, totals after each main round, the bonus, and each seat's solves.
+
 tune-reader: tune the reader's knobs one at a time, scoring each setting by the average log probability
 the reader puts on the true answer across every board of the tuning puzzles, then check the tuned knobs
 against the untuned ones on held out puzzles.
@@ -553,6 +556,213 @@ def steal(folders, out: Path, rules: Rules, spec: WheelSpec, knobs: versions.Kno
     return result
 
 
+# Bot games
+
+READER_KNOBS = {"samples", "top_answers", "unknown_word", "vocabulary", "slot_candidates", "pair_weight", "phrase_odds",
+                "phrase_odds_other", "name_odds", "name_odds_other", "fit_weight", "ing_boost", "same_letter_boost",
+                "rhyme_boost", "same_name_boost"}
+
+
+@dataclass(frozen=True)
+class Entrant:
+    """A bot variant: a name and knob changes, written name:knob=value+knob=value."""
+
+    name: str
+    changes: tuple[str, ...] = ()
+
+    @classmethod
+    def parse(cls, text: str) -> Entrant:
+        name, _, rest = text.partition(":")
+        return cls(name, tuple(x for x in rest.split("+") if x))
+
+    def knobs(self, base: versions.Knobs) -> versions.Knobs:
+        reader = {c.partition("=")[0] for c in self.changes} & READER_KNOBS
+        if reader:
+            raise ValueError(f"{self.name} changes {', '.join(sorted(reader))}: entrants share one reader, "
+                             "so they can only change decision knobs")
+        return override(base, self.changes)
+
+    def __str__(self) -> str:
+        return self.name + (":" + "+".join(self.changes) if self.changes else "")
+
+
+def _shown(puzzle_answer: str, used) -> float:
+    letters = [c for c in puzzle_answer if c in LETTERS]
+    return sum(c in used for c in letters) / len(letters)
+
+
+def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus_puzzle: Puzzle, reader: Reader,
+             rules: Rules, spec: WheelSpec, base: versions.Knobs) -> dict:
+    """One bot-only game, summed up in one record."""
+    from rstlne.players.bot.player import BotPlayer
+    from rstlne.runner import play_turn
+
+    started = time.monotonic()
+    seats = [entrants[e] for e in game.order]
+    players = [BotPlayer(i, rules, spec, reader, version=1, knobs=e.knobs(base)) for i, e in enumerate(seats)]
+    state = new_game(game.seed, rules, spec, puzzles, bonus_puzzle)
+    stats = [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0} for _ in seats]
+    round_totals, moves = [], 0
+    while state.phase is not Phase.GAME_OVER:
+        before = state
+        state = play_turn(state, players)
+        moves += 1
+        r = state.last
+        if before.round is None:
+            continue
+        seat = stats[r.seat]
+        if r.action.kind == "solve":
+            seat["attempts"] += 1
+            if r.outcome == "solved":
+                seat["right"] += 1
+                seat["shown"].append(round(_shown(before.round.puzzle.answer, before.round.used), 4))
+        if "bankrupt" in r.events or r.outcome in ("bankrupt", "flipped_bankrupt"):
+            seat["bankrupts"] += 1
+        if state.round is None or state.round.number != before.round.number:
+            round_totals.append([s.total for s in state.seats])
+    b = state.bonus
+    return {
+        "game": game.name, "set": game.set, "permutation": game.permutation, "seed": game.seed,
+        "seats": [e.name for e in seats], "entrants": [str(e) for e in seats],
+        "totals": [s.total for s in state.seats], "round_totals": round_totals,
+        "bonus": None if b is None else {"seat": b.seat, "solved": b.solved, "envelope": b.envelope},
+        "moves": moves, "seconds": round(time.monotonic() - started, 2), "seat_stats": stats,
+    }
+
+
+def _play_in_worker(job) -> dict:
+    game, entrants, puzzles, bonus_puzzle, base = job
+    return play_one(game, entrants, puzzles, bonus_puzzle, _worker["reader"], _worker["rules"], _worker["spec"], base)
+
+
+def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, seed: int, out: Path, rules: Rules,
+               spec: WheelSpec, base: versions.Knobs, make_reader, shard: tuple[int, int] = (1, 1), workers: int = 1,
+               say=print, heartbeat: float = HEARTBEAT) -> Path:
+    """Bot-only games with duplicate scoring: each set's six games share its seed and puzzles, one game per
+    ordering of the three entrants. Writes games-shard{i}of{n}.jsonl and skips games already played."""
+    from rstlne import tournament
+
+    if len(entrants) != 3:
+        raise ValueError("a game needs three entrants")
+    i, n = shard
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / f"games-shard{i}of{n}.jsonl"
+    done = {r["game"] for r in _rows(path)}
+    main_hands = tournament.deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
+    bonus_hands = tournament.deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
+    games = shard_of(tournament.schedule(sets, seed, "all"), i, n)
+    todo = [g for g in games if g.name not in done]
+    if done:
+        say(f"{len(games) - len(todo)} games already played; playing the other {len(todo)}")
+    names = ", ".join(str(e) for e in entrants)
+    say(f"Playing {len(todo)} games ({sets} sets, shard {i}/{n}) between {names}; {workers} "
+        f"worker{'s' if workers != 1 else ''}; a status line every 2 minutes")
+    jobs = [(g, tuple(entrants), tuple(main_hands[g.set]), bonus_hands[g.set][0], base) for g in todo]
+    if workers > 1:
+        pool_ = ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(make_reader, base, rules, spec))
+        results = pool_.map(_play_in_worker, jobs)
+    else:
+        pool_ = None
+        _start_worker(make_reader, base, rules, spec)
+        results = map(_play_in_worker, jobs)
+    began = last = time.monotonic()
+    wins: dict[str, float] = {e.name: 0.0 for e in entrants}
+    try:
+        with open(path, "a") as f:
+            for k, record in enumerate(results, 1):
+                f.write(json.dumps(record) + "\n")
+                f.flush()
+                for name, w in zip(record["seats"], tournament.split_wins(record["totals"])):
+                    wins[name] += w
+                now = time.monotonic()
+                if now - last >= heartbeat:
+                    last = now
+                    tally = ", ".join(f"{name} {w:g}" for name, w in wins.items())
+                    say(f"  {k} of {len(todo)} games · wins so far: {tally} · {duration(now - began)} elapsed, "
+                        f"finish in about {duration((now - began) / k * (len(todo) - k))}")
+    finally:
+        if pool_:
+            pool_.shutdown()
+    say(f"Played {len(todo)} games in {duration(time.monotonic() - began)} into {path}")
+    return path
+
+
+def games_summary(out: Path, resamples: int = 2000) -> dict:
+    """Every shard's games together: each entrant's win rate with 95% intervals from resampling whole sets,
+    by seat, money, bonus, and solving; and the win rate gap between each pair."""
+    from statistics import median
+
+    from rstlne import tournament
+
+    games = [g for path in sorted(Path(out).glob("games-shard*.jsonl")) for g in _rows(path)]
+    names = sorted({name for g in games for name in g["seats"]})
+    per_set: dict[int, dict[str, list[float]]] = {}
+    acc = {name: {"games": 0, "wins": 0.0, "seat_games": [0, 0, 0], "seat_wins": [0.0, 0.0, 0.0], "total": 0,
+                  "main": 0, "bonus_played": 0, "bonus_won": 0, "attempts": 0, "right": 0, "shown": [], "bankrupts": 0}
+           for name in names}
+    for g in games:
+        shares = tournament.split_wins(g["totals"])
+        for seat, (name, w) in enumerate(zip(g["seats"], shares)):
+            a = acc[name]
+            a["games"] += 1
+            a["wins"] += w
+            a["seat_games"][seat] += 1
+            a["seat_wins"][seat] += w
+            a["total"] += g["totals"][seat]
+            a["main"] += g["round_totals"][-1][seat] if g["round_totals"] else 0
+            if g["bonus"] and g["bonus"]["seat"] == seat:
+                a["bonus_played"] += 1
+                a["bonus_won"] += bool(g["bonus"]["solved"])
+            st = g["seat_stats"][seat]
+            a["attempts"] += st["attempts"]
+            a["right"] += st["right"]
+            a["shown"] += st["shown"]
+            a["bankrupts"] += st["bankrupts"]
+            per_set.setdefault(g["set"], {}).setdefault(name, []).append(w)
+    rows = list(per_set.values())
+
+    def rate(name):
+        return lambda sample: (sum(sum(r.get(name, [])) for r in sample) / n if (n := sum(len(r.get(name, [])) for r in sample)) else None)
+
+    entrants = []
+    for name in names:
+        a = acc[name]
+        ci = tournament.bootstrap(rows, rate(name), resamples=resamples) if rows else None
+        entrants.append({
+            "entrant": name, "games": a["games"], "wins": a["wins"], "win_rate": a["wins"] / a["games"],
+            "ci95": list(ci) if ci else None,
+            "by_seat": [w / g if g else None for w, g in zip(a["seat_wins"], a["seat_games"])],
+            "avg_total": a["total"] / a["games"], "avg_main": a["main"] / a["games"],
+            "bonus": f"{a['bonus_won']}/{a['bonus_played']}",
+            "solve_accuracy": a["right"] / a["attempts"] if a["attempts"] else None,
+            "shown_median": median(a["shown"]) if a["shown"] else None,
+            "bankrupts_per_game": a["bankrupts"] / a["games"],
+        })
+    pairwise = []
+    for x in range(len(names)):
+        for y in range(x + 1, len(names)):
+            a, b = names[x], names[y]
+            gap = lambda sample, a=a, b=b: (None if (ra := rate(a)(sample)) is None or (rb := rate(b)(sample)) is None else ra - rb)
+            ci = tournament.bootstrap(rows, gap, resamples=resamples) if rows else None
+            pairwise.append({"a": a, "b": b, "gap": gap(rows), "ci95": list(ci) if ci else None})
+    return {"games": len(games), "sets": len(rows), "entrants": entrants, "pairwise": pairwise}
+
+
+def summary_lines(summary: dict) -> list[str]:
+    lines = [f"{summary['games']} games in {summary['sets']} sets"]
+    for e in summary["entrants"]:
+        ci = f" [{e['ci95'][0]:.0%}-{e['ci95'][1]:.0%}]" if e["ci95"] else ""
+        seats = "/".join("-" if x is None else f"{x:.0%}" for x in e["by_seat"])
+        acc = "-" if e["solve_accuracy"] is None else f"{e['solve_accuracy']:.0%}"
+        shown = "-" if e["shown_median"] is None else f"{e['shown_median']:.0%}"
+        lines.append(f"  {e['entrant']:12s} wins {e['win_rate']:.0%}{ci} by seat {seats} · main ${e['avg_main']:,.0f} "
+                     f"· bonus {e['bonus']} · solves {acc} right at {shown} shown · {e['bankrupts_per_game']:.2f} Bankrupts a game")
+    for p in summary["pairwise"]:
+        ci = f" [{p['ci95'][0]:+.0%} to {p['ci95'][1]:+.0%}]" if p["ci95"] else ""
+        lines.append(f"  {p['a']} minus {p['b']}: {p['gap']:+.0%}{ci}")
+    return lines
+
+
 # Knobs
 
 
@@ -565,6 +775,8 @@ def override(knobs: versions.Knobs, pairs: Sequence[str]) -> versions.Knobs:
         if name not in types:
             raise ValueError(f"no knob named {name!r}")
         kind = types[name]
+        if kind is type(None):  # a knob that is off by default takes a number
+            kind = float
         if name == "calibration":  # points as raw:actual pairs
             changes[name] = tuple(tuple(float(v) for v in pair.split(":")) for pair in value.split(","))
         else:
@@ -598,6 +810,18 @@ def main(argv: Sequence[str] | None = None) -> None:
     tune.add_argument("--workers", type=int, default=4, help="processes, one per core")
     tune.add_argument("--passes", type=int, default=2)
     tune.add_argument("--knob", action="append", default=[], help="name=value, to start from other knobs")
+    games = jobs.add_parser("games", help="bot-only games between bot variants, with duplicate scoring")
+    games.add_argument("--entrant", action="append", required=True,
+                       help="three of them: name or name:knob=value+knob=value, like eager:eager_solve=0.65")
+    games.add_argument("--puzzles", required=True, help="a puzzle or batch file")
+    games.add_argument("--sets", type=int, required=True, help="each set is 6 games, one per seat ordering")
+    games.add_argument("--seed", type=int, required=True)
+    games.add_argument("--out", required=True, help="the folder for games-shard*.jsonl")
+    games.add_argument("--shard", default="1/1", help="i/n: this machine's share of the games")
+    games.add_argument("--workers", type=int, default=4, help="processes, one per core")
+    games.add_argument("--knob", action="append", default=[], help="name=value, for every entrant's starting knobs")
+    gsum = jobs.add_parser("games-summary", help="win rates with intervals across every shard of a games folder")
+    gsum.add_argument("folder")
     cal = jobs.add_parser("calibrate", help="fit the confidence curve on tuning reads, then check it on held out ones")
     cal.add_argument("--puzzles", required=True, help="the tuning batch")
     cal.add_argument("--held-out", required=True, help="the grading batch, never fit on")
@@ -617,9 +841,26 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.job == "summary":
         print(json.dumps(summarize_reads(Path(args.folder)), indent=2))
         return
+    if args.job == "games-summary":
+        for line in summary_lines(games_summary(Path(args.folder))):
+            print(line)
+        return
     rules, spec = settings.load_rules(), settings.load_wheel()
     config = settings.load_config()
-    knobs = override(versions.knobs(versions.current(config)), args.knob)
+    knobs = override(versions.knobs(versions.current(config)), getattr(args, "knob", []))
+    if args.job == "games":
+        try:
+            shard_spec = parse_shard(args.shard)
+            entrants = [Entrant.parse(t) for t in args.entrant]
+            for e in entrants:
+                e.knobs(knobs)
+        except ValueError as err:
+            sys.exit(str(err))
+        path = play_games(entrants, settings.load_puzzles(Path(args.puzzles)), args.sets, args.seed, Path(args.out),
+                          rules, spec, knobs, _make_reader, shard_spec, args.workers, say=print)
+        for line in summary_lines(games_summary(path.parent)):
+            print(line)
+        return
     if args.job == "calibrate":
         calibrate(settings.load_puzzles(Path(args.puzzles)), settings.load_puzzles(Path(args.held_out)), Path(args.out),
                   rules, spec, knobs, _make_reader, args.workers, say=print)
