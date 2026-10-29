@@ -118,3 +118,31 @@ def test_the_command_checks_entrants_before_playing(tmp_path, capsys):
         selfplay.main(["games", "--entrant", "x:phrase_odds=2", "--entrant", "b", "--entrant", "c",
                        "--puzzles", "puzzles/dev.json", "--sets", "1", "--seed", "1", "--out", str(tmp_path)])
     assert "reader" in str(stop.value)
+
+
+# Tuning decisions
+
+
+def test_a_change_is_adopted_only_when_it_clearly_wins():
+    results = [{"value": 0.9, "gap": 0.04, "ci95": [-0.01, 0.09]}, {"value": 0.98, "gap": 0.06, "ci95": [0.01, 0.11]}]
+    assert selfplay.pick(results) == 0.98
+    assert selfplay.pick([{"value": 0.9, "gap": 0.05, "ci95": [-0.02, 0.12]}]) is None  # not clear of zero
+    assert selfplay.pick([]) is None
+
+
+def test_decision_tuning_plays_each_value_against_the_current_bot_and_resumes(tmp_path, rules, wheel_spec):
+    grid = {"known_answer": [0.9], "tie_margin": [0.01]}
+    lines = []
+    changes = selfplay.tune_decisions(POOL, tmp_path, rules, wheel_spec, KNOBS, reader, sets=1, seed=4, grid=grid,
+                                      say=lines.append)
+    folders = sorted(p.name for p in tmp_path.iterdir() if p.is_dir())
+    assert folders == ["known_answer=0.9", "tie_margin=0.01"]
+    seats = {tuple(sorted(json.loads(line)["seats"])) for line in (tmp_path / "known_answer=0.9" / "games-shard1of1.jsonl").read_text().splitlines()}
+    assert seats == {("current", "eager", "variant")}
+    saved = json.loads((tmp_path / "tune-decisions.json").read_text())
+    assert {r["knob"] for r in saved["comparisons"]} == {"known_answer", "tie_margin"}
+    assert saved["changes"] == list(changes)
+    assert any("variant minus current" in line for line in lines)
+    before = len(lines)
+    selfplay.tune_decisions(POOL, tmp_path, rules, wheel_spec, KNOBS, reader, sets=1, seed=4, grid=grid, say=lines.append)
+    assert any("already played" in line for line in lines[before:])

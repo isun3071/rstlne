@@ -9,6 +9,10 @@ No job calls an API: the bot reads boards and plays games on its own.
 games: bot-only games with duplicate scoring, between bot variants (a name and knob changes), one compact
 line per game: who sat where, final totals, totals after each main round, the bonus, and each seat's solves.
 
+tune-decisions: test each candidate value of each decision knob as a variant against the current bot, with
+the eager bot at the table, in duplicate-scored games; adopt a value only if it wins with its 95% interval
+clear of zero.
+
 tune-reader: tune the reader's knobs one at a time, scoring each setting by the average log probability
 the reader puts on the true answer across every board of the tuning puzzles, then check the tuned knobs
 against the untuned ones on held out puzzles.
@@ -763,6 +767,70 @@ def summary_lines(summary: dict) -> list[str]:
     return lines
 
 
+# Tuning decisions
+
+DECISION_GRID = {
+    "known_answer": [0.9, 0.98],
+    "safe_hit": [0.97, 0.995],
+    "tie_margin": [0.002, 0.01],
+    "wild_bonus_lift": [0.05, 0.2],
+    "bonus_solve": [0.3, 0.7],
+}
+EAGER = "eager_solve=0.65"  # the LLM-like opponent: the median LLM solve attempt came at this confidence
+
+
+def pick(results: Sequence[dict]):
+    """The value that beat the current one by the most, among those whose 95% interval is clear of zero."""
+    clear = [r for r in results if r["ci95"] and r["ci95"][0] > 0]
+    return max(clear, key=lambda r: r["gap"])["value"] if clear else None
+
+
+def tune_decisions(pool: Sequence[Puzzle], out: Path, rules: Rules, spec: WheelSpec, base: versions.Knobs, make_reader,
+                   sets: int = 125, seed: int = 404, grid: dict | None = None, workers: int = 1,
+                   say=print) -> tuple[str, ...]:
+    """One knob at a time: each candidate value plays as `variant` against `current` and `eager` in the same
+    games, all comparisons on the same seed. Returns the adopted changes, also saved in tune-decisions.json."""
+    grid = DECISION_GRID if grid is None else grid
+    out.mkdir(parents=True, exist_ok=True)
+    began = time.monotonic()
+    changes: list[str] = []
+    comparisons = []
+    total = sum(len(v) for v in grid.values())
+    k = 0
+    for knob, values in grid.items():
+        results = []
+        for value in values:
+            k += 1
+            current = Entrant("current", tuple(changes))
+            variant = Entrant("variant", tuple(c for c in changes if not c.startswith(f"{knob}=")) + (f"{knob}={value}",))
+            eager = Entrant("eager", tuple(changes) + (EAGER,))
+            folder = out / f"{knob}={value}"
+            say(f"Comparison {k} of {total}: {knob} = {value} (now {getattr(current.knobs(base), knob)}) · "
+                f"{duration(time.monotonic() - began)} elapsed so far")
+            play_games([variant, current, eager], pool, sets, seed, folder, rules, spec, base, make_reader,
+                       workers=workers, say=say)
+            summary = games_summary(folder)
+            gap = next(p for p in summary["pairwise"] if {p["a"], p["b"]} == {"current", "variant"})
+            sign = 1 if gap["a"] == "variant" else -1
+            ci = sorted(sign * x for x in gap["ci95"]) if gap["ci95"] else None
+            result = {"knob": knob, "value": value, "gap": sign * gap["gap"], "ci95": ci, "games": summary["games"]}
+            results.append(result)
+            comparisons.append(result)
+            span = f" [{ci[0]:+.1%} to {ci[1]:+.1%}]" if ci else ""
+            say(f"  variant minus current: {result['gap']:+.1%}{span} in win rate over {summary['games']} games")
+        best = pick(results)
+        if best is not None:
+            changes = [c for c in changes if not c.startswith(f"{knob}=")] + [f"{knob}={best}"]
+            say(f"  {knob}: adopt {best}")
+        else:
+            say(f"  {knob}: keep {getattr(Entrant('current', tuple(changes)).knobs(base), knob)}")
+    result = {"changes": changes, "comparisons": comparisons, "sets": sets, "seed": seed,
+              "base": _knob_dict(base), "hours": round((time.monotonic() - began) / 3600, 2)}
+    (out / "tune-decisions.json").write_text(json.dumps(result, indent=2) + "\n")
+    say(f"Decision tuning done in {duration(time.monotonic() - began)}: {', '.join(changes) or 'no change'}")
+    return tuple(changes)
+
+
 # The win-chance table
 
 
@@ -893,6 +961,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     games.add_argument("--shard", default="1/1", help="i/n: this machine's share of the games")
     games.add_argument("--workers", type=int, default=4, help="processes, one per core")
     games.add_argument("--knob", action="append", default=[], help="name=value, for every entrant's starting knobs")
+    td = jobs.add_parser("tune-decisions", help="test decision knob values against the current bot in bot games")
+    td.add_argument("--puzzles", required=True, help="the tuning batch")
+    td.add_argument("--out", required=True, help="the folder for each comparison and tune-decisions.json")
+    td.add_argument("--sets", type=int, default=125, help="sets per comparison, 6 games each")
+    td.add_argument("--seed", type=int, default=404)
+    td.add_argument("--workers", type=int, default=4, help="processes, one per core")
+    td.add_argument("--knob", action="append", default=[], help="name=value or name=@file, for the starting knobs")
     wt = jobs.add_parser("win-table", help="P(finish first | lead, rounds left) from bot games")
     wt.add_argument("--games", nargs="+", required=True, help="games folders")
     wt.add_argument("--out", required=True, help="the folder for win-table.json")
@@ -916,6 +991,10 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     if args.job == "summary":
         print(json.dumps(summarize_reads(Path(args.folder)), indent=2))
+        return
+    if args.job == "tune-decisions":
+        tune_decisions(settings.load_puzzles(Path(args.puzzles)), Path(args.out), rules, spec, knobs, _make_reader,
+                       args.sets, args.seed, workers=args.workers, say=print)
         return
     if args.job == "win-table":
         win_table([Path(f) for f in args.games], Path(args.out), settings.load_rules().main_rounds, say=print)
