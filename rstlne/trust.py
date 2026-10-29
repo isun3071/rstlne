@@ -12,8 +12,10 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import time
 from collections.abc import Callable, Sequence
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from contextlib import ExitStack
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -26,7 +28,7 @@ from rstlne.engine.puzzle import LETTERS, Puzzle, fits_shown, normalize, solve_m
 from rstlne.engine.state import Rules
 from rstlne.engine.wheel import WheelSpec
 from rstlne.llm.openrouter import OpenRouter
-from rstlne.narrate import line_output
+from rstlne.narrate import duration, line_output
 from rstlne.players.bot import versions
 from rstlne.players.bot.reader import Reader
 from rstlne.players.hybrid import Asked, ask, logistic
@@ -37,6 +39,23 @@ CONFIDENT = 0.95  # a reader this sure of its best answer is "confident"
 TRUST_TERMS = ("a", "b", "c", "d", "g")  # constant, shown, agree, p_reader, reader confidence
 STEAL_TERMS = ("a", "b", "c", "d")  # constant, shown, reader confidence, readable
 BANDS = ((0, 0.5), (0.5, 0.7), (0.7, 0.85), (0.85, 0.95), (0.95, 1.01))
+HEARTBEAT = 30  # seconds between status lines
+
+
+class Status:
+    """A status line at most every `every` seconds: how far along, and how long is left."""
+
+    def __init__(self, total: int, write: Callable[[str], None], every: float):
+        self.total, self.write, self.every = total, write, every
+        self.began = self.last = time.monotonic()
+
+    def tick(self, done: int, line: Callable[[], str]) -> None:
+        now = time.monotonic()
+        if now - self.last >= self.every or done == self.total:
+            self.last = now
+            elapsed = now - self.began
+            left = elapsed / done * (self.total - done) if done else 0
+            self.write(f"{line()} · {duration(elapsed)} elapsed, finish in about {duration(left)}")
 
 
 @dataclass(frozen=True)
@@ -124,18 +143,26 @@ def _read_in_worker(board) -> dict:
 
 
 def read_boards(boards: Sequence, reader: Reader | None, knobs: versions.Knobs, rules: Rules, spec: WheelSpec,
-                workers: int) -> dict:
+                workers: int, write: Callable[[str], None] = print, heartbeat: float = HEARTBEAT) -> dict:
     """The reader's best answer, confidence, and top answers on each distinct board."""
-    if reader is None and workers > 1:
-        with ProcessPoolExecutor(workers, initializer=selfplay._start_worker,
-                                 initargs=(selfplay._make_reader, knobs, rules, spec)) as pool:
-            return dict(zip(boards, pool.map(_read_in_worker, boards, chunksize=8)))
-    reader = reader or selfplay._make_reader(knobs)
-    return {b: _read_one(reader, b, rules, spec) for b in boards}
+    status = Status(len(boards), write, heartbeat)
+    out = {}
+    with ExitStack() as stack:
+        if reader is None and workers > 1:
+            pool = stack.enter_context(ProcessPoolExecutor(workers, initializer=selfplay._start_worker,
+                                                           initargs=(selfplay._make_reader, knobs, rules, spec)))
+            results = pool.map(_read_in_worker, boards, chunksize=8)
+        else:
+            reader = reader or selfplay._make_reader(knobs)
+            results = (_read_one(reader, b, rules, spec) for b in boards)
+        for k, (board, read) in enumerate(zip(boards, results), 1):
+            out[board] = read
+            status.tick(k, lambda: f"  read {k} of {len(boards)} boards")
+    return out
 
 
 def ask_boards(model: str, boards: Sequence, client: OpenRouter, config: dict, rules: Rules, spec: WheelSpec,
-               parallel: int) -> dict:
+               parallel: int, write: Callable[[str], None] = print, heartbeat: float = HEARTBEAT) -> dict:
     """One hybrid ask per distinct board, with the model's configured temperature, effort, and provider."""
     llm = config.get("llm", {})
 
@@ -145,8 +172,17 @@ def ask_boards(model: str, boards: Sequence, client: OpenRouter, config: dict, r
         return ask(client, model, view, frozenset(refuted), temperature=llm.get("temperature"),
                    reasoning_effort=llm.get("reasoning_effort"), provider=config.get("providers", {}).get(model))
 
+    write(f"Asking {model} about {len(boards)} boards, {parallel} at a time")
+    status = Status(len(boards), write, heartbeat)
+    out: dict = {}
     with ThreadPoolExecutor(max_workers=parallel) as pool:
-        return dict(zip(boards, pool.map(one, boards)))
+        futures = {pool.submit(one, b): b for b in boards}
+        for future in as_completed(futures):
+            out[futures[future]] = future.result()
+            k = len(out)
+            status.tick(k, lambda: f"  {model}: {k} of {len(boards)} asks · ${sum(a.usage.cost for a in out.values()):.4f} so far"
+                        f" · {sum(a.reply is None for a in out.values())} failed")
+    return {b: out[b] for b in boards}
 
 
 def points_for(turns: Sequence[Turn], reads: dict, asks: dict) -> list[dict]:
@@ -317,6 +353,7 @@ def measure(
     workers: int = 4,
     resamples: int = 1000,
     write: Callable[[str], None] = print,
+    heartbeat: float = HEARTBEAT,
 ) -> dict:
     config = settings.load_config()
     rules, spec = rules_and_spec()
@@ -329,8 +366,9 @@ def measure(
         turns = sample(collect(folders), count, seed)
         boards = sorted({t.board for t in turns})
         write(f"{label}: {len(turns)} turns on {len(boards)} distinct boards from {', '.join(str(f) for f in folders)}")
-        reads = read_boards(boards, reader, knobs, rules, spec, workers)
-        asks = {m: ask_boards(m, boards, client, config, rules, spec, parallel) for m in models}
+        write(f"Reading {len(boards)} boards with the bot's reader")
+        reads = read_boards(boards, reader, knobs, rules, spec, workers, write, heartbeat)
+        asks = {m: ask_boards(m, boards, client, config, rules, spec, parallel, write, heartbeat) for m in models}
         return turns, reads, asks
 
     turns, reads, asks = run(folders, "Fitting")

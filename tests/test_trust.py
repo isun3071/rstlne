@@ -156,3 +156,14 @@ def test_the_calibrate_command_routes_trust(monkeypatch, logs):
     calibrate.main(["trust", "--models", "a/one, b/two", "--logs", str(logs), "--count", "50", "--seed", "4"])
     assert seen["models"] == ["a/one", "b/two"] and seen["count"] == 50 and seen["seed"] == 4
     assert [str(f) for f in seen["folders"]] == [str(logs)]
+
+
+def test_long_steps_print_status_lines(logs, tmp_path):
+    lines = []
+    trust.measure(["model/a"], [logs], client=router(fake_model), reader=WordListReader(WORDS, KNOBS), knobs=KNOBS,
+                  count=40, seed=1, out_dir=tmp_path, resamples=0, write=lines.append, heartbeat=0)
+    reading = [line for line in lines if line.startswith("  read ")]
+    asking = [line for line in lines if line.startswith("  model/a: ")]
+    assert reading and "of" in reading[-1] and "finish in about" in reading[0]
+    assert asking and "$" in asking[-1] and "asks" in asking[-1]
+    assert any(line.startswith("Asking model/a") for line in lines)
