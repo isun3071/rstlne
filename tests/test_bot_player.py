@@ -5,12 +5,13 @@ import pytest
 from helpers import BONUS, PUZZLES, start
 
 from rstlne import cli, settings
+from rstlne.engine.puzzle import LETTERS
 from rstlne.engine.rules import public_view
 from rstlne.engine.state import Phase
 from rstlne.players.bot import versions
 from rstlne.players.bot.player import BotPlayer, guess
 from rstlne.players.bot.reader import FrequencyReader, WordListReader
-from rstlne.runner import GameLog, play_game
+from rstlne.runner import GameLog, play_game, play_turn
 from rstlne.tournament import run_tournament
 
 KNOBS = replace(versions.knobs(1), samples=120)
@@ -64,6 +65,32 @@ def test_a_guess_with_no_answer_still_fits_the_board(rules, wheel_spec):
     state = replace(state, round=replace(state.round, used=frozenset("ETAOINSHRDLCUMWFGYPBVKJXQZ") - {"U"}))
     view = public_view(state, 0)
     assert guess(FrequencyReader().read(view), view) == "WHEEL OF FORTUNE"  # the one unused letter fills the gap
+
+
+def only_vowels_hidden(rules, wheel_spec):
+    """WH__L _F F_RT_N_ with every seat broke: solving is the only legal move."""
+    state = start(rules, wheel_spec)
+    return replace(state, round=replace(state.round, used=frozenset(LETTERS - set("AEIOU"))))
+
+
+def test_bots_drop_an_answer_once_a_wrong_solve_refutes_it(rules, wheel_spec):
+    state = only_vowels_hidden(rules, wheel_spec)
+    words = {"WHOOL": 50, "WHEEL": 10, "OF": 50, "FORTUNE": 50}
+    players = bots(rules, wheel_spec, reader=WordListReader(words, KNOBS))
+    guesses = []
+    while state.round.number == 1:
+        state = play_turn(state, players)
+        guesses.append(state.last.action.answer)
+    assert guesses == ["WHOOL OF FORTUNE", "WHEEL OF FORTUNE"]  # the next seat tries the answer still standing
+
+
+def test_a_guess_with_no_answer_skips_fills_already_refuted(rules, wheel_spec):
+    state = only_vowels_hidden(rules, wheel_spec)
+    state = replace(state, round=replace(state.round, used=state.round.used | {"A", "I"}))
+    view = public_view(state, 0)
+    belief = FrequencyReader().read(view)
+    assert guess(belief, view) == "WHEEL EF FERTENE"
+    assert guess(belief, view, frozenset({"WHEEL EF FERTENE"})) == "WHOOL OF FORTONO"
 
 
 def test_the_bot_explains_its_move(rules, wheel_spec):

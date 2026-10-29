@@ -30,7 +30,7 @@ class Fixed:
     def __init__(self, b):
         self.b = b
 
-    def read(self, view):
+    def read(self, view, refuted=frozenset()):
         return self.b
 
 

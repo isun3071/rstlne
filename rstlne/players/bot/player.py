@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from rstlne.engine.puzzle import LETTERS
+from rstlne.engine.puzzle import LETTERS, normalize
 from rstlne.engine.state import (
     Action,
     BonusSolve,
@@ -52,12 +52,14 @@ def share_revealed(board: str) -> float:
     return shown / (shown + hidden) if shown + hidden else 1.0
 
 
-def guess(belief: Belief, view: PublicView) -> str:
-    """The best answer, or with none, the board with the commonest unused letter in every hidden square."""
+def guess(belief: Belief, view: PublicView, refuted: frozenset[str] = frozenset()) -> str:
+    """The best answer, or with none, the board with the commonest unused letter in every hidden square,
+    skipping fills a wrong solve already refuted."""
     if belief.best:
         return belief.best
     unused = [c for c in sorted(FREQUENCY, key=FREQUENCY.get, reverse=True) if c not in view.used_letters]
-    return board_text(view.board).replace("_", unused[0] if unused else "E")
+    fills = [board_text(view.board).replace("_", c) for c in unused or ["E"]]
+    return next((f for f in fills if f not in refuted), fills[0])
 
 
 class BotPlayer(Player):
@@ -75,6 +77,7 @@ class BotPlayer(Player):
         self.steal = Steal(seat, self.knobs)
         self.last_call: CallRecord | None = None
         self._beliefs: dict[tuple, Belief] = {}
+        self._refuted: dict[int | None, frozenset[str]] = {}  # answers wrong solves ruled out, by round
         self._before: PublicView | None = None  # the table before the latest action
         self._pending = 0  # copies found on a Mystery wedge, waiting on keep or flip
         self._record: dict = {}
@@ -96,6 +99,14 @@ class BotPlayer(Player):
                 and before.phase in (Phase.TURN, Phase.EXPRESS) and result.action.kind in _OPPORTUNITIES):
             belief = self._read(before)
             self.steal.note(result.seat, share_revealed(before.board), belief.confidence, result.outcome == "solved")
+        if result.outcome == "wrong_solve":
+            round_number = before.round_number if before is not None else view.round_number
+            try:
+                answer = normalize(result.action.answer)
+            except ValueError:  # an answer with characters no puzzle holds can't match a sampled one anyway
+                answer = None
+            if answer:
+                self._refuted[round_number] = self._refuted.get(round_number, frozenset()) | {answer}
         self._before = view
 
     def decide(self, view: PublicView, error: str | None = None) -> Action:
@@ -121,13 +132,13 @@ class BotPlayer(Player):
         if view.phase is Phase.BONUS_PICKS:
             return bonus.picks(belief, view, self.rules)
         if view.phase is Phase.BONUS_SOLVE:
-            return BonusSolve(guess(belief, view))
+            return BonusSolve(guess(belief, view, self._refuted_in(view)))
         s = self._situation(view, belief)
         match view.phase:
             case Phase.TURN:
                 eager = self.knobs.eager_solve
                 if eager is not None and belief.best and "solve" in legal and s.c >= eager:
-                    return Solve(guess(belief, view))
+                    return Solve(guess(belief, view, self._refuted_in(view)))
                 if s.c >= self.knobs.known_answer:
                     kind = planner.decide(s, legal)
                 else:
@@ -138,10 +149,10 @@ class BotPlayer(Player):
                     return Spin()
                 if kind == "buy_vowel":
                     return BuyVowel(s.vowel()[0])
-                return Solve(guess(belief, view))
+                return Solve(guess(belief, view, self._refuted_in(view)))
             case Phase.EXPRESS:
                 kind, letter = s.express_move(legal)
-                return CallConsonant(letter) if kind == "call_consonant" else Solve(guess(belief, view))
+                return CallConsonant(letter) if kind == "call_consonant" else Solve(guess(belief, view, self._refuted_in(view)))
             case Phase.CALL_CONSONANT:
                 return CallConsonant(s.consonant(view.wedge)[0])
             case Phase.WILD_CONSONANT:
@@ -179,8 +190,12 @@ class BotPlayer(Player):
     def _note(self, options: dict) -> None:
         self._record["values"] = {k: v.main for k, v in options.items()}
 
+    def _refuted_in(self, view: PublicView) -> frozenset[str]:
+        return self._refuted.get(view.round_number, frozenset())
+
     def _read(self, view: PublicView) -> Belief:
-        key = (view.round_number, view.category, view.board, view.used_letters)
+        refuted = self._refuted_in(view)
+        key = (view.round_number, view.category, view.board, view.used_letters, refuted)
         if key not in self._beliefs:
-            self._beliefs[key] = self.reader.read(view)
+            self._beliefs[key] = self.reader.read(view, refuted)
         return self._beliefs[key]

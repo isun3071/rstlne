@@ -12,6 +12,7 @@ import math
 import random
 from collections import Counter, defaultdict
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import Protocol
 
 from rstlne.engine.puzzle import LETTERS
@@ -31,7 +32,7 @@ _UNKNOWN = None  # marks an unknown word in a slot
 
 
 class Reader(Protocol):
-    def read(self, view: PublicView) -> Belief: ...
+    def read(self, view: PublicView, refuted: frozenset[str] = frozenset()) -> Belief: ...
 
 
 def board_text(board: str) -> str:
@@ -46,7 +47,7 @@ def _entropy(counts: Counter, total: int) -> float:
 class FrequencyReader:
     name = "frequency"
 
-    def read(self, view: PublicView) -> Belief:
+    def read(self, view: PublicView, refuted: frozenset[str] = frozenset()) -> Belief:
         text = board_text(view.board)
         hidden = text.count("_")
         if hidden == 0:
@@ -79,7 +80,7 @@ class WordListReader:
         total = sum(smoothed.values())
         self.length_share = {n: m / total for n, m in smoothed.items()}
 
-    def read(self, view: PublicView) -> Belief:
+    def read(self, view: PublicView, refuted: frozenset[str] = frozenset()) -> Belief:
         text = board_text(view.board)
         if "_" not in text:
             return Belief(letters={}, answers=((text, 1.0),), oov=0.0)
@@ -101,7 +102,7 @@ class WordListReader:
                 words.append(word)
             samples.append(" ".join(words))
             unknown.append(oov)
-        return summarize(samples, unknown, text, pool, self.knobs)
+        return summarize(samples, unknown, text, pool, self.knobs, refuted)
 
     def _slot(self, pattern: str, used: set[str], open_square: float) -> tuple[list, list[float]]:
         """One word slot's candidates and weights, the unknown word included."""
@@ -119,8 +120,14 @@ class WordListReader:
         return options, weights
 
 
-def summarize(samples: list[str], unknown: list[bool], text: str, pool: list[str], knobs: Knobs) -> Belief:
-    """A Belief from sampled whole answers. Answers with an unknown word count toward the oov share only."""
+def summarize(samples: list[str], unknown: list[bool], text: str, pool: list[str], knobs: Knobs,
+              refuted: frozenset[str] = frozenset()) -> Belief:
+    """A Belief from sampled whole answers. Answers with an unknown word count toward the oov share only.
+    Answers a wrong solve refuted are dropped first; if none is left standing, the answer is unknown."""
+    keep = [i for i, (s, oov) in enumerate(zip(samples, unknown)) if oov or s not in refuted]
+    if not keep:
+        return replace(summarize(samples, unknown, text, pool, knobs), answers=(), oov=1.0)
+    samples, unknown = [samples[i] for i in keep], [unknown[i] for i in keep]
     n = len(samples)
     answers = Counter(a for a, oov in zip(samples, unknown) if not oov)
     top = sorted(answers.items(), key=lambda a: (-a[1], a[0]))[: knobs.top_answers]
