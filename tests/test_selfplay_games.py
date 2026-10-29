@@ -146,3 +146,29 @@ def test_decision_tuning_plays_each_value_against_the_current_bot_and_resumes(tm
     before = len(lines)
     selfplay.tune_decisions(POOL, tmp_path, rules, wheel_spec, KNOBS, reader, sets=1, seed=4, grid=grid, say=lines.append)
     assert any("already played" in line for line in lines[before:])
+
+
+def test_decision_tuning_can_be_limited_to_some_knobs():
+    assert selfplay.grid_for("tie_margin,known_answer") == {"tie_margin": [0.002, 0.01], "known_answer": [0.9, 0.98]}
+    assert selfplay.grid_for(None) == selfplay.DECISION_GRID
+    with pytest.raises(ValueError, match="nonsense"):
+        selfplay.grid_for("nonsense")
+
+
+def test_v1_plays_with_the_steal_curve_measured_from_llm_play():
+    # From 4,303 turns of three LLMs on fresh puzzles (logs/selfplay/steal-preview), with the reader's knobs kept
+    assert versions.knobs(1).steal_prior == (-3.27, 2.61, 1.92)
+
+
+def test_the_tuning_command_starts_from_the_configured_bot_plus_its_knobs(tmp_path, monkeypatch):
+    table = tmp_path / "win-table.json"
+    table.write_text(json.dumps({"knob": [[1, [[-1000.0, 0.2], [1000.0, 0.8]]]]}))
+    seen = {}
+    monkeypatch.setattr(selfplay, "tune_decisions", lambda pool, out, rules, spec, base, make_reader, sets, seed, grid,
+                        workers, say: seen.update(base=base, grid=grid, rules=rules, sets=sets))
+    selfplay.main(["tune-decisions", "--puzzles", "puzzles/dev.json", "--out", str(tmp_path / "t"), "--sets", "2",
+                   "--knob", f"win_table=@{table}", "--knobs", "tie_margin"])
+    assert seen["base"].win_table == ((1, ((-1000.0, 0.2), (1000.0, 0.8))),)
+    assert seen["base"].steal_prior == versions.knobs(1).steal_prior
+    assert seen["grid"] == {"tie_margin": [0.002, 0.01]}
+    assert seen["rules"].main_rounds > 0 and seen["sets"] == 2

@@ -16,7 +16,8 @@ class Knobs:
     win_sigma: float = 6000.0  # spread of one round's winnings, for the win chance heuristic
     wild_bonus_lift: float = 0.10  # rise in bonus solve chance from the Wild Card's extra consonant
     bonus_solve: float = 0.5  # chance of solving the bonus puzzle, for card values
-    steal_prior: tuple[float, float, float] = (-4.0, 4.0, 3.0)  # logistic: intercept, share revealed, confidence
+    # Steal curve, logistic on (share revealed, raw confidence): fit on 4,303 turns of three LLMs on fresh puzzles
+    steal_prior: tuple[float, float, float] = (-3.27, 2.61, 1.92)
     steal_pseudo: float = 2.0  # pseudo-count that shrinks each seat's estimate toward the prior
     # The full reader
     vocabulary: int = 100_000  # most common wordfreq words a free slot can hold

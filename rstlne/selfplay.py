@@ -779,6 +779,17 @@ DECISION_GRID = {
 EAGER = "eager_solve=0.65"  # the LLM-like opponent: the median LLM solve attempt came at this confidence
 
 
+def grid_for(names: str | None) -> dict:
+    """The decision grid, or just the named knobs from it, comma separated."""
+    if not names:
+        return DECISION_GRID
+    wanted = [n.strip() for n in names.split(",") if n.strip()]
+    unknown = [n for n in wanted if n not in DECISION_GRID]
+    if unknown:
+        raise ValueError(f"not a tuned decision knob: {', '.join(unknown)}. Tuned: {', '.join(DECISION_GRID)}")
+    return {n: DECISION_GRID[n] for n in wanted}
+
+
 def pick(results: Sequence[dict]):
     """The value that beat the current one by the most, among those whose 95% interval is clear of zero."""
     clear = [r for r in results if r["ci95"] and r["ci95"][0] > 0]
@@ -812,8 +823,8 @@ def tune_decisions(pool: Sequence[Puzzle], out: Path, rules: Rules, spec: WheelS
             summary = games_summary(folder)
             gap = next(p for p in summary["pairwise"] if {p["a"], p["b"]} == {"current", "variant"})
             sign = 1 if gap["a"] == "variant" else -1
-            ci = sorted(sign * x for x in gap["ci95"]) if gap["ci95"] else None
-            result = {"knob": knob, "value": value, "gap": sign * gap["gap"], "ci95": ci, "games": summary["games"]}
+            ci = sorted(sign * x + 0.0 for x in gap["ci95"]) if gap["ci95"] else None  # + 0.0 turns -0.0 into 0.0
+            result = {"knob": knob, "value": value, "gap": sign * gap["gap"] + 0.0, "ci95": ci, "games": summary["games"]}
             results.append(result)
             comparisons.append(result)
             span = f" [{ci[0]:+.1%} to {ci[1]:+.1%}]" if ci else ""
@@ -968,6 +979,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     td.add_argument("--seed", type=int, default=404)
     td.add_argument("--workers", type=int, default=4, help="processes, one per core")
     td.add_argument("--knob", action="append", default=[], help="name=value or name=@file, for the starting knobs")
+    td.add_argument("--knobs", help="only these decision knobs, comma separated; all of them by default")
     wt = jobs.add_parser("win-table", help="P(finish first | lead, rounds left) from bot games")
     wt.add_argument("--games", nargs="+", required=True, help="games folders")
     wt.add_argument("--out", required=True, help="the folder for win-table.json")
@@ -992,10 +1004,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.job == "summary":
         print(json.dumps(summarize_reads(Path(args.folder)), indent=2))
         return
-    if args.job == "tune-decisions":
-        tune_decisions(settings.load_puzzles(Path(args.puzzles)), Path(args.out), rules, spec, knobs, _make_reader,
-                       args.sets, args.seed, workers=args.workers, say=print)
-        return
     if args.job == "win-table":
         win_table([Path(f) for f in args.games], Path(args.out), settings.load_rules().main_rounds, say=print)
         return
@@ -1006,6 +1014,14 @@ def main(argv: Sequence[str] | None = None) -> None:
     rules, spec = settings.load_rules(), settings.load_wheel()
     config = settings.load_config()
     knobs = override(versions.knobs(versions.current(config)), getattr(args, "knob", []))
+    if args.job == "tune-decisions":
+        try:
+            grid = grid_for(args.knobs)
+        except ValueError as err:
+            sys.exit(str(err))
+        tune_decisions(settings.load_puzzles(Path(args.puzzles)), Path(args.out), rules, spec, knobs, _make_reader,
+                       args.sets, args.seed, grid=grid, workers=args.workers, say=print)
+        return
     if args.job == "games":
         try:
             shard_spec = parse_shard(args.shard)
