@@ -184,3 +184,18 @@ def test_tuning_keeps_the_best_setting_of_each_knob_and_checks_it_on_held_out_pu
 def test_paired_knobs_move_together():
     changes = selfplay.setting(versions.knobs(1), "phrase_odds", 2.0)
     assert changes == {"phrase_odds": 2.0, "phrase_odds_other": 0.2}
+
+
+# Calibration
+
+
+def test_calibration_fits_on_tuning_reads_and_reports_honesty_on_held_out_ones(tmp_path, rules, wheel_spec):
+    held_out = [Puzzle("Thing", "BIG BACK PORCH")]
+    lines = []
+    points = selfplay.calibrate(PUZZLES, held_out, tmp_path, rules, wheel_spec, KNOBS, reader, say=lines.append)
+    saved = json.loads((tmp_path / "calibration.json").read_text())
+    assert [tuple(p) for p in saved["points"]] == list(points)
+    for batch in ("tuning", "held_out"):
+        assert {"before", "after"} <= set(saved[batch]) and {"error", "brier", "boards"} <= set(saved[batch]["before"])
+    assert saved["knob"].startswith("calibration=")
+    assert any("held out" in line for line in lines)

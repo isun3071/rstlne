@@ -63,6 +63,7 @@ rstlne/
       reader.py    # readers: letter frequency, and sampled whole answers from a word list
       full.py      # the full reader: a chain of words, phrases, and names over the slots
       lexicon.py   # the full reader's data, loaded once per process from a compiled cache
+      calibration.py # the confidence curve: stated confidence to how often it's right
       info.py      # how a reveal moves the chance the best guess is right
       objective.py # dollars in rounds 1 and 2, win chance from round 3, card values, ties
       steal.py     # steal odds per opponent, in sequence around the table

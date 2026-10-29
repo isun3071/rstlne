@@ -39,7 +39,7 @@ from rstlne.engine.rules import new_game, public_view
 from rstlne.engine.state import Phase, PublicView, Rules
 from rstlne.engine.wheel import WheelSpec
 from rstlne.narrate import duration, line_output
-from rstlne.players.bot import bonus, versions
+from rstlne.players.bot import bonus, calibration, versions
 from rstlne.players.bot.reader import Reader
 
 ORDER = "ETAOINSHRDLCUMWFGYPBVKJXQZ"  # English letter frequency
@@ -239,16 +239,74 @@ def _score(rows: Sequence[dict], samples: int) -> dict:
     }
 
 
+def read_rows(puzzles: Sequence[Puzzle], knobs: versions.Knobs, make_reader, rules: Rules, spec: WheelSpec,
+              workers: int = 1) -> list[dict]:
+    """Every board of `puzzles`, read with these knobs."""
+    if workers > 1:
+        with ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(make_reader, knobs, rules, spec)) as pool:
+            return [row for rows in pool.map(_read_in_worker, puzzles, chunksize=4) for row in rows]
+    reader = make_reader(knobs)
+    return [row for p in puzzles for row in read_puzzle(p, reader, rules, spec)]
+
+
 def evaluate(puzzles: Sequence[Puzzle], knobs: versions.Knobs, make_reader, rules: Rules, spec: WheelSpec,
              workers: int = 1) -> dict:
     """Read every board of `puzzles` with these knobs, and score the reading."""
-    if workers > 1:
-        with ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(make_reader, knobs, rules, spec)) as pool:
-            rows = [row for rows in pool.map(_read_in_worker, puzzles, chunksize=4) for row in rows]
-    else:
-        reader = make_reader(knobs)
-        rows = [row for p in puzzles for row in read_puzzle(p, reader, rules, spec)]
-    return _score(rows, knobs.samples)
+    return _score(read_rows(puzzles, knobs, make_reader, rules, spec, workers), knobs.samples)
+
+
+# Calibration
+
+
+def _honesty(pairs: Sequence[tuple[float, bool]], correct) -> dict:
+    return {"boards": len(pairs), "error": calibration.error(pairs, correct), "brier": calibration.brier(pairs, correct),
+            "mean_stated": float(np.mean([correct(c) for c, _ in pairs])), "accuracy": float(np.mean([r for _, r in pairs]))}
+
+
+def _bands(pairs: Sequence[tuple[float, bool]], correct, bands: int = 10) -> list[dict]:
+    out = []
+    for b in range(bands):
+        lo, hi = b / bands, (b + 1) / bands
+        inside = [(c, r) for c, r in pairs if lo <= c < hi or (b == bands - 1 and c == 1)]
+        if inside:
+            out.append({"raw": f"{lo:.1f}-{hi:.1f}", "boards": len(inside),
+                        "raw_mean": float(np.mean([c for c, _ in inside])),
+                        "calibrated_mean": float(np.mean([correct(c) for c, _ in inside])),
+                        "actual": float(np.mean([r for _, r in inside]))})
+    return out
+
+
+def calibrate(puzzles: Sequence[Puzzle], held_out: Sequence[Puzzle], out: Path, rules: Rules, spec: WheelSpec,
+              knobs: versions.Knobs, make_reader, workers: int = 1, say=print) -> calibration.Points:
+    """Fit the confidence curve on the tuning puzzles' main round boards, and report how honest the
+    reader's confidence is before and after, on the tuning boards and on held out ones."""
+    began = time.monotonic()
+    raw = replace(knobs, calibration=())
+    say(f"Reading {len(puzzles)} tuning and {len(held_out)} held out puzzles, {workers} worker{'s' if workers != 1 else ''}")
+    tuning = [(r["confidence"], r["correct"]) for r in read_rows(puzzles, raw, make_reader, rules, spec, workers) if not r["bonus"]]
+    unseen = [(r["confidence"], r["correct"]) for r in read_rows(held_out, raw, make_reader, rules, spec, workers) if not r["bonus"]]
+    points = calibration.fit(tuning)
+    before, after = calibration.curve(()), calibration.curve(points)
+    result = {
+        "points": [list(p) for p in points],
+        "knob": "calibration=" + ",".join(f"{x:g}:{y:g}" for x, y in points),
+        "tuning": {"before": _honesty(tuning, before), "after": _honesty(tuning, after)},
+        "held_out": {"before": _honesty(unseen, before), "after": _honesty(unseen, after),
+                     "bands": _bands(unseen, after)},
+        "reader_knobs": _knob_dict(raw),
+        "minutes": round((time.monotonic() - began) / 60, 1),
+    }
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "calibration.json").write_text(json.dumps(result, indent=2) + "\n")
+    for name, label in (("tuning", "tuning boards"), ("held_out", "held out boards")):
+        b, a = result[name]["before"], result[name]["after"]
+        say(f"{label}: calibration error {b['error']:.3f} -> {a['error']:.3f}, Brier {b['brier']:.3f} -> {a['brier']:.3f} "
+            f"({a['boards']} boards; accuracy {a['accuracy']:.1%}, mean stated {b['mean_stated']:.1%} -> {a['mean_stated']:.1%})")
+    for band in result["held_out"]["bands"]:
+        say(f"  raw {band['raw']}: {band['boards']:5d} boards, says {band['raw_mean']:.0%} -> {band['calibrated_mean']:.0%}, "
+            f"actually right {band['actual']:.0%}")
+    say(f"Curve points ({len(points)}), for v1's knobs: {result['knob']}")
+    return points
 
 
 def _knob_dict(knobs: versions.Knobs) -> dict:
@@ -507,7 +565,10 @@ def override(knobs: versions.Knobs, pairs: Sequence[str]) -> versions.Knobs:
         if name not in types:
             raise ValueError(f"no knob named {name!r}")
         kind = types[name]
-        changes[name] = tuple(float(x) for x in value.split(",")) if kind is tuple else kind(value)
+        if name == "calibration":  # points as raw:actual pairs
+            changes[name] = tuple(tuple(float(v) for v in pair.split(":")) for pair in value.split(","))
+        else:
+            changes[name] = tuple(float(x) for x in value.split(",")) if kind is tuple else kind(value)
     return replace(knobs, **changes)
 
 
@@ -537,6 +598,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     tune.add_argument("--workers", type=int, default=4, help="processes, one per core")
     tune.add_argument("--passes", type=int, default=2)
     tune.add_argument("--knob", action="append", default=[], help="name=value, to start from other knobs")
+    cal = jobs.add_parser("calibrate", help="fit the confidence curve on tuning reads, then check it on held out ones")
+    cal.add_argument("--puzzles", required=True, help="the tuning batch")
+    cal.add_argument("--held-out", required=True, help="the grading batch, never fit on")
+    cal.add_argument("--out", required=True, help="the folder for calibration.json")
+    cal.add_argument("--workers", type=int, default=4, help="processes, one per core")
+    cal.add_argument("--knob", action="append", default=[], help="name=value, to read with other knobs")
     fit = jobs.add_parser("steal", help="fit the steal curve from tournament logs")
     fit.add_argument("--logs", nargs="+", required=True, help="tournament folders")
     fit.add_argument("--out", required=True, help="the folder for steal-fit.json and steal-points.jsonl")
@@ -553,6 +620,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     rules, spec = settings.load_rules(), settings.load_wheel()
     config = settings.load_config()
     knobs = override(versions.knobs(versions.current(config)), args.knob)
+    if args.job == "calibrate":
+        calibrate(settings.load_puzzles(Path(args.puzzles)), settings.load_puzzles(Path(args.held_out)), Path(args.out),
+                  rules, spec, knobs, _make_reader, args.workers, say=print)
+        return
     if args.job == "tune-reader":
         tune_reader(settings.load_puzzles(Path(args.puzzles)), settings.load_puzzles(Path(args.held_out)), Path(args.out),
                     rules, spec, knobs, _make_reader, passes=args.passes, workers=args.workers, say=print)

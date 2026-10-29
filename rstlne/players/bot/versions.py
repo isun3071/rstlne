@@ -31,6 +31,8 @@ class Knobs:
     same_letter_boost: float = 20.0  # Same Letter: neighbors sharing a first letter
     rhyme_boost: float = 20.0  # Rhyme Time: words that rhyme
     same_name_boost: float = 50.0  # Same Name: both halves name a known phrase with the shared ending
+    # Confidence correction: (raw confidence, how often it was right) points; none means no change
+    calibration: tuple[tuple[float, float], ...] = ()
 
 
 VERSIONS = {1: Knobs()}  # v1 is in development until self-play freezes it

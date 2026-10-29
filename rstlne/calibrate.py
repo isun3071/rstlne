@@ -24,6 +24,7 @@ from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
 from rstlne.narrate import line_output
 from rstlne.players.base import InvalidResponse
+from rstlne.players.bot.calibration import calibration_curve
 from rstlne.players.decision import SOLVABLE_QUESTION, decision_state
 from rstlne.players.llm import LLMPlayer
 
@@ -54,20 +55,6 @@ def boards(puzzles: Sequence[Puzzle], count: int, seed: int) -> list[Board]:
             shown = sum(c in progression[i] for c in letters) / len(letters)
             out.append(Board(puzzle, progression[i], round(shown, 3)))
     return out
-
-
-def calibration_curve(points: Sequence[tuple[float, bool]]) -> list[tuple[float, float, float, int]]:
-    """Solver accuracy as a never-decreasing function of P(solvable), fit by pooling adjacent violators.
-    Each block is (lowest P, highest P, accuracy, boards)."""
-    blocks: list[list] = []  # [correct, boards, lowest P, highest P]
-    for p, correct in sorted(points):
-        blocks.append([float(correct), 1, p, p])
-        while len(blocks) > 1 and blocks[-2][0] / blocks[-2][1] > blocks[-1][0] / blocks[-1][1]:
-            right, n, _, high = blocks.pop()
-            blocks[-1][0] += right
-            blocks[-1][1] += n
-            blocks[-1][3] = high
-    return [(low, high, right / n, n) for right, n, low, high in blocks]
 
 
 def choose_threshold(points: Sequence[tuple[float, bool]], target: float = TARGET, minimum: int = MINIMUM) -> float | None:

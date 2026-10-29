@@ -23,7 +23,7 @@ from rstlne.engine.state import (
 from rstlne.engine.wheel import Kind, WheelSpec
 from rstlne.llm.openrouter import Usage
 from rstlne.players.base import CallRecord, Player
-from rstlne.players.bot import bonus, info, lexicon, planner, versions
+from rstlne.players.bot import bonus, calibration, info, lexicon, planner, versions
 from rstlne.players.bot.belief import Belief
 from rstlne.players.bot.full import FullReader
 from rstlne.players.bot.objective import Objective
@@ -170,6 +170,7 @@ class BotPlayer(Player):
         goal = Objective(view, self.rules, self.spec, self.knobs)
         prior = self.steal.prior
         return Situation(view, belief, goal, odds, self.rules, self.spec, self.knobs,
+                         calibrate=calibration.curve(self.knobs.calibration),
                          turn_chance=lambda c: max(c, prior(share, c)))
 
     def _note(self, options: dict) -> None:
