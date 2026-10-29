@@ -1,6 +1,8 @@
 """Pick each decision model's solve threshold from data.
 
     python -m rstlne.calibrate --models openai/gpt-6-luna-decisions,typesafe/jev-1.14
+
+`python -m rstlne.calibrate trust ...` measures hybrid seats' trust and steal curves instead; see trust.py.
 """
 
 from __future__ import annotations
@@ -8,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import sys
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
@@ -143,6 +146,10 @@ def calibrate(
 
 
 def main(argv: Sequence[str] | None = None) -> dict:
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv[:1] == ["trust"]:
+        from rstlne import trust
+        return trust.main(argv[1:])
     line_output()
     parser = argparse.ArgumentParser(prog="python -m rstlne.calibrate", description="Pick decision model solve thresholds from data.")
     parser.add_argument("--models", required=True, help="decision model IDs, comma separated")

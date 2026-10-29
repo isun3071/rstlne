@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import math
 import time
+from dataclasses import dataclass
 
 from rstlne.engine.puzzle import compact, fits_shown, normalize
 from rstlne.engine.state import Action, Phase, PublicView, Result, Rules
@@ -96,6 +97,44 @@ def ask_text(view: PublicView, refuted: frozenset[str]) -> str:
         f"Proven wrong this round: {'; '.join(sorted(refuted)) or 'none'}",
         "Does the board look solvable right now? Call read_board.",
     ])
+
+
+@dataclass(frozen=True)
+class Asked:
+    reply: tuple[bool, str | None] | None  # (solvable, answer), or None after ATTEMPTS bad responses
+    attempts: int
+    seconds: float
+    provider: str | None
+    usage: Usage
+
+
+def ask(client: OpenRouter, model: str, view: PublicView, refuted: frozenset[str], *, temperature: float | None = None,
+        session_id: str | None = None, reasoning_effort: str | None = None, provider: str | None = None) -> Asked:
+    """One ask: the hybrid's question about this board, reprompted up to ATTEMPTS times."""
+    messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": ask_text(view, refuted)}]
+    began, routed, usage = time.monotonic(), None, Usage()
+    for attempt in range(1, ATTEMPTS + 1):
+        reply = client.chat(model=model, messages=messages, tools=[READ_BOARD], temperature=temperature,
+                            session_id=session_id, reasoning_effort=reasoning_effort, provider=provider)
+        usage += reply.usage
+        routed = reply.provider
+        try:
+            return Asked(read_reply(reply.message), attempt, time.monotonic() - began, routed, usage)
+        except InvalidResponse as err:
+            messages.append(_assistant(reply.message))
+            if reply.message.tool_calls:
+                messages.append({"role": "tool", "tool_call_id": reply.message.tool_calls[0].id, "content": f"Error: {err}"})
+            else:
+                messages.append({"role": "user", "content": f"Error: {err}"})
+    return Asked(None, ATTEMPTS, time.monotonic() - began, routed, usage)
+
+
+def trust_of(curve: tuple[float, ...], shown: float, alone: Belief, answer: str) -> float:
+    """The trust curve: t from share showing, agreement, the reader's probability for the answer, and its confidence."""
+    a, b, c, d, g = curve
+    agree = float(alone.best == answer)
+    p_reader = dict(alone.answers).get(answer, 0.0)
+    return logistic(a + b * shown + c * agree + d * p_reader + g * alone.confidence)
 
 
 def _assistant(message) -> dict:
@@ -210,7 +249,11 @@ class HybridPlayer(BotPlayer):
     def _consult(self, view: PublicView, alone: Belief, refuted: frozenset[str]) -> dict:
         """Ask the model about this board, check its answer, and mix it in."""
         self._asked += 1
-        reply, attempts, seconds, provider = self._send(view, refuted)
+        asked = ask(self.client, self.model, view, refuted, temperature=self.temperature, session_id=self.session_id,
+                    reasoning_effort=self.reasoning_effort, provider=self.provider)
+        self.usage += asked.usage
+        self._ask_usage += asked.usage
+        reply = asked.reply
         answer, status, trust, belief = None, "failed" if reply is None else "not solvable", None, alone
         if reply and reply[0]:
             try:
@@ -223,41 +266,12 @@ class HybridPlayer(BotPlayer):
                 status = "refuted"
             else:
                 status = "used"
-                trust = self._trust(view, alone, answer)
+                trust = trust_of(self.trust, share_revealed(view.board), alone, answer)
                 belief = self.reader.read(view, refuted, (answer, trust))
         record = {
-            "n": self._asked, "model": self.model, "provider": provider,
+            "n": self._asked, "model": self.model, "provider": asked.provider,
             "reply": {"solvable": bool(reply and reply[0]), "answer": reply[1] if reply else None},
             "status": status, "trust": trust, "reader_confidence": alone.confidence,
-            "merged_confidence": belief.confidence, "attempts": attempts, "seconds": round(seconds, 2),
+            "merged_confidence": belief.confidence, "attempts": asked.attempts, "seconds": round(asked.seconds, 2),
         }
         return {"record": record, "belief": belief}
-
-    def _trust(self, view: PublicView, alone: Belief, answer: str) -> float:
-        a, b, c, d, g = self.trust
-        shown = share_revealed(view.board)
-        agree = float(alone.best == answer)
-        p_reader = dict(alone.answers).get(answer, 0.0)
-        return logistic(a + b * shown + c * agree + d * p_reader + g * alone.confidence)
-
-    def _send(self, view: PublicView, refuted: frozenset[str]):
-        """Up to ATTEMPTS requests. Returns ((solvable, answer) or None, attempts, seconds, provider)."""
-        messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": ask_text(view, refuted)}]
-        began, provider = time.monotonic(), None
-        for attempt in range(1, ATTEMPTS + 1):
-            reply = self.client.chat(
-                model=self.model, messages=messages, tools=[READ_BOARD], temperature=self.temperature,
-                session_id=self.session_id, reasoning_effort=self.reasoning_effort, provider=self.provider,
-            )
-            self.usage += reply.usage
-            self._ask_usage += reply.usage
-            provider = reply.provider
-            try:
-                return read_reply(reply.message), attempt, time.monotonic() - began, provider
-            except InvalidResponse as err:
-                messages.append(_assistant(reply.message))
-                if reply.message.tool_calls:
-                    messages.append({"role": "tool", "tool_call_id": reply.message.tool_calls[0].id, "content": f"Error: {err}"})
-                else:
-                    messages.append({"role": "user", "content": f"Error: {err}"})
-        return None, ATTEMPTS, time.monotonic() - began, provider

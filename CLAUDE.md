@@ -84,6 +84,7 @@ rstlne/
   cli.py           # play a game in the terminal
   tournament.py    # seeded model only runs
   calibrate.py     # picks each decision model's solve threshold from data
+  trust.py         # measures each model's hybrid trust and steal curves on real game boards
   data.py          # fetches the bot's word data into data/, streamed and pruned
   puzzlegen.py     # fresh puzzles: a generator writes, code checks, a judge confirms, nothing reused
   selfplay.py      # bot self-play and tuning on a server: sharded, resumable, no API calls
