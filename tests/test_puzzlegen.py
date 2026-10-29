@@ -179,6 +179,20 @@ def seen(tmp_path, monkeypatch):
     return path
 
 
+def test_a_tournament_on_a_saved_batch_records_who_made_it(tmp_path, seen):
+    answers = ["CRIMSON BARN", "COBALT DOOR", "GOLDEN KITE", "SCARLET LAMP"]
+    batch = tmp_path / "grading-1.json"
+    batch.write_text(json.dumps({"generator": "maker/gen", "judge": "maker/judge", "puzzles": [
+        *({"category": "Thing", "answer": a, "bonus": False} for a in answers),
+        {"category": "Thing", "answer": "SILVER MUG", "bonus": True}]}))
+    out = tmp_path / "t"
+    result = run_tournament(["llm:a/one", "llm:b/two", "llm:c/three"], sets=1, seed=5, puzzles_path=batch,
+                            out_dir=out, parallel=3, client=table_client(iter(())), write=lambda line: None, heartbeat=600)
+    header = json.loads(next(out.glob("set000-perm0.jsonl")).read_text().splitlines()[0])
+    assert header["tournament"]["generated_by"] == {"generator": "maker/gen", "judge": "maker/judge"}
+    assert not result["dev_run"] and result["generated_by"]["judge"] == "maker/judge"
+
+
 def test_a_tournament_generates_its_puzzles_once_and_records_how(tmp_path, seen):
     fresh = iter(f"{a} {b}" for a in ("CRIMSON", "COBALT", "GOLDEN", "SCARLET", "SILVER", "VIOLET", "AMBER", "COPPER", "MAROON", "INDIGO")
                  for b in ("BARN", "DOOR", "KITE", "LAMP", "MUG", "SOCK", "VASE", "YARN", "BELL", "COAT"))

@@ -169,7 +169,7 @@ def run_tournament(
         generated_by = {"generator": s.generator, "judge": s.judge}
     else:
         pool = settings.load_puzzles(puzzles_path)
-        generated_by = None
+        generated_by = settings.puzzle_makers(puzzles_path)
     main_hands = deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
     bonus_hands = deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
     processes = "bot" in kinds and client is None and decisions is None  # the bot computes, so it needs its own cores
@@ -284,7 +284,7 @@ def report(out_dir: Path) -> dict:
         header, summary = rows[0], rows[-1]
         tournament = header["tournament"]
         names, puzzles = tournament["names"], tournament["puzzles"]
-        generated = tournament.get("generated_by")
+        generated = generated or tournament.get("generated_by")  # games logged before batches were labeled lack it
         set_puzzles[tournament["set"]] = [p["answer"] for p in header["puzzles"]] + [header["bonus_puzzle"]["answer"]]
         wins = split_wins(summary["totals"])
         bonus = summary["bonus"]

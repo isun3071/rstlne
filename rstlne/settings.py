@@ -33,3 +33,11 @@ def load_puzzles(path: Path) -> list[Puzzle]:
     """A puzzle file: a plain list, or a generated batch with its puzzles under "puzzles"."""
     data = json.loads(Path(path).read_text())
     return [Puzzle.from_dict(p) for p in (data["puzzles"] if isinstance(data, dict) else data)]
+
+
+def puzzle_makers(path: Path) -> dict | None:
+    """The generator and judge of a generated batch file; None for a plain puzzle list."""
+    data = json.loads(Path(path).read_text())
+    if isinstance(data, dict) and "generator" in data:
+        return {"generator": data["generator"], "judge": data.get("judge")}
+    return None
