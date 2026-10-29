@@ -6,6 +6,8 @@ import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
+import numpy as np
+
 from rstlne.engine.state import PublicView, Rules
 from rstlne.engine.wheel import WheelSpec
 from rstlne.players.bot.versions import Knobs
@@ -43,6 +45,14 @@ def p_first(totals: Sequence[float], seat: int, rounds_left: int, sigma: float) 
     return 0.5 * (1 + math.erf(lead / (sigma * math.sqrt(rounds_left) * math.sqrt(2))))
 
 
+def win_chance(table, rounds_left: int, lead: float) -> float | None:
+    """The table's chance of finishing first with this lead and this many rounds left, or None without a row."""
+    for left, points in table:
+        if left == rounds_left and points:
+            return float(np.interp(lead, [x for x, _ in points], [p for _, p in points]))
+    return None
+
+
 class Objective:
     def __init__(self, view: PublicView, rules: Rules, spec: WheelSpec, knobs: Knobs):
         self.seat = view.seat
@@ -52,18 +62,28 @@ class Objective:
         self.minimum = rules.solve_minimum
         self.win_mode = view.round_number is not None and view.round_number > MONEY_ROUNDS
         self.rounds_left = rules.main_rounds - (view.round_number or rules.main_rounds)  # after this round
-        self.reach_bonus = p_first(self.totals, self.seat, self.rounds_left + 1, knobs.win_sigma) if rules.bonus_round else 0.0
+        self.reach_bonus = self.first(self.totals, self.rounds_left + 1) if rules.bonus_round else 0.0
         envelopes = spec.envelopes
         replaced, million = spec.million_swap
         self.wild_value = knobs.wild_bonus_lift * sum(envelopes) / len(envelopes) * self.reach_bonus
         self.million_value = knobs.bonus_solve * (million - replaced) / len(envelopes) * self.reach_bonus
+
+    def first(self, totals: Sequence[float], rounds_left: int) -> float:
+        """The chance of finishing first: the self-play table where it has a row, else the formula.
+        With no rounds left, the lead decides."""
+        if rounds_left > 0 and self.knobs.win_table:
+            lead = totals[self.seat] - max(t for i, t in enumerate(totals) if i != self.seat)
+            chance = win_chance(self.knobs.win_table, rounds_left, lead)
+            if chance is not None:
+                return chance
+        return p_first(totals, self.seat, rounds_left, self.knobs.win_sigma)
 
     def _cards(self, wild: bool, million: bool) -> float:
         return self.wild_value * wild + self.million_value * million
 
     def _value(self, dollars: float, totals: Sequence[float], cards: float) -> Value:
         if self.win_mode:
-            return Value(p_first(totals, self.seat, self.rounds_left, self.knobs.win_sigma), cards)
+            return Value(self.first(totals, self.rounds_left), cards)
         return Value(dollars + cards)
 
     def win_round(self, bank: float, wild: bool, million: bool) -> Value:

@@ -763,7 +763,76 @@ def summary_lines(summary: dict) -> list[str]:
     return lines
 
 
+# The win-chance table
+
+
+def _increasing(means: Sequence[float], weights: Sequence[float]) -> list[float]:
+    """Weighted pooling of adjacent violators: the closest never-decreasing sequence."""
+    blocks: list[list[float]] = []  # [weighted sum, weight, count of entries]
+    for m, w in zip(means, weights):
+        blocks.append([m * w, w, 1])
+        while len(blocks) > 1 and blocks[-2][0] / blocks[-2][1] > blocks[-1][0] / blocks[-1][1]:
+            s, w2, c = blocks.pop()
+            blocks[-1][0] += s
+            blocks[-1][1] += w2
+            blocks[-1][2] += c
+    out = []
+    for s, w, c in blocks:
+        out += [s / w] * int(c)
+    return out
+
+
+def build_win_table(games: Sequence[dict], main_rounds: int, band: int = 1000, cap: int = 30_000,
+                    minimum: int = 20) -> tuple:
+    """P(finish first after the main rounds | lead over the best opponent, rounds left), from every seat at
+    every round boundary of every game. Ties for first are shared. Leads group into bands; bands with fewer
+    than `minimum` records are dropped; the chance is made to rise with the lead."""
+    from rstlne import tournament
+
+    groups: dict[int, dict[int, list[float]]] = {}
+    for g in games:
+        rounds = g["round_totals"]
+        if len(rounds) != main_rounds:
+            continue
+        shares = tournament.split_wins(rounds[-1])
+        for k in range(main_rounds):
+            totals = [0, 0, 0] if k == 0 else rounds[k - 1]
+            left = main_rounds - k
+            for seat in range(3):
+                lead = totals[seat] - max(t for i, t in enumerate(totals) if i != seat)
+                b = max(-cap, min(cap, round(lead / band) * band))
+                groups.setdefault(left, {}).setdefault(b, []).append(shares[seat])
+    table = []
+    for left in sorted(groups):
+        bands = sorted((b, v) for b, v in groups[left].items() if len(v) >= minimum)
+        if not bands:
+            continue
+        means = _increasing([sum(v) / len(v) for _, v in bands], [len(v) for _, v in bands])
+        table.append((left, tuple((float(b), round(m, 4)) for (b, _), m in zip(bands, means))))
+    return tuple(table)
+
+
+def win_table(folders: Sequence[Path], out: Path, main_rounds: int, say=print) -> tuple:
+    """Build the win-chance table from games folders and save it as win-table.json, ready for --knob win_table=@."""
+    from rstlne.players.bot.objective import win_chance
+
+    games = [g for folder in folders for path in sorted(Path(folder).glob("games-shard*.jsonl")) for g in _rows(path)]
+    table = build_win_table(games, main_rounds)
+    out.mkdir(parents=True, exist_ok=True)
+    result = {"games": len(games), "main_rounds": main_rounds, "knob": [[r, [list(p) for p in pts]] for r, pts in table]}
+    (out / "win-table.json").write_text(json.dumps(result, indent=2) + "\n")
+    say(f"Win-chance table from {len(games)} games, saved to {out / 'win-table.json'}")
+    for left, points in table:
+        row = ", ".join(f"{lead:+,.0f} {win_chance(table, left, lead):.0%}" for lead in (-10000, -5000, -2000, 0, 2000, 5000, 10000))
+        say(f"  {left} round{'s' if left != 1 else ''} left: {row}")
+    return table
+
+
 # Knobs
+
+
+def _tuples(value):
+    return tuple(_tuples(v) for v in value) if isinstance(value, list) else value
 
 
 def override(knobs: versions.Knobs, pairs: Sequence[str]) -> versions.Knobs:
@@ -774,6 +843,10 @@ def override(knobs: versions.Knobs, pairs: Sequence[str]) -> versions.Knobs:
         name, _, value = pair.partition("=")
         if name not in types:
             raise ValueError(f"no knob named {name!r}")
+        if value.startswith("@"):  # a big knob, like a table, from a file: its "knob" entry
+            data = json.loads(Path(value[1:]).read_text())
+            changes[name] = _tuples(data["knob"] if isinstance(data, dict) else data)
+            continue
         kind = types[name]
         if kind is type(None):  # a knob that is off by default takes a number
             kind = float
@@ -820,6 +893,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     games.add_argument("--shard", default="1/1", help="i/n: this machine's share of the games")
     games.add_argument("--workers", type=int, default=4, help="processes, one per core")
     games.add_argument("--knob", action="append", default=[], help="name=value, for every entrant's starting knobs")
+    wt = jobs.add_parser("win-table", help="P(finish first | lead, rounds left) from bot games")
+    wt.add_argument("--games", nargs="+", required=True, help="games folders")
+    wt.add_argument("--out", required=True, help="the folder for win-table.json")
     gsum = jobs.add_parser("games-summary", help="win rates with intervals across every shard of a games folder")
     gsum.add_argument("folder")
     cal = jobs.add_parser("calibrate", help="fit the confidence curve on tuning reads, then check it on held out ones")
@@ -840,6 +916,9 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     if args.job == "summary":
         print(json.dumps(summarize_reads(Path(args.folder)), indent=2))
+        return
+    if args.job == "win-table":
+        win_table([Path(f) for f in args.games], Path(args.out), settings.load_rules().main_rounds, say=print)
         return
     if args.job == "games-summary":
         for line in summary_lines(games_summary(Path(args.folder))):
