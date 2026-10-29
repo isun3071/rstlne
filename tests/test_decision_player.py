@@ -65,6 +65,25 @@ def test_turn_with_money_asks_action_and_vowel_in_one_call(rules, wheel_spec, ga
     assert options(call, "vowel") == ["A", "I", "O", "U"]
 
 
+def test_a_last_unused_vowel_is_taken_without_asking(rules, wheel_spec, game):
+    state = set_seat(game, 0, bank=1000)
+    state = replace(state, round=replace(state.round, used=frozenset("AEIO")))
+    player, decisions, _ = seat(rules, wheel_spec, decide_by(0.1, {"action": "buy_vowel"}))
+    assert player.decide(public_view(state, 0)) == BuyVowel("U")
+    (call,) = decisions.calls
+    assert set(call["questions"]) == {"solvable", "action"}  # the API rejects a choice with one option
+    assert player.last_call.raw["decisions"][0]["chosen"]["vowel"] == "U"
+
+
+def test_a_pick_with_one_option_makes_no_call(rules, wheel_spec, game):
+    state = spin_to(game, 3)
+    state = replace(state, round=replace(state.round, used=CONSONANTS - {"T"}))
+    player, decisions, _ = seat(rules, wheel_spec, decide_by())
+    assert player.decide(public_view(state, 0)) == CallConsonant("T")
+    assert decisions.calls == []
+    assert player.thoughts() == ["consonant T (only option)"]
+
+
 @pytest.mark.parametrize("p_yes, solves", [(0.8, True), (0.95, True), (0.79, False)])
 def test_solve_check_hands_off_to_the_solver_at_the_threshold(rules, wheel_spec, game, p_yes, solves):
     replies = [completion(("solve", {"answer": "WHEEL OF FORTUNE"}))]

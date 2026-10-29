@@ -98,6 +98,8 @@ class DecisionPlayer(Player):
                 answer = decision["answers"].get(name, {})
                 if answer.get("type") == "noul":
                     parts.append(f"P(solvable) {picked:.2f}")
+                elif name in decision.get("only_option", ()):
+                    parts.append(f"{name} {picked} (only option)")
                 else:
                     parts.append(f"{name} {picked} ({answer.get('probabilities', {}).get(picked, 0):.2f})")
             lines.append(", ".join(parts))
@@ -188,25 +190,33 @@ class DecisionPlayer(Player):
         return self._ask(view, {name: choice(instructions, options)}, note)[name]
 
     def _ask(self, view: PublicView, questions: dict[str, dict], note: str | None = None) -> dict:
-        """One Decisions call. Logs every distribution, then checks each choice is an offered option."""
-        decisions = self.decisions.ask(model=self.model, state=self._state(view, note), questions=questions, session_id=self.session_id)
-        self.usage += decisions.usage
-        self._call_usage += decisions.usage
+        """One Decisions call. Logs every distribution, then checks each choice is an offered option.
+        A choice with one option takes it without asking, since the API needs two; with nothing left, no call."""
+        only = {name: next(iter(q["criteria"])) for name, q in questions.items()
+                if q["type"] == "choice" and len(q["criteria"]) == 1}
+        asked = {name: q for name, q in questions.items() if name not in only}
+        model, provider, answers = self.model, None, {}
+        if asked:
+            decisions = self.decisions.ask(model=self.model, state=self._state(view, note), questions=asked, session_id=self.session_id)
+            self.usage += decisions.usage
+            self._call_usage += decisions.usage
+            model, provider, answers = decisions.model or self.model, decisions.provider, decisions.answers
         chosen = {}
         for name, question in questions.items():
-            answer = decisions.answers.get(name) or {}
-            chosen[name] = answer.get("noul") if question["type"] == "noul" else answer.get("choice")
+            answer = answers.get(name) or {}
+            chosen[name] = only[name] if name in only else answer.get("noul") if question["type"] == "noul" else answer.get("choice")
         self._record["decisions"].append({
-            "model": decisions.model or self.model,
-            "provider": decisions.provider,
+            "model": model,
+            "provider": provider,
             "questions": {
                 name: {"type": q["type"], "options": list(q["criteria"]) if q["type"] == "choice" else None}
                 for name, q in questions.items()
             },
-            "answers": decisions.answers,
+            "answers": answers,
+            "only_option": sorted(only),
             "chosen": chosen,
         })
-        for name, question in questions.items():
+        for name, question in asked.items():
             if question["type"] == "choice" and chosen[name] not in question["criteria"]:
                 raise InvalidResponse("bad_decision", f"{name}: {chosen[name]!r} is not one of the options")
         return chosen
