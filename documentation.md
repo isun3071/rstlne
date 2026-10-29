@@ -226,7 +226,7 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 
 ## Seats
 
-Each seat is one of four kinds.
+Each seat is one of five kinds.
 
 | seat | moves and risk choices | the solve itself |
 |---|---|---|
@@ -234,9 +234,11 @@ Each seat is one of four kinds.
 | `llm:<slug>` | the model | the model |
 | `decision[:<model>]` | a decision model | an LLM, the solver |
 | `bot` | the bot | the bot |
+| `hybrid:<slug>` | the bot, with the model's reading of the board | the bot, often with the model's answer |
 
 - **`llm:<slug>`:** the model plays every move, as the LLM player section describes.
 - **`bot`:** the bot plays every move and solves as the Bot section describes, bonus round included.
+- **`hybrid:<slug>`:** the bot plays every move, and the model reads the board for it, as the Hybrid seat section describes.
 - **`decision`:** a decision model, called through OpenRouter's Decisions API, makes every choice except the answer text: spin, buy a vowel, or solve; which consonant; which vowel; keep or flip on Mystery; pass or play on Express; whether to spend the Wild Card; and the bonus round letter picks. An LLM writes the solve answer, and only when the decision model triggers a solve. `decision:<model>` names the decision model for one seat.
   - **Solve trigger:** every turn, before any other choice, ask the decision model a yes or no question: "Can the puzzle be solved correctly from this board right now?" If P(yes) is at or above `solve_threshold`, the LLM writes the answer. A wrong answer passes the turn as usual. Otherwise, ask which action to take, with the options restricted to legal non-solve actions. Ask both questions in one call. When buying a vowel is legal, ask which vowel in the same call, and during Express mode ask which consonant too, so the pick is ready if that action wins. After each action that keeps the turn, ask again before the next action.
   - **Nothing to choose:** when only one non-solve action is legal, skip the action question and still ask whether to solve. When solving is the only legal move, skip both questions and the LLM writes the answer.
@@ -246,6 +248,57 @@ Each seat is one of four kinds.
   - **Config:** set `decision_model` (any Decisions API model ID, default `openai/gpt-6-luna-decisions`), `solver_model` (any OpenRouter chat model slug, default `openai/gpt-6-luna`), and `solve_threshold` (default 0.8) in `config.toml`. `[decision.thresholds]` overrides the threshold for named decision models, because their probabilities run on different scales: Jev 1.14 gives a fully revealed board about 0.75 on average, while GPT-6 Luna Decisions gives about 0.99.
   - **Calibration:** `python -m rstlne.calibrate --models <id>,<id>` picks each decision model's threshold from data. It samples main round puzzles with a seed, reveals each one in English letter frequency order (E T A O I N S H R D L C U M W F G Y P B V K J X Q Z), and stops at several points from an empty board to a full one. At each board, every decision model gives P(solvable) from the same state and question it gets in a game, and the solver gets one solve attempt with the same view and tool, shared across the models. A model's threshold is the lowest P(solvable) at which the calibration curve reaches 80%: the solver's accuracy, fit as a never-decreasing function of P(solvable). At least 5 boards must sit at or above the threshold. The command prints the `[decision.thresholds]` lines and saves every board's results.
   - **Logging:** log the full probability distribution returned for every question, the chosen option, and the threshold. For every triggered solve, log P(yes) and whether the answer was correct, so calibration can be plotted later.
+
+## Hybrid seat
+
+The `hybrid:<slug>` seat is the bot with a second reader. The bot makes every move as the Bot section describes. On its own turns it asks the model whether the board looks solvable and, if so, for the answer. The model never moves and never solves on its own: a fitting answer joins the reader's candidates, and the bot decides what to do with it, including whether to milk the board before solving. The hybrid tests whether the bot's strategy plus a model's recognition beats either one alone.
+
+In this section, "ask" means one request to the model. "Call" still means calling a letter.
+
+### When it asks
+
+- Once for each new board the hybrid acts on in the main rounds. A board is new when the board or the used letters change. A spin and the consonant call that follows it share one ask.
+- Never on an opponent's turn.
+- In the bonus round, once, after R S T L N E and the hybrid's picks are revealed. The picks themselves come from the reader alone.
+
+### The question
+
+- The system prompt says what a solve must be: the whole puzzle, matching the board's words, word lengths, revealed letters, and punctuation. It carries no strategy advice.
+- The request holds the category, the spaced board, the compact pattern with word lengths, the used letters, and the answers wrong solves have refuted this round. It holds no banks, totals, cards, or wheel: the question is recognition only.
+- One tool, required: `read_board(solvable, answer)`. `solvable` is true or false, and `answer` is required when it is true.
+- Models reason at their defaults, and tool choice follows the LLM player section.
+- A response with no tool call or unreadable arguments is reprompted with the error up to 2 times. After the third failure, the ask counts as "not solvable".
+
+### Using the answer
+
+- An answer is used only if it fits the board (the same word count and word lengths, every revealed letter and punctuation mark in place, only unused letters in hidden squares) and isn't refuted. Otherwise it's ignored and logged as not fitting or refuted. A "not solvable" reply is ignored too, and the bot reads the board alone.
+- A used answer A joins the reader's sampled answers with share t, the trust: the reader's samples carry weight 1 − t and A carries t. The merged confidence in A is t + (1 − t) × the reader's probability for A. Letter odds, copy counts, and entropy come from the merged samples, so letter choice, the known answer planner, and the Express ride all follow the model's answer.
+- t comes from the model's trust curve: t = 1 / (1 + e^-(a + b × shown + c × agree + d × p_reader)), where shown is the share of letters showing, agree is 1 when the reader's best answer is A, and p_reader is the reader's probability for A. Each model has its own a, b, c, d in `[hybrid.trust]` in `config.toml`. A model with no trust curve can't sit in a hybrid seat.
+- Steal odds keep using the reader's confidence alone, since the steal curve was fit on it. The model changes how sure the bot is, not its model of the opponents.
+- A wrong solve refutes its answer, as for the bot. A refuted answer is listed in the next ask and never used again that round.
+- Bonus solve: the best answer of the merged candidates.
+
+### Logging
+
+- The header records the bot version, its data fingerprint, the model slug, temperature, and any pinned provider.
+- Every ask logs the board, the reply, whether the answer was used (or why not), t, the reader's and the merged confidence, token usage, and seconds taken. Usage totals per game, and a tournament's `--max-cost` counts it.
+
+### Trust curves
+
+`python -m rstlne.calibrate trust --models <slug>,<slug> --logs <tournament folders>` measures each model's trust curve on real game boards.
+
+- Boards: main round boards on which a player moved, taken from the given tournament logs, which hold the true answers. It samples 2,000 boards by default, an equal number from each tenth of the share showing, with a seed. The refuted answers each board's ask lists are the ones refuted at that point in the logged game.
+- Each board gets the exact hybrid question from every model, and the bot's reader reads it.
+- Each ask records: the share showing, whether the model said solvable, its answer, whether it fits, whether it was right, the reader's best answer and confidence, whether they agree, the reader's probability for the model's answer, tokens, cost, and seconds.
+- The fit: a, b, c, d by maximum likelihood on the asks that said solvable with a fitting answer, with 95% intervals from resampling whole puzzles.
+- The report, per model:
+  - the share of asks that said solvable, and their accuracy, by tenth of the board showing
+  - disagreements: boards where the reader's confidence is at least 0.95 and the model gives another fitting answer, and how often each was right
+  - the share of answers that don't fit the board
+  - cost and seconds per ask, and an estimated cost per game
+  - the `[hybrid.trust]` lines to paste into `config.toml`
+- `--held-out <tournament folders>` checks a fitted curve on other boards, reporting predicted against actual accuracy without refitting.
+- Fit only on tournaments played on tuning puzzles. Grading puzzles may serve only as the held-out check.
 
 ## Human player (CLI)
 
