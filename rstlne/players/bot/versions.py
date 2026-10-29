@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -40,7 +42,22 @@ class Knobs:
     eager_solve: float | None = None
 
 
-VERSIONS = {1: Knobs()}  # v1 is in development until self-play freezes it
+def _tuples(value):
+    return tuple(_tuples(v) for v in value) if isinstance(value, list) else value
+
+
+def _win_table(name: str) -> tuple:
+    return _tuples(json.loads((Path(__file__).parent / name).read_text())["knob"])
+
+
+# Frozen 2026-10-29. In bot games on grading puzzles they tied, 37% each (gap +0%, 95% interval -2% to +3%),
+# so both are kept. v1 reads win chances from the formula; v2 from the win table built in self-play.
+# A change to either is a new version, never an edit here.
+VERSIONS = {
+    1: Knobs(),
+    2: Knobs(win_table=_win_table("win-table-v2.json")),
+}
+DATA = {1: "0640bcd6a420", 2: "0640bcd6a420"}  # the word data each version was frozen with, by fingerprint
 
 
 def current(config: dict) -> int:

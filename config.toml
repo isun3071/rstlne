@@ -14,6 +14,7 @@ bonus_consonants = 3  # plus one vowel; a held Wild Card adds one more consonant
 
 [bot]
 version = 1  # picks the bot's code, data, and knobs; tournaments never mix versions
+# 1: win chances from the formula. 2: from the win table built in self-play. They tied in bot games.
 
 [puzzlegen]
 # Fresh puzzles: a generator writes them, code checks them, and a judge from another lab confirms the

@@ -34,13 +34,19 @@ from rstlne.players.bot.value import Situation
 _OPPORTUNITIES = ("spin", "buy_vowel", "solve")  # moves made when the seat could have solved
 
 
-def make_reader(knobs: versions.Knobs) -> Reader:
-    """The full reader when the word data is fetched, or letter frequency alone until it is."""
+def make_reader(knobs: versions.Knobs, version: int | None = None) -> Reader:
+    """The full reader when the word data is fetched, or letter frequency alone until it is.
+    With a version, the data must be the data that version was frozen with."""
     root = lexicon.data_dir()
     if not lexicon.available(root):
         return FrequencyReader()
+    found = lexicon.fingerprint(root, knobs.vocabulary)
+    pinned = versions.DATA.get(version) if version is not None else None
+    if pinned and found != pinned:
+        raise ValueError(f"bot v{version} was frozen with word data {pinned}, but {root} holds {found}. "
+                         "Fetch the data it was frozen with, or pick another version in config.toml.")
     reader = FullReader(lexicon.load(str(root), knobs.vocabulary), knobs)
-    reader.fingerprint = lexicon.fingerprint(root, knobs.vocabulary)
+    reader.fingerprint = found
     return reader
 
 

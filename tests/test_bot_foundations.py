@@ -91,6 +91,47 @@ def test_the_project_config_names_a_known_version():
     assert versions.current(settings.load_config()) in versions.VERSIONS
 
 
+def test_v1_plays_the_formula_and_v2_the_win_table():
+    v1, v2 = versions.knobs(1), versions.knobs(2)
+    assert v1.win_table == () and [left for left, _ in v2.win_table] == [1, 2, 3, 4]
+    assert replace(v2, win_table=()) == v1  # the table is their only difference
+
+
+def knob_hash(version):
+    from dataclasses import asdict
+    import hashlib
+    return hashlib.sha256(json.dumps(asdict(versions.knobs(version)), sort_keys=True).encode()).hexdigest()[:12]
+
+
+def test_frozen_versions_never_change():
+    """A frozen version's knobs are fixed. A change belongs in a new version, never in v1 or v2."""
+    assert knob_hash(1) == "ee505edb9891" and knob_hash(2) == "4b391d4eb285"
+
+
+def test_both_versions_are_pinned_to_the_same_word_data():
+    assert versions.DATA[1] == versions.DATA[2] == "0640bcd6a420"
+
+
+class _Reader:
+    def __init__(self, lexicon, knobs):
+        self.knobs = knobs
+
+
+@pytest.mark.parametrize("found, ok", [("0640bcd6a420", True), ("abcdef123456", False)])
+def test_a_version_refuses_word_data_it_wasnt_frozen_with(monkeypatch, found, ok):
+    from rstlne.players.bot import lexicon, player
+    monkeypatch.setattr(lexicon, "available", lambda root: True)
+    monkeypatch.setattr(lexicon, "load", lambda path, vocabulary: None)
+    monkeypatch.setattr(lexicon, "fingerprint", lambda root, vocabulary: found)
+    monkeypatch.setattr(player, "FullReader", _Reader)
+    assert player.make_reader(versions.knobs(1)).fingerprint == found  # self-play experiments aren't checked
+    if ok:
+        assert player.make_reader(versions.knobs(1), version=1).fingerprint == found
+    else:
+        with pytest.raises(ValueError, match="0640bcd6a420"):
+            player.make_reader(versions.knobs(1), version=1)
+
+
 # Tournaments
 
 

@@ -90,7 +90,7 @@ def build_players(
             return HumanPlayer(i, seconds=config["cli"]["bonus_solve_seconds"])
         if kind == "bot":
             version = versions.current(config)
-            return BotPlayer(i, rules, spec, make_reader(versions.knobs(version)), version=version)
+            return BotPlayer(i, rules, spec, make_reader(versions.knobs(version), version), version=version)
         if kind == "hybrid":
             trust, steal = hybrid.get("trust", {}).get(model), hybrid.get("steal", {}).get(model)
             if trust is None or steal is None:
@@ -98,7 +98,7 @@ def build_players(
                                  f"hybrid seat. Measure them with: python -m rstlne.calibrate trust --models {model}")
             version = versions.current(config)
             return HybridPlayer(
-                i, model, client, tuple(trust), tuple(steal), rules, spec, make_reader(versions.knobs(version)),
+                i, model, client, tuple(trust), tuple(steal), rules, spec, make_reader(versions.knobs(version), version),
                 version=version, temperature=temperature, session_id=session, reasoning_effort=effort,
                 provider=providers.get(model),
             )

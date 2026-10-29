@@ -134,6 +134,8 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 ### Versions
 
 - The bot is versioned: bot v1, v2, and so on. A version fixes the bot's code, its data files, and its knobs. `[bot] version` in `config.toml` picks one, and every log header records it.
+- Versions 1 and 2 were frozen on 2026-10-29. They differ only in how they read win chances from round 3 on: v1 uses the formula, and v2 the win table built from 1,998 bot games. In 1,998 bot games on grading puzzles they tied, at 37% wins each (gap +0%, 95% interval −2% to +3%), so both are kept. A change to either is a new version.
+- Each version is pinned to the word data it was frozen with, by fingerprint: 0640bcd6a420 for both. A bot or hybrid seat refuses to play a version on other data. Self-play experiments aren't checked.
 - A tournament never changes the bot. Its default folder name covers the bot version, and a rerun refuses to resume a tournament whose finished games used another version.
 - Self-play may try knobs away from a version's values. Those runs are experiments, not versions, and tournaments refuse them.
 
@@ -143,7 +145,7 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 - Rounds 3 and later: maximize the chance of finishing ahead of both opponents after the last main round. Every payoff converts into the change in that chance. A tie for first counts as a shared win, as in tournament scoring.
 - From round 3 on, only finishing first counts: winning by $100 is as good as winning by 10 times second place. A lead still matters as a means, since it raises the chance of finishing first. With a commanding lead, the best move is often to solve at once, ending the round before an opponent banks anything.
 - The bonus round is secondary. It matters through the Wild Card's saved value, the Million card's value, and the bonus round itself. In rounds 1 and 2 those values count in dollars. From round 3 on, they only break ties: moves whose win chances sit within a set margin of the best (a knob) count as tied, and the tied move with the most bonus value wins.
-- The win chance comes from a table of P(finish first | lead, rounds left), built from self-play games. Lead is the bot's game total minus the highest opponent total. Where the table has no row, a simple formula stands in: P = Φ(lead / (σ √(rounds left))), with σ a knob. Once no rounds are left, the lead decides: 1, 0, or a shared win.
+- The win chance comes from a simple formula, P = Φ(lead / (σ √(rounds left))) with σ a knob, or in versions that carry one, from a table of P(finish first | lead, rounds left) built from self-play games, with the formula standing in where the table has no row. Lead is the bot's game total minus the highest opponent total. Once no rounds are left, the lead decides: 1, 0, or a shared win.
 
 ### Reader
 
