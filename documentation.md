@@ -273,8 +273,8 @@ In this section, "ask" means one request to the model. "Call" still means callin
 
 - An answer is used only if it fits the board (the same word count and word lengths, every revealed letter and punctuation mark in place, only unused letters in hidden squares) and isn't refuted. Otherwise it's ignored and logged as not fitting or refuted. A "not solvable" reply is ignored too, and the bot reads the board alone.
 - A used answer A joins the reader's sampled answers with share t, the trust: the reader's samples carry weight 1 − t and A carries t. The merged confidence in A is t + (1 − t) × the reader's probability for A. Letter odds, copy counts, and entropy come from the merged samples, so letter choice, the known answer planner, and the Express ride all follow the model's answer.
-- t comes from the model's trust curve: t = 1 / (1 + e^-(a + b × shown + c × agree + d × p_reader)), where shown is the share of letters showing, agree is 1 when the reader's best answer is A, and p_reader is the reader's probability for A. Each model has its own a, b, c, d in `[hybrid.trust]` in `config.toml`. A model with no trust curve can't sit in a hybrid seat.
-- Steal odds keep using the reader's confidence alone, since the steal curve was fit on it. The model changes how sure the bot is, not its model of the opponents.
+- t comes from the model's trust curve: t = 1 / (1 + e^-(a + b × shown + c × agree + d × p_reader + g × reader_best)), where shown is the share of letters showing, agree is 1 when the reader's best answer is A, p_reader is the reader's probability for A, and reader_best is the reader's confidence in its own best answer. reader_best tells a reader that is confidently sure of another answer from one that has no idea. Each model has its own a, b, c, d, g in `[hybrid.trust]` in `config.toml`. A model with no trust curve can't sit in a hybrid seat.
+- Steal odds use the model's steal curve instead of the bot's: q = 1 / (1 + e^-(a + b × shown + c × reader_best + d × readable)), where readable is 1 when the hybrid's latest ask on this board got a fitting answer. A board the model can read is likely readable to LLM opponents too, even when the reader can't read it, and the bot's curve would miss that. Each model has its own a, b, c, d in `[hybrid.steal]` in `config.toml`. Everything else about steal odds follows the bot: each opponent's estimate scales during the game from what it does, and opponents act in sequence. When it scales an opponent's estimate, the hybrid uses the verdict from its latest ask this round, or 0 before its first ask, since it never asks on an opponent's turn.
 - A wrong solve refutes its answer, as for the bot. A refuted answer is listed in the next ask and never used again that round.
 - Bonus solve: the best answer of the merged candidates.
 
@@ -289,14 +289,17 @@ In this section, "ask" means one request to the model. "Call" still means callin
 
 - Boards: main round boards on which a player moved, taken from the given tournament logs, which hold the true answers. It samples 2,000 boards by default, an equal number from each tenth of the share showing, with a seed. The refuted answers each board's ask lists are the ones refuted at that point in the logged game.
 - Each board gets the exact hybrid question from every model, and the bot's reader reads it.
-- Each ask records: the share showing, whether the model said solvable, its answer, whether it fits, whether it was right, the reader's best answer and confidence, whether they agree, the reader's probability for the model's answer, tokens, cost, and seconds.
-- The fit: a, b, c, d by maximum likelihood on the asks that said solvable with a fitting answer, with 95% intervals from resampling whole puzzles.
+- Each ask records: the share showing, whether the model said solvable, its answer, whether it fits, whether it was right, the reader's best answer and confidence, whether they agree, the reader's probability for the model's answer, whether the logged player on that turn solved correctly, tokens, cost, and seconds.
+- The trust fit: a, b, c, d, g by maximum likelihood on the asks that said solvable with a fitting answer, with 95% intervals from resampling whole puzzles.
+- The steal fit: a, b, c, d by maximum likelihood on every sampled board, from whether the logged player solved correctly on that turn, with the same intervals.
 - The report, per model:
   - the share of asks that said solvable, and their accuracy, by tenth of the board showing
   - disagreements: boards where the reader's confidence is at least 0.95 and the model gives another fitting answer, and how often each was right
+  - agreeing and wrong: boards where the model's answer is the reader's best answer and both are wrong, by tenth of the board showing and separately for a reader at 0.95 or more. This is the risk behind riding the Express on an answer both believe
+  - the steal curve with and without readable, and how much readable moves the odds
   - the share of answers that don't fit the board
   - cost and seconds per ask, and an estimated cost per game
-  - the `[hybrid.trust]` lines to paste into `config.toml`
+  - the `[hybrid.trust]` and `[hybrid.steal]` lines to paste into `config.toml`
 - `--held-out <tournament folders>` checks a fitted curve on other boards, reporting predicted against actual accuracy without refitting.
 - Fit only on tournaments played on tuning puzzles. Grading puzzles may serve only as the held-out check.
 
