@@ -88,8 +88,9 @@ solve_pause = 10          # seconds to hold a solved board before the next round
 # Pin a model to one OpenRouter provider, by the tag on its endpoints page, so every game runs on
 # the same build. No fallback: if that provider is down, calls fail after the usual retries.
 # DeepSeek's own servers are blocked by this account's privacy setting (they may train on paid prompts).
-# DeepInfra serves the model at FP8 and caches; the default cheapest host served FP4 and stalled.
-"deepseek/deepseek-v4.1-flash-1017" = "deepinfra/fp8"
+# Inference.net serves it at FP8 and thinks about 3x as fast as DeepInfra (147 vs 47 tokens/s), so long
+# thinks finish inside the time limit. DeepInfra FP8 hosted it for every game before 2026-10-30.
+"deepseek/deepseek-v4.1-flash-1017" = "inference-net/fp8"
 "mistralai/mistral-small-3.2-24b-instruct" = "deepinfra/fp8"  # the puzzle generator until 2026-10-29
 "minimax/minimax-m3" = "together"  # the puzzle generator: one of three hosts that take a JSON schema; not FP4, up 100%
 "google/gemma-3-27b-it" = "deepinfra/fp8"  # the puzzle judge until 2026-10-29; some of its other hosts stall
