@@ -29,7 +29,7 @@ from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage
 from rstlne.narrate import duration, line_output
 from rstlne.players.bot.lexicon import data_dir, rhyme_key
 
-PROMPT_VERSION = 3
+PROMPT_VERSION = 4  # 4: bonus requests ask for less common letters
 DEADLINE = 60  # seconds for one request: a batch of answers takes a few
 MAX_FAILURES = 5  # requests failing in a row before a run stops and keeps what it has
 FAMILIAR = 4  # the judge rates how familiar an answer is, 1 to 5; below this it's out
@@ -86,6 +86,10 @@ class Settings:
     main_min_letters: int = 8  # a main puzzle needs at least this many letters
     judges: int = 4  # judge calls in flight at once
     providers: dict[str, str] = field(default_factory=dict)  # model -> the one host it runs on, from [providers]
+    bonus_letters: str = "RSTLNE"  # what the bonus round gives every player
+    bonus_picks: str = "CDMA"  # the picks a bonus puzzle is tested against, the most common ones
+    bonus_min_hidden: float = 0.5  # share of letter squares still hidden after those letters show
+    bonus_min_letters: int = 6  # fewer and a puzzle is a guess among many words, not hard
 
     @classmethod
     def from_config(cls, config: dict) -> Settings:
@@ -93,7 +97,9 @@ class Settings:
         pins = config.get("providers", {})
         return cls(c["generator"], c["judge"], c.get("batch", 10), tuple(c["rows"]), tuple(c["bonus_rows"]),
                    c.get("max_requests", 200), c.get("main_min_letters", 8), c.get("judges", 4),
-                   {m: pins[m] for m in (c["generator"], c["judge"]) if m in pins})
+                   {m: pins[m] for m in (c["generator"], c["judge"]) if m in pins},
+                   "".join(config.get("bonus_letters", "RSTLNE")), c.get("bonus_picks", "CDMA"),
+                   c.get("bonus_min_hidden", 0.5), c.get("bonus_min_letters", 6))
 
 
 @dataclass
@@ -121,6 +127,13 @@ def fits_rows(answer: str, rows: Sequence[int]) -> bool:
             room, need = rows[row], len(word)
         room -= need
     return True
+
+
+def hidden_after_picks(answer: str, s: Settings) -> float:
+    """The share of a bonus puzzle's letter squares still hidden once the given letters and the usual picks show."""
+    shown = set(s.bonus_letters) | set(s.bonus_picks)
+    letters = [c for c in answer if c in LETTERS]
+    return sum(c not in shown for c in letters) / len(letters)
 
 
 def structure_ok(category: str, answer: str, rhymes: dict[str, set[str]]) -> bool:
@@ -298,12 +311,17 @@ _PARTS = {
 
 
 def _ask_generator(client: OpenRouter, s: Settings, category: str, bonus: bool, ideas: list[str], n: int):
-    size = ("short: two or three words, at most 14 letters in all" if bonus
+    size = ("short: one to three words, at most 14 letters in all" if bonus
             else "one to six words, no word longer than 12 letters")
+    letters = ", ".join(s.bonus_letters[:-1]) + f", and {s.bonus_letters[-1]}"
+    hard = ([f"Favor words built from less common letters, like B, F, G, H, J, K, P, Q, U, V, W, X, Y, and Z, and use "
+             f"few of {letters}. Each must still be a common phrase or thing that a typical adult would recognize."]
+            if bonus else [])
     request = "\n".join([
         f"Category: {category}",
         f"What fits: {DESCRIPTIONS.get(category, 'something that clearly belongs to this category')}.",
         f"Write {n} different answers. Each is {size}.",
+        *hard,
         f"For variety, these words may suggest topics, but never force them in: {', '.join(ideas)}.",
         'Reply as JSON: {"answers": ["...", "..."]}',
     ])
@@ -434,7 +452,7 @@ def generate(
                     candidates = []
                     for raw in answers:
                         verdict = _check(raw, category, rows, rhymes, prior, this_run, pending, result,
-                                         0 if is_bonus else s.main_min_letters)
+                                         0 if is_bonus else s.main_min_letters, s if is_bonus else None)
                         if verdict is not None:
                             pending.add(verdict)
                             candidates.append(verdict)
@@ -466,8 +484,9 @@ def generate(
 
 
 def _check(raw: str, category: str, rows, rhymes, prior: NearIndex, this_run: NearIndex, pending: NearIndex,
-           result: Result, min_letters: int = 0) -> str | None:
-    """The answer if it passes every check in code, else None with the reason counted."""
+           result: Result, min_letters: int = 0, bonus: Settings | None = None) -> str | None:
+    """The answer if it passes every check in code, else None with the reason counted.
+    With `bonus`, the answer is also held to the bonus round's length and difficulty."""
     try:
         answer = normalize(raw)
     except ValueError:
@@ -490,6 +509,12 @@ def _check(raw: str, category: str, rows, rhymes, prior: NearIndex, this_run: Ne
         return None
     if sum(c in LETTERS for c in answer) < min_letters:
         result.rejected["too short for a main puzzle"] += 1
+        return None
+    if bonus and sum(c in LETTERS for c in answer) < bonus.bonus_min_letters:
+        result.rejected["too short for a bonus puzzle"] += 1
+        return None
+    if bonus and hidden_after_picks(answer, bonus) < bonus.bonus_min_hidden:
+        result.rejected["too easy for a bonus puzzle"] += 1
         return None
     if not structure_ok(category, answer, rhymes):
         result.rejected[f"breaks the {category} rule"] += 1
@@ -539,8 +564,9 @@ def load_pool(path: Path) -> list[Puzzle]:
 def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path], known: Sequence[Puzzle],
             say=lambda line: None) -> list[str]:
     """Hold a batch file to the current checks: drop near repeats of `known` puzzles, of the `against` files,
-    and of earlier puzzles in the file; contractions without apostrophes; and categories whose familiarity
-    bar has risen, which get judged again. Rewrites the file, and returns what it dropped."""
+    and of earlier puzzles in the file; contractions without apostrophes; bonus puzzles too short or too easy;
+    and categories whose familiarity bar has risen, which get judged again. Rewrites the file, and returns
+    what it dropped."""
     data = json.loads(path.read_text())
     prior = NearIndex([p.answer for p in known] + [p.answer for f in against for p in load_pool(f)])
     kept_index, kept, dropped = NearIndex(), [], []
@@ -552,6 +578,10 @@ def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path]
             reason = "near an earlier puzzle in this file"
         elif missing_apostrophe(p.answer):
             reason = "contraction without its apostrophe"
+        elif p.bonus and sum(c in LETTERS for c in p.answer) < s.bonus_min_letters:
+            reason = "too short for a bonus puzzle"
+        elif p.bonus and hidden_after_picks(p.answer, s) < s.bonus_min_hidden:
+            reason = f"too easy for a bonus puzzle: {hidden_after_picks(p.answer, s):.0%} hidden after the usual picks"
         elif p.category in FAMILIAR_FOR:
             fits, why, common, parts = _verdict(_ask_judge(client, s, p.category, p.answer).message.content)
             if not fits or common < FAMILIAR_FOR[p.category] or not parts_ok(p.category, p.answer, parts):

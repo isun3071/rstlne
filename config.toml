@@ -19,7 +19,7 @@ version = 1  # picks the bot's code, data, and knobs; tournaments never mix vers
 [puzzlegen]
 # Fresh puzzles: a generator writes them, code checks them, and a judge from another lab confirms the
 # category. Both are cheap, from labs apart from every player model. Requests stand alone, so input stays small.
-generator = "mistralai/mistral-small-3.2-24b-instruct"
+generator = "minimax/minimax-m3"  # in a 2026-10-29 trial it wrote the most familiar hard bonus answers
 judge = "google/gemma-3-27b-it"
 batch = 10            # answers per generator request
 max_requests = 200    # generator requests per run, a cost guard
@@ -27,6 +27,9 @@ judges = 4            # judge calls in flight at once
 rows = [12, 14, 14, 12]   # a main puzzle wraps into these board rows, never splitting a word
 bonus_rows = [14, 14]     # a bonus puzzle fits these rows: shorter than main puzzles, and harder
 main_min_letters = 8      # a main puzzle needs at least this many letters, so none is trivial
+bonus_min_letters = 6     # a bonus puzzle needs at least this many: three blanks fit too many words to be fair
+bonus_picks = "CDMA"      # a bonus puzzle is tested against R S T L N E plus these, the most common picks
+bonus_min_hidden = 0.5    # and must keep at least this share of its letter squares hidden after them
 # Category mix, by weight: dev.json's proportions, for the categories with a plain description
 main_mix = { "Phrase" = 23, "Food & Drink" = 8, "Place" = 8, "Thing" = 7, "What Are You Doing?" = 7, "Event" = 6, "Before & After" = 6, "Same Name" = 4, "Rhyme Time" = 4, "Living Thing" = 3, "Person" = 3, "Fun & Games" = 3, "Around the House" = 3, "What Are You Wearing?" = 3, "Same Letter" = 3, "Occupation" = 2, "Living Things" = 2, "In the Kitchen" = 2, "On the Map" = 2, "Landmark" = 2, "Character" = 2, "Show Biz" = 2, "Things" = 1, "Title" = 1 }
 bonus_mix = { "Thing" = 7, "Phrase" = 7, "Place" = 4, "Food & Drink" = 4, "Living Thing" = 3, "What Are You Doing?" = 2, "What Are You Wearing?" = 1, "Around the House" = 1, "Rhyme Time" = 1 }
@@ -81,7 +84,8 @@ solve_pause = 10          # seconds to hold a solved board before the next round
 # DeepSeek's own servers are blocked by this account's privacy setting (they may train on paid prompts).
 # DeepInfra serves the model at FP8 and caches; the default cheapest host served FP4 and stalled.
 "deepseek/deepseek-v4.1-flash-1017" = "deepinfra/fp8"
-"mistralai/mistral-small-3.2-24b-instruct" = "deepinfra/fp8"  # the puzzle generator: cheapest host, up 100%
+"mistralai/mistral-small-3.2-24b-instruct" = "deepinfra/fp8"  # the puzzle generator until 2026-10-29
+"minimax/minimax-m3" = "deepinfra/fp8"  # the puzzle generator: FP8 like the others, JSON replies, up 100%
 "google/gemma-3-27b-it" = "deepinfra/fp8"  # the puzzle judge; some of its other hosts stall
 
 [models]
