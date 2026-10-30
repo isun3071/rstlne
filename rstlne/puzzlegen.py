@@ -15,7 +15,7 @@ import random
 import re
 import sys
 import time
-from collections import Counter
+from collections import Counter, deque
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -461,48 +461,60 @@ def generate(
             rows = s.bonus_rows if is_bonus else s.rows
             for category, count in wanted:
                 got = 0
-                while got < count and result.requests < s.max_requests and not result.stopped:
-                    result.requests += 1
-                    ideas = _ideas(rng, pool)
-                    reply = record("generator", attempt(lambda: _ask_generator(client, s, category, is_bonus, ideas, s.batch)))
-                    if reply is None:
+                pending = NearIndex()  # this category's answers queued or sent to the judge, so overlapping replies can't repeat one
+                queue: list[str] = []  # checked answers waiting for a judge
+                flight: deque = deque()  # (answer, future) with the judge, handled in the order sent
+                while got < count and not result.stopped:
+                    # Keep the judges busy across replies, with no more in flight than the answers still needed could use
+                    while len(flight) < max(1, min(s.judges, 2 * (count - got))) and not result.stopped:
+                        if queue:
+                            answer = queue.pop(0)
+                            flight.append((answer, judges.submit(attempt, lambda a=answer: _ask_judge(client, s, category, a))))
+                            continue
+                        if result.requests >= s.max_requests or len(flight) >= count - got:
+                            break  # out of requests, or what's with the judge could fill the quota on its own
+                        result.requests += 1
+                        ideas = _ideas(rng, pool)
+                        reply = record("generator", attempt(lambda: _ask_generator(client, s, category, is_bonus, ideas, s.batch)))
+                        if reply is None:
+                            continue
+                        answers = parse_answers(reply.message.content)
+                        rng.shuffle(answers)  # the first answer is the most typical; a shuffle keeps the pick varied
+                        status(category, is_bonus, got, count)
+                        if not answers:
+                            result.rejected["reply didn't parse"] += 1
+                        for raw in answers:
+                            verdict = _check(raw, category, rows, rhymes, prior, this_run, pending, result,
+                                             0 if is_bonus else s.main_min_letters, s if is_bonus else None, dictionary)
+                            if verdict is not None:
+                                pending.add(verdict)
+                                queue.append(verdict)
+                    if not flight:
+                        break
+                    answer, future = flight.popleft()
+                    judged = record("judge", future.result())
+                    if judged is None or result.stopped:
                         continue
-                    answers = parse_answers(reply.message.content)
-                    rng.shuffle(answers)  # the first answer is the most typical; a shuffle keeps the pick varied
+                    fits, reason, common, parts = _verdict(judged.message.content)
+                    if fits and common < FAMILIAR_FOR.get(category, FAMILIAR):
+                        fits, reason = False, f"familiarity {common} of 5: {reason}"
+                    if fits and not parts_ok(category, answer, parts):
+                        fits, reason = False, f"its parts {parts} don't rebuild the answer"
+                    if not fits:
+                        result.rejected["judge: doesn't fit the category"] += 1
+                        result.judged_out.append((category, answer, reason))
+                        continue
+                    this_run.add(answer)
+                    with open(seen_path, "a") as f:
+                        f.write(answer + "\n")
+                    result.puzzles.append(Puzzle(category, answer, bonus=is_bonus))
+                    on_accept(result.puzzles)
+                    got += 1
                     status(category, is_bonus, got, count)
-                    if not answers:
-                        result.rejected["reply didn't parse"] += 1
-                    pending = NearIndex()  # this reply's answers so far
-                    candidates = []
-                    for raw in answers:
-                        verdict = _check(raw, category, rows, rhymes, prior, this_run, pending, result,
-                                         0 if is_bonus else s.main_min_letters, s if is_bonus else None, dictionary)
-                        if verdict is not None:
-                            pending.add(verdict)
-                            candidates.append(verdict)
-                    while candidates and got < count and not result.stopped:
-                        chunk, candidates = candidates[:max(1, s.judges)], candidates[max(1, s.judges):]
-                        futures = [judges.submit(attempt, lambda a=a: _ask_judge(client, s, category, a)) for a in chunk]
-                        for answer, future in zip(chunk, futures):
-                            judged = record("judge", future.result())
-                            if judged is None or got == count or result.stopped:
-                                continue
-                            fits, reason, common, parts = _verdict(judged.message.content)
-                            if fits and common < FAMILIAR_FOR.get(category, FAMILIAR):
-                                fits, reason = False, f"familiarity {common} of 5: {reason}"
-                            if fits and not parts_ok(category, answer, parts):
-                                fits, reason = False, f"its parts {parts} don't rebuild the answer"
-                            if not fits:
-                                result.rejected["judge: doesn't fit the category"] += 1
-                                result.judged_out.append((category, answer, reason))
-                                continue
-                            this_run.add(answer)
-                            with open(seen_path, "a") as f:
-                                f.write(answer + "\n")
-                            result.puzzles.append(Puzzle(category, answer, bonus=is_bonus))
-                            on_accept(result.puzzles)
-                            got += 1
-                            status(category, is_bonus, got, count)
+                for _, future in flight:  # verdicts no longer needed still cost money
+                    outcome = future.result()
+                    if not isinstance(outcome, BaseException):
+                        result.usage += outcome.usage
                 say(f"  {category}{' (bonus)' if is_bonus else ''}: {got} of {count}")
     return result
 

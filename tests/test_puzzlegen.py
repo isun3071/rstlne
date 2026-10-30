@@ -464,6 +464,29 @@ def test_judges_work_in_parallel(tmp_path):
     assert sorted(p.answer for p in result.puzzles) == ["KITCHEN SINK", "SPARE TIRE"]
 
 
+
+def test_judges_stay_busy_across_generator_replies(tmp_path):
+    together = threading.Barrier(2, timeout=5)  # each reply leaves one answer, so the two calls come from two replies
+    batches = iter([["Spare tire"], ["Kitchen sink"]])
+
+    def reply(request):
+        if request["model"] == GEN:
+            return completion(content=json.dumps({"answers": next(batches)}))
+        together.wait()
+        return completion(content=json.dumps({"fits": True, "reason": "ok", "common": 5, "parts": []}))
+    result = puzzlegen.generate(router(reply), settings(max_requests=2, judges=2), [("Thing", 2)], [], seed=1,
+                                known=[], seen_path=tmp_path / "seen.txt")
+    assert sorted(p.answer for p in result.puzzles) == ["KITCHEN SINK", "SPARE TIRE"]
+
+
+def test_an_answer_already_with_the_judge_isnt_sent_twice(tmp_path):
+    client = fake([["Spare tire"], ["spare tire", "Kitchen sink"]])
+    result = puzzlegen.generate(client, settings(max_requests=2, judges=4), [("Thing", 2)], [], seed=1,
+                                known=[], seen_path=tmp_path / "seen.txt")
+    assert sorted(p.answer for p in result.puzzles) == ["KITCHEN SINK", "SPARE TIRE"]
+    assert result.rejected == {"duplicate in this batch": 1}
+
+
 # Near repeats, contractions, and rechecking
 
 
