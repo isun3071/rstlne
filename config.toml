@@ -26,13 +26,14 @@ max_requests = 200    # generator requests per run, a cost guard
 judges = 16           # judge calls in flight at once; GLM thinks for 15 to 25 s a verdict, so judging sets the pace
 rows = [12, 14, 14, 12]   # a main puzzle wraps into these board rows, never splitting a word
 bonus_rows = [14, 14]     # a bonus puzzle fits these rows: shorter than main puzzles, and harder
-main_min_letters = 8      # a main puzzle needs at least this many letters, so none is trivial
+main_min_letters = 16     # aired main puzzles run 15 to 27 letters (10th to 90th percentile), median 20
 bonus_min_letters = 10    # a bonus puzzle needs at least this many: a phrase like JUMBO SHRIMP, not one short word
 bonus_picks = "CDMA"      # a bonus puzzle is tested against R S T L N E plus these, the most common picks
-bonus_min_hidden = 0.5    # and must keep at least this share of its letter squares hidden after them
-# Category mix, by weight: dev.json's proportions, for the categories with a plain description
-main_mix = { "Phrase" = 23, "Food & Drink" = 8, "Place" = 8, "Thing" = 7, "What Are You Doing?" = 7, "Event" = 6, "Before & After" = 6, "Same Name" = 4, "Rhyme Time" = 4, "Living Thing" = 3, "Person" = 3, "Fun & Games" = 3, "Around the House" = 3, "What Are You Wearing?" = 3, "Same Letter" = 3, "Occupation" = 2, "Living Things" = 2, "In the Kitchen" = 2, "On the Map" = 2, "Landmark" = 2, "Character" = 2, "Show Biz" = 2, "Things" = 1, "Title" = 1 }
-bonus_mix = { "Thing" = 7, "Phrase" = 7, "Place" = 4, "Food & Drink" = 4, "Living Thing" = 3, "What Are You Doing?" = 2, "What Are You Wearing?" = 1, "Around the House" = 1, "Rhyme Time" = 1 }
+bonus_min_hidden = 0.4    # and must keep at least this share hidden after them: 89% of aired bonus puzzles do
+# Category mix, by weight: each category's share of aired puzzles from 2013 to 2025, in tenths of a percent for
+# main rounds and percent for the bonus, for the categories with a description (90% of aired main puzzles)
+main_mix = { "Phrase" = 128, "What Are You Doing?" = 105, "Before & After" = 85, "Food & Drink" = 61, "Thing" = 50, "Fun & Games" = 49, "Event" = 42, "Same Letter" = 39, "Things" = 36, "Place" = 33, "Same Name" = 29, "Show Biz" = 25, "Song Lyrics" = 23, "Rhyme Time" = 21, "Living Things" = 20, "Person" = 17, "Places" = 17, "Around the House" = 16, "People" = 13, "What Are You Wearing?" = 12, "On the Map" = 12, "Occupation" = 9, "Living Thing" = 7, "In the Kitchen" = 7, "Title" = 6, "Quotation" = 6, "Landmark" = 6, "Character" = 5, "Proper Name" = 4, "Movie Title" = 4, "Song Title" = 4, "Characters" = 4, "Headline" = 3, "Song/Artist" = 3, "Movie Quote" = 3 }
+bonus_mix = { "Phrase" = 26, "Thing" = 18, "What Are You Doing?" = 12, "Food & Drink" = 7, "Place" = 6, "Person" = 5, "Event" = 4, "Things" = 3, "What Are You Wearing?" = 3, "Living Things" = 3, "Living Thing" = 2, "Around the House" = 2, "People" = 2, "Fun & Games" = 2, "In the Kitchen" = 1, "On the Map" = 1 }
 
 [llm]
 # Unset, so each model plays at its own default. Claude Haiku 5.5 and GPT-6 Luna ignore

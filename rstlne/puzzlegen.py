@@ -24,6 +24,7 @@ from pathlib import Path
 
 import openai
 
+from rstlne import puzzle_examples
 from rstlne import settings as project
 from rstlne.engine.puzzle import LETTERS, Puzzle, normalize
 from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage
@@ -31,7 +32,9 @@ from rstlne.narrate import duration, line_output
 from rstlne.players.bot import lexicon, versions
 from rstlne.players.bot.lexicon import data_dir, rhyme_key
 
-PROMPT_VERSION = 5  # 4: bonus requests ask for less common letters; 5: and for at least 10 letters
+PROMPT_VERSION = 6  # 4: bonus requests ask for less common letters; 5: and for at least 10 letters;
+# 6: real puzzles' length and style, few-shot examples, a judge for natural wording, sources for songs and titles,
+# and bonus answers in everyday words
 DEADLINE = 60  # seconds for one request: a batch of answers takes a few
 MAX_FAILURES = 5  # requests failing in a row before a run stops and keeps what it has
 FAMILIAR = 4  # the judge rates how familiar an answer is, 1 to 5; below this it's out
@@ -41,17 +44,20 @@ _ARTICLES = {"A", "AN", "THE"}
 _AND = {"&", "AND"}
 
 SYSTEM = (
-    "You write answers for a word puzzle game. An answer is a common English phrase, name, or thing that a "
-    "typical adult would recognize, and it must clearly belong to its category. Write each answer in plain "
-    "capital letters, with spaces between words. Use only letters, spaces, hyphens, apostrophes, and the "
-    "ampersand (&). No numbers. Reply with JSON only."
+    "You write answers for a word puzzle game. An answer is natural English that a typical adult would understand "
+    "at once, and it clearly belongs to its category: a well-known saying, name, or title, or a vivid everyday "
+    "description whose words go together. Write each answer in plain capital letters, with spaces between words. "
+    "Use only letters, spaces, hyphens, apostrophes, the ampersand (&), and now and then a question mark, "
+    "exclamation point, or colon. No numbers. Reply with JSON only."
 )
 
 # What each category asks for, in plain terms. Structural categories spell out their rule.
 DESCRIPTIONS = {
     "Phrase": "a common saying, idiom, or everyday expression",
     "Thing": "an everyday object or thing, often with a describing word",
-    "Things": "a group of everyday things, in the plural",
+    "Things": "a group of everyday things, in the plural, or a list of two or three",
+    "Places": "kinds of places, in the plural, or a list of two or three",
+    "People": "a group of people, in the plural, or a list of two or three kinds of people",
     "Place": "a kind of place, or a specific well-known place",
     "On the Map": "a specific city, country, region, or geographic feature",
     "Landmark": "a famous building, monument, or natural landmark",
@@ -62,6 +68,17 @@ DESCRIPTIONS = {
     "Living Things": "animals or plants, in the plural",
     "Person": "a kind of person, or a famous real person",
     "Character": "a well-known fictional character",
+    "Characters": "two or more fictional characters who belong together",
+    "Proper Name": "a real, well-known person, team, or organization, often with a describing word",
+    "Song Lyrics": ("a line from a real song: an album track or a lesser-known song by a well-known artist, "
+                    "not one of the most famous hit singles"),
+    "Song Title": "the title of a real song, preferably an album track or lesser-known song rather than a famous hit",
+    "Song/Artist": ("a real song and its artist, written SONG BY ARTIST, preferably an album track or lesser-known "
+                    "song rather than a famous hit"),
+    "Movie Title": "the title of a real film",
+    "Movie Quote": "a real line spoken in a film, preferably not one of the most quoted lines",
+    "Quotation": "a real quotation from a known person, book, or speech",
+    "Headline": "a newspaper-style headline about a real event",
     "Event": "an occasion, celebration, or happening",
     "Fun & Games": "a game, sport, toy, or pastime",
     "Show Biz": "something from film, television, music, or theater",
@@ -75,6 +92,10 @@ DESCRIPTIONS = {
     "Rhyme Time": "a phrase whose two main words rhyme, like WEAR AND TEAR",
     "Same Letter": "a phrase in which every word starts with the same letter, like BIG BLUE BUBBLES",
 }
+
+
+SOURCED = {"Song Lyrics", "Song Title", "Song/Artist", "Movie Title", "Movie Quote", "Quotation", "Headline", "Title",
+           "Character", "Characters"}  # answers that must be real: the generator names the source, the judge checks it
 
 
 @dataclass(frozen=True)
@@ -109,6 +130,7 @@ class Result:
     puzzles: list[Puzzle] = field(default_factory=list)
     rejected: Counter = field(default_factory=Counter)  # reason -> count
     judged_out: list[tuple[str, str, str]] = field(default_factory=list)  # (category, answer, the judge's reason)
+    sources: dict[str, str] = field(default_factory=dict)  # answer -> the source the generator named, for SOURCED
     usage: Usage = field(default_factory=Usage)
     requests: int = 0
     stopped: bool = False  # too many requests failed in a row
@@ -270,10 +292,11 @@ def missing_apostrophe(answer: str) -> bool:
     return bool(_CONTRACTION.search(answer.upper()))
 
 
-def parse_answers(text: str | None) -> list[str]:
-    """The answers from a reply, through code fences and stray words around the JSON."""
+def parse_reply(text: str | None) -> tuple[list[str], list[str]]:
+    """The answers from a reply and the sources beside them, through code fences and stray words around the JSON.
+    Sources line up with answers by position; a missing one is empty."""
     if not text:
-        return []
+        return [], []
     for candidate in (text, *re.findall(r"\{.*\}", text, re.S)):
         try:
             data = json.loads(candidate)
@@ -281,8 +304,14 @@ def parse_answers(text: str | None) -> list[str]:
             continue
         answers = data.get("answers") if isinstance(data, dict) else None
         if isinstance(answers, list):
-            return [a for a in answers if isinstance(a, str)]
-    return []
+            pairs = [(a, s) for a, s in zip(answers, [*data.get("sources", []), *[""] * len(answers)])
+                     if isinstance(a, str)]
+            return [a for a, _ in pairs], [s if isinstance(s, str) else "" for _, s in pairs]
+    return [], []
+
+
+def parse_answers(text: str | None) -> list[str]:
+    return parse_reply(text)[0]
 
 
 def split(count: int, weights: dict[str, float], rng: random.Random) -> list[tuple[str, int]]:
@@ -310,18 +339,31 @@ def load_rhymes(path: Path) -> dict[str, set[str]]:
 
 
 _ANSWERS = {"type": "json_schema", "json_schema": {"name": "answers", "strict": True, "schema": {
-    "type": "object", "properties": {"answers": {"type": "array", "items": {"type": "string"}}},
-    "required": ["answers"], "additionalProperties": False}}}
+    "type": "object", "properties": {"answers": {"type": "array", "items": {"type": "string"}},
+                                     "sources": {"type": "array", "items": {"type": "string"}}},
+    "required": ["answers", "sources"], "additionalProperties": False}}}
 _VERDICT = {"type": "json_schema", "json_schema": {"name": "verdict", "strict": True, "schema": {
     "type": "object", "properties": {"fits": {"type": "boolean"}, "reason": {"type": "string"},
                                      "common": {"type": "integer"},
                                      "parts": {"type": "array", "items": {"type": "string"}}},
     "required": ["fits", "reason", "common", "parts"], "additionalProperties": False}}}
 JUDGE_SYSTEM = (
-    "You check answers for a word puzzle game. Be strict: reject an answer unless it is a real, common phrase, name, "
-    "or thing that people actually say or write, and it clearly belongs to its category. Made-up combinations fail, "
-    "like BOUND CAULIFLOWER for Food & Drink. Reply with JSON only."
+    "You check answers for a word puzzle game. An answer passes when it clearly belongs to its category and reads as "
+    "natural English a typical adult would understand at once: a well-known saying, name, or title, or a natural "
+    "description whose words go together. Puzzle answers are often long, vivid descriptions, and that is fine. Reject "
+    "an answer that is made up or oddly combined, has a missing or wrong word, is misspelled, or doesn't fit its "
+    "category. A song, quotation, title, headline, or character must be real: reject it unless you are confident the "
+    "exact words exist and come from the named source. Reply with JSON only."
 )
+_JUDGE_EXAMPLES = "\n".join(
+    ["Examples of verdicts:"]
+    + [f"{json.dumps({k: e[k] for k in ('category', 'answer', 'source') if k in e})} -> {json.dumps(e['verdict'])}"
+       for e in puzzle_examples.JUDGE])
+_RATING = ("Rate how natural and familiar it is, 1 to 5: 5 means a well-known expression, name, or thing; 4 means "
+           "natural wording people would say or write; 3 means understandable but forced or unusual; 2 means awkward; "
+           "1 means made up or broken.")
+_RATING_SOURCED = ("Rate how sure you are, 1 to 5, that these exact words are real and come from the source: 5 means "
+                   "certain, 4 fairly sure, 3 unsure, 1 likely invented. Name the real source in your reason.")
 _PARTS = {
     "Before & After": ("Also give the two phrases it joins in parts, like [\"PIECE OF CAKE\", \"CAKE WALK\"] for "
                        "PIECE OF CAKE WALK. Each must be a real, common phrase. JACK THE LADDER UP fails: its halves "
@@ -331,35 +373,53 @@ _PARTS = {
 }
 
 
-def _ask_generator(client: OpenRouter, s: Settings, category: str, bonus: bool, ideas: list[str], n: int):
-    size = (f"two to four words, at least {s.bonus_min_letters} letters in all, and short enough to fit "
+def example_answers() -> list[str]:
+    """Every few-shot example, so the generator can't hand one back as its own."""
+    return [normalize(a) for table in (puzzle_examples.MAIN, puzzle_examples.BONUS) for xs in table.values() for a in xs]
+
+
+def examples_for(category: str, bonus: bool, rng: random.Random, n: int = 3) -> list[str]:
+    """A seeded handful of the category's examples, or none when it has none."""
+    pool = (puzzle_examples.BONUS if bonus else puzzle_examples.MAIN).get(category, [])
+    return rng.sample(pool, min(n, len(pool)))
+
+
+def _ask_generator(client: OpenRouter, s: Settings, category: str, bonus: bool, ideas: list[str], n: int,
+                   examples: Sequence[str] = ()):
+    size = (f"two to four everyday words, at least {s.bonus_min_letters} letters in all, and short enough to fit "
             f"{len(s.bonus_rows)} lines of {max(s.bonus_rows)} squares" if bonus
-            else "one to six words, no word longer than 12 letters")
-    letters = ", ".join(s.bonus_letters[:-1]) + f", and {s.bonus_letters[-1]}"
-    hard = ([f"Favor words built from less common letters, like B, F, G, H, J, K, P, Q, U, V, W, X, Y, and Z, and use "
-             f"few of {letters}. Each must still be a common phrase or thing that a typical adult would recognize."]
-            if bonus else [])
+            else f"three to six words, at least {s.main_min_letters} letters in all, and short enough to fit "
+                 f"{len(s.rows)} lines of {min(s.rows)} to {max(s.rows)} squares without splitting a word")
+    sourced = ([f"These must be real. In sources, at the same position as each answer, name where it comes from: "
+                f"the song and artist, the film, the book and author, the speaker, or the event and year."]
+               if category in SOURCED else ["Leave sources empty."])
     request = "\n".join([
         f"Category: {category}",
         f"What fits: {DESCRIPTIONS.get(category, 'something that clearly belongs to this category')}.",
+        *([f"Examples of the style, to show length and wording; write new ones, never these: {'; '.join(examples)}."]
+          if examples else []),
         f"Write {n} different answers. Each is {size}.",
-        *hard,
+        *sourced,
         f"For variety, these words may suggest topics, but never force them in: {', '.join(ideas)}.",
-        'Reply as JSON: {"answers": ["...", "..."]}',
+        'Reply as JSON: {"answers": ["...", "..."], "sources": ["...", "..."]}',
     ])
     messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": request}]
     return client.chat(model=s.generator, messages=messages, tools=None, response_format=_ANSWERS,
                        provider=s.providers.get(s.generator))
 
 
-def _ask_judge(client: OpenRouter, s: Settings, category: str, answer: str):
+def _ask_judge(client: OpenRouter, s: Settings, category: str, answer: str, source: str | None = None):
+    item = {"category": category, "means": DESCRIPTIONS.get(category, category), "answer": answer}
+    if category in SOURCED:
+        item["source"] = source or "not given: identify it yourself"
     request = "\n".join([
-        "Is this answer a real, common phrase, name, or thing, and does it clearly belong to its category?",
-        "Rate how familiar it is as common: 5 means nearly everyone says or knows it, 3 means some people would, "
-        "1 means nobody says it.",
+        _JUDGE_EXAMPLES,
+        "",
+        "Does this answer read as natural English and clearly belong to its category?",
+        _RATING_SOURCED if category in SOURCED else _RATING,
         _PARTS.get(category, "Leave parts empty."),
         'Reply as JSON: {"fits": true or false, "reason": "a few words", "common": 1 to 5, "parts": [...]}',
-        json.dumps({"category": category, "means": DESCRIPTIONS.get(category, category), "answer": answer}),
+        json.dumps(item),
     ])
     messages = [{"role": "system", "content": JUDGE_SYSTEM}, {"role": "user", "content": request}]
     return client.chat(model=s.judge, messages=messages, tools=None, response_format=_VERDICT,
@@ -406,10 +466,11 @@ def generate(
     say=lambda line: None,
     heartbeat: float = 120.0,
     clock=time.monotonic,
-    on_accept=lambda puzzles: None,
+    on_accept=lambda puzzles, sources: None,
 ) -> Result:
     """Puzzles for each (category, count), checked and judged. Accepted answers join the seen registry.
-    Every `heartbeat` seconds, `say` gets a status line, and `on_accept` hears every accepted puzzle at once.
+    Every `heartbeat` seconds, `say` gets a status line, and `on_accept` hears every accepted puzzle at once,
+    with the sources named so far.
     A failed request is skipped; after MAX_FAILURES in a row, the run stops and returns what it has."""
     rng = random.Random(f"puzzlegen:{seed}")
     seen_path = SEEN if seen_path is None else seen_path
@@ -418,7 +479,7 @@ def generate(
     pool = ideas if ideas is not None else _idea_pool()
     seen_path.parent.mkdir(parents=True, exist_ok=True)
     seen = seen_path.read_text().splitlines() if seen_path.exists() else []
-    prior = NearIndex([*seen, *(p.answer for p in known)])  # anything used before this run
+    prior = NearIndex([*seen, *(p.answer for p in known), *example_answers()])  # anything used before this run
     this_run = NearIndex()  # this run's accepted answers
     result = Result()
     wanted_total = sum(n for _, n in main) + sum(n for _, n in bonus)
@@ -462,36 +523,39 @@ def generate(
             for category, count in wanted:
                 got = 0
                 pending = NearIndex()  # this category's answers queued or sent to the judge, so overlapping replies can't repeat one
-                queue: list[str] = []  # checked answers waiting for a judge
-                flight: deque = deque()  # (answer, future) with the judge, handled in the order sent
+                queue: list[tuple[str, str]] = []  # (answer, source) checked and waiting for a judge
+                flight: deque = deque()  # (answer, source, future) with the judge, handled in the order sent
                 while got < count and not result.stopped:
                     # Keep the judges busy across replies, with no more in flight than the answers still needed could use
                     while len(flight) < max(1, min(s.judges, 2 * (count - got))) and not result.stopped:
                         if queue:
-                            answer = queue.pop(0)
-                            flight.append((answer, judges.submit(attempt, lambda a=answer: _ask_judge(client, s, category, a))))
+                            answer, source = queue.pop(0)
+                            flight.append((answer, source, judges.submit(
+                                attempt, lambda a=answer, src=source: _ask_judge(client, s, category, a, src))))
                             continue
                         if result.requests >= s.max_requests or len(flight) >= count - got:
                             break  # out of requests, or what's with the judge could fill the quota on its own
                         result.requests += 1
                         ideas = _ideas(rng, pool)
-                        reply = record("generator", attempt(lambda: _ask_generator(client, s, category, is_bonus, ideas, s.batch)))
+                        shown = examples_for(category, is_bonus, rng)
+                        reply = record("generator", attempt(lambda: _ask_generator(client, s, category, is_bonus, ideas,
+                                                                                   s.batch, shown)))
                         if reply is None:
                             continue
-                        answers = parse_answers(reply.message.content)
+                        answers = list(zip(*parse_reply(reply.message.content)))
                         rng.shuffle(answers)  # the first answer is the most typical; a shuffle keeps the pick varied
                         status(category, is_bonus, got, count)
                         if not answers:
                             result.rejected["reply didn't parse"] += 1
-                        for raw in answers:
+                        for raw, source in answers:
                             verdict = _check(raw, category, rows, rhymes, prior, this_run, pending, result,
                                              0 if is_bonus else s.main_min_letters, s if is_bonus else None, dictionary)
                             if verdict is not None:
                                 pending.add(verdict)
-                                queue.append(verdict)
+                                queue.append((verdict, source))
                     if not flight:
                         break
-                    answer, future = flight.popleft()
+                    answer, source, future = flight.popleft()
                     judged = record("judge", future.result())
                     if judged is None or result.stopped:
                         continue
@@ -505,13 +569,15 @@ def generate(
                         result.judged_out.append((category, answer, reason))
                         continue
                     this_run.add(answer)
+                    if category in SOURCED and source:
+                        result.sources[answer] = source
                     with open(seen_path, "a") as f:
                         f.write(answer + "\n")
                     result.puzzles.append(Puzzle(category, answer, bonus=is_bonus))
-                    on_accept(result.puzzles)
+                    on_accept(result.puzzles, result.sources)
                     got += 1
                     status(category, is_bonus, got, count)
-                for _, future in flight:  # verdicts no longer needed still cost money
+                for _, _, future in flight:  # verdicts no longer needed still cost money
                     outcome = future.result()
                     if not isinstance(outcome, BaseException):
                         result.usage += outcome.usage
@@ -579,10 +645,12 @@ def _verdict(text: str | None) -> tuple[bool, str, int, list[str]]:
 
 
 def save_pool(path: Path, puzzles: Sequence[Puzzle], s: Settings, seed: int, rejected: dict, cost: float,
-              judged_out: Sequence[tuple[str, str, str]] = (), final: bool = True) -> None:
+              judged_out: Sequence[tuple[str, str, str]] = (), final: bool = True,
+              sources: dict[str, str] | None = None) -> None:
     """Write the batch file. Its history stays: every recheck, and one entry per finished run.
-    `final=False` saves puzzles mid-run without logging a run."""
+    `final=False` saves puzzles mid-run without logging a run. Sources the generator named stay with their puzzles."""
     old = json.loads(path.read_text()) if path.exists() else {}
+    sources = {**_sources(old), **(sources or {})}
     runs = list(old.get("runs", []))
     if final:
         runs.append({"created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "prompt_version": PROMPT_VERSION,
@@ -591,8 +659,17 @@ def save_pool(path: Path, puzzles: Sequence[Puzzle], s: Settings, seed: int, rej
     path.write_text(json.dumps({
         "generator": s.generator, "judge": s.judge, "prompt_version": PROMPT_VERSION, "seed": seed,
         "cost": sum(run["cost"] for run in runs), "runs": runs, "rechecked": old.get("rechecked", []),
-        "puzzles": [{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in puzzles],
+        "puzzles": [_row(p, sources) for p in puzzles],
     }, indent=2) + "\n")
+
+
+def _sources(data: dict) -> dict[str, str]:
+    return {p["answer"]: p["source"] for p in data.get("puzzles", []) if p.get("source")}
+
+
+def _row(p: Puzzle, sources: dict[str, str]) -> dict:
+    return {"category": p.category, "answer": p.answer, "bonus": p.bonus,
+            **({"source": sources[p.answer]} if p.answer in sources else {})}
 
 
 def load_pool(path: Path) -> list[Puzzle]:
@@ -612,11 +689,12 @@ def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path]
     prior = NearIndex([p.answer for p in known] + [p.answer for f in against for p in load_pool(f)])
     kept_index, kept, dropped = NearIndex(), [], []
     pool = load_pool(path)
+    sources = _sources(data)
     to_judge = [p for p in pool if rejudge or p.category in FAMILIAR_FOR]
 
     def judge(p: Puzzle):
         try:
-            return _verdict(_ask_judge(client, s, p.category, p.answer).message.content)
+            return _verdict(_ask_judge(client, s, p.category, p.answer, sources.get(p.answer)).message.content)
         except (openai.APIError, EmptyResponse):
             return None  # no answer from the judge: the puzzle stays
 
@@ -646,7 +724,7 @@ def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path]
             continue
         kept_index.add(p.answer)
         kept.append(p)
-    data["puzzles"] = [{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in kept]
+    data["puzzles"] = [_row(p, sources) for p in kept]
     if rejudge:
         data["judge"] = s.judge  # every puzzle left has passed it, so reports name it; the history keeps the first
     data.setdefault("rechecked", []).append({"prompt_version": PROMPT_VERSION, "dropped": dropped,
@@ -721,9 +799,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         client, s, split(short_main, main_mix, rng) if short_main else [],
         split(short_bonus, bonus_mix, rng) if short_bonus else [], args.seed * 1000 + len(have),
         known_puzzles() + have, say=lambda line: print(line, flush=True),
-        on_accept=lambda puzzles: save_pool(out, have + puzzles, s, args.seed, {}, 0.0, final=False),
+        on_accept=lambda puzzles, sources: save_pool(out, have + puzzles, s, args.seed, {}, 0.0, final=False,
+                                                     sources=sources),
     )
-    save_pool(out, have + result.puzzles, s, args.seed, result.rejected, result.usage.cost, result.judged_out)
+    save_pool(out, have + result.puzzles, s, args.seed, result.rejected, result.usage.cost, result.judged_out,
+              sources=result.sources)
     total_main = sum(not p.bonus for p in have + result.puzzles)
     total_bonus = sum(p.bonus for p in have + result.puzzles)
     print(f"{len(result.puzzles)} new puzzles in {result.requests} generator requests and "

@@ -87,6 +87,7 @@ rstlne/
   trust.py         # measures each model's hybrid trust and steal curves on real game boards
   data.py          # fetches the bot's word data into data/, streamed and pruned
   puzzlegen.py     # fresh puzzles: a generator writes, code checks, a judge confirms, nothing reused
+  puzzle_examples.py # few-shot examples for the generator and judge, checked against aired puzzles
   selfplay.py      # bot self-play and tuning on a server: sharded, resumable, no API calls
 puzzles/
   dev.json         # puzzles for development, committed
