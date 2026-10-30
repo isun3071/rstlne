@@ -191,3 +191,24 @@ def test_saved_asks_are_kept_apart_by_how_the_model_was_run(logs, tmp_path, monk
     monkeypatch.setattr(trust.settings, "load_config", lambda: {**config, "llm": {**config["llm"], "reasoning_effort": "low"}})
     _, more = measure(logs, tmp_path)
     assert more  # another effort level is another measurement
+
+
+def test_a_board_that_gets_no_reply_is_skipped_and_asked_again_next_run(logs, tmp_path):
+    import httpx2
+    import openai
+
+    def flaky(request):
+        text = next(m["content"] for m in request["messages"] if m["role"] == "user")
+        if "Category: Place" in text:  # every BIG CITY board times out
+            return openai.APITimeoutError(request=httpx2.Request("POST", "https://openrouter.ai/api/v1/chat/completions"))
+        return fake_model(request)
+
+    lines = []
+    result = trust.measure(["model/a"], [logs], client=router(flaky), reader=WordListReader(WORDS, KNOBS), knobs=KNOBS,
+                           count=400, seed=1, out_dir=tmp_path / "out", resamples=0, write=lines.append, heartbeat=0)
+    points = result["models"]["model/a"]["points"]
+    assert points and not any(p["answer"] == "BIG CITY" for p in points)
+    unanswered = result["models"]["model/a"]["report"]["unanswered"]
+    assert unanswered > 0 and any("rerun" in line.lower() for line in lines)
+    _, calls = measure(logs, tmp_path)
+    assert calls and all("Category: Place" in c["messages"][1]["content"] for c in calls)  # only those boards again

@@ -22,12 +22,13 @@ from pathlib import Path
 from statistics import mean, median
 
 import numpy as np
+import openai
 
 from rstlne import selfplay, settings
 from rstlne.engine.puzzle import LETTERS, Puzzle, fits_shown, normalize, solve_matches
 from rstlne.engine.state import Rules
 from rstlne.engine.wheel import WheelSpec
-from rstlne.llm.openrouter import OpenRouter, Usage
+from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage
 from rstlne.narrate import duration, line_output
 from rstlne.players.bot import versions
 from rstlne.players.bot.reader import Reader
@@ -181,18 +182,22 @@ def ask_boards(model: str, boards: Sequence, client: OpenRouter, config: dict, r
                parallel: int, write: Callable[[str], None] = print, heartbeat: float = HEARTBEAT,
                saved: Path | None = None) -> dict:
     """One hybrid ask per distinct board, with the model's configured temperature, effort, and provider.
-    With `saved`, each ask is kept in a file there as it completes, and a rerun reuses them."""
+    With `saved`, each ask is kept in a file there as it completes, and a rerun reuses them.
+    A board that gets no reply at all, after the client's retries, is left out and not saved, so a rerun asks it again."""
     llm = config.get("llm", {})
     settings_key = {"temperature": llm.get("temperature"), "reasoning_effort": llm.get("reasoning_effort"),
                     "provider": config.get("providers", {}).get(model)}
     path = Path(saved) / f"{model.replace('/', '--')}.jsonl" if saved else None
     out: dict = {b: a for b, a in (_saved(path, settings_key) if path else {}).items() if b in set(boards)}
 
-    def one(board) -> Asked:
+    def one(board) -> Asked | Exception:
         answer, category, used, refuted = board
         view = selfplay.view_of(Puzzle(category, answer), frozenset(used), rules, spec)
-        return ask(client, model, view, frozenset(refuted), temperature=llm.get("temperature"),
-                   reasoning_effort=llm.get("reasoning_effort"), provider=config.get("providers", {}).get(model))
+        try:
+            return ask(client, model, view, frozenset(refuted), temperature=llm.get("temperature"),
+                       reasoning_effort=llm.get("reasoning_effort"), provider=config.get("providers", {}).get(model))
+        except (openai.APIError, EmptyResponse) as err:  # timeouts, dropped connections, provider errors
+            return err
 
     todo = [b for b in boards if b not in out]
     before = len(out)
@@ -205,8 +210,13 @@ def ask_boards(model: str, boards: Sequence, client: OpenRouter, config: dict, r
         log = stack.enter_context(open(path, "a")) if path else None
         pool = stack.enter_context(ThreadPoolExecutor(max_workers=parallel))
         futures = {pool.submit(one, b): b for b in todo}
+        unanswered: list = []
         for future in as_completed(futures):
             board, asked = futures[future], future.result()
+            if isinstance(asked, Exception):
+                unanswered.append(board)
+                status.tick(len(out) - before + len(unanswered), lambda: f"  {model}: no reply on a board ({type(asked).__name__})")
+                continue
             out[board] = asked
             if log:
                 answer, category, used, refuted = board
@@ -215,16 +225,21 @@ def ask_boards(model: str, boards: Sequence, client: OpenRouter, config: dict, r
                                       "seconds": asked.seconds, "provider": asked.provider,
                                       "usage": asdict(asked.usage)}) + "\n")
                 log.flush()
-            k = len(out) - before
+            k = len(out) - before + len(unanswered)
             status.tick(k, lambda: f"  {model}: {k} of {len(todo)} asks · ${sum(a.usage.cost for a in out.values()):.4f} so far"
-                        f" · {sum(a.reply is None for a in out.values())} failed")
-    return {b: out[b] for b in boards}
+                        f" · {sum(a.reply is None for a in out.values())} failed · {len(unanswered)} no reply")
+    if unanswered:
+        write(f"  {model}: {len(unanswered)} boards got no reply and are left out. Rerun the same command to ask them again.")
+    return {b: out[b] for b in boards if b in out}
 
 
 def points_for(turns: Sequence[Turn], reads: dict, asks: dict) -> list[dict]:
-    """A point per turn: what the model said, whether it was right, and what the reader thought."""
+    """A point per turn: what the model said, whether it was right, and what the reader thought.
+    Turns on a board that got no reply are left out."""
     out = []
     for turn in turns:
+        if turn.board not in asks:
+            continue
         read, asked = reads[turn.board], asks[turn.board]
         said = asked.reply is not None and asked.reply[0]
         given = asked.reply[1] if said else None
@@ -307,7 +322,7 @@ def _share(values) -> float | None:
     return sum(values) / len(values) if values else None
 
 
-def report(points: Sequence[dict], asks: dict) -> dict:
+def report(points: Sequence[dict], asks: dict, unanswered: int = 0) -> dict:
     by_tenth = []
     for t in range(TENTHS):
         inside = [p for p in points if tenth(p["shown"]) == t]
@@ -337,6 +352,7 @@ def report(points: Sequence[dict], asks: dict) -> dict:
                                "confident_reader": {"agreeing": len(sure), "wrong": _share(not p["right"] for p in sure)}},
         "misfit_share": _share(p["status"] == "doesn't fit" for p in solvable) or 0,
         "failed_asks": sum(a.reply is None for a in distinct),
+        "unanswered": unanswered,
         "cost_per_ask": cost, "cost_per_game": cost * ASKS_PER_GAME,
         "seconds_per_ask": mean(a.seconds for a in distinct) if distinct else 0.0,
         "completion_tokens_per_ask": mean(a.usage.completion_tokens for a in distinct) if distinct else 0.0,
@@ -419,7 +435,8 @@ def measure(
         without = fit(*steal_rows(points, readable=False), STEAL_TERMS[:3], 0, seed)
         entry = {"trust": trust_fit, "steal": steal_fit and {**steal_fit, "readable_effect": steal_effect(steal_fit, points),
                                                              "without_readable": without},
-                 "report": report(points, asks[model]), "points": points}
+                 "report": report(points, asks[model], len({t.board for t in turns}) - len(asks[model])),
+                 "points": points}
         if checked:
             entry["held_out"] = held_out_check(trust_fit, steal_fit, points_for(checked[0], checked[1], checked[2][model]))
         result["models"][model] = entry
@@ -452,7 +469,8 @@ def _print(model: str, entry: dict, write: Callable[[str], None]) -> None:
           f"model right {_pct(d['model_right'])}, reader right {_pct(d['reader_right'])}")
     sure = r["agreeing_and_wrong"]["confident_reader"]
     write(f"  agreeing and wrong with the reader at {CONFIDENT}+: {_pct(sure['wrong'])} of {sure['agreeing']}")
-    write(f"  answers that don't fit the board: {_pct(r['misfit_share'])}; failed asks: {r['failed_asks']}")
+    write(f"  answers that don't fit the board: {_pct(r['misfit_share'])}; failed asks: {r['failed_asks']}; "
+          f"boards with no reply, left out: {r['unanswered']}")
     write(f"  per ask: ${r['cost_per_ask']:.5f}, {r['seconds_per_ask']:.1f} s, {r['completion_tokens_per_ask']:.0f} output tokens; "
           f"about ${r['cost_per_game']:.3f} a game at {ASKS_PER_GAME} asks")
     for name, f in (("trust", entry["trust"]), ("steal", entry["steal"])):
