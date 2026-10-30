@@ -27,7 +27,7 @@ import openai
 from rstlne import puzzle_examples
 from rstlne import settings as project
 from rstlne.engine.puzzle import LETTERS, Puzzle, normalize
-from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage
+from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Reply, Usage
 from rstlne.narrate import duration, line_output
 from rstlne.players.bot import lexicon, versions
 from rstlne.players.bot.lexicon import data_dir, rhyme_key
@@ -431,6 +431,16 @@ def _ask_judge(client: OpenRouter, s: Settings, category: str, answer: str, sour
                        provider=s.providers.get(s.judge))
 
 
+def _judged(client: OpenRouter, s: Settings, category: str, answer: str, source: str | None = None):
+    """The judge's verdict. A sourced answer is judged twice and must pass both: a single call once let an invented
+    lyric through that the same judge rejected every time it was asked again."""
+    first = _ask_judge(client, s, category, answer, source)
+    if category not in SOURCED or not _verdict(first.message.content)[0]:
+        return first
+    second = _ask_judge(client, s, category, answer, source)
+    return Reply(second.message, first.usage + second.usage, second.provider)
+
+
 def _ideas(rng: random.Random, pool: list[str], n: int = 6) -> list[str]:
     return [w.upper() for w in rng.sample(pool, min(n, len(pool)))]
 
@@ -536,7 +546,7 @@ def generate(
                         if queue:
                             answer, source = queue.pop(0)
                             flight.append((answer, source, judges.submit(
-                                attempt, lambda a=answer, src=source: _ask_judge(client, s, category, a, src))))
+                                attempt, lambda a=answer, src=source: _judged(client, s, category, a, src))))
                             continue
                         if result.requests >= s.max_requests or len(flight) >= count - got:
                             break  # out of requests, or what's with the judge could fill the quota on its own
@@ -699,7 +709,7 @@ def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path]
 
     def judge(p: Puzzle):
         try:
-            return _verdict(_ask_judge(client, s, p.category, p.answer, sources.get(p.answer)).message.content)
+            return _verdict(_judged(client, s, p.category, p.answer, sources.get(p.answer)).message.content)
         except (openai.APIError, EmptyResponse):
             return None  # no answer from the judge: the puzzle stays
 

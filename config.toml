@@ -31,7 +31,8 @@ bonus_rows = [14, 14]     # a bonus puzzle fits these rows: shorter than main pu
 main_min_letters = 16     # aired main puzzles run 15 to 27 letters (10th to 90th percentile), median 20
 bonus_min_letters = 10    # a bonus puzzle needs at least this many: a phrase like JUMBO SHRIMP, not one short word
 bonus_picks = "CDMA"      # a bonus puzzle is tested against R S T L N E plus these, the most common picks
-bonus_min_hidden = 0.4    # and must keep at least this share hidden after them: 89% of aired bonus puzzles do
+bonus_min_hidden = 0.45   # and must keep at least this share hidden after them: 76% of aired bonus puzzles do;
+                          # at 0.4 a v6 trial averaged 47% hidden against the show's 52%
 # Category mix, by weight: each category's share of aired puzzles from 2013 to 2025, in tenths of a percent for
 # main rounds and percent for the bonus, for the categories with a description (90% of aired main puzzles)
 main_mix = { "Phrase" = 128, "What Are You Doing?" = 105, "Before & After" = 85, "Food & Drink" = 61, "Thing" = 50, "Fun & Games" = 49, "Event" = 42, "Same Letter" = 39, "Things" = 36, "Place" = 33, "Same Name" = 29, "Show Biz" = 25, "Song Lyrics" = 23, "Rhyme Time" = 21, "Living Things" = 20, "Person" = 17, "Places" = 17, "Around the House" = 16, "People" = 13, "What Are You Wearing?" = 12, "On the Map" = 12, "Occupation" = 9, "Living Thing" = 7, "In the Kitchen" = 7, "Title" = 6, "Quotation" = 6, "Landmark" = 6, "Character" = 5, "Proper Name" = 4, "Movie Title" = 4, "Song Title" = 4, "Characters" = 4, "Headline" = 3, "Song/Artist" = 3, "Movie Quote" = 3 }

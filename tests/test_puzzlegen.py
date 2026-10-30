@@ -672,3 +672,19 @@ def test_puzzle_runs_show_elapsed_time(tmp_path):
                        seen_path=tmp_path / "seen.txt", say=lines.append, heartbeat=120, clock=clock)
     status = [line for line in lines if "overall" in line]
     assert status and all("elapsed" in line for line in status)
+
+
+def test_a_sourced_answer_needs_two_judge_passes(tmp_path):
+    votes = {"SHINE LITTLE GLOWWORM GLIMMER": iter([True, False]), "MEET ME IN SAINT LOUIS LOUIS": iter([True, True])}
+    def reply(request):
+        if request["model"] == GEN:
+            return completion(content=json.dumps({"answers": ["Shine little glowworm glimmer", "Meet me in Saint Louis Louis"],
+                                                  "sources": ["Glow-Worm, 1907", "Meet Me in St. Louis, Louis, 1904"]}))
+        answer = json.loads(request["messages"][-1]["content"].rsplit("\n", 1)[-1])["answer"]
+        return completion(content=json.dumps({"fits": next(votes[answer]), "reason": "checked", "common": 5, "parts": []}))
+    client = router(reply)  # the first passes once, then fails; the second passes twice
+    result = puzzlegen.generate(client, settings(max_requests=1, judges=1), [("Song Lyrics", 2)], [], seed=1, known=[],
+                                seen_path=tmp_path / "seen.txt")
+    assert [p.answer for p in result.puzzles] == ["MEET ME IN SAINT LOUIS LOUIS"]
+    assert sum(c["model"] == JUDGE for c in client.client.calls) == 4
+    assert result.usage.calls == 5  # one generator call and both judge calls for each answer
