@@ -95,6 +95,9 @@ solve_pause = 10          # seconds to hold a solved board before the next round
 # Inference.net serves it at FP8 and thinks about 3x as fast as DeepInfra (147 vs 47 tokens/s), so long
 # thinks finish inside the time limit. DeepInfra FP8 hosted it for every game before 2026-10-30.
 "deepseek/deepseek-v4.1-flash-1017" = "inference-net/fp8"
+# MiMo V2.6 Flash: in a screen of one game per host on 2026-10-30, Cohere took about 13 s a move with full
+# thinking; the next fastest took 43 s, Makora dropped the thinking, and four hosts refused forced tool calls.
+"xiaomi/mimo-v2.6-flash" = "cohere"
 "mistralai/mistral-small-3.2-24b-instruct" = "deepinfra/fp8"  # the puzzle generator until 2026-10-29
 "minimax/minimax-m3" = "together"  # the puzzle generator: one of three hosts that take a JSON schema; not FP4, up 100%
 "google/gemma-3-27b-it" = "deepinfra/fp8"  # the puzzle judge until 2026-10-29; some of its other hosts stall
