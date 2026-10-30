@@ -140,13 +140,29 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 - A tournament never changes the bot. Its default folder name covers the bot version, and a rerun refuses to resume a tournament whose finished games used another version.
 - Self-play may try knobs away from a version's values. Those runs are experiments, not versions, and tournaments refuse them.
 
+### Version 3 (specified 2026-10-30, not built yet)
+
+Version 3 is version 1 with two changes. Every other knob, the reader, the calibration, the steal prior, and the word data pin stay as in version 1.
+
+- **Why.** Versions 1 and 2 give an opponent who takes the round only the bank it holds right now, or the $1,000 minimum. They never count what the opponent adds before it solves. In round 4, with no rounds after it, a lead bigger than an opponent's bank plus $1,000 then looks certain, and every move scores the same. In the 300 hybrid games of seed606, a bot or hybrid seat saw every move at exactly 1 in 163 games and lost 30 of them. It saw every move at exactly 0 in 103 games and won 5. In one game, a hybrid led $4,000 to $2,000 entering round 4, rated every move 1, made a wild solve at 2% confidence, and lost to an opponent who built an $18,950 round.
+- **Change 1: the stealer's gain.** When the bot weighs an opponent taking the round, that opponent banks max(its bank now + G, $1,000), where G is what it adds between now and its solve. G is a spread, not one number: 10 equally likely values, the midpoints of its tenths (the 5th, 15th, … 95th percentiles). The bot averages its win chance over the 10 values. G can be negative, when the opponent hits Bankrupt and rebuilds.
+  - G depends on how many letter squares still hide a consonant, in bands: 0, 1–2, 3–5, 6–9, and 10 or more. It is fit separately for rounds 1 to 3 and for round 4 on, whose wedges are bigger. A band with fewer than 200 data points merges into its neighbor with fewer hidden consonants.
+  - It applies wherever a steal counts against the bot: a lost round in the value function, and V(continue later). The bot's own future bank is unchanged, since the value function already plans it.
+- **Change 2: flat choices go to dollars.** When every option of a choice scores within the tie margin of the best, the bot chooses as in rounds 1 and 2: by expected dollars, with cards at their dollar values. This covers every choice the bot makes: the move, the letter, keep or flip, the Wild Card, and riding the Express. A bot certain of the result plays out the round for money and solves an answer it knows, instead of taking the first option in the list. With change 1, such choices come up only when the result really is settled.
+- **Fitting G.** `selfplay stealer-gain` fits it from two sources, weighted half and half, so neither kind of opponent dominates:
+  - LLM opponents: the prior-101 tournament, 180 games of three chat models on the tuning puzzles.
+  - Bot opponents: `selfplay round-banks`, bot v1 games on the tuning puzzles that record, at the start of every turn of a round that ended in a correct solve, the eventual solver's bank, the hidden consonant squares, and the round, along with the solver's bank when it solved. About 2,000 games.
+  - Every turn start of such a round, from every seat's view, is one data point: G = the solver's bank when it solved minus its bank at that turn. It refuses logs played on grading puzzles, `dev.json`, or `private.json`. It reports each band's count, median, and 90th percentile, for each source and pooled. The fit is frozen into version 3 as `stealer-gain-v3.json`.
+- **Checking it.** `selfplay games` with variants v3, v1, v1 on grading-202, about 2,000 games with duplicate scoring, on the server. It reports v3's win rate against the v1 seats' with a 95% interval, average totals, how often each version saw every move at exactly 0 or 1 and how often that proved wrong, and how many choices went to dollars under change 2. If v3 wins more, with the interval clear of zero, Ian decides whether `[bot] version` moves to 3. Version 1 stays frozen either way.
+- **Logging.** Each bot decision records `flat: true` when change 2 chose it.
+
 ### Objective
 
 - Rounds 1 and 2: maximize the bot's expected game total, whatever the number of main rounds.
 - Rounds 3 and later: maximize the chance of finishing ahead of both opponents after the last main round. Every payoff converts into the change in that chance. A tie for first counts as a shared win, as in tournament scoring.
 - From round 3 on, only finishing first counts: winning by $100 is as good as winning by 10 times second place. A lead still matters as a means, since it raises the chance of finishing first. With a commanding lead, the best move is often to solve at once, ending the round before an opponent banks anything.
 - The bonus round is secondary. It matters through the Wild Card's saved value, the Million card's value, and the bonus round itself. In rounds 1 and 2 those values count in dollars. From round 3 on, they only break ties: moves whose win chances sit within a set margin of the best (a knob) count as tied, and the tied move with the most bonus value wins.
-- The win chance comes from a simple formula, P = Φ(lead / (σ √(rounds left))) with σ a knob, or in versions that carry one, from a table of P(finish first | lead, rounds left) built from self-play games, with the formula standing in where the table has no row. Lead is the bot's game total minus the highest opponent total. Once no rounds are left, the lead decides: 1, 0, or a shared win.
+- The win chance comes from a simple formula, P = Φ(lead / (σ √(rounds left))) with σ a knob, or in versions that carry one, from a table of P(finish first | lead, rounds left) built from self-play games, with the formula standing in where the table has no row. Lead is the bot's game total minus the highest opponent total. Once no rounds are left, the lead decides: 1, 0, or a shared win. From version 3, an opponent who takes the round banks what it holds plus what it adds before solving (see Version 3).
 
 ### Reader
 
@@ -177,7 +193,7 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 - Spin: each wheel outcome is one branch, over the wheel as it stands. A dollar wedge pays the best consonant's p_hit × value × E[count | hit] and keeps the wheel with chance p_hit. Lose a Turn passes the wheel. Bankrupt zeroes B and passes the wheel, and counts only in that branch. Free Play, Mystery, and Express follow their own rules below.
 - Buy a vowel: −$250 plus the vowel's information value. It keeps the wheel with chance p_hit.
 - Solve: c × the payoff of banking max(B, $1,000) + (1 − c) × (1 − p_steal) × V(continue later), where c is the calibrated confidence. A solve never keeps the wheel. With no candidate answer at all, the bot doesn't guess unless solving is its only legal move.
-- Losing the wheel costs the round's whole value: a steal leaves the bot nothing from the round, not even the $1,000 minimum. From round 3 on, the stealer's gain also counts against the bot's win chance.
+- Losing the wheel costs the round's whole value: a steal leaves the bot nothing from the round, not even the $1,000 minimum. From round 3 on, the stealer's gain also counts against the bot's win chance. Versions 1 and 2 count the stealer's bank as it stands now; version 3 adds the spread G of what it banks before solving.
 - V(continue) is a race from the board the move leads to. Each turn the bot holds the wheel, it takes the round with chance t: its confidence c, or while c is low, the chance any seat solves on its turn at that board (the steal prior), since holding the wheel lets it reveal more. Between its turns the opponents get their steal odds, so the bot takes the round with chance t / (t + (1 − t) × p_steal), and the payoff follows. V(continue later) is the same race once the wheel comes back.
 
 ### Steal odds
