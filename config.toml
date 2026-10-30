@@ -85,7 +85,7 @@ solve_pause = 10          # seconds to hold a solved board before the next round
 # DeepInfra serves the model at FP8 and caches; the default cheapest host served FP4 and stalled.
 "deepseek/deepseek-v4.1-flash-1017" = "deepinfra/fp8"
 "mistralai/mistral-small-3.2-24b-instruct" = "deepinfra/fp8"  # the puzzle generator until 2026-10-29
-"minimax/minimax-m3" = "deepinfra/fp8"  # the puzzle generator: FP8 like the others, JSON replies, up 100%
+"minimax/minimax-m3" = "together"  # the puzzle generator: one of three hosts that take a JSON schema; not FP4, up 100%
 "google/gemma-3-27b-it" = "deepinfra/fp8"  # the puzzle judge; some of its other hosts stall
 
 [models]
