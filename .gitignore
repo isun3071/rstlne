@@ -6,6 +6,8 @@
 # scored puzzles and game logs
 puzzles/private.json
 puzzles/generated/
+# real show puzzles: the show's content, never committed
+puzzles/*.csv
 logs/
  
 # python
