@@ -63,10 +63,16 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 [hybrid.trust]
 # "<slug>" = [a, b, c, d, g]: trust in the model's fitting answer, on share showing, agreement with the
 # reader, the reader's probability for that answer, and the reader's confidence in its own best answer.
+# Measured 2026-10-30 on 1,480 turns of prior-101 (tuning-101): logs/calibration/trust-20261030-034331.json.
+# DeepSeek's curve is missing 90 boards whose asks timed out; neither curve has had a held-out check.
+"deepseek/deepseek-v4.1-flash-1017" = [0.740, -0.164, 0.675, 4.678, -0.985]
+"openai/gpt-6-luna" = [-0.099, 2.978, 0.546, 4.776, -1.849]
 
 [hybrid.steal]
 # "<slug>" = [a, b, c, d]: an opponent's chance to solve, on share showing, the reader's confidence, and
 # whether the model could read the board.
+"deepseek/deepseek-v4.1-flash-1017" = [-3.505, 1.674, 1.301, 1.217]
+"openai/gpt-6-luna" = [-3.223, 1.680, 1.386, 1.003]
 
 [tournament]
 # "all": a set is 6 games, every ordering of the 3 entrants across the seats.
