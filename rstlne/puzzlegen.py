@@ -590,16 +590,27 @@ def load_pool(path: Path) -> list[Puzzle]:
 
 
 def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path], known: Sequence[Puzzle],
-            say=lambda line: None, dictionary: frozenset[str] | None = None) -> list[str]:
+            say=lambda line: None, dictionary: frozenset[str] | None = None, rejudge: bool = False) -> list[str]:
     """Hold a batch file to the current checks: drop near repeats of `known` puzzles, of the `against` files,
-    and of earlier puzzles in the file; contractions without apostrophes; bonus puzzles too short or too easy;
-    and categories whose familiarity bar has risen, which get judged again. Rewrites the file, and returns
-    what it dropped."""
+    and of earlier puzzles in the file; contractions without apostrophes; misspellings; bonus puzzles too short
+    or too easy; and categories whose familiarity bar has risen, which get judged again. With `rejudge`,
+    every puzzle goes back to the current judge. Rewrites the file, and returns what it dropped."""
     data = json.loads(path.read_text())
     dictionary = load_dictionary() if dictionary is None else dictionary
     prior = NearIndex([p.answer for p in known] + [p.answer for f in against for p in load_pool(f)])
     kept_index, kept, dropped = NearIndex(), [], []
-    for p in load_pool(path):
+    pool = load_pool(path)
+    to_judge = [p for p in pool if rejudge or p.category in FAMILIAR_FOR]
+
+    def judge(p: Puzzle):
+        try:
+            return _verdict(_ask_judge(client, s, p.category, p.answer).message.content)
+        except (openai.APIError, EmptyResponse):
+            return None  # no answer from the judge: the puzzle stays
+
+    with ThreadPoolExecutor(max_workers=max(1, s.judges)) as judges:
+        verdicts = dict(zip((p.answer for p in to_judge), judges.map(judge, to_judge)))
+    for p in pool:
         reason = None
         if prior.has_near(p.answer):
             reason = "near an earlier batch or a hand-written puzzle"
@@ -613,10 +624,10 @@ def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path]
             reason = "too short for a bonus puzzle"
         elif p.bonus and hidden_after_picks(p.answer, s) < s.bonus_min_hidden:
             reason = f"too easy for a bonus puzzle: {hidden_after_picks(p.answer, s):.0%} hidden after the usual picks"
-        elif p.category in FAMILIAR_FOR:
-            fits, why, common, parts = _verdict(_ask_judge(client, s, p.category, p.answer).message.content)
-            if not fits or common < FAMILIAR_FOR[p.category] or not parts_ok(p.category, p.answer, parts):
-                reason = f"judged again: familiarity {common} of 5, {why}"
+        elif verdicts.get(p.answer) is not None:
+            fits, why, common, parts = verdicts[p.answer]
+            if not fits or common < FAMILIAR_FOR.get(p.category, FAMILIAR) or not parts_ok(p.category, p.answer, parts):
+                reason = f"judged again{' by ' + s.judge if rejudge else ''}: familiarity {common} of 5, {why}"
         if reason:
             dropped.append(p.answer)
             say(f"  dropped {p.category}: {p.answer} ({reason})")
@@ -625,7 +636,8 @@ def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path]
         kept.append(p)
     data["puzzles"] = [{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in kept]
     data.setdefault("rechecked", []).append({"prompt_version": PROMPT_VERSION, "dropped": dropped,
-                                             "against": [str(f) for f in against]})
+                                             "against": [str(f) for f in against],
+                                             **({"rejudged_by": s.judge} if rejudge else {})})
     path.write_text(json.dumps(data, indent=2) + "\n")
     return dropped
 
@@ -658,6 +670,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m rstlne.puzzlegen", description="Generate fresh, checked puzzles.")
     parser.add_argument("--recheck", help="hold an existing batch file to the current checks, then exit")
     parser.add_argument("--against", nargs="*", default=[], help="with --recheck: batch files it must not repeat")
+    parser.add_argument("--rejudge", action="store_true", help="with --recheck: send every puzzle back to the current judge")
     parser.add_argument("--main", type=int, default=40, help="main round puzzles")
     parser.add_argument("--bonus", type=int, default=10, help="bonus round puzzles")
     parser.add_argument("--seed", type=int)
@@ -669,7 +682,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         path = Path(args.recheck)
         print(f"Rechecking {path} against {', '.join(args.against) or 'the hand-written puzzles'}", flush=True)
         dropped = recheck(_client(), s, path, [Path(f) for f in args.against], known_puzzles(),
-                          say=lambda line: print(line, flush=True))
+                          say=lambda line: print(line, flush=True), rejudge=args.rejudge)
         held = load_pool(path)
         print(f"Dropped {len(dropped)}; {path} now holds {sum(not p.bonus for p in held)} main and "
               f"{sum(p.bonus for p in held)} bonus. Rerun its generate command to top it up.")

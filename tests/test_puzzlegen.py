@@ -530,6 +530,30 @@ def test_recheck_drops_bonus_puzzles_that_are_too_easy_or_too_short(tmp_path):
     assert puzzlegen.PROMPT_VERSION == 5
 
 
+def test_rejudging_sends_every_puzzle_back_to_the_judge(tmp_path):
+    path = tmp_path / "batch.json"
+    puzzles = [Puzzle("Phrase", "BUMP IN ROAD"), Puzzle("Phrase", "SPILL THE BEANS"), Puzzle("Thing", "GOAL POST NET"),
+               Puzzle("Thing", "WATERING CAN")]
+    puzzlegen.save_pool(path, puzzles, settings(), seed=1, rejected={}, cost=0.0)
+    client = fake([], verdicts={"BUMP IN ROAD": False, "GOAL POST NET": 3})
+    assert puzzlegen.recheck(client, settings(), path, against=[], known=[]) == []  # only raised bars get judged
+    dropped = puzzlegen.recheck(client, settings(judges=2), path, against=[], known=[], rejudge=True)
+    assert sorted(dropped) == ["BUMP IN ROAD", "GOAL POST NET"]
+    assert [p.answer for p in puzzlegen.load_pool(path)] == ["SPILL THE BEANS", "WATERING CAN"]
+    last = json.loads(path.read_text())["rechecked"][-1]
+    assert last["rejudged_by"] == JUDGE and last["dropped"] == dropped
+
+
+def test_the_rejudge_flag_reaches_recheck(monkeypatch, tmp_path):
+    seen = {}
+    monkeypatch.setattr(puzzlegen, "recheck", lambda *a, **kw: seen.update(kw) or [])
+    monkeypatch.setattr(puzzlegen, "_client", lambda: None)
+    path = tmp_path / "batch.json"
+    puzzlegen.save_pool(path, [Puzzle("Thing", "WATERING CAN")], settings(), seed=1, rejected={}, cost=0.0)
+    puzzlegen.main(["--recheck", str(path), "--rejudge"])
+    assert seen["rejudge"] is True
+
+
 def test_a_batch_file_keeps_its_history_across_rechecks_and_top_ups(tmp_path):
     path = tmp_path / "batch.json"
     puzzlegen.save_pool(path, [Puzzle("Thing", "SPARE TIRE")], settings(), seed=4, rejected={"already used": 3}, cost=0.01)
