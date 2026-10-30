@@ -51,18 +51,21 @@ def _tuples(value):
     return tuple(_tuples(v) for v in value) if isinstance(value, list) else value
 
 
-def _win_table(name: str) -> tuple:
+def _knob_file(name: str) -> tuple:
     return _tuples(json.loads((Path(__file__).parent / name).read_text())["knob"])
 
 
-# Frozen 2026-10-29. In bot games on grading puzzles they tied, 37% each (gap +0%, 95% interval -2% to +3%),
+# v1 and v2 frozen 2026-10-29. In bot games on grading puzzles they tied, 37% each (gap +0%, 95% interval -2% to +3%),
 # so both are kept. v1 reads win chances from the formula; v2 from the win table built in self-play.
-# A change to either is a new version, never an edit here.
+# v3 frozen 2026-10-30: v1 plus what a stealer banks before solving, fit from LLM and bot games on tuning puzzles,
+# and choices where every option wins equally played for dollars.
+# A change to any of them is a new version, never an edit here.
 VERSIONS = {
     1: Knobs(),
-    2: Knobs(win_table=_win_table("win-table-v2.json")),
+    2: Knobs(win_table=_knob_file("win-table-v2.json")),
+    3: Knobs(stealer_gain=_knob_file("stealer-gain-v3.json"), flat_dollars=True),
 }
-DATA = {1: "0640bcd6a420", 2: "0640bcd6a420"}  # the word data each version was frozen with, by fingerprint
+DATA = {1: "0640bcd6a420", 2: "0640bcd6a420", 3: "0640bcd6a420"}  # the word data each was frozen with, by fingerprint
 
 
 def current(config: dict) -> int:

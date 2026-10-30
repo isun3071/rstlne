@@ -108,12 +108,23 @@ def knob_hash(version):
 
 
 def test_frozen_versions_never_change():
-    """A frozen version's knobs are fixed. A change belongs in a new version, never in v1 or v2."""
+    """A frozen version's knobs are fixed. A change belongs in a new version, never in an old one."""
+    from dataclasses import asdict
+    import hashlib
     assert knob_hash(1) == "ee505edb9891" and knob_hash(2) == "4b391d4eb285"
+    every_knob = hashlib.sha256(json.dumps(asdict(versions.knobs(3)), sort_keys=True).encode()).hexdigest()[:12]
+    assert every_knob == "342c440f08d6"
+
+
+def test_v3_is_v1_with_the_stealers_gain_and_flat_choices_for_dollars():
+    v1, v3 = versions.knobs(1), versions.knobs(3)
+    assert replace(v3, stealer_gain=(), flat_dollars=False) == v1
+    assert [start for start, _ in v3.stealer_gain] == [1, 4]
+    assert all(len(gains) == 20 and bands[0][0] == 0 for _, bands in v3.stealer_gain for _, gains in bands)
 
 
 def test_both_versions_are_pinned_to_the_same_word_data():
-    assert versions.DATA[1] == versions.DATA[2] == "0640bcd6a420"
+    assert versions.DATA[1] == versions.DATA[2] == versions.DATA[3] == "0640bcd6a420"
 
 
 class _Reader:

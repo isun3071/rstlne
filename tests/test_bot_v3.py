@@ -203,3 +203,8 @@ def test_a_tournament_folder_must_say_which_puzzles_it_played(tmp_path):
     (tmp_path / "report.json").write_text(json.dumps({"puzzles": "puzzles/generated/grading-303.json"}))
     with pytest.raises(ValueError, match="grading"):
         selfplay.tournament_gain_points([tmp_path])
+
+
+def test_a_source_with_too_few_points_in_a_band_counts_point_for_point():
+    table, _ = selfplay.fit_stealer_gain([(4, 1, 0.0)] * 3, [(4, 1, 1000.0)] * 297)
+    assert table == ((4, ((0, (1000.0,) * 20),)),)  # 3 LLM points are 1% of the band, not half of it

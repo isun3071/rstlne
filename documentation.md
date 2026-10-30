@@ -136,11 +136,11 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 
 - The bot is versioned: bot v1, v2, and so on. A version fixes the bot's code, its data files, and its knobs. `[bot] version` in `config.toml` picks one, and every log header records it.
 - Versions 1 and 2 were frozen on 2026-10-29. They differ only in how they read win chances from round 3 on: v1 uses the formula, and v2 the win table built from 1,998 bot games. In 1,998 bot games on grading puzzles they tied, at 37% wins each (gap +0%, 95% interval −2% to +3%), so both are kept. A change to either is a new version.
-- Each version is pinned to the word data it was frozen with, by fingerprint: 0640bcd6a420 for both. A bot or hybrid seat refuses to play a version on other data. Self-play experiments aren't checked.
+- Each version is pinned to the word data it was frozen with, by fingerprint: 0640bcd6a420 for all three. A bot or hybrid seat refuses to play a version on other data. Self-play experiments aren't checked.
 - A tournament never changes the bot. Its default folder name covers the bot version, and a rerun refuses to resume a tournament whose finished games used another version.
 - Self-play may try knobs away from a version's values. Those runs are experiments, not versions, and tournaments refuse them.
 
-### Version 3 (built 2026-10-30, its gain not yet fit)
+### Version 3 (frozen 2026-10-30)
 
 Version 3 is version 1 with two changes. Every other knob, the reader, the calibration, the steal prior, and the word data pin stay as in version 1.
 
@@ -152,8 +152,8 @@ Version 3 is version 1 with two changes. Every other knob, the reader, the calib
 - **Fitting G.** `selfplay stealer-gain` fits it from two sources, weighted half and half, so neither kind of opponent dominates:
   - LLM opponents: the prior-101 tournament, 180 games of three chat models on the tuning puzzles.
   - Bot opponents: `selfplay round-banks`, about 2,000 bot v1 games on the tuning puzzles that record the data points below.
-  - In each round that ended in a correct solve, every turn decision (spin, buy a vowel, or solve) by a seat other than the solver is one data point: the round, the hidden letter squares then, and G = the solver's bank when it solved minus its bank at that decision. These are the moments a bot weighs a steal. Within a band, the 20 gains are the weighted midpoints of the twentieths.
-  - It refuses logs played on grading puzzles, `dev.json`, or `private.json`: a tournament folder must hold a report.json naming its puzzles, and a round-banks folder a round-banks.json. It reports each band's count, median, and 90th percentile, for each source, and the 20 gains. The fit is frozen into version 3 as `stealer-gain-v3.json`.
+  - In each round that ended in a correct solve, every turn decision (spin, buy a vowel, or solve) by a seat other than the solver is one data point: the round, the hidden letter squares then, and G = the solver's bank when it solved minus its bank at that decision. These are the moments a bot weighs a steal. Within a band, the 20 gains are the weighted midpoints of the twentieths. LLM and bot opponents weigh half and half only where each has at least 50 points in the band; elsewhere every point counts the same, so a handful of points can't set half the spread.
+  - It refuses logs played on grading puzzles, `dev.json`, or `private.json`: a tournament folder must hold a report.json naming its puzzles, and a round-banks folder a round-banks.json. It reports each band's count, median, and 90th percentile, for each source, and the 20 gains. The fit is frozen into version 3 as `stealer-gain-v3.json`: 2,043 points from LLM opponents and 36,012 from 2,004 bot games. With 10 to 14 squares hidden in rounds 1 to 3, an LLM opponent added a median $350 before solving (90th percentile $3,200) and a bot $2,500 ($6,800); the blend's 20 gains run from $0 to $10,500, half of them $1,050 or less. Round 4's bands reach $15,000, from its $5,000 top wedge.
 - **Checking it.** `selfplay games` with variants v3, v1, v1 on grading-202, about 2,000 games with duplicate scoring, on the server. It reports v3's win rate against the v1 seats' with a 95% interval, average totals, in how many games each version saw every move score exactly 1 or exactly 0 and how often that proved wrong, and how many choices a game went to dollars under change 2. If v3 wins more, with the interval clear of zero, Ian decides whether `[bot] version` moves to 3. Version 1 stays frozen either way.
 - **Logging.** Each bot decision records `flat: true` when change 2 chose it.
 

@@ -940,6 +940,7 @@ def win_table(folders: Sequence[Path], out: Path, main_rounds: int, say=print) -
 GAIN_ROUNDS = (1, 4)  # rounds 1 to 3, and round 4 on, whose wedges are bigger
 GAIN_BANDS = (0, 3, 6, 10, 15)  # hidden letter squares where each band starts
 GAIN_MIN_POINTS = 200  # a band with fewer merges into its neighbor with fewer hidden squares
+GAIN_SOURCE_MIN = 50  # LLM and bot opponents weigh half and half only where each has this many points
 GAIN_QUANTILES = tuple((k + 0.5) / 20 for k in range(20))  # the midpoints of the twentieths
 
 
@@ -1026,10 +1027,14 @@ def games_gain_points(folders: Sequence[Path]) -> list[tuple[int, int, float]]:
 
 
 def _weighted(sources: Sequence[Sequence[float]]) -> tuple[np.ndarray, np.ndarray]:
-    """Values and weights, each non-empty source carrying an equal share."""
+    """Values and weights: each source carries an equal share where every one has GAIN_SOURCE_MIN points,
+    and every point counts the same where one doesn't, so a handful of points can't set half the spread."""
     present = [s for s in sources if s]
     values = np.array([v for s in present for v in s], dtype=float)
-    weights = np.array([1 / (len(present) * len(s)) for s in present for _ in s])
+    if all(len(s) >= GAIN_SOURCE_MIN for s in present):
+        weights = np.array([1 / (len(present) * len(s)) for s in present for _ in s])
+    else:
+        weights = np.full(len(values), 1 / len(values))
     order = np.argsort(values, kind="stable")
     return values[order], weights[order]
 
