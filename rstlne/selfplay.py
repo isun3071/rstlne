@@ -36,6 +36,7 @@ import time
 from collections.abc import Callable, Sequence
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, fields, replace
+from typing import NamedTuple
 from pathlib import Path
 
 import numpy as np
@@ -596,8 +597,8 @@ def _shown(puzzle_answer: str, used) -> float:
 
 
 def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus_puzzle: Puzzle, reader: Reader,
-             rules: Rules, spec: WheelSpec, base: versions.Knobs) -> dict:
-    """One bot-only game, summed up in one record."""
+             rules: Rules, spec: WheelSpec, base: versions.Knobs, gains: bool = False) -> dict:
+    """One bot-only game, summed up in one record. With `gains`, it also holds the stealer's gain points."""
     from rstlne.players.bot.player import BotPlayer
     from rstlne.runner import play_turn
 
@@ -605,8 +606,9 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
     seats = [entrants[e] for e in game.order]
     players = [BotPlayer(i, rules, spec, reader, version=1, knobs=e.knobs(base)) for i, e in enumerate(seats)]
     state = new_game(game.seed, rules, spec, puzzles, bonus_puzzle)
-    stats = [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0} for _ in seats]
-    round_totals, moves = [], 0
+    stats = [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0, "certain_win": False, "certain_loss": False,
+              "flat": 0} for _ in seats]
+    round_totals, moves, steps = [], 0, []
     while state.phase is not Phase.GAME_OVER:
         before = state
         state = play_turn(state, players)
@@ -614,7 +616,16 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
         r = state.last
         if before.round is None:
             continue
+        if gains:
+            steps.append(Step(before.round.number, before.phase.value, r.seat, tuple(s.bank for s in before.seats),
+                              _hidden(before.round.puzzle.answer, before.round.used), r.action.kind, r.outcome))
         seat = stats[r.seat]
+        raw = players[r.seat].last_call.raw if players[r.seat].last_call else {}
+        values = {round(v, 9) for v in (raw or {}).get("values", {}).values()}
+        if len(values) == 1 and len(raw["values"]) > 1:  # every move scored the same: the bot saw the result settled
+            seat["certain_win"] |= values == {1.0}
+            seat["certain_loss"] |= values == {0.0}
+        seat["flat"] += bool((raw or {}).get("flat"))
         if r.action.kind == "solve":
             seat["attempts"] += 1
             if r.outcome == "solved":
@@ -631,17 +642,19 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
         "totals": [s.total for s in state.seats], "round_totals": round_totals,
         "bonus": None if b is None else {"seat": b.seat, "solved": b.solved, "envelope": b.envelope},
         "moves": moves, "seconds": round(time.monotonic() - started, 2), "seat_stats": stats,
+        **({"gains": gain_points(steps)} if gains else {}),
     }
 
 
 def _play_in_worker(job) -> dict:
-    game, entrants, puzzles, bonus_puzzle, base = job
-    return play_one(game, entrants, puzzles, bonus_puzzle, _worker["reader"], _worker["rules"], _worker["spec"], base)
+    game, entrants, puzzles, bonus_puzzle, base, gains = job
+    return play_one(game, entrants, puzzles, bonus_puzzle, _worker["reader"], _worker["rules"], _worker["spec"], base,
+                    gains)
 
 
 def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, seed: int, out: Path, rules: Rules,
                spec: WheelSpec, base: versions.Knobs, make_reader, shard: tuple[int, int] = (1, 1), workers: int = 1,
-               say=print, heartbeat: float = HEARTBEAT) -> Path:
+               say=print, heartbeat: float = HEARTBEAT, gains: bool = False) -> Path:
     """Bot-only games with duplicate scoring: each set's six games share its seed and puzzles, one game per
     ordering of the three entrants. Writes games-shard{i}of{n}.jsonl and skips games already played."""
     from rstlne import tournament
@@ -661,7 +674,7 @@ def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, s
     names = ", ".join(str(e) for e in entrants)
     say(f"Playing {len(todo)} games ({sets} sets, shard {i}/{n}) between {names}; {workers} "
         f"worker{'s' if workers != 1 else ''}; a status line every 2 minutes")
-    jobs = [(g, tuple(entrants), tuple(main_hands[g.set]), bonus_hands[g.set][0], base) for g in todo]
+    jobs = [(g, tuple(entrants), tuple(main_hands[g.set]), bonus_hands[g.set][0], base, gains) for g in todo]
     if workers > 1:
         pool_ = ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(make_reader, base, rules, spec))
         results = pool_.map(_play_in_worker, jobs)
@@ -702,7 +715,8 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
     names = sorted({name for g in games for name in g["seats"]})
     per_set: dict[int, dict[str, list[float]]] = {}
     acc = {name: {"games": 0, "wins": 0.0, "seat_games": [0, 0, 0], "seat_wins": [0.0, 0.0, 0.0], "total": 0,
-                  "main": 0, "bonus_played": 0, "bonus_won": 0, "attempts": 0, "right": 0, "shown": [], "bankrupts": 0}
+                  "main": 0, "bonus_played": 0, "bonus_won": 0, "attempts": 0, "right": 0, "shown": [], "bankrupts": 0,
+                  "certain_win": 0, "certain_win_lost": 0, "certain_loss": 0, "certain_loss_won": 0, "flat": 0}
            for name in names}
     for g in games:
         shares = tournament.split_wins(g["totals"])
@@ -722,6 +736,13 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
             a["right"] += st["right"]
             a["shown"] += st["shown"]
             a["bankrupts"] += st["bankrupts"]
+            if st.get("certain_win"):
+                a["certain_win"] += 1
+                a["certain_win_lost"] += w == 0
+            if st.get("certain_loss"):
+                a["certain_loss"] += 1
+                a["certain_loss_won"] += w > 0
+            a["flat"] += st.get("flat", 0)
             per_set.setdefault(g["set"], {}).setdefault(name, []).append(w)
     rows = list(per_set.values())
 
@@ -741,6 +762,9 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
             "solve_accuracy": a["right"] / a["attempts"] if a["attempts"] else None,
             "shown_median": median(a["shown"]) if a["shown"] else None,
             "bankrupts_per_game": a["bankrupts"] / a["games"],
+            "certain_win": a["certain_win"], "certain_win_lost": a["certain_win_lost"],
+            "certain_loss": a["certain_loss"], "certain_loss_won": a["certain_loss_won"],
+            "flat_per_game": a["flat"] / a["games"],
         })
     pairwise = []
     for x in range(len(names)):
@@ -761,6 +785,10 @@ def summary_lines(summary: dict) -> list[str]:
         shown = "-" if e["shown_median"] is None else f"{e['shown_median']:.0%}"
         lines.append(f"  {e['entrant']:12s} wins {e['win_rate']:.0%}{ci} by seat {seats} · main ${e['avg_main']:,.0f} "
                      f"· bonus {e['bonus']} · solves {acc} right at {shown} shown · {e['bankrupts_per_game']:.2f} Bankrupts a game")
+        if e.get("certain_win") or e.get("certain_loss") or e.get("flat_per_game"):
+            lines.append(f"  {'':12s} sure it had won in {e['certain_win']} games, lost {e['certain_win_lost']} · "
+                         f"sure it had lost in {e['certain_loss']}, won {e['certain_loss_won']} · "
+                         f"{e['flat_per_game']:.2f} choices a game went to dollars")
     for p in summary["pairwise"]:
         ci = f" [{p['ci95'][0]:+.0%} to {p['ci95'][1]:+.0%}]" if p["ci95"] else ""
         lines.append(f"  {p['a']} minus {p['b']}: {p['gap']:+.0%}{ci}")
@@ -907,6 +935,173 @@ def win_table(folders: Sequence[Path], out: Path, main_rounds: int, say=print) -
     return table
 
 
+# The stealer's gain
+
+GAIN_ROUNDS = (1, 4)  # rounds 1 to 3, and round 4 on, whose wedges are bigger
+GAIN_BANDS = (0, 3, 6, 10, 15)  # hidden letter squares where each band starts
+GAIN_MIN_POINTS = 200  # a band with fewer merges into its neighbor with fewer hidden squares
+GAIN_QUANTILES = tuple((k + 0.5) / 10 for k in range(10))  # the midpoints of the tenths
+
+
+class Step(NamedTuple):
+    """One move in a main round, as the stealer's gain sees it."""
+
+    round: int
+    phase: str
+    seat: int
+    banks: tuple[int, ...]  # before the move
+    hidden: int  # letter squares still hidden before the move
+    kind: str
+    outcome: str
+
+
+def _hidden(answer: str, used) -> int:
+    return sum(c in LETTERS and c not in used for c in answer)
+
+
+def log_steps(rows: Sequence[dict]) -> list[Step]:
+    """A tournament game log's main round moves."""
+    steps = []
+    for r in rows:
+        state = r.get("state") or {}
+        if r.get("type") != "action" or not state.get("round"):
+            continue
+        rnd = state["round"]
+        steps.append(Step(rnd["number"], state["phase"], r["seat"], tuple(s["bank"] for s in state["seats"]),
+                          _hidden(rnd["puzzle"]["answer"], set(rnd["used"])), r["action"]["kind"],
+                          r["result"]["outcome"]))
+    return steps
+
+
+def gain_points(steps: Sequence[Step]) -> list[tuple[int, int, float]]:
+    """(round, hidden squares, gain) for every turn decision of a seat that didn't solve, in each round that ended
+    in a correct solve: the gain is the solver's bank when it solved minus its bank at that decision."""
+    points = []
+    rounds: dict[int, list[Step]] = {}
+    for s in steps:
+        rounds.setdefault(s.round, []).append(s)
+    for number, moves in rounds.items():
+        end = next((s for s in moves if s.kind == "solve" and s.outcome == "solved"), None)
+        if end is None:
+            continue
+        solver, final = end.seat, end.banks[end.seat]
+        points += [(number, s.hidden, float(final - s.banks[solver]))
+                   for s in moves if s.phase == Phase.TURN.value and s.seat != solver]
+    return points
+
+
+def check_fit_puzzles(name: str) -> None:
+    """The gain is fit on tuning puzzles only: never grading, dev, or private puzzles."""
+    name = Path(name).name
+    if name.startswith("grading") or name in ("dev.json", "private.json"):
+        raise ValueError(f"{name} is a grading, dev, or private puzzle file; the stealer's gain never fits on those")
+
+
+def tournament_gain_points(folders: Sequence[Path]) -> list[tuple[int, int, float]]:
+    """Gain points from finished tournament games, after checking which puzzles each tournament played."""
+    points = []
+    for folder in folders:
+        report = Path(folder) / "report.json"
+        if not report.exists():
+            raise ValueError(f"{folder} has no report.json, so it can't say which puzzles it played")
+        check_fit_puzzles(json.loads(report.read_text())["puzzles"])
+        for path in sorted(Path(folder).glob("set*.jsonl")):
+            rows = _rows(path)
+            if rows and rows[-1].get("type") == "summary":
+                points += gain_points(log_steps(rows))
+    return points
+
+
+def games_gain_points(folders: Sequence[Path]) -> list[tuple[int, int, float]]:
+    """Gain points from round-banks folders, after checking which puzzles they played."""
+    points = []
+    for folder in folders:
+        meta = Path(folder) / "round-banks.json"
+        if not meta.exists():
+            raise ValueError(f"{folder} has no round-banks.json; make it with selfplay round-banks")
+        check_fit_puzzles(json.loads(meta.read_text())["puzzles"])
+        for path in sorted(Path(folder).glob("games-shard*.jsonl")):
+            points += [tuple(p) for g in _rows(path) for p in g.get("gains", [])]
+    return points
+
+
+def _weighted(sources: Sequence[Sequence[float]]) -> tuple[np.ndarray, np.ndarray]:
+    """Values and weights, each non-empty source carrying an equal share."""
+    present = [s for s in sources if s]
+    values = np.array([v for s in present for v in s], dtype=float)
+    weights = np.array([1 / (len(present) * len(s)) for s in present for _ in s])
+    order = np.argsort(values, kind="stable")
+    return values[order], weights[order]
+
+
+def _quantile(values: np.ndarray, weights: np.ndarray, q: float) -> float:
+    cumulative = np.cumsum(weights)
+    return float(values[min(np.searchsorted(cumulative, q - 1e-12), len(values) - 1)])
+
+
+def fit_stealer_gain(llm: Sequence[tuple], bot: Sequence[tuple]) -> tuple[tuple, list[dict]]:
+    """The stealer_gain knob and a report: per group of rounds and band of hidden squares, the 10 gains at the
+    midpoints of the tenths, with LLM and bot opponents weighted half and half where both are present."""
+    table, report = [], []
+    for g, start in enumerate(GAIN_ROUNDS):
+        end = GAIN_ROUNDS[g + 1] if g + 1 < len(GAIN_ROUNDS) else None
+        inside = lambda p: p[0] >= start and (end is None or p[0] < end)
+        bands = []
+        for b, low in enumerate(GAIN_BANDS):
+            high = GAIN_BANDS[b + 1] if b + 1 < len(GAIN_BANDS) else None
+            fits = lambda p: inside(p) and p[1] >= low and (high is None or p[1] < high)
+            bands.append([low, [p[2] for p in llm if fits(p)], [p[2] for p in bot if fits(p)]])
+        if not any(lo or bo for _, lo, bo in bands):
+            continue
+        while len(bands) > 1:
+            sparse = next((i for i, (_, lo, bo) in enumerate(bands) if len(lo) + len(bo) < GAIN_MIN_POINTS), None)
+            if sparse is None:
+                break
+            a, b = (sparse - 1, sparse) if sparse > 0 else (0, 1)
+            bands[a:b + 1] = [[bands[a][0], bands[a][1] + bands[b][1], bands[a][2] + bands[b][2]]]
+        rows = []
+        for low, lo, bo in bands:
+            values, weights = _weighted([lo, bo])
+            gains = tuple(float(round(_quantile(values, weights, q))) for q in GAIN_QUANTILES)
+            rows.append((low, gains))
+            spread = lambda s: {"points": len(s), "median": float(np.median(s)) if s else None,
+                                "p90": float(np.percentile(s, 90)) if s else None}
+            report.append({"from_round": start, "from_hidden": low, "llm": spread(lo), "bot": spread(bo),
+                           "gains": list(gains)})
+        table.append((start, tuple(rows)))
+    return tuple(table), report
+
+
+def stealer_gain(logs: Sequence[Path], games: Sequence[Path], out: Path, say=print) -> tuple:
+    """Fit the stealer's gain from LLM tournaments and round-banks self-play, and save it under `out`."""
+    llm, bot = tournament_gain_points(logs), games_gain_points(games)
+    if not llm and not bot:
+        raise ValueError("no gain points: pass tournament folders with --logs, round-banks folders with --games, or both")
+    table, report = fit_stealer_gain(llm, bot)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "stealer-gain.json").write_text(json.dumps(
+        {"knob": table, "report": report, "logs": [str(f) for f in logs], "games": [str(f) for f in games]}, indent=1))
+    say(f"Fit the stealer's gain from {len(llm)} LLM-opponent points and {len(bot)} bot-opponent points "
+        f"into {out / 'stealer-gain.json'}")
+    for r in report:
+        side = lambda s: "-" if s["points"] == 0 else f"{s['points']} pts, median ${s['median']:,.0f}, p90 ${s['p90']:,.0f}"
+        say(f"  rounds {r['from_round']}+, {r['from_hidden']}+ hidden: LLM {side(r['llm'])} · bot {side(r['bot'])}")
+        say("    gains: " + ", ".join(f"${g:,.0f}" for g in r["gains"]))
+    return table
+
+
+def round_banks(puzzles_path: Path, sets: int, seed: int, out: Path, rules: Rules, spec: WheelSpec,
+                base: versions.Knobs, make_reader, shard: tuple[int, int] = (1, 1), workers: int = 1,
+                say=print) -> Path:
+    """Bot games on tuning puzzles that record the stealer's gain points, for `stealer-gain`."""
+    check_fit_puzzles(puzzles_path.name)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "round-banks.json").write_text(json.dumps({"puzzles": str(puzzles_path)}))
+    entrants = [Entrant(name) for name in ("a", "b", "c")]
+    return play_games(entrants, settings.load_puzzles(puzzles_path), sets, seed, out, rules, spec, base, make_reader,
+                      shard, workers, say=say, gains=True)
+
+
 # Knobs
 
 
@@ -927,6 +1122,11 @@ def override(knobs: versions.Knobs, pairs: Sequence[str]) -> versions.Knobs:
             changes[name] = _tuples(data["knob"] if isinstance(data, dict) else data)
             continue
         kind = types[name]
+        if kind is bool:
+            if value.lower() not in ("true", "false", "1", "0"):
+                raise ValueError(f"{name} is true or false, not {value!r}")
+            changes[name] = value.lower() in ("true", "1")
+            continue
         if kind is type(None):  # a knob that is off by default takes a number
             kind = float
         if name == "calibration":  # points as raw:actual pairs
@@ -997,6 +1197,17 @@ def main(argv: Sequence[str] | None = None) -> None:
     fit.add_argument("--workers", type=int, default=4, help="processes, one per core")
     fit.add_argument("--resamples", type=int, default=1000, help="for the 95%% intervals")
     fit.add_argument("--knob", action="append", default=[], help="name=value, to read with other knobs")
+    rb = jobs.add_parser("round-banks", help="bot games on tuning puzzles that record the stealer's gain points")
+    rb.add_argument("--puzzles", required=True, help="the tuning batch; grading, dev, and private files are refused")
+    rb.add_argument("--sets", type=int, required=True, help="each set is 6 games, one per seat ordering")
+    rb.add_argument("--seed", type=int, required=True)
+    rb.add_argument("--out", required=True, help="the folder for games-shard*.jsonl and round-banks.json")
+    rb.add_argument("--shard", default="1/1", help="i/n: this machine's share of the games")
+    rb.add_argument("--workers", type=int, default=4, help="processes, one per core")
+    sg = jobs.add_parser("stealer-gain", help="fit what an opponent adds to its bank before it solves")
+    sg.add_argument("--logs", nargs="*", default=[], help="tournament folders: LLM opponents")
+    sg.add_argument("--games", nargs="*", default=[], help="round-banks folders: bot opponents")
+    sg.add_argument("--out", required=True, help="the folder for stealer-gain.json")
     summary = jobs.add_parser("summary", help="accuracy by confidence across every shard of a reads folder")
     summary.add_argument("folder")
     args = parser.parse_args(argv)
@@ -1006,6 +1217,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         return
     if args.job == "win-table":
         win_table([Path(f) for f in args.games], Path(args.out), settings.load_rules().main_rounds, say=print)
+        return
+    if args.job == "stealer-gain":
+        try:
+            stealer_gain([Path(f) for f in args.logs], [Path(f) for f in args.games], Path(args.out), say=print)
+        except ValueError as err:
+            sys.exit(str(err))
         return
     if args.job == "games-summary":
         for line in summary_lines(games_summary(Path(args.folder))):
@@ -1034,6 +1251,14 @@ def main(argv: Sequence[str] | None = None) -> None:
                           rules, spec, knobs, _make_reader, shard_spec, args.workers, say=print)
         for line in summary_lines(games_summary(path.parent)):
             print(line)
+        return
+    if args.job == "round-banks":
+        try:
+            path = round_banks(Path(args.puzzles), args.sets, args.seed, Path(args.out), rules, spec, knobs,
+                               _make_reader, parse_shard(args.shard), args.workers, say=print)
+        except ValueError as err:
+            sys.exit(str(err))
+        print(f"{sum(len(g.get('gains', [])) for g in _rows(path))} gain points in {path}")
         return
     if args.job == "calibrate":
         calibrate(settings.load_puzzles(Path(args.puzzles)), settings.load_puzzles(Path(args.held_out)), Path(args.out),

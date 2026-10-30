@@ -119,9 +119,12 @@ class BotPlayer(Player):
         belief = self._belief(view)
         self._record = {"version": self.version, "confidence": belief.confidence, "best": belief.best,
                         "oov": belief.oov, "p_steal": None, "values": {}}
+        self._goal = None
         try:
             return self._decide(view, belief)
         finally:
+            if self._goal is not None and self._goal.last_flat:
+                self._record["flat"] = True
             self.last_call = CallRecord(raw=self._record, usage=Usage())
 
     def thoughts(self) -> list[str]:
@@ -197,6 +200,7 @@ class BotPlayer(Player):
         odds = self.steal.odds(share, seen.confidence, share_after, confidence_after)
         self._record["p_steal"] = odds.total
         goal = Objective(view, self.rules, self.spec, self.knobs)
+        self._goal = goal
         prior = self.steal.prior
         return Situation(view, belief, goal, odds, self.rules, self.spec, self.knobs,
                          calibrate=calibration.curve(self.knobs.calibration),

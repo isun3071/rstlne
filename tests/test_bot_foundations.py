@@ -97,10 +97,14 @@ def test_v1_plays_the_formula_and_v2_the_win_table():
     assert replace(v2, win_table=()) == v1  # the table is their only difference
 
 
+LATER_KNOBS = {"stealer_gain", "flat_dollars"}  # added after the freeze, off in versions 1 and 2
+
+
 def knob_hash(version):
     from dataclasses import asdict
     import hashlib
-    return hashlib.sha256(json.dumps(asdict(versions.knobs(version)), sort_keys=True).encode()).hexdigest()[:12]
+    knobs = {k: v for k, v in asdict(versions.knobs(version)).items() if k not in LATER_KNOBS}
+    return hashlib.sha256(json.dumps(knobs, sort_keys=True).encode()).hexdigest()[:12]
 
 
 def test_frozen_versions_never_change():

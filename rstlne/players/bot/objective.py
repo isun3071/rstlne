@@ -1,4 +1,6 @@
-"""What the bot plays for: dollars in rounds 1 and 2, the chance of finishing first from round 3 on."""
+"""What the bot plays for: dollars in rounds 1 and 2, the chance of finishing first from round 3 on.
+From version 3, an opponent who takes the round banks what it holds plus a spread of what it adds before
+solving, and a choice where every option wins equally goes to dollars."""
 
 from __future__ import annotations
 
@@ -17,16 +19,18 @@ MONEY_ROUNDS = 2  # rounds 1 and 2 always play for money
 
 @dataclass(frozen=True)
 class Value:
-    """A move's worth: dollars, or win chance, plus bonus value that only breaks ties in win mode."""
+    """A move's worth: dollars, or win chance, plus bonus value that only breaks ties in win mode.
+    `dollars` is the move's worth in dollars in either mode, for choices where every option wins equally."""
 
     main: float
     bonus: float = 0.0
+    dollars: float = 0.0
 
     def __add__(self, other: Value) -> Value:
-        return Value(self.main + other.main, self.bonus + other.bonus)
+        return Value(self.main + other.main, self.bonus + other.bonus, self.dollars + other.dollars)
 
     def __mul__(self, weight: float) -> Value:
-        return Value(self.main * weight, self.bonus * weight)
+        return Value(self.main * weight, self.bonus * weight, self.dollars * weight)
 
     __rmul__ = __mul__
 
@@ -61,12 +65,23 @@ class Objective:
         self.knobs = knobs
         self.minimum = rules.solve_minimum
         self.win_mode = view.round_number is not None and view.round_number > MONEY_ROUNDS
+        self.round_number = view.round_number
+        self.hidden = view.board.count("_")  # letter squares still hidden
+        self.gains = self.gains_for(self.hidden) if self.win_mode else None
+        self.last_flat = False  # whether the latest choice went to dollars
         self.rounds_left = rules.main_rounds - (view.round_number or rules.main_rounds)  # after this round
         self.reach_bonus = self.first(self.totals, self.rounds_left + 1) if rules.bonus_round else 0.0
         envelopes = spec.envelopes
         replaced, million = spec.million_swap
         self.wild_value = knobs.wild_bonus_lift * sum(envelopes) / len(envelopes) * self.reach_bonus
         self.million_value = knobs.bonus_solve * (million - replaced) / len(envelopes) * self.reach_bonus
+
+    def gains_for(self, hidden: int) -> tuple[float, ...] | None:
+        """What a stealer adds before solving, at this round and this many hidden squares; None without a table."""
+        rows = [bands for start, bands in self.knobs.stealer_gain if start <= (self.round_number or 0)]
+        if not rows:
+            return None
+        return [gains for start, gains in rows[-1] if start <= hidden][-1]
 
     def first(self, totals: Sequence[float], rounds_left: int) -> float:
         """The chance of finishing first: the self-play table where it has a row, else the formula.
@@ -83,8 +98,8 @@ class Objective:
 
     def _value(self, dollars: float, totals: Sequence[float], cards: float) -> Value:
         if self.win_mode:
-            return Value(self.first(totals, self.rounds_left), cards)
-        return Value(dollars + cards)
+            return Value(self.first(totals, self.rounds_left), cards, dollars + cards)
+        return Value(dollars + cards, 0.0, dollars + cards)
 
     def win_round(self, bank: float, wild: bool, million: bool) -> Value:
         banked = max(bank, self.minimum)
@@ -97,20 +112,29 @@ class Objective:
         if not self.win_mode or not stealers:
             return self._value(0, self.totals, self._cards(wild, False))
         total = sum(stealers.values())
+        gains = self.gains or (0.0,)
         value = ZERO
         for seat, weight in stealers.items():
-            totals = list(self.totals)
-            totals[seat] += max(self.banks[seat], self.minimum)
-            value += self._value(0, totals, self._cards(wild, False)) * (weight / total)
+            taken = ZERO
+            for gain in gains:
+                totals = list(self.totals)
+                totals[seat] += max(self.banks[seat] + gain, self.minimum)
+                taken += self._value(0, totals, self._cards(wild, False))
+            value += taken * (weight / total / len(gains))
         return value
 
     def choose(self, options: Mapping[str, Value]) -> str:
-        """The best move. From round 3, moves within the tie margin of the best go to bonus value."""
+        """The best move. From round 3, moves within the tie margin of the best go to bonus value, or from
+        version 3, when every option is that close, to dollars."""
+        self.last_flat = False
         best = max(options, key=lambda k: options[k].main)
         if not self.win_mode:
             return best
         floor = options[best].main - self.knobs.tie_margin
         tied = [k for k in options if options[k].main >= floor]
+        if self.knobs.flat_dollars and len(options) > 1 and len(tied) == len(options):
+            self.last_flat = True
+            return max(options, key=lambda k: options[k].dollars)
         return max(tied, key=lambda k: (options[k].bonus, options[k].main))
 
     def choose_value(self, options: Mapping[str, Value]) -> Value:

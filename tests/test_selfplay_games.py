@@ -172,3 +172,28 @@ def test_the_tuning_command_starts_from_the_configured_bot_plus_its_knobs(tmp_pa
     assert seen["base"].steal_prior == versions.knobs(1).steal_prior
     assert seen["grid"] == {"tie_margin": [0.002, 0.01]}
     assert seen["rules"].main_rounds > 0 and seen["sets"] == 2
+
+
+# The stealer's gain
+
+
+def test_round_banks_games_record_gain_points_and_name_their_puzzles(tmp_path, rules, wheel_spec):
+    puzzles = tmp_path / "tuning-test.json"
+    puzzles.write_text(json.dumps([{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in POOL]))
+    path = selfplay.round_banks(puzzles, 1, 7, tmp_path / "rb", rules, wheel_spec, KNOBS, reader)
+    games = [json.loads(line) for line in path.read_text().splitlines()]
+    points = [p for g in games for p in g["gains"]]
+    assert len(games) == 6 and points and all(len(p) == 3 and 1 <= p[0] <= rules.main_rounds for p in points)
+    assert selfplay.games_gain_points([tmp_path / "rb"]) == [tuple(p) for p in points]
+    grading = tmp_path / "grading-9.json"
+    grading.write_text(puzzles.read_text())
+    with pytest.raises(ValueError, match="grading"):
+        selfplay.round_banks(grading, 1, 7, tmp_path / "no", rules, wheel_spec, KNOBS, reader)
+
+
+def test_games_count_when_a_bot_thought_the_result_settled(tmp_path, rules, wheel_spec):
+    path = play(tmp_path, rules, wheel_spec)
+    g = json.loads(path.read_text().splitlines()[0])
+    assert {"certain_win", "certain_loss", "flat"} <= set(g["seat_stats"][0])
+    e = selfplay.games_summary(tmp_path)["entrants"][0]
+    assert {"certain_win", "certain_win_lost", "certain_loss", "certain_loss_won", "flat_per_game"} <= set(e)
