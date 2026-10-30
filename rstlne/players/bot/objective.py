@@ -69,6 +69,7 @@ class Objective:
         self.hidden = view.board.count("_")  # letter squares still hidden
         self.gains = self.gains_for(self.hidden) if self.win_mode else None
         self.last_flat = False  # whether the latest choice went to dollars
+        self._lost: dict = {}  # lose_round answers: one decision asks the same few questions many times
         self.rounds_left = rules.main_rounds - (view.round_number or rules.main_rounds)  # after this round
         self.reach_bonus = self.first(self.totals, self.rounds_left + 1) if rules.bonus_round else 0.0
         envelopes = spec.envelopes
@@ -111,6 +112,12 @@ class Objective:
         """Another seat solves. `stealers` weights who; the Million card is lost, the Wild Card kept."""
         if not self.win_mode or not stealers:
             return self._value(0, self.totals, self._cards(wild, False))
+        key = (wild, tuple(stealers.items()))
+        if key not in self._lost:
+            self._lost[key] = self._stolen(wild, stealers)
+        return self._lost[key]
+
+    def _stolen(self, wild: bool, stealers: Mapping[int, float]) -> Value:
         total = sum(stealers.values())
         gains = self.gains or (0.0,)
         value = ZERO
