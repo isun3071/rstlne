@@ -334,7 +334,7 @@ In this section, "ask" means one request to the model. "Call" still means callin
 - A human's typo or illegal move just reprompts. The three-strike rule applies to models only.
 - Show model turns as they happen, with a short pause, so the game reads like a show.
 - Add a `--show-thinking` flag that prints each model's raw response.
-- Add a `--live` flag for model-only games that redraws one fixed screen after every move: the board as tiles, unused letters, each seat's bank, total, cards, and latest thinking, and the recent moves. It refuses a human seat, and it falls back to plain lines when output is not a terminal.
+- Add a `--live` flag that redraws one fixed screen after every move: the board as tiles, unused letters, each seat's bank, total, cards, and latest thinking, and the recent moves. It falls back to plain lines when output is not a terminal. With a human seat, the screen is cleared and drawn again after every move instead of updating in place, and the human's prompt sits under it; a typo's hint and the bonus round's 10-second clock show there too. The thinking column stays hidden while a human plays, since a model's or the bot's thoughts would show its best guess.
 - After a correct solve, show the solved board and hold it for `solve_pause` seconds (default 10, in `config.toml`) before the next round starts: on the `--live` screen, and in plain output with `--show-puzzle`. `--pause 0` skips the hold. When the game ends, the `--live` screen reveals the last puzzle.
 - Add a `--show-puzzle` flag that prints the public table after every move: board, category, used letters, banks, totals, held cards, and wedge. It never shows the answer.
 

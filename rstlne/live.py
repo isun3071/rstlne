@@ -1,4 +1,8 @@
-"""A live terminal screen for model-only games. The board stays put and redraws after every move."""
+"""A live terminal screen. The board stays put and redraws after every move.
+
+Model-only games redraw smoothly with rich's Live display. With a human seat, the screen is cleared and drawn
+again instead, with the human's prompt under it, since a Live display can't take typed input. Thinking stays
+hidden then: a model's or the bot's thoughts would show the human its best guess."""
 
 from __future__ import annotations
 
@@ -46,6 +50,8 @@ class LiveShow:
         sleep: Callable[[float], None] = time.sleep,
         moves_shown: int = 10,
         solve_pause: float = 10,
+        read: Callable[[str], str] | None = None,
+        read_timed: Callable[[float], str | None] | None = None,
     ):
         self.players = players
         self.pause = pause
@@ -58,12 +64,43 @@ class LiveShow:
         self.thoughts: dict[int, str] = {}  # each seat's latest thought
         self.seed: int | None = None
         self.live: Live | None = None
+        self.interactive = any(p.describe().get("kind") == "human" for p in players)
+        self.read = read or self.console.input
+        self.read_timed = read_timed
+        self.state: GameState | None = None  # the latest state drawn, for a human's prompt
+        self.notes: list[str] = []  # hints and messages for the human, shown under the next frame
 
     def start(self, state: GameState) -> None:
         self.seed = state.seed
+        self.state = state
         self._remember(state)
+        if self.interactive:
+            self._show(self.render(state))
+            return
         self.live = Live(self.render(state), console=self.console, refresh_per_second=8)
         self.live.start()
+
+    # A human seat's prompts
+
+    def note(self, text: str) -> None:
+        self.notes.append(text.strip())
+
+    def ask(self, prompt: str) -> str:
+        """Redraw the screen with any notes, then read the human's command under it."""
+        self._redraw_for_human()
+        return self.read(prompt)
+
+    def ask_timed(self, seconds: float) -> str | None:
+        from rstlne.players.human_cli import read_with_timeout
+        self._redraw_for_human()
+        return (self.read_timed or read_with_timeout)(seconds)
+
+    def _redraw_for_human(self) -> None:
+        if self.state is not None:
+            self._show(self.render(self.state))
+        for line in self.notes:
+            self.console.print(line, markup=False, highlight=False)
+        self.notes.clear()
 
     def result(self, state: GameState) -> None:
         result = state.last
@@ -75,12 +112,16 @@ class LiveShow:
             self._show(self.render(state, solved_view(public_view(state, state.seat), self.round_number, self.puzzle)))
             if self.pause:
                 self.sleep(self.solve_pause)
+        self.state = state
         self._show(self.render(state))
         self.sleep(self.pause)
         self._remember(state)
 
     def _show(self, frame: RenderableType) -> None:
-        if self.live:
+        if self.interactive:
+            self.console.clear()
+            self.console.print(frame)
+        elif self.live:
             self.live.update(frame, refresh=True)
 
     def _remember(self, state: GameState) -> None:
@@ -102,8 +143,8 @@ class LiveShow:
             self.live = None
 
     def finish(self, state: GameState, log_path: Path | str) -> None:
-        if self.live:
-            self.live.update(self.render(state), refresh=True)
+        if self.live or self.interactive:
+            self._show(self.render(state))
         self.stop()
         write = lambda line: self.console.print(line, markup=False, highlight=False)  # noqa: E731
         Show(self.players, 0, False, write=write).finish(state, log_path)
@@ -170,20 +211,15 @@ class LiveShow:
         table = Table(expand=True, show_edge=False)
         for column in ("", "Seat", "Player", "Round bank", "Total", "Cards"):
             table.add_column(column, no_wrap=True)
-        table.add_column("Thinking", overflow="ellipsis", no_wrap=True, ratio=1)
+        if not self.interactive:
+            table.add_column("Thinking", overflow="ellipsis", no_wrap=True, ratio=1)
         for i, player in enumerate(self.players):
             cards = ", ".join(
                 name for name, held in (("Wild Card", view.wild_cards[i]), ("Million", view.million_cards[i])) if held
             )
             up = i == state.seat and state.phase is not Phase.GAME_OVER
-            table.add_row(
-                "▶" if up else "",
-                f"Seat {i + 1}",
-                player.label(),
-                money(view.banks[i]),
-                money(view.totals[i]),
-                cards,
-                self.thoughts.get(i, ""),
-                style="bold" if up else None,
-            )
+            cells = ["▶" if up else "", f"Seat {i + 1}", player.label(), money(view.banks[i]), money(view.totals[i]), cards]
+            if not self.interactive:
+                cells.append(self.thoughts.get(i, ""))
+            table.add_row(*cells, style="bold" if up else None)
         return table

@@ -136,7 +136,7 @@ def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--pause", type=float, help="seconds to pause after each model move")
     parser.add_argument("--show-thinking", action="store_true", help="print each model's raw response")
     parser.add_argument("--show-puzzle", action="store_true", help="print the board, letters, and banks after every move")
-    parser.add_argument("--live", action="store_true", help="model-only games: redraw one fixed screen after every move")
+    parser.add_argument("--live", action="store_true", help="redraw one fixed screen after every move, human seats too")
     parser.add_argument("--log-dir", default=str(settings.ROOT / "logs"))
     return parser.parse_args(argv)
 
@@ -158,15 +158,15 @@ def main(
 
     path = Path(args.log_dir) / f"{datetime.now():%Y%m%d-%H%M%S}-seed{seed}.jsonl"
     kinds = {kind for kind, _ in seats}
-    if args.live and "human" in kinds:
-        sys.exit("--live is for model-only games, since a redrawing screen can't take typed moves. "
-                 "Drop the human seat, or use --show-puzzle.")
     client, decisions = clients(kinds, client, decisions)
     players = build_players(seats, rules, spec, config, client, decisions, path.stem)
     pause = args.pause if args.pause is not None else config["cli"]["model_pause"]
     show: Show | LiveShow
     if args.live and sys.stdout.isatty():
         show = LiveShow(players, pause, solve_pause=config["cli"]["solve_pause"])
+        for player in players:
+            if isinstance(player, HumanPlayer):
+                player.use_screen(show)
     else:
         if args.live:
             print("--live needs a terminal; showing plain output instead.")

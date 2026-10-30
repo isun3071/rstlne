@@ -134,6 +134,12 @@ class HumanPlayer(Player):
         self.read_timed = read_timed
         self.clock = clock
         self.seconds = seconds
+        self.screen = None  # a live screen, once use_screen sets one
+
+    def use_screen(self, screen) -> None:
+        """Play on a live screen: it draws the table, and prompts and hints go through it."""
+        self.screen = screen
+        self.read, self.write, self.read_timed = screen.ask, screen.note, screen.ask_timed
 
     def describe(self) -> dict:
         return {"kind": "human"}
@@ -141,7 +147,7 @@ class HumanPlayer(Player):
     def decide(self, view: PublicView, error: str | None = None) -> Action:
         if error:
             self.write(f"  {error}")
-        else:
+        elif self.screen is None:
             self.write("\n" + "\n".join(table(view, self.seat)))
         if view.phase is Phase.BONUS_SOLVE:
             return self._timed_solve()

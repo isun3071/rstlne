@@ -97,9 +97,61 @@ def test_a_whole_game_plays_on_the_live_screen(rules, wheel_spec):
     assert "Final totals" in out.export_text()
 
 
-def test_live_is_for_model_only_games(tmp_path):
-    with pytest.raises(SystemExit, match="model-only"):
+# A human seat on the live screen
+
+
+def human_table(rules, wheel_spec, typed=(), timed=None):
+    """A human in seat 1 and two models, on a live screen that answers prompts from `typed`."""
+    from rstlne.players.human_cli import HumanPlayer
+    answers, prompts = iter(typed), []
+    out = console()
+    others = [LLMPlayer(i, f"test/model-{i + 1}", router([]), rules, wheel_spec) for i in (1, 2)]
+    human = HumanPlayer(0)
+    players = [human, *others]
+    live = LiveShow(players, pause=0, console=out, read=lambda p: prompts.append(p) or next(answers),
+                    read_timed=lambda seconds: timed)
+    human.use_screen(live)
+    return live, human, out, prompts
+
+
+def test_a_human_takes_turns_on_the_live_screen(rules, wheel_spec):
+    from rstlne.engine.state import Spin
+    live, human, out, prompts = human_table(rules, wheel_spec, typed=["x", "s"])
+    state = start(rules, wheel_spec)
+    live.start(state)
+    assert human.decide(cli_view(state)) == Spin()
+    screen = out.export_text()
+    assert "Round 1 of 4" in screen and "Moves" in screen  # the board, not a table of text lines
+    assert "Round banks:" not in screen
+    assert "Try: s to spin" in screen  # the typo's hint, shown on the screen before asking again
+    assert prompts == ["s to spin, solve <answer>: "] * 2
+
+
+def test_the_bonus_clock_runs_on_the_live_screen(rules, wheel_spec):
+    from rstlne.engine.rules import public_view
+    from rstlne.engine.state import BonusPicks, BonusSolve
+    from helpers import solve
+    live, human, out, _ = human_table(rules, wheel_spec, timed="big city")
+    state = apply(solve(start(rules, wheel_spec, main_rounds=1)), BonusPicks(("C", "D", "M"), "A"))
+    live.start(state)
+    assert human.decide(public_view(state, 0)) == BonusSolve("big city")
+    assert "You have 10 seconds" in out.export_text()
+
+
+def test_thinking_stays_hidden_while_a_human_plays(rules, wheel_spec):
+    live, *_ = human_table(rules, wheel_spec)
+    live.thoughts[1] = "confidence 0.95 in WHEEL OF FORTUNE"
+    screen = text(live, start(rules, wheel_spec))
+    assert "Thinking" not in screen and "WHEEL OF FORTUNE" not in screen
+
+
+def test_live_takes_a_human_seat(tmp_path, monkeypatch):
+    seen = []
+    monkeypatch.setattr(cli, "LiveShow", lambda players, *a, **k: seen.append(players) or (_ for _ in ()).throw(SystemExit("built")))
+    monkeypatch.setattr(cli.sys.stdout, "isatty", lambda: True)
+    with pytest.raises(SystemExit, match="built"):
         cli.main(["--seats", "human,llm:a/one,llm:b/two", "--live", "--log-dir", str(tmp_path)], client=router([]))
+    assert seen and seen[0][0].describe() == {"kind": "human"}
 
 
 def test_live_without_a_terminal_falls_back_to_plain_lines(tmp_path, capsys):
