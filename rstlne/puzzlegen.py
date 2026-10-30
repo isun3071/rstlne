@@ -19,6 +19,7 @@ from collections import Counter
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 
 import openai
@@ -27,6 +28,7 @@ from rstlne import settings as project
 from rstlne.engine.puzzle import LETTERS, Puzzle, normalize
 from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage
 from rstlne.narrate import duration, line_output
+from rstlne.players.bot import lexicon, versions
 from rstlne.players.bot.lexicon import data_dir, rhyme_key
 
 PROMPT_VERSION = 5  # 4: bonus requests ask for less common letters; 5: and for at least 10 letters
@@ -127,6 +129,25 @@ def fits_rows(answer: str, rows: Sequence[int]) -> bool:
             room, need = rows[row], len(word)
         room -= need
     return True
+
+
+def unknown_words(answer: str, dictionary: frozenset[str]) -> list[str]:
+    """The answer's words that no dictionary word or name holds, like WAKIKI for WAIKIKI."""
+    words = [w for w in re.split(r"[ \-&]+", answer) if w]
+    return [w for w in words if w not in dictionary and w.replace("'", "") not in dictionary]
+
+
+@lru_cache(maxsize=1)
+def load_dictionary() -> frozenset[str] | None:
+    """Every word the bot's word data knows, from wordfreq and from its phrases and names; None without the data."""
+    root = data_dir()
+    if not lexicon.available(root):
+        return None
+    lex = lexicon.load(str(root), versions.knobs(versions.current(project.load_config())).vocabulary)
+    words = set(lex.frequency)
+    for text in lex.texts:
+        words.update(w for w in re.split(r"[ \-&]+", text) if w)
+    return frozenset(words)
 
 
 def hidden_after_picks(answer: str, s: Settings) -> float:
@@ -381,6 +402,7 @@ def generate(
     seen_path: Path | None = None,
     rhymes: dict[str, set[str]] | None = None,
     ideas: list[str] | None = None,
+    dictionary: frozenset[str] | None = None,
     say=lambda line: None,
     heartbeat: float = 120.0,
     clock=time.monotonic,
@@ -392,6 +414,7 @@ def generate(
     rng = random.Random(f"puzzlegen:{seed}")
     seen_path = SEEN if seen_path is None else seen_path
     rhymes = load_rhymes(data_dir() / "cmudict.dict") if rhymes is None else rhymes
+    dictionary = load_dictionary() if dictionary is None else dictionary  # still None without the word data: no spelling check
     pool = ideas if ideas is not None else _idea_pool()
     seen_path.parent.mkdir(parents=True, exist_ok=True)
     seen = seen_path.read_text().splitlines() if seen_path.exists() else []
@@ -453,7 +476,7 @@ def generate(
                     candidates = []
                     for raw in answers:
                         verdict = _check(raw, category, rows, rhymes, prior, this_run, pending, result,
-                                         0 if is_bonus else s.main_min_letters, s if is_bonus else None)
+                                         0 if is_bonus else s.main_min_letters, s if is_bonus else None, dictionary)
                         if verdict is not None:
                             pending.add(verdict)
                             candidates.append(verdict)
@@ -485,7 +508,8 @@ def generate(
 
 
 def _check(raw: str, category: str, rows, rhymes, prior: NearIndex, this_run: NearIndex, pending: NearIndex,
-           result: Result, min_letters: int = 0, bonus: Settings | None = None) -> str | None:
+           result: Result, min_letters: int = 0, bonus: Settings | None = None,
+           dictionary: frozenset[str] | None = None) -> str | None:
     """The answer if it passes every check in code, else None with the reason counted.
     With `bonus`, the answer is also held to the bonus round's length and difficulty."""
     try:
@@ -504,6 +528,9 @@ def _check(raw: str, category: str, rows, rhymes, prior: NearIndex, this_run: Ne
         return None
     if missing_apostrophe(answer):
         result.rejected["contraction without its apostrophe"] += 1
+        return None
+    if dictionary is not None and unknown_words(answer, dictionary):
+        result.rejected["a word no dictionary or name list holds"] += 1
         return None
     if not fits_rows(answer, rows):
         result.rejected["doesn't fit the board"] += 1
@@ -563,12 +590,13 @@ def load_pool(path: Path) -> list[Puzzle]:
 
 
 def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path], known: Sequence[Puzzle],
-            say=lambda line: None) -> list[str]:
+            say=lambda line: None, dictionary: frozenset[str] | None = None) -> list[str]:
     """Hold a batch file to the current checks: drop near repeats of `known` puzzles, of the `against` files,
     and of earlier puzzles in the file; contractions without apostrophes; bonus puzzles too short or too easy;
     and categories whose familiarity bar has risen, which get judged again. Rewrites the file, and returns
     what it dropped."""
     data = json.loads(path.read_text())
+    dictionary = load_dictionary() if dictionary is None else dictionary
     prior = NearIndex([p.answer for p in known] + [p.answer for f in against for p in load_pool(f)])
     kept_index, kept, dropped = NearIndex(), [], []
     for p in load_pool(path):
@@ -579,6 +607,8 @@ def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path]
             reason = "near an earlier puzzle in this file"
         elif missing_apostrophe(p.answer):
             reason = "contraction without its apostrophe"
+        elif dictionary is not None and unknown_words(p.answer, dictionary):
+            reason = f"a word no dictionary or name list holds: {', '.join(unknown_words(p.answer, dictionary))}"
         elif p.bonus and sum(c in LETTERS for c in p.answer) < s.bonus_min_letters:
             reason = "too short for a bonus puzzle"
         elif p.bonus and hidden_after_picks(p.answer, s) < s.bonus_min_hidden:

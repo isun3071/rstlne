@@ -134,6 +134,40 @@ def test_settings_read_the_bonus_difficulty_and_letters_from_config():
     assert (s.bonus_letters, s.bonus_picks, s.bonus_min_hidden, s.bonus_min_letters) == ("RSTLNE", "CDMA", 0.55, 7)
 
 
+DICTIONARY = frozenset({"WAIKIKI", "BEACH", "JUMBO", "SHRIMP", "DON'T", "STOP", "ROCK", "ROLL"})
+
+
+def test_unknown_words_are_the_ones_no_dictionary_or_name_list_holds():
+    assert puzzlegen.unknown_words("WAKIKI BEACH", DICTIONARY) == ["WAKIKI"]
+    assert puzzlegen.unknown_words("JUMBO SHRIMP", DICTIONARY) == []
+    assert puzzlegen.unknown_words("DON'T STOP", DICTIONARY) == []
+    assert puzzlegen.unknown_words("ROCK-AND-ROLL", DICTIONARY) == ["AND"]
+
+
+def test_a_misspelled_answer_is_rejected_when_the_word_data_is_there(tmp_path):
+    client = fake([["Wakiki beach", "Jumbo shrimp"]])
+    result = puzzlegen.generate(client, settings(max_requests=1), [], [("Place", 2)], seed=2, known=[],
+                                seen_path=tmp_path / "seen.txt", dictionary=DICTIONARY)
+    assert [p.answer for p in result.puzzles] == ["JUMBO SHRIMP"]
+    assert result.rejected["a word no dictionary or name list holds"] == 1
+
+
+def test_without_word_data_the_spelling_check_is_off(tmp_path):
+    assert puzzlegen.load_dictionary() is None  # tests never read data/
+    client = fake([["Wakiki beach"]])
+    result = puzzlegen.generate(client, settings(max_requests=1), [], [("Place", 1)], seed=2, known=[],
+                                seen_path=tmp_path / "seen.txt")
+    assert [p.answer for p in result.puzzles] == ["WAKIKI BEACH"]
+
+
+def test_recheck_drops_misspelled_answers(tmp_path):
+    path = tmp_path / "batch.json"
+    puzzlegen.save_pool(path, [Puzzle("Place", "WAKIKI BEACH", bonus=True), Puzzle("Place", "WAIKIKI BEACH", bonus=True)],
+                        settings(bonus_min_hidden=0.0), seed=1, rejected={}, cost=0.0)
+    dropped = puzzlegen.recheck(fake([]), settings(bonus_min_hidden=0.0), path, against=[], known=[], dictionary=DICTIONARY)
+    assert dropped == ["WAKIKI BEACH"]
+
+
 def test_every_request_stands_alone_and_never_names_the_show(tmp_path):
     client = fake([["Spare tire", "Kitchen sink", "Garden hose"]])
     puzzlegen.generate(client, settings(), [("Thing", 3)], [], seed=3, known=[], seen_path=tmp_path / "seen.txt")
