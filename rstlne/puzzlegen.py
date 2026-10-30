@@ -29,7 +29,7 @@ from rstlne.llm.openrouter import EmptyResponse, OpenRouter, Usage
 from rstlne.narrate import duration, line_output
 from rstlne.players.bot.lexicon import data_dir, rhyme_key
 
-PROMPT_VERSION = 4  # 4: bonus requests ask for less common letters
+PROMPT_VERSION = 5  # 4: bonus requests ask for less common letters; 5: and for at least 10 letters
 DEADLINE = 60  # seconds for one request: a batch of answers takes a few
 MAX_FAILURES = 5  # requests failing in a row before a run stops and keeps what it has
 FAMILIAR = 4  # the judge rates how familiar an answer is, 1 to 5; below this it's out
@@ -89,7 +89,7 @@ class Settings:
     bonus_letters: str = "RSTLNE"  # what the bonus round gives every player
     bonus_picks: str = "CDMA"  # the picks a bonus puzzle is tested against, the most common ones
     bonus_min_hidden: float = 0.5  # share of letter squares still hidden after those letters show
-    bonus_min_letters: int = 6  # fewer and a puzzle is a guess among many words, not hard
+    bonus_min_letters: int = 10  # a bonus puzzle is a phrase, not one short word
 
     @classmethod
     def from_config(cls, config: dict) -> Settings:
@@ -99,7 +99,7 @@ class Settings:
                    c.get("max_requests", 200), c.get("main_min_letters", 8), c.get("judges", 4),
                    {m: pins[m] for m in (c["generator"], c["judge"]) if m in pins},
                    "".join(config.get("bonus_letters", "RSTLNE")), c.get("bonus_picks", "CDMA"),
-                   c.get("bonus_min_hidden", 0.5), c.get("bonus_min_letters", 6))
+                   c.get("bonus_min_hidden", 0.5), c.get("bonus_min_letters", 10))
 
 
 @dataclass
@@ -311,7 +311,8 @@ _PARTS = {
 
 
 def _ask_generator(client: OpenRouter, s: Settings, category: str, bonus: bool, ideas: list[str], n: int):
-    size = ("short: one to three words, at most 14 letters in all" if bonus
+    size = (f"two to four words, at least {s.bonus_min_letters} letters in all, and short enough to fit "
+            f"{len(s.bonus_rows)} lines of {max(s.bonus_rows)} squares" if bonus
             else "one to six words, no word longer than 12 letters")
     letters = ", ".join(s.bonus_letters[:-1]) + f", and {s.bonus_letters[-1]}"
     hard = ([f"Favor words built from less common letters, like B, F, G, H, J, K, P, Q, U, V, W, X, Y, and Z, and use "

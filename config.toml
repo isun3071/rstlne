@@ -27,7 +27,7 @@ judges = 4            # judge calls in flight at once
 rows = [12, 14, 14, 12]   # a main puzzle wraps into these board rows, never splitting a word
 bonus_rows = [14, 14]     # a bonus puzzle fits these rows: shorter than main puzzles, and harder
 main_min_letters = 8      # a main puzzle needs at least this many letters, so none is trivial
-bonus_min_letters = 6     # a bonus puzzle needs at least this many: three blanks fit too many words to be fair
+bonus_min_letters = 10    # a bonus puzzle needs at least this many: a phrase like JUMBO SHRIMP, not one short word
 bonus_picks = "CDMA"      # a bonus puzzle is tested against R S T L N E plus these, the most common picks
 bonus_min_hidden = 0.5    # and must keep at least this share of its letter squares hidden after them
 # Category mix, by weight: dev.json's proportions, for the categories with a plain description

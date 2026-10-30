@@ -94,15 +94,15 @@ def test_generated_puzzles_pass_every_check_and_are_never_reused(tmp_path):
 
 
 def test_bonus_puzzles_are_marked_and_held_to_the_bonus_rows(tmp_path):
-    client = fake([["Hot cocoa", "A very long bonus puzzle that runs on"]])
+    client = fake([["Jumbo shrimp", "A very long bonus puzzle that runs on"]])
     result = puzzlegen.generate(client, settings(max_requests=1), [], [("Food & Drink", 1)], seed=2, known=[],
                                 seen_path=tmp_path / "seen.txt")
-    assert result.puzzles == [Puzzle("Food & Drink", "HOT COCOA", bonus=True)]
+    assert result.puzzles == [Puzzle("Food & Drink", "JUMBO SHRIMP", bonus=True)]
 
 
 def test_a_bonus_puzzle_keeps_half_its_letters_hidden_after_the_usual_picks(tmp_path):
-    # After R S T L N E and C D M A: LEATHER WALLET shows 85%, FUZZY SOCKS 30%, JUG is too short to be fair
-    client = fake([["Leather wallet", "Fuzzy socks", "Jug"]])
+    # After R S T L N E and C D M A: LEATHER WALLET shows 85%, FUZZY SOCKS 30%; QUICK FIX has only 8 letters
+    client = fake([["Leather wallet", "Fuzzy socks", "Quick fix"]])
     result = puzzlegen.generate(client, settings(max_requests=1), [], [("Thing", 3)], seed=2, known=[],
                                 seen_path=tmp_path / "seen.txt")
     assert result.puzzles == [Puzzle("Thing", "FUZZY SOCKS", bonus=True)]
@@ -116,13 +116,14 @@ def test_the_bonus_hidden_share_counts_letter_squares_only():
     assert puzzlegen.hidden_after_picks("BOX OF CHOCOLATES", settings(bonus_picks="")) == pytest.approx(11 / 15)
 
 
-def test_only_bonus_requests_ask_for_uncommon_letters(tmp_path):
-    client = fake([["Spare tire", "Kitchen sink", "Garden hose"], ["Fuzzy socks", "Jumbo shrimp", "Quick fix"]])
+def test_only_bonus_requests_ask_for_long_answers_in_uncommon_letters(tmp_path):
+    client = fake([["Spare tire", "Kitchen sink", "Garden hose"], ["Fuzzy socks", "Jumbo shrimp", "Kiwi smoothie"]])
     puzzlegen.generate(client, settings(max_requests=2), [("Thing", 3)], [("Thing", 3)], seed=3, known=[],
                        seen_path=tmp_path / "seen.txt")
     main, bonus = [c["messages"][-1]["content"] for c in client.client.calls if c["model"] == GEN]
     assert "less common letters" not in main
     assert "less common letters" in bonus and "R, S, T, L, N, and E" in bonus
+    assert "at least 10 letters" in bonus and "14 letters" not in bonus
 
 
 def test_settings_read_the_bonus_difficulty_and_letters_from_config():
@@ -492,7 +493,7 @@ def test_recheck_drops_bonus_puzzles_that_are_too_easy_or_too_short(tmp_path):
                         settings(), seed=1, rejected={}, cost=0.0)
     dropped = puzzlegen.recheck(fake([]), settings(), path, against=[], known=[])
     assert sorted(dropped) == ["JUG", "LEATHER WALLET"]  # a main puzzle isn't held to the bonus rule
-    assert puzzlegen.PROMPT_VERSION == 4
+    assert puzzlegen.PROMPT_VERSION == 5
 
 
 def test_a_batch_file_keeps_its_history_across_rechecks_and_top_ups(tmp_path):
