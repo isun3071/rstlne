@@ -184,9 +184,10 @@ def test_a_provider_rejection_carries_the_provider_message():
     assert "Alibaba" in notes and "thinking mode" in notes
 
 
-def test_requests_time_out_after_three_minutes(monkeypatch):
+def test_requests_time_out_after_five_minutes(monkeypatch):
+    """DeepSeek V4.1 Flash sometimes thinks 6,000+ tokens on a hard board: about 4 minutes on its host."""
     monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
-    assert OpenRouter().client.timeout == 180
+    assert OpenRouter().client.timeout == 300 and OpenRouter(FakeClient([])).deadline == 300
 
 
 def test_a_timed_out_request_is_retried_only_once():
@@ -240,3 +241,4 @@ def test_a_pinned_model_goes_only_to_its_provider():
     OpenRouter(client).chat(model="deepseek/deepseek-v4.1-flash-1017", messages=MESSAGES, tools=TOOLS, provider="deepseek")
     assert client.calls[0]["extra_body"]["provider"] == {"order": ["deepseek"], "allow_fallbacks": False}
     assert "provider" not in request_for("deepseek/deepseek-v4.1-flash-1017").get("extra_body", {})
+

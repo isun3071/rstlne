@@ -635,6 +635,8 @@ def recheck(client: OpenRouter, s: Settings, path: Path, against: Sequence[Path]
         kept_index.add(p.answer)
         kept.append(p)
     data["puzzles"] = [{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in kept]
+    if rejudge:
+        data["judge"] = s.judge  # every puzzle left has passed it, so reports name it; the history keeps the first
     data.setdefault("rechecked", []).append({"prompt_version": PROMPT_VERSION, "dropped": dropped,
                                              "against": [str(f) for f in against],
                                              **({"rejudged_by": s.judge} if rejudge else {})})

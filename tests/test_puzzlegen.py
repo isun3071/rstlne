@@ -534,14 +534,16 @@ def test_rejudging_sends_every_puzzle_back_to_the_judge(tmp_path):
     path = tmp_path / "batch.json"
     puzzles = [Puzzle("Phrase", "BUMP IN ROAD"), Puzzle("Phrase", "SPILL THE BEANS"), Puzzle("Thing", "GOAL POST NET"),
                Puzzle("Thing", "WATERING CAN")]
-    puzzlegen.save_pool(path, puzzles, settings(), seed=1, rejected={}, cost=0.0)
+    puzzlegen.save_pool(path, puzzles, settings(judge="google/old-judge"), seed=1, rejected={}, cost=0.0)
     client = fake([], verdicts={"BUMP IN ROAD": False, "GOAL POST NET": 3})
     assert puzzlegen.recheck(client, settings(), path, against=[], known=[]) == []  # only raised bars get judged
     dropped = puzzlegen.recheck(client, settings(judges=2), path, against=[], known=[], rejudge=True)
     assert sorted(dropped) == ["BUMP IN ROAD", "GOAL POST NET"]
     assert [p.answer for p in puzzlegen.load_pool(path)] == ["SPILL THE BEANS", "WATERING CAN"]
-    last = json.loads(path.read_text())["rechecked"][-1]
+    data = json.loads(path.read_text())
+    last = data["rechecked"][-1]
     assert last["rejudged_by"] == JUDGE and last["dropped"] == dropped
+    assert data["judge"] == JUDGE  # every puzzle left has passed this judge, so reports name it
 
 
 def test_the_rejudge_flag_reaches_recheck(monkeypatch, tmp_path):

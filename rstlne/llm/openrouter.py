@@ -15,7 +15,7 @@ from openai.types.chat import ChatCompletionMessage
 
 BASE_URL = "https://openrouter.ai/api/v1"
 CACHE = {"type": "ephemeral"}  # the default 5 minute cache
-TIMEOUT = 180  # seconds per request; the slowest real move seen, a Qwen overthink, took 118
+TIMEOUT = 300  # seconds per request: DeepSeek V4.1 Flash sometimes thinks 6,000+ tokens on a hard board, about 4 minutes
 TIMEOUT_RETRIES = 1  # a request that timed out once will likely time out again
 MIN_TEMPERATURE, MAX_TEMPERATURE = 0.2, 0.4
 
