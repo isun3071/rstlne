@@ -40,7 +40,7 @@ class Knobs:
     win_table: tuple[tuple[int, tuple[tuple[float, float], ...]], ...] = ()
     # Self-play only: solve as soon as calibrated confidence reaches this, like an LLM. None plays normally.
     eager_solve: float | None = None
-    # From version 3. What an opponent adds to its bank before it solves, as 10 equally likely gains, by
+    # From version 3. What an opponent adds to its bank before it solves, as equally likely gains (20 in a fit), by
     # (from round, ((from hidden letter squares, gains), ...)). None counts only the bank it holds now.
     stealer_gain: tuple[tuple[int, tuple[tuple[int, tuple[float, ...]], ...]], ...] = ()
     # From version 3. When every option scores within the tie margin, choose by dollars, as in rounds 1 and 2.

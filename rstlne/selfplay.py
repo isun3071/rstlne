@@ -940,7 +940,7 @@ def win_table(folders: Sequence[Path], out: Path, main_rounds: int, say=print) -
 GAIN_ROUNDS = (1, 4)  # rounds 1 to 3, and round 4 on, whose wedges are bigger
 GAIN_BANDS = (0, 3, 6, 10, 15)  # hidden letter squares where each band starts
 GAIN_MIN_POINTS = 200  # a band with fewer merges into its neighbor with fewer hidden squares
-GAIN_QUANTILES = tuple((k + 0.5) / 10 for k in range(10))  # the midpoints of the tenths
+GAIN_QUANTILES = tuple((k + 0.5) / 20 for k in range(20))  # the midpoints of the twentieths
 
 
 class Step(NamedTuple):
@@ -1040,8 +1040,8 @@ def _quantile(values: np.ndarray, weights: np.ndarray, q: float) -> float:
 
 
 def fit_stealer_gain(llm: Sequence[tuple], bot: Sequence[tuple]) -> tuple[tuple, list[dict]]:
-    """The stealer_gain knob and a report: per group of rounds and band of hidden squares, the 10 gains at the
-    midpoints of the tenths, with LLM and bot opponents weighted half and half where both are present."""
+    """The stealer_gain knob and a report: per group of rounds and band of hidden squares, the 20 gains at the
+    midpoints of the twentieths, with LLM and bot opponents weighted half and half where both are present."""
     table, report = [], []
     for g, start in enumerate(GAIN_ROUNDS):
         end = GAIN_ROUNDS[g + 1] if g + 1 < len(GAIN_ROUNDS) else None

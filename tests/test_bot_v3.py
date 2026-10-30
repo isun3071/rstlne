@@ -170,7 +170,7 @@ def test_the_fit_weights_bot_and_llm_opponents_half_and_half():
     llm = [(1, 4, 0.0)] * 900
     bot = [(1, 4, 1000.0)] * 300
     table, report = selfplay.fit_stealer_gain(llm, bot)
-    assert table == ((1, ((0, (0.0,) * 5 + (1000.0,) * 5),)),)  # three times as many LLM points count no more
+    assert table == ((1, ((0, (0.0,) * 10 + (1000.0,) * 10),)),)  # three times as many LLM points count no more
     assert report[0]["llm"]["points"] == 900 and report[0]["bot"]["points"] == 300
 
 
@@ -179,12 +179,12 @@ def test_sparse_bands_merge_into_the_one_with_fewer_hidden_squares():
     table, _ = selfplay.fit_stealer_gain(points, [])
     early, late = table
     assert [band for band, _ in early[1]] == [0, 10]  # 6-9 had only 50, so it joined 0-2 (3-5 was empty)
-    assert late == (4, ((0, (5000.0,) * 10),))  # round 4's only band covers every hidden count
+    assert late == (4, ((0, (5000.0,) * 20),))  # round 4's only band covers every hidden count
 
 
 def test_a_band_with_one_source_uses_it_alone():
     table, _ = selfplay.fit_stealer_gain([], [(1, 4, 700.0)] * 250)
-    assert table == ((1, ((0, (700.0,) * 10),)),)
+    assert table == ((1, ((0, (700.0,) * 20),)),)
 
 
 @pytest.mark.parametrize("name, ok", [("tuning-101.json", True), ("grading-303.json", False), ("dev.json", False),
