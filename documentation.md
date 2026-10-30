@@ -288,7 +288,7 @@ In this section, "ask" means one request to the model. "Call" still means callin
 `python -m rstlne.calibrate trust --models <slug>,<slug> --logs <tournament folders>` measures each model's trust curve on real game boards.
 
 - Boards: main round turns on which a player had the wheel and could have solved, taken from the given finished tournament games, which hold the true answers. It samples 2,000 turns by default, an equal number from each tenth of the share showing (all of a tenth that has fewer), with a seed. Each distinct board is asked once. The refuted answers each board's ask lists are the ones refuted at that point in the logged game.
-- Each board gets the exact hybrid question from every model, and the bot's reader reads it.
+- Each board gets the exact hybrid question from every model, and the bot's reader reads it. Every ask is saved under `trust-asks/` in the output folder as it completes, with the temperature, reasoning effort, and provider it ran with. A rerun reuses the saved asks that match, so a stopped run picks up where it left off.
 - Each ask records: the share showing, whether the model said solvable, its answer, whether it fits, whether it was right, the reader's best answer and confidence, whether they agree, the reader's probability for the model's answer, whether the logged player on that turn solved correctly, tokens, cost, and seconds.
 - The trust fit: a, b, c, d, g by maximum likelihood on the asks that said solvable with a fitting answer, with 95% intervals from resampling whole puzzles.
 - The steal fit: a, b, c, d by maximum likelihood on every sampled board, from whether the logged player solved correctly on that turn, with the same intervals.

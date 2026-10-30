@@ -167,3 +167,27 @@ def test_long_steps_print_status_lines(logs, tmp_path):
     assert reading and "of" in reading[-1] and "finish in about" in reading[0]
     assert asking and "$" in asking[-1] and "asks" in asking[-1]
     assert any(line.startswith("Asking model/a") for line in lines)
+
+
+def test_a_rerun_reuses_every_saved_ask(logs, tmp_path):
+    first, calls = measure(logs, tmp_path)
+    again, more = measure(logs, tmp_path)
+    assert calls and more == []  # every ask came from disk
+    assert again["models"]["model/a"]["points"] == first["models"]["model/a"]["points"]
+
+
+def test_a_stopped_run_asks_only_what_is_missing(logs, tmp_path):
+    _, calls = measure(logs, tmp_path)
+    saved = next((tmp_path / "out" / "trust-asks").glob("*.jsonl"))
+    lines = saved.read_text().splitlines()
+    saved.write_text("\n".join(lines[:5]) + "\n")  # as if stopped after 5 asks
+    _, more = measure(logs, tmp_path)
+    assert len(more) == len(calls) - 5
+
+
+def test_saved_asks_are_kept_apart_by_how_the_model_was_run(logs, tmp_path, monkeypatch):
+    measure(logs, tmp_path)
+    config = trust.settings.load_config()
+    monkeypatch.setattr(trust.settings, "load_config", lambda: {**config, "llm": {**config["llm"], "reasoning_effort": "low"}})
+    _, more = measure(logs, tmp_path)
+    assert more  # another effort level is another measurement

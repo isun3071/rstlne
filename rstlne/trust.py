@@ -27,7 +27,7 @@ from rstlne import selfplay, settings
 from rstlne.engine.puzzle import LETTERS, Puzzle, fits_shown, normalize, solve_matches
 from rstlne.engine.state import Rules
 from rstlne.engine.wheel import WheelSpec
-from rstlne.llm.openrouter import OpenRouter
+from rstlne.llm.openrouter import OpenRouter, Usage
 from rstlne.narrate import duration, line_output
 from rstlne.players.bot import versions
 from rstlne.players.bot.reader import Reader
@@ -161,10 +161,32 @@ def read_boards(boards: Sequence, reader: Reader | None, knobs: versions.Knobs, 
     return out
 
 
+def _saved(path: Path, settings_key: dict) -> dict:
+    """Asks a stopped run already made with these settings, by board."""
+    done = {}
+    if path.exists():
+        for line in path.read_text().splitlines():
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # a line cut short when the run stopped
+            if r.get("settings") == settings_key:
+                answer, category, used, refuted = r["board"]
+                done[(answer, category, used, tuple(refuted))] = Asked(
+                    tuple(r["reply"]) if r["reply"] else None, r["attempts"], r["seconds"], r["provider"], Usage(**r["usage"]))
+    return done
+
+
 def ask_boards(model: str, boards: Sequence, client: OpenRouter, config: dict, rules: Rules, spec: WheelSpec,
-               parallel: int, write: Callable[[str], None] = print, heartbeat: float = HEARTBEAT) -> dict:
-    """One hybrid ask per distinct board, with the model's configured temperature, effort, and provider."""
+               parallel: int, write: Callable[[str], None] = print, heartbeat: float = HEARTBEAT,
+               saved: Path | None = None) -> dict:
+    """One hybrid ask per distinct board, with the model's configured temperature, effort, and provider.
+    With `saved`, each ask is kept in a file there as it completes, and a rerun reuses them."""
     llm = config.get("llm", {})
+    settings_key = {"temperature": llm.get("temperature"), "reasoning_effort": llm.get("reasoning_effort"),
+                    "provider": config.get("providers", {}).get(model)}
+    path = Path(saved) / f"{model.replace('/', '--')}.jsonl" if saved else None
+    out: dict = {b: a for b, a in (_saved(path, settings_key) if path else {}).items() if b in set(boards)}
 
     def one(board) -> Asked:
         answer, category, used, refuted = board
@@ -172,15 +194,29 @@ def ask_boards(model: str, boards: Sequence, client: OpenRouter, config: dict, r
         return ask(client, model, view, frozenset(refuted), temperature=llm.get("temperature"),
                    reasoning_effort=llm.get("reasoning_effort"), provider=config.get("providers", {}).get(model))
 
-    write(f"Asking {model} about {len(boards)} boards, {parallel} at a time")
-    status = Status(len(boards), write, heartbeat)
-    out: dict = {}
-    with ThreadPoolExecutor(max_workers=parallel) as pool:
-        futures = {pool.submit(one, b): b for b in boards}
+    todo = [b for b in boards if b not in out]
+    before = len(out)
+    write(f"Asking {model} about {len(todo)} boards, {parallel} at a time"
+          + (f" ({before} saved from an earlier run)" if before else ""))
+    status = Status(len(todo), write, heartbeat)
+    if path:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    with ExitStack() as stack:
+        log = stack.enter_context(open(path, "a")) if path else None
+        pool = stack.enter_context(ThreadPoolExecutor(max_workers=parallel))
+        futures = {pool.submit(one, b): b for b in todo}
         for future in as_completed(futures):
-            out[futures[future]] = future.result()
-            k = len(out)
-            status.tick(k, lambda: f"  {model}: {k} of {len(boards)} asks · ${sum(a.usage.cost for a in out.values()):.4f} so far"
+            board, asked = futures[future], future.result()
+            out[board] = asked
+            if log:
+                answer, category, used, refuted = board
+                log.write(json.dumps({"board": [answer, category, used, list(refuted)], "settings": settings_key,
+                                      "reply": list(asked.reply) if asked.reply else None, "attempts": asked.attempts,
+                                      "seconds": asked.seconds, "provider": asked.provider,
+                                      "usage": asdict(asked.usage)}) + "\n")
+                log.flush()
+            k = len(out) - before
+            status.tick(k, lambda: f"  {model}: {k} of {len(todo)} asks · ${sum(a.usage.cost for a in out.values()):.4f} so far"
                         f" · {sum(a.reply is None for a in out.values())} failed")
     return {b: out[b] for b in boards}
 
@@ -368,7 +404,8 @@ def measure(
         write(f"{label}: {len(turns)} turns on {len(boards)} distinct boards from {', '.join(str(f) for f in folders)}")
         write(f"Reading {len(boards)} boards with the bot's reader")
         reads = read_boards(boards, reader, knobs, rules, spec, workers, write, heartbeat)
-        asks = {m: ask_boards(m, boards, client, config, rules, spec, parallel, write, heartbeat) for m in models}
+        asks = {m: ask_boards(m, boards, client, config, rules, spec, parallel, write, heartbeat,
+                              saved=Path(out_dir) / "trust-asks") for m in models}
         return turns, reads, asks
 
     turns, reads, asks = run(folders, "Fitting")
