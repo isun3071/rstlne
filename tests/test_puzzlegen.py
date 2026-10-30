@@ -366,6 +366,8 @@ def test_a_short_pool_stops_before_any_game_and_tops_up_on_rerun(tmp_path, seen,
     ("Before & After", "PIECE OF CAKE WALK", ["PIECE OF CAKE", "CAKE WALK"], True),
     ("Before & After", "JACK THE LADDER UP", ["JACK THE", "LADDER UP"], False),  # no shared word
     ("Before & After", "PIECE OF CAKE WALK", ["PIECE OF PIE", "PIE WALK"], False),  # doesn't rebuild the answer
+    ("Before & After", "MORE THAN MEETS THE EYE DOCTOR", ["MORE THAN MEETS THE EYE", "THE EYE DOCTOR"], True),  # an article
+    ("Before & After", "CATTLE DRIVE-THROUGH WINDOW", ["CATTLE DRIVE", "DRIVE-THROUGH WINDOW"], True),  # a hyphen joins
     ("Same Name", "BIRTHDAY & WEDDING CAKE", ["BIRTHDAY CAKE", "WEDDING CAKE"], True),
     ("Same Name", "BIRTHDAY & WEDDING CAKE", ["BIRTHDAY PARTY", "WEDDING CAKE"], False),
     ("Thing", "COFFEE MUG", [], True),
@@ -583,12 +585,13 @@ def test_generation_rejects_near_repeats_of_anything_seen(tmp_path):
     assert result.rejected["already used"] == 1 and result.rejected["contraction without its apostrophe"] == 1
 
 
-def test_rhyme_time_needs_the_top_familiarity(tmp_path):
-    client = fake([["Eat and meat", "Wear and tear"]], verdicts={"EAT AND MEAT": 4})
+def test_rhyme_time_is_held_to_the_same_bar_as_every_category(tmp_path):
+    client = fake([["Eat and meat", "Wear and tear"]], verdicts={"EAT AND MEAT": 3})
     rhymes = {"EAT": {"IY1 T"}, "MEAT": {"IY1 T"}, "WEAR": {"EH1 R"}, "TEAR": {"EH1 R"}}
     result = puzzlegen.generate(client, settings(max_requests=1), [("Rhyme Time", 2)], [], seed=1, known=[],
                                 seen_path=tmp_path / "seen.txt", rhymes=rhymes)
     assert [p.answer for p in result.puzzles] == ["WEAR AND TEAR"]
+    assert puzzlegen.FAMILIAR_FOR == {}  # on aired puzzles, 5 of 5 kept 9 of 31 Rhyme Time, 4 kept 15
 
 
 def test_recheck_drops_what_fails_the_new_checks_and_keeps_grading_apart(tmp_path):
@@ -599,8 +602,9 @@ def test_recheck_drops_what_fails_the_new_checks_and_keeps_grading_apart(tmp_pat
                         settings(), seed=1, rejected={}, cost=0.0)
     puzzlegen.save_pool(grading, [Puzzle("Phrase", "BIRDS OF A FEATHER"), Puzzle("Thing", "PAPER TOWEL")],
                         settings(), seed=2, rejected={}, cost=0.0)
-    client = fake([], verdicts={"EAT AND MEAT": 4})
-    dropped = puzzlegen.recheck(client, settings(), tuning, against=[], known=[Puzzle("Phrase", "BIG BROWN BEAR")])
+    client = fake([], verdicts={"EAT AND MEAT": 3})
+    dropped = puzzlegen.recheck(client, settings(), tuning, against=[], known=[Puzzle("Phrase", "BIG BROWN BEAR")],
+                                rejudge=True)
     assert sorted(dropped) == ["BIG BROWN BEAR", "BIG BROWN BEARS", "DONT JUDGE A BOOK", "EAT AND MEAT"]
     assert [p.answer for p in puzzlegen.load_pool(tuning)] == ["BIRDS OF A FEATHER FLOCK TOGETHER", "WEAR AND TEAR"]
     dropped = puzzlegen.recheck(client, settings(), grading, against=[tuning], known=[])

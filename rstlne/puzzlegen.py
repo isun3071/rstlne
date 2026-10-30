@@ -38,7 +38,9 @@ PROMPT_VERSION = 6  # 4: bonus requests ask for less common letters; 5: and for 
 DEADLINE = 60  # seconds for one request: a batch of answers takes a few
 MAX_FAILURES = 5  # requests failing in a row before a run stops and keeps what it has
 FAMILIAR = 4  # the judge rates how familiar an answer is, 1 to 5; below this it's out
-FAMILIAR_FOR = {"Rhyme Time": 5}  # categories where made-up answers come easily need the top rating
+# Categories that need more than FAMILIAR. Rhyme Time needed 5 until a judge test on aired puzzles: 5 kept 9 of 31
+# aired Rhyme Time puzzles, 4 kept 15, and both caught every made-up rhyme.
+FAMILIAR_FOR: dict[str, int] = {}
 SEEN = project.ROOT / "puzzles" / "generated" / "seen.txt"
 _ARTICLES = {"A", "AN", "THE"}
 _AND = {"&", "AND"}
@@ -53,8 +55,9 @@ SYSTEM = (
 
 # What each category asks for, in plain terms. Structural categories spell out their rule.
 DESCRIPTIONS = {
-    "Phrase": "a common saying, idiom, or everyday expression",
-    "Thing": "an everyday object or thing, often with a describing word",
+    "Phrase": "a common saying or idiom, or something people often say in everyday life",
+    "Thing": ("a thing of any kind, often with a describing word: an object, or a quality, idea, feeling, or "
+              "experience"),
     "Things": "a group of everyday things, in the plural, or a list of two or three",
     "Places": "kinds of places, in the plural, or a list of two or three",
     "People": "a group of people, in the plural, or a list of two or three kinds of people",
@@ -80,7 +83,7 @@ DESCRIPTIONS = {
     "Quotation": "a real quotation from a known person, book, or speech",
     "Headline": "a newspaper-style headline about a real event",
     "Event": "an occasion, celebration, or happening",
-    "Fun & Games": "a game, sport, toy, or pastime",
+    "Fun & Games": "a game, sport, toy, or pastime, or a fun activity or outing",
     "Show Biz": "something from film, television, music, or theater",
     "Title": "the title of a well-known film, book, song, or show",
     "Occupation": "a job or profession",
@@ -89,7 +92,7 @@ DESCRIPTIONS = {
     "Before & After": ("two common phrases joined into one, where the last word of the first phrase is the first "
                        "word of the second and is written only once, like PIECE OF CAKE WALK"),
     "Same Name": "two things that end with the same word, written as FIRST & SECOND SHARED, like BIRTHDAY & WEDDING CAKE",
-    "Rhyme Time": "a phrase whose two main words rhyme, like WEAR AND TEAR",
+    "Rhyme Time": "a natural phrase or description in which two main words rhyme, like WEAR AND TEAR",
     "Same Letter": "a phrase in which every word starts with the same letter, like BIG BLUE BUBBLES",
 }
 
@@ -205,11 +208,13 @@ def parts_ok(category: str, answer: str, parts: Sequence[str]) -> bool:
     if len(parts) != 2:
         return False
     try:
-        first, second = (normalize(p).split(" ") for p in parts)
+        first, second = (re.split(r"[ -]", normalize(p)) for p in parts)
     except ValueError:
         return False
-    words = answer.split(" ")
+    words = re.split(r"[ -]", answer)  # a hyphen joins words: CATTLE DRIVE + DRIVE-THROUGH WINDOW
     if category == "Before & After":  # PIECE OF CAKE + CAKE WALK, the shared word written once
+        if second[0] in _ARTICLES and len(second) > 2 and first[-1] == second[1]:
+            second = second[1:]  # MORE THAN MEETS THE EYE + THE EYE DOCTOR
         return len(first) >= 2 and len(second) >= 2 and first[-1] == second[0] and first + second[1:] == words
     for i, w in enumerate(words):  # BIRTHDAY & WEDDING CAKE: BIRTHDAY CAKE and WEDDING CAKE
         if w in _AND:
