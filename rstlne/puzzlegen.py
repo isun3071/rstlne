@@ -32,9 +32,10 @@ from rstlne.narrate import duration, line_output
 from rstlne.players.bot import lexicon, versions
 from rstlne.players.bot.lexicon import data_dir, rhyme_key
 
-PROMPT_VERSION = 6  # 4: bonus requests ask for less common letters; 5: and for at least 10 letters;
+PROMPT_VERSION = 7  # 4: bonus requests ask for less common letters; 5: and for at least 10 letters;
 # 6: real puzzles' length and style, few-shot examples, a judge for natural wording, sources for songs and titles,
-# and bonus answers in everyday words
+# and bonus answers in everyday words; 7: a bonus Phrase is everyday talk rather than an idiom, and bonus words
+# needn't be the commonest
 DEADLINE = 60  # seconds for one request: a batch of answers takes a few
 MAX_FAILURES = 5  # requests failing in a row before a run stops and keeps what it has
 FAMILIAR = 4  # the judge rates how familiar an answer is, 1 to 5; below this it's out
@@ -94,6 +95,13 @@ DESCRIPTIONS = {
     "Same Name": "two things that end with the same word, written as FIRST & SECOND SHARED, like BIRTHDAY & WEDDING CAKE",
     "Rhyme Time": "a natural phrase or description in which two main words rhyme, like WEAR AND TEAR",
     "Same Letter": "a phrase in which every word starts with the same letter, like BIG BLUE BUBBLES",
+}
+
+# Where a bonus request asks for something else. Aired bonus phrases are mostly everyday talk: 13% are a stock
+# phrase in the bot's word data, where 70% of grading-505's were, and the bot solved every one of those.
+BONUS_DESCRIPTIONS = {
+    "Phrase": ("something people say in everyday conversation, like a remark, request, or exclamation; only now and "
+               "then a well-known idiom"),
 }
 
 
@@ -391,16 +399,19 @@ def examples_for(category: str, bonus: bool, rng: random.Random, n: int = 3) -> 
 
 def _ask_generator(client: OpenRouter, s: Settings, category: str, bonus: bool, ideas: list[str], n: int,
                    examples: Sequence[str] = ()):
-    size = (f"two to four everyday words, at least {s.bonus_min_letters} letters in all, and short enough to fit "
-            f"{len(s.bonus_rows)} lines of {max(s.bonus_rows)} squares" if bonus
+    size = (f"two to four words, at least {s.bonus_min_letters} letters in all, short enough to fit "
+            f"{len(s.bonus_rows)} lines of {max(s.bonus_rows)} squares, in words any adult knows but not always the "
+            f"commonest ones" if bonus
             else f"three to six words, at least {s.main_min_letters} letters in all, and short enough to fit "
                  f"{len(s.rows)} lines of {min(s.rows)} to {max(s.rows)} squares without splitting a word")
     sourced = ([f"These must be real. In sources, at the same position as each answer, name where it comes from: "
                 f"the song and artist, the film, the book and author, the speaker, or the event and year."]
                if category in SOURCED else ["Leave sources empty."])
+    means = ((BONUS_DESCRIPTIONS if bonus else {}).get(category)
+             or DESCRIPTIONS.get(category, "something that clearly belongs to this category"))
     request = "\n".join([
         f"Category: {category}",
-        f"What fits: {DESCRIPTIONS.get(category, 'something that clearly belongs to this category')}.",
+        f"What fits: {means}.",
         *([f"Examples of the style, to show length and wording; write new ones, never these: {'; '.join(examples)}."]
           if examples else []),
         f"Write {n} different answers. Each is {size}.",

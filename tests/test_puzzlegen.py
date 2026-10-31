@@ -116,14 +116,23 @@ def test_the_bonus_hidden_share_counts_letter_squares_only():
     assert puzzlegen.hidden_after_picks("BOX OF CHOCOLATES", settings(bonus_picks="")) == pytest.approx(11 / 15)
 
 
-def test_requests_ask_for_real_puzzle_length_and_bonus_answers_in_everyday_words(tmp_path):
+def test_requests_ask_for_real_puzzle_length_and_bonus_answers_in_words_any_adult_knows(tmp_path):
     client = fake([["Spare tire", "Kitchen sink", "Garden hose"], ["Fuzzy socks", "Jumbo shrimp", "Kiwi smoothie"]])
     puzzlegen.generate(client, settings(max_requests=2), [("Thing", 3)], [("Thing", 3)], seed=3, known=[],
                        seen_path=tmp_path / "seen.txt")
     main, bonus = [c["messages"][-1]["content"] for c in client.client.calls if c["model"] == GEN]
     assert "three to six words, at least 6 letters" in main and "4 lines of 12 to 14 squares" in main
-    assert "two to four everyday words, at least 10 letters" in bonus
+    assert "two to four words, at least 10 letters" in bonus and "not always the commonest ones" in bonus
     assert "less common letters" not in main + bonus  # version 6 bonus answers read like the real ones
+
+
+def test_a_bonus_phrase_is_everyday_talk_where_a_main_phrase_may_be_an_idiom(tmp_path):
+    client = fake([["Spill the beans", "Bite the bullet", "Break the ice"], ["Wipe your feet", "Who wants pizza"]])
+    puzzlegen.generate(client, settings(max_requests=2), [("Phrase", 3)], [("Phrase", 2)], seed=3, known=[],
+                       seen_path=tmp_path / "seen.txt")
+    main, bonus = [c["messages"][-1]["content"] for c in client.client.calls if c["model"] == GEN]
+    assert puzzlegen.DESCRIPTIONS["Phrase"] in main
+    assert puzzlegen.BONUS_DESCRIPTIONS["Phrase"] in bonus and puzzlegen.DESCRIPTIONS["Phrase"] not in bonus
 
 
 def test_requests_show_a_few_of_the_categorys_examples_and_never_take_them_back(tmp_path):
@@ -618,7 +627,7 @@ def test_recheck_drops_bonus_puzzles_that_are_too_easy_or_too_short(tmp_path):
                         settings(), seed=1, rejected={}, cost=0.0)
     dropped = puzzlegen.recheck(fake([]), settings(), path, against=[], known=[])
     assert sorted(dropped) == ["JUG", "LEATHER WALLET"]  # a main puzzle isn't held to the bonus rule
-    assert puzzlegen.PROMPT_VERSION == 6
+    assert puzzlegen.PROMPT_VERSION == 7
 
 
 def test_rejudging_sends_every_puzzle_back_to_the_judge(tmp_path):
