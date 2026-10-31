@@ -363,13 +363,21 @@ def _end_round(state: GameState, solver: int | None, result: Result) -> GameStat
         seats.append(replace(s, total=s.total + banked, bank=0, million=keeps_million))
     state = replace(state, seats=tuple(seats), last=result.plus("round_over"))
     if r.number < state.rules.main_rounds:
-        return _start_round(state, r.number + 1)
+        return _start_round(state, r.number + 1, solver)
     if state.rules.bonus_round:
         return bonus.start(state)
     return replace(state, phase=Phase.GAME_OVER, last=state.last.plus("game_over"))
 
 
-def _start_round(state: GameState, number: int) -> GameState:
+def _start_round(state: GameState, number: int, last_solver: int | None = None) -> GameState:
+    """Rounds 1 to 3 open on seats 1 to 3. From round 4, the last round's solver opens, or a seeded draw
+    picks a seat when nobody solved it."""
+    if number <= SEATS:
+        first = number - 1
+    elif last_solver is not None:
+        first = last_solver
+    else:
+        first = wheel.draw(SEATS, state.seed, "starter", number)
     overlay = state.wheel.overlay(number)
     r = RoundState(
         number=number,
@@ -378,7 +386,7 @@ def _start_round(state: GameState, number: int) -> GameState:
         million_on_wheel=overlay.million is not None and not any(s.million for s in state.seats),
         mystery_prize=wheel.mystery_prize_wedge(state.seed, number, overlay.mystery) if overlay.mystery else None,
     )
-    return replace(state, round=r, phase=Phase.TURN, seat=(number - 1) % SEATS)
+    return replace(state, round=r, phase=Phase.TURN, seat=first)
 
 
 # Small helpers

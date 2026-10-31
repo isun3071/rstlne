@@ -164,8 +164,8 @@ def test_own_outcome_and_other_seats_moves_reach_the_next_request(rules, wheel_s
 def test_history_resets_each_round(rules, wheel_spec, game):
     llm, client = player(rules, wheel_spec, [completion(("spin", {}))] * 2)
     llm.decide(public_view(game, 0))
-    state = solve(game)
-    state = to_round(state, 4)  # seat 0 starts round 4
+    state = to_round(solve(game), 3)
+    state = solve(apply(state, Solve("NOT IT")))  # seat 2 misses round 3 and seat 0 solves, so seat 0 opens round 4
     observe_all([llm], state)
     llm.decide(public_view(state, 0))
     messages = client.calls[1]["messages"]
@@ -184,9 +184,8 @@ def test_express_view_says_so(rules, wheel_spec, game):
 
 
 def test_bonus_picks_prompt_counts_the_wild_card(rules, wheel_spec, game):
-    state = set_seat(game, 0, wild=True)
-    for _ in range(4):
-        state = solve(state)
+    state = to_round(set_seat(game, 0, wild=True), 3)
+    state = solve(solve(apply(state, Solve("NOT IT"))))  # seat 0 takes rounds 3 and 4 too, and the bonus
     llm, client = player(rules, wheel_spec, [completion(("bonus_picks", {"consonants": ["B", "G", "C", "D"], "vowel": "I"}))])
     assert state.phase is Phase.BONUS_PICKS and state.seat == 0
     llm.decide(public_view(state, 0))

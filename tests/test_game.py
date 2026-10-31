@@ -71,13 +71,13 @@ def test_a_full_game_runs_four_rounds_then_the_bonus(rules, wheel_spec):
     for _ in range(4):
         state = solve(state)
     m = rules.solve_minimum
-    assert [s.total for s in state.seats] == [2 * m, m, m]
-    assert state.phase is Phase.BONUS_PICKS and state.seat == 0
+    assert [s.total for s in state.seats] == [m, m, 2 * m]  # seat 3 solved round 3, so opened and solved round 4
+    assert state.phase is Phase.BONUS_PICKS and state.seat == 2
     state = apply(state, BonusPicks(("B", "G", "C"), "I"))
     envelope = state.bonus.envelope
     state = apply(state, BonusSolve("BIG CITY"))
     assert state.phase is Phase.GAME_OVER
-    assert state.seats[0].total == 2 * m + envelope
+    assert state.seats[2].total == 2 * m + envelope
 
 
 def test_no_bonus_round_when_config_turns_it_off(rules, wheel_spec):

@@ -4,6 +4,7 @@ from dataclasses import replace
 import pytest
 from helpers import BONUS, PUZZLES, illegal, set_seat, solve, spin_to, start, to_round
 
+from rstlne.engine.puzzle import Puzzle
 from rstlne.engine.rules import apply, current_wheel, legal_actions, new_game, public_view
 from rstlne.engine.state import (
     BuyVowel,
@@ -68,13 +69,38 @@ def test_new_game_needs_a_puzzle_per_round(rules, wheel_spec):
         new_game(7, rules, wheel_spec, PUZZLES[:3], BONUS)
 
 
-def test_starting_seat_rotates_each_round(game):
+def miss(state):
+    """The seat whose turn it is solves wrong, passing the turn."""
+    return apply(state, Solve("NOT IT"))
+
+
+def test_rounds_1_to_3_rotate_then_each_round_winner_starts_the_next(rules, wheel_spec):
+    five = (*PUZZLES, Puzzle("Thing", "PAPER TOWEL"))
+    state = new_game(7, replace(rules, main_rounds=5), wheel_spec, five, BONUS)
     starts = []
-    state = game
-    for _ in range(4):
+    for _ in range(3):
         starts.append(state.seat)
         state = solve(state)
-    assert starts == [0, 1, 2, 0]
+    assert starts == [0, 1, 2] and (state.round.number, state.seat) == (4, 2)  # seat 2 solved round 3
+    state = new_game(7, replace(rules, main_rounds=5), wheel_spec, five, BONUS)
+    state = solve(solve(state))  # seats 0 and 1 solve rounds 1 and 2
+    state = solve(miss(miss(state)))  # round 3: seats 2 and 0 miss, seat 1 solves
+    assert (state.round.number, state.seat) == (4, 1)
+    state = solve(miss(state))  # round 4: seat 1 misses, seat 2 solves
+    assert (state.round.number, state.seat) == (5, 2)
+
+
+def test_with_no_round_3_solver_a_seeded_draw_picks_who_starts_round_4(rules, wheel_spec):
+    def round_4_starter(seed):
+        state = new_game(seed, replace(rules, max_turns_per_round=3), wheel_spec, PUZZLES, BONUS)
+        state = solve(solve(state))
+        while state.round.number == 3:
+            state = miss(state)
+        assert "turn_cap" in state.last.events
+        return state.seat
+
+    assert round_4_starter(7) == round_4_starter(7)
+    assert {round_4_starter(seed) for seed in range(30)} == {0, 1, 2}
 
 
 # Spinning and consonants

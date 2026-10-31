@@ -208,7 +208,7 @@ def test_folder_name_changes_with_anything_that_changes_play():
 
 
 def test_report_numbers_match_a_known_game(tmp_path, rules, wheel_spec):
-    """Seat 1 solves rounds 1 and 4 and the bonus; seats 2 and 3 solve one round each."""
+    """Seat 3 solves rounds 3 and 4 and the bonus; seats 1 and 2 solve one round each."""
     players = [Scripted(solves) for _ in range(3)]
     state = start(rules, wheel_spec)
     header = {"tournament": {"set": 0, "permutation": 0, "entrants": [0, 1, 2], "names": ENTRANTS, "puzzles": str(DEV)}}
@@ -218,14 +218,14 @@ def test_report_numbers_match_a_known_game(tmp_path, rules, wheel_spec):
     result = report(tmp_path)
     first, second, third = result["entrants"]
     m = rules.solve_minimum
-    assert first["wins"] == 1 and second["wins"] == 0
-    assert first["win_rate_by_seat"] == [1.0, None, None] and second["win_rate_by_seat"] == [None, 0.0, None]
-    assert first["avg_total"] == 2 * m + envelope and first["avg_main_winnings"] == 2 * m
-    assert (first["bonus_reached"], first["bonus_won"]) == (1, 1)
-    assert first["solve_attempts"] == 2 and first["solve_accuracy"] == 1.0
-    assert first["avg_board_shown"] == 0.0 and first["money_left_per_solve"] > 0
-    assert third["solve_attempts"] == 1 and third["avg_total"] == m
-    assert first["ci95"]["win_rate"] == [1.0, 1.0]  # one set: no spread to resample
+    assert third["wins"] == 1 and second["wins"] == 0
+    assert third["win_rate_by_seat"] == [None, None, 1.0] and second["win_rate_by_seat"] == [None, 0.0, None]
+    assert third["avg_total"] == 2 * m + envelope and third["avg_main_winnings"] == 2 * m
+    assert (third["bonus_reached"], third["bonus_won"]) == (1, 1)
+    assert third["solve_attempts"] == 2 and third["solve_accuracy"] == 1.0
+    assert third["avg_board_shown"] == 0.0 and third["money_left_per_solve"] > 0
+    assert first["solve_attempts"] == 1 and first["avg_total"] == m
+    assert third["ci95"]["win_rate"] == [1.0, 1.0]  # one set: no spread to resample
 
 
 def test_command_line_trial_set(tmp_path):

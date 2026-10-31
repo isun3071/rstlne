@@ -58,7 +58,8 @@ On their turn, a player picks one action from the legal list:
 - A repeated letter is a legal call. It takes the same penalty as a missing letter.
 - Only the solver banks round money. The other two seats lose their round banks.
 - A solver who banks under $1,000 in a round gets raised to $1,000.
-- The starting seat rotates each round.
+- Seats 1, 2, and 3 start rounds 1, 2, and 3. From round 4 on, the seat that solved the round before starts the next one; when nobody solved it (the turn cap), a seeded draw picks the starting seat. Until 2026-10-31 the start simply rotated, so seat 1 also started round 4. The show also rotates rounds 2 and 3 from round 1's starter, and gives round 4 to the winner of the Triple Toss-Up.
+- Toss-ups are left out on purpose. A toss-up is a recognition race, and this game is about letter choice, risk, and when to solve; the main rounds and the bonus test already measure recognition. In a turn-based game the only speed is which revealed letter a player answers on, and polling every model on every letter would cost more than the rest of the game.
 - A round ends after 200 turns if nobody solves. Each pass to the next seat starts a new turn. No seat banks its round money, and nobody gets the $1,000 minimum. Set the cap in `config.toml`.
 - A game runs 4 main rounds by default, then the bonus round. Set both in `config.toml`.
 
