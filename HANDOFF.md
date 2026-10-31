@@ -179,11 +179,11 @@ All grid lineups use the grid deck, one seed, 60 sets (360 games) and bot versio
 | 4 | Sol, hybrid, bot | all three player types at one table | not started |
 | 5 | Sol, hybrid, hybrid | can an LLM beat the strongest seats? | not started |
 | 6 | bot, Sol, Sol | can the bot beat two good LLMs? | optional: the bot would be a massive underdog |
-| 6a | bot, Luna, Luna | can the bot beat a pair of reckless guessers? | planned |
+| 6a | bot, Luna, Luna | can the bot beat a pair of reckless guessers? | done: bot 50%, Lunas 26% and 24% |
 | 6b | bot, Haiku, Haiku | ...a pair of passive readers? | planned |
 | 6c | bot, DeepSeek, DeepSeek | ...a pair of eager readers? | planned |
 | 3c | DeepSeek alone, bot, bot | DeepSeek's solo yardstick | planned |
-| 3d | Haiku alone, bot, bot | Haiku's solo yardstick | planned |
+| 3d | Haiku alone, bot, bot | Haiku's solo yardstick | done: Haiku 14%, bots 40% and 46% |
 | 3e | DeepSeek hybrid, bot, bot | does wrapping DeepSeek lift it too? | planned |
 
 ### Lineup 1: Sol, DeepSeek, Haiku ($12.46)
@@ -255,6 +255,12 @@ Every gap clears zero (Sol over DeepSeek +41, DeepSeek over Haiku +15). Haiku is
 - **The hybrid's wrapper removes exactly these faults:** the fit check, the list of refuted answers, and the bot deciding when to trust a read.
 - **Ian's line:** no prompt engineering of the models. "LLMs in the wild" stay unprompted beyond the rules; every gain comes from code around them.
 - **The two identical bots differed by 8 points** (+0.6 to +16), most likely chance.
+
+### Lineups 6a and 3d
+
+- **6a, the bot against two Lunas ($2.58):** bot 50% (43–57%), Lunas 26% and 24%. The bot leads each by about 25 points. The Lunas solve at 47–48% of the board and get 70% right.
+- **3d, Haiku alone against two bots ($2.61):** Haiku 14% (10–19%), bots 40% and 46%. Haiku is right 95% of the time but solves at 72% of the board, later than the bots, and wins only 1.22 rounds a game.
+- **Opposite faults, same result:** Luna is reckless (early and often wrong: 0.7 wrong solves a game), Haiku passive (right but late: 0.07). Both land well under a fair share. Sol (early and right) is the only one that beats the bots.
 
 ### Bonus test: each player alone on every bonus puzzle in a deck
 

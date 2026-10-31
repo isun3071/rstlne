@@ -106,6 +106,19 @@ The hybrid leads each bot by 17 to 19 points (9 to 27). Set by set, it wins 12.8
 
 Set by set: hybrid − Luna alone +27.8 points (+20.8 to +34.7), Sol − Luna alone +40.6 (+32.5 to +48.3), Sol − hybrid +12.8 (+5.6 to +20.0). Luna's losses are discipline: 219 solves that don't fit the board (it puts already-called letters in hidden squares, repeats refuted answers, guesses on near-empty boards) and 150 bad tool calls, almost all a consonant called without spinning first (every tool is offered on every move, for prompt caching). The hybrid's fit check, refuted-answer list, and the bot's choice of when to trust a read remove those faults. The two identical bots differed by 8 points (+0.6 to +16), most likely chance.
 
+## Lineups 6a and 3d results (2026-10-31)
+
+| | 6a: bot against two Lunas | 3d: Haiku alone against two bots |
+|---|---|---|
+| Win rate | bot **50%** (43–57%); Lunas 26% and 24% | Haiku **14%** (10–19%); bots 40% and 46% |
+| Gap | bot over each Luna +25 to +26 (+13 to +36) | Haiku under each bot −25 to −31 |
+| The LLM's solves | 70% right, at 47–48% of the board | 95% right, at 72% of the board |
+| The LLM's wrong solves per game | about 0.7 each | 0.07 |
+| Rounds won per game (the LLM) | | 1.22 (Luna alone: 1.79) |
+| Cost | $2.58 | $2.61 |
+
+Luna is reckless (early, often wrong) and Haiku passive (right, but too late): opposite faults, both well below a fair share. Sol, early and right, is the only one of the three that beats the bots. Folders `seed707-6496578d` (6a) and `seed707-4ef950be` (3d).
+
 ## Frontier and other labs: trials only, until there's a grant (2026-10-31)
 
 Three more models had one-set trials (set 0, six games, alone against two bots, on the laptop):
