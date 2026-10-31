@@ -118,6 +118,7 @@ solve_pause = 10          # seconds to hold a solved board before the next round
 # Gemini 4 Argon (2026-10-13), Google's flagship: AI Studio's flex tier is half price, like Sol's, and was the
 # steadier of its two AI Studio endpoints on 2026-10-31 (100% uptime against 73%).
 "google/gemini-4-argon" = "google-ai-studio/flex"
+"google/gemini-3.8-flash" = "google-ai-studio/flex"  # half price on flex, like Argon; under half of Argon's flex output price
 "mistralai/mistral-small-3.2-24b-instruct" = "deepinfra/fp8"  # the puzzle generator until 2026-10-29
 "minimax/minimax-m3" = "together"  # the puzzle generator: one of three hosts that take a JSON schema; not FP4, up 100%
 "google/gemma-3-27b-it" = "deepinfra/fp8"  # the puzzle judge until 2026-10-29; some of its other hosts stall
@@ -130,6 +131,7 @@ slugs = [
     "openai/gpt-6-luna",
     "deepseek/deepseek-v4.1-flash-1017",
     "google/gemini-4-argon",
+    "google/gemini-3.8-flash",
     # backups
     "qwen/qwen3.8-flash",
     "z-ai/glm-5.3-flash",
