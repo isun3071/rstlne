@@ -307,19 +307,19 @@ Every gap clears zero (Sol over DeepSeek +41, DeepSeek over Haiku +15). Haiku is
 
 ## 10. What's next
 
-1. **Terra alone against two bots** (about $3): a middle point between Luna (17.5%) and Sol (58%), testing whether a mid-tier model is disciplined enough to play on its own. Terra was left out of lineup 1 only because it's from the same lab as Sol.
-2. **Spread across labs.** After lineup 1 every LLM seat was OpenAI's, so the next runs keep the study from becoming a test of one lab:
+1. **Spread across labs.** After lineup 1 every LLM seat was OpenAI's, so the next runs keep the study from becoming a test of one lab:
    - **The solo yardstick** (a model alone against two bots) for DeepSeek and Haiku.
    - **A DeepSeek hybrid,** to show the hybrid's lift on a second lab. DeepSeek already has its trust and steal curves.
    - **Lineup 6's format against weaker pairs:** the bot against two Lunas, two Haikus, and two DeepSeeks. Each mirrors that model's solo run.
    - **Why not two Sols:** one Sol beat two bots 58% to 21% each, so against two Sols the bot would be a massive underdog, in betting terms a long shot likely winning 10% or less. That's a predictable result for about $12. It stays optional, at 20 sets if run.
    - **Who can't play:** MiniMax and Z.ai, since they write and judge the puzzles. Sonnet and Gemini are off for now.
-3. **Lineups 4 and 5** (Sol with the hybrid at one table): whether the hybrid solves sooner against a fast opponent.
-4. **Optional checks:**
+2. **Lineups 4 and 5** (Sol with the hybrid at one table): whether the hybrid solves sooner against a fast opponent.
+3. **Optional checks:**
+   - Terra alone against two bots (about $3): one more OpenAI point between Luna (17.5%) and Sol (58%). Optional now that DeepSeek and Haiku give middle points from other labs.
    - The Sol-against-bots lineup rerun with version 3 bots (does version 4 help against LLMs?).
    - The blank-board memory probe on aired bonus puzzles (about $1).
    - The bot's habits measured against Sol, a real stealer.
-5. **Later:**
+4. **Later:**
    - A bot version 5 that refits its tables under the new start rule.
    - A tighter near-repeat check in puzzle generation.
    - The write-up.
