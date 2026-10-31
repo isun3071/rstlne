@@ -1,8 +1,10 @@
 # The wheel
 
-The wheel every game and tournament in this project plays, as set in `wheel.toml` on 2026-10-31. `documentation.md` (The wheel, Special wedges, Bonus round) has the full rules. `wheel.svg` is drawn from the engine's own layout of `wheel.toml`, so it shows exactly what the games spin.
+The wheel every game and tournament in this project plays, as set in `wheel.toml` on 2026-10-31. `documentation.md` (The wheel, Special wedges, Bonus round) has the full rules. `wheel.png` and `wheel.svg` are drawn from the engine's own layout of `wheel.toml`, so they show exactly what the games spin.
 
-![The four round wheels and the bonus wheel](wheel.svg)
+![The four round wheels and the bonus wheel](wheel.png)
+
+`wheel.svg` is the same drawing as a vector file.
 
 ## How it's built
 
