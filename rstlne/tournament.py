@@ -128,15 +128,32 @@ def labels(entrants: Sequence[str]) -> list[str]:
 
 def folder_name(entrants: Sequence[str], seed: int, puzzles_path: Path, config: dict) -> str:
     """Covers everything that changes play, so a rerun resumes only an identical tournament."""
-    play = {key: config.get(key) for key in ("tournament", "providers", "llm", "decision")}
+    play = {key: config.get(key) for key in ("tournament", "llm", "decision")}
     if any(_plays_bot(e) for e in entrants):  # only then, so model-only folders keep their names
         play["bot_version"] = config.get("bot", {}).get("version")
     if any(e.startswith("hybrid:") for e in entrants):
         play["hybrid"] = config.get("hybrid")
+    models = _seated_models(entrants, config)
     if str(puzzles_path) == GENERATE:
         play["puzzlegen"] = config.get("puzzlegen")
+        models |= {config.get("puzzlegen", {}).get("generator"), config.get("puzzlegen", {}).get("judge")}
+    # only the pins of models that play, so pinning a new model never renames another tournament's folder
+    play["providers"] = {m: pin for m, pin in (config.get("providers") or {}).items() if m in models}
     key = json.dumps([list(entrants), seed, Path(puzzles_path).name, play], sort_keys=True)
     return f"seed{seed}-{hashlib.sha256(key.encode()).hexdigest()[:8]}"
+
+
+def _seated_models(entrants: Sequence[str], config: dict) -> set[str]:
+    """Every model a tournament calls: llm and hybrid slugs, and a decision seat's decision model and solver."""
+    models = set()
+    for entrant in entrants:
+        kind, _, slug = entrant.partition(":")
+        if kind in ("llm", "hybrid") and slug:
+            models.add(slug)
+        elif kind == "decision":
+            decision = config.get("decision", {})
+            models |= {slug or decision.get("decision_model"), decision.get("solver_model")}
+    return models
 
 
 def _plays_bot(entrant: str) -> bool:

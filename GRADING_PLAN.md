@@ -106,6 +106,19 @@ The hybrid leads each bot by 17 to 19 points (9 to 27). Set by set, it wins 12.8
 
 Set by set: hybrid − Luna alone +27.8 points (+20.8 to +34.7), Sol − Luna alone +40.6 (+32.5 to +48.3), Sol − hybrid +12.8 (+5.6 to +20.0). Luna's losses are discipline: 219 solves that don't fit the board (it puts already-called letters in hidden squares, repeats refuted answers, guesses on near-empty boards) and 150 bad tool calls, almost all a consonant called without spinning first (every tool is offered on every move, for prompt caching). The hybrid's fit check, refuted-answer list, and the bot's choice of when to trust a read remove those faults. The two identical bots differed by 8 points (+0.6 to +16), most likely chance.
 
+## Folders (resume or extend with `--out`)
+
+On 2026-10-31 folder names stopped counting provider pins of models that don't play, which renamed every tournament once. To resume or extend a tournament started before that, pass its folder: `--out logs/tournaments/<folder>`.
+
+| Lineup | Folder |
+|---|---|
+| 1 | `seed707-d7589355` |
+| 2 | `seed707-e250a942` |
+| 3 | `seed707-ca968604` |
+| 3b | `seed707-e71dd1af` |
+| 6a | `seed707-6496578d` |
+| 3d | `seed707-4ef950be` |
+
 ## Order
 
 1. **Now:** run lineup 1 (LLMs only, so the bot version doesn't matter). Alongside it, run v4's data run:

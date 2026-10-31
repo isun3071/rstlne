@@ -196,12 +196,25 @@ def test_parse_entrants():
         parse_entrants(seats=None, models=None)
 
 
+def test_pinning_a_model_that_isn_t_seated_keeps_a_tournament_s_folder():
+    config = settings.load_config()
+    base = folder_name(["llm:a/one", "bot", "bot"], 42, DEV, config)
+    other = {**config, "providers": {**config.get("providers", {}), "some/new-model": "host/flex"}}
+    assert folder_name(["llm:a/one", "bot", "bot"], 42, DEV, other) == base
+    seated = {**config, "providers": {**config.get("providers", {}), "a/one": "host/flex"}}
+    assert folder_name(["llm:a/one", "bot", "bot"], 42, DEV, seated) != base
+    # a decision seat plays through its decision model and its solver
+    solver = config["decision"]["solver_model"]
+    for_solver = {**config, "providers": {**config.get("providers", {}), solver: "host/other"}}
+    assert folder_name(["decision", "bot", "bot"], 42, DEV, for_solver) != folder_name(["decision", "bot", "bot"], 42, DEV, config)
+
+
 def test_folder_name_changes_with_anything_that_changes_play():
     config = settings.load_config()
     base = folder_name(ENTRANTS, 42, DEV, config)
     assert base == folder_name(ENTRANTS, 42, DEV, config)
     cyclic = {**config, "tournament": {"set_permutations": "cyclic"}}
-    pinned = {**config, "providers": {"llm:a/one": "x"}}
+    pinned = {**config, "providers": {**config.get("providers", {}), "a/one": "x"}}
     effort = {**config, "llm": {**config["llm"], "reasoning_effort": "low"}}
     assert len({base, folder_name(ENTRANTS, 43, DEV, config), folder_name(ENTRANTS, 42, DEV, cyclic),
                 folder_name(ENTRANTS, 42, DEV, pinned), folder_name(ENTRANTS, 42, DEV, effort)}) == 5
