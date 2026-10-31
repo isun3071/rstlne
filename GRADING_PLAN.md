@@ -48,6 +48,21 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 
 Every gap clears zero: Sol leads DeepSeek by 41 points (34 to 49), and DeepSeek leads Haiku by 15 (9 to 21). In Sol's 123 losses it won no round 40 times, won at least as many rounds as the winner 31 times, and made a wrong solve in only 12.
 
+## Lineup 2 result (2026-10-31): Sol beats two bots, but less easily than two LLMs
+
+360 games in 60 sets, `logs/tournaments/seed707-e250a942`, $6.35, bot v4, round 3's solver starting round 4.
+
+| | Sol | Each bot |
+|---|---|---|
+| Win rate | **58%** (51–64%) | 21% (17–25%) |
+| Rounds won per game | 2.26 | 0.87 |
+| Median bank when winning a round (rounds 1–3) | $3,350–3,975 | $5,300–7,000 |
+| Solves right | 96% | 90% |
+| Board showing at a correct solve | 52% | 65% |
+| Bonus won | 205 / 209 | 129 / 151 (both bots) |
+
+Sol leads each bot by 37 to 38 points (27 to 47). Set by set, Sol wins 7.8 points less against two bots than against DeepSeek and Haiku in lineup 1 (−15.0 to −0.6), with the caveat that lineup 1 ran under the old round 4 rule (worth under a point in self-play). Sol takes 56% of rounds, but the bots bank half again as much when they win one, and in 125 of Sol's 151 losses a bot took round 4. The bots read Sol as LLM-like (median w 0.87 at game end), so v4's per-opponent gain was in use; only a rerun with v3 seats would show whether it helped.
+
 ## Order
 
 1. **Now:** run lineup 1 (LLMs only, so the bot version doesn't matter). Alongside it, run v4's data run:
