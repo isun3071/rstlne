@@ -119,6 +119,9 @@ solve_pause = 10          # seconds to hold a solved board before the next round
 # steadier of its two AI Studio endpoints on 2026-10-31 (100% uptime against 73%).
 "google/gemini-4-argon" = "google-ai-studio/flex"
 "google/gemini-3.8-flash" = "google-ai-studio/flex"  # half price on flex, like Argon; under half of Argon's flex output price
+# GLM 5.3 (2026-08-18), Z.ai's flagship: Morph's FP8 build is as cheap as the cheapest hosts ($0.07 in, $1.40 out)
+# without dropping to FP4. Z.ai also judges the puzzles (GLM 4.7), so a GLM player is a disclosed exception.
+"z-ai/glm-5.3" = "morph/fp8"
 "mistralai/mistral-small-3.2-24b-instruct" = "deepinfra/fp8"  # the puzzle generator until 2026-10-29
 "minimax/minimax-m3" = "together"  # the puzzle generator: one of three hosts that take a JSON schema; not FP4, up 100%
 "google/gemma-3-27b-it" = "deepinfra/fp8"  # the puzzle judge until 2026-10-29; some of its other hosts stall
@@ -132,6 +135,7 @@ slugs = [
     "deepseek/deepseek-v4.1-flash-1017",
     "google/gemini-4-argon",
     "google/gemini-3.8-flash",
+    "z-ai/glm-5.3",
     # backups
     "qwen/qwen3.8-flash",
     "z-ai/glm-5.3-flash",
