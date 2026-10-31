@@ -56,6 +56,12 @@ def test_a_model_only_game_runs_from_the_command_line(tmp_path, capsys):
     assert final.phase.value == "game_over"
     out = capsys.readouterr().out
     assert "Final totals" in out
+    assert out.index("Before the bonus round") < out.index("Final totals")  # the main-round sums, then with the bonus
+    before = out.split("Before the bonus round")[1].split("Final totals")[0]
+    bonus = final.bonus
+    for i, seat in enumerate(final.seats):
+        main = seat.total - (bonus.envelope if bonus.solved and bonus.seat == i else 0)
+        assert f"${main:,}" in before
     logs = list(tmp_path.glob("*.jsonl"))
     assert len(logs) == 1
     records = [json.loads(line) for line in logs[0].read_text().splitlines()]

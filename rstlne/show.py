@@ -7,6 +7,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import replace
 from pathlib import Path
 
+from rstlne.engine.bonus import before_bonus
 from rstlne.engine.puzzle import LETTERS, Puzzle, board
 from rstlne.engine.rules import public_view
 from rstlne.engine.state import GameState, Phase, PublicView
@@ -106,6 +107,10 @@ class Show:
                 f"The bonus answer was {state.bonus.puzzle.answer}. "
                 f"The envelope held {money(state.bonus.envelope)}."
             )
+        if state.bonus:
+            self.write("\nBefore the bonus round")
+            for name, main in zip(self.names, before_bonus(state)):
+                self.write(f"  {name}: {money(main)}")
         self.write("\nFinal totals")
         for name, seat in zip(self.names, state.seats):
             self.write(f"  {name}: {money(seat.total)}")

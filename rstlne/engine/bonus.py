@@ -29,6 +29,13 @@ def envelopes(spec: WheelSpec, million: bool) -> tuple[int, ...]:
     return (*spec.envelopes[:i], new, *spec.envelopes[i + 1:])
 
 
+def before_bonus(state: GameState) -> list[int]:
+    """Each seat's game total without the bonus envelope: its money from the main rounds."""
+    b = state.bonus
+    won = b.envelope if b and b.solved else 0
+    return [s.total - (won if b and i == b.seat else 0) for i, s in enumerate(state.seats)]
+
+
 def qualifier(state: GameState) -> int:
     """The seat with the highest game total. A seeded draw breaks ties."""
     best = max(s.total for s in state.seats)

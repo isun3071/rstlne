@@ -278,10 +278,26 @@ def test_table_keeps_long_names_and_three_digit_bonus_counts_apart():
     header, row = lines[2], lines[3]
     assert row.startswith("llm:deepseek/deepseek-v4.1-flash-1017 ")
     assert "$4,283 " in row and " 137/149 " in row
-    for column in ("main", "bonus", "solve%"):  # each value ends under its header
-        assert header.index(column) + len(column) == {"main": row.index("$4,283") + 6,
+    for column in ("avg total", "total − bonus", "bonus", "solve%"):  # each value ends under its header
+        at = header.rindex(column) if column == "bonus" else header.index(column)  # "bonus" also ends "total − bonus"
+        assert at + len(column) == {"avg total": row.index("$28,612") + 7,
+                                                      "total − bonus": row.index("$4,283") + 6,
                                                       "bonus": row.index("137/149") + 7,
                                                       "solve%": row.index("81%") + 3}[column]
+
+
+def test_each_finished_game_prints_every_seat_s_total_before_the_bonus(tmp_path):
+    lines = []
+    run(tmp_path, write=lines.append)
+    results = [line for line in lines if line.startswith("[")]
+    assert len(results) == 6
+    for line, log in zip(sorted(results, key=lambda l: l.split(": ")[0].split("] ")[1]), sorted(tmp_path.glob("set*.jsonl"))):
+        summary = json.loads(log.read_text().splitlines()[-1])
+        bonus = summary["bonus"]
+        before = [t - (bonus["envelope"] if bonus and bonus["solved"] and bonus["seat"] == i else 0)
+                  for i, t in enumerate(summary["totals"])]
+        part = line.split("before the bonus: ")[1].split("  ·  ")[0]
+        assert [int(x.rsplit("$", 1)[1].replace(",", "")) for x in part.split(", ")] == before
 
 
 def test_a_failed_game_says_which_seat_and_why(tmp_path):
