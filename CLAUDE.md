@@ -83,6 +83,7 @@ rstlne/
   live.py          # --live: one fixed screen, redrawn with rich
   cli.py           # play a game in the terminal
   tournament.py    # seeded model only runs
+  bonustest.py     # the bonus round alone: every player on every bonus puzzle in a file
   calibrate.py     # picks each decision model's solve threshold from data
   trust.py         # measures each model's hybrid trust and steal curves on real game boards
   data.py          # fetches the bot's word data into data/, streamed and pruned

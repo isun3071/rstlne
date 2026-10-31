@@ -271,6 +271,16 @@ Version 4 is version 3 with one change: each opponent gets its own stealer's gai
 - `steal` fits the steal prior from tournament logs: every main round turn where a player had the wheel and could have solved becomes a data point, with the share of the board showing, the reader's confidence on that board, and whether the player solved correctly. It fits a, b, and c of q = 1 / (1 + e^-(a + b × shown + c × confidence)) by maximum likelihood, with 95% intervals from resampling whole sets, and reports predicted against actual solve rates, a fit per model, and where players stand when they try to solve. The fit is tied to the reader, so it runs again after the reader is tuned.
 - It never tunes on `dev.json` or `private.json`. It tunes on boards generated from the phrase sources and grades on held out seeds.
 
+## Bonus test
+
+`python -m rstlne.bonustest --players <seat>,<seat>,... --puzzles <file> --seed <n>` plays the bonus round alone. Every player meets every bonus puzzle in the file, with no wheel and no opponents. That gives each player a pure bonus solve rate on the same puzzles. In a tournament, only the game's winner plays the bonus.
+
+- **Players:** any seat but `human`, as many as wanted: `llm:<slug>`, `decision[:<model>]`, `bot`, `hybrid:<slug>`. A human takes the bonus round in the CLI.
+- **Each puzzle:** the player sits in seat 1, with no Wild or Million card, and the bonus round runs exactly as in a game (see Bonus round), from the spin to the one solve attempt. Seats 2 and 3 are empty. The envelope comes from the puzzle's seed, so every player sees the same envelope on the same puzzle. A model starts with a fresh conversation, as it does at the start of a game's bonus round.
+- **Logs:** each player and puzzle is one game log in `logs/bonustest/<folder>/<player>/puzzleNNN.jsonl`. The folder name covers the puzzle file, the seed, and the settings that change play, but not the players, so a later run can add one. A rerun skips finished puzzles. `--max-cost` stops starting new puzzles at a budget, and `--limit` takes only the first puzzles.
+- **Report:** per player, puzzles solved with a Wilson 95% interval, the share of the board showing after the picks, the letters picked, refused responses, solves that don't fit the board, and cost. For each pair of players, the gap in solve rate on the puzzles both finished, with a 95% interval from resampling puzzles.
+- **Puzzles:** a scoring run, like a tournament. Aired puzzles (`private.json`) and generated ones (a grading batch) can be compared directly. Never tune on the results.
+
 ## Seats
 
 Each seat is one of five kinds.

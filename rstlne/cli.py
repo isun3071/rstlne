@@ -33,23 +33,24 @@ from rstlne.runner import GameLog, play_game
 from rstlne.show import Show
 
 
+def parse_seat(part: str) -> tuple[str, str | None]:
+    """`human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slug>` as a (kind, model) pair."""
+    part = part.strip()
+    if part in ("human", "bot"):
+        return part, None
+    if part.startswith(("llm:", "hybrid:")):
+        kind, _, slug = part.partition(":")
+        if not slug.strip():
+            raise ValueError(f"{kind} seats need a model slug, like {kind}:openai/gpt-4o")
+        return kind, slug.strip()
+    if part == "decision" or part.startswith("decision:"):
+        return "decision", part.removeprefix("decision").removeprefix(":").strip() or None
+    raise ValueError(f"unknown seat {part!r}. Use human, llm:<slug>, decision, bot, or hybrid:<slug>.")
+
+
 def parse_seats(text: str) -> list[tuple[str, str | None]]:
-    """`human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slug>` seats as (kind, model) pairs."""
-    seats: list[tuple[str, str | None]] = []
-    for part in (p.strip() for p in text.split(",")):
-        if part == "human":
-            seats.append(("human", None))
-        elif part == "bot":
-            seats.append(("bot", None))
-        elif part.startswith(("llm:", "hybrid:")):
-            kind, _, slug = part.partition(":")
-            if not slug.strip():
-                raise ValueError(f"{kind} seats need a model slug, like {kind}:openai/gpt-4o")
-            seats.append((kind, slug.strip()))
-        elif part == "decision" or part.startswith("decision:"):
-            seats.append(("decision", part.removeprefix("decision").removeprefix(":").strip() or None))
-        else:
-            raise ValueError(f"unknown seat {part!r}. Use human, llm:<slug>, decision, bot, or hybrid:<slug>.")
+    """Three seats, comma separated, as (kind, model) pairs."""
+    seats = [parse_seat(part) for part in text.split(",")]
     if len(seats) != 3:
         raise ValueError(f"a game needs three seats, got {len(seats)}")
     return seats

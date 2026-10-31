@@ -36,9 +36,10 @@ def qualifier(state: GameState) -> int:
     return tied[wheel.draw(len(tied), state.seed, "tiebreak")]
 
 
-def start(state: GameState) -> GameState:
-    """Spin the bonus wheel, hide the envelope, and reveal the given letters."""
-    seat = qualifier(state)
+def start(state: GameState, seat: int | None = None) -> GameState:
+    """Spin the bonus wheel, hide the envelope, and reveal the given letters. The qualifier plays, unless
+    `seat` is given: the bonus test seats its player directly."""
+    seat = qualifier(state) if seat is None else seat
     options = envelopes(state.wheel, state.seats[seat].million)
     b = BonusState(
         seat=seat,
