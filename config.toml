@@ -46,10 +46,11 @@ bonus_mix = { "Phrase" = 26, "Thing" = 18, "What Are You Doing?" = 12, "Food & D
 # thinking switched on, since OpenRouter leaves it off unless asked. Set one level for every
 # model with "none", "low", "medium", "high", "xhigh", or "max".
 # reasoning_effort = "medium"
-# "legal" (the default) offers only the tools that are legal right now. "all" offers every tool on every
-# request in one fixed order, so the model's cached prompt prefix never changes and more input is billed
-# at the cached rate; the engine still refuses an illegal move. Being tested, so it stays off for now.
-# tools = "all"
+# "legal" offers only the tools that are legal right now. "all" offers every tool on every request in one
+# fixed order, so the model's cached prompt prefix never changes; the engine still refuses an illegal move.
+# On 4 seeded Terra games on 2026-10-30, "all" lifted the cached share of input from 36% to 80% and halved
+# the cost per game ($0.0146 to $0.0074), with no invalid moves either way.
+tools = "all"
 
 [decision]
 # Decision seats: a decision model makes every choice, and the solver writes the answers.
