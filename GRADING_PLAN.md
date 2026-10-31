@@ -31,7 +31,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 
 ## Lineup 1 result (2026-10-31): W is Sol
 
-**Rule change after lineup 1:** from 2026-10-31 the solver of round 3 starts round 4 (before, seat 1 always did). Lineup 1 played under the old rule and is not rerun: W is Sol either way. Lineups 2 to 6 play under the new rule. Don't extend lineup 1's folder with more sets, since it would mix the two rules.
+**Rule change after lineup 1:** from 2026-10-31 the solver of round 3 starts round 4 (before, seat 1 always did). Lineup 1 played under the old rule and is not rerun: W is Sol either way, and in 100 self-play sets the change moved no player's win rate by more than a point (`logs/selfplay/v4-check-newstart`). Lineups 2 to 6 play under the new rule. Don't extend lineup 1's folder with more sets, since it would mix the two rules.
 
 360 games in 60 sets, `logs/tournaments/seed707-d7589355`, $12.46 in all.
 
