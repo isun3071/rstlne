@@ -54,7 +54,7 @@ class DecisionPlayer(Player):
         solver: LLMPlayer,
         rules: Rules,
         spec: WheelSpec,
-        threshold: float,
+        threshold: float | None,  # None: solving is one of the moves the decision model chooses, with no threshold
         session_id: str | None = None,
     ):
         self.seat = seat
@@ -71,7 +71,8 @@ class DecisionPlayer(Player):
         self._call_usage = Usage()
 
     def describe(self) -> dict:
-        return {"kind": "decision", "model": self.model, "solver": self.solver.model, "threshold": self.threshold}
+        return {"kind": "decision", "model": self.model, "solver": self.solver.model,
+                "solve": "threshold" if self.threshold is not None else "choice", "threshold": self.threshold}
 
     def label(self) -> str:
         return f"{self.model} + {self.solver.model}"
@@ -139,20 +140,29 @@ class DecisionPlayer(Player):
         moves = [kind for kind in view.legal_actions if kind != "solve"]
         if not moves:
             return self._solve(view)
-        questions = {"solvable": SOLVABLE_QUESTION}
-        if len(moves) > 1:
-            questions["action"] = choice("Which move should you make?", {kind: self._move_text(kind) for kind in moves})
+        by_choice = self.threshold is None
+        offered = [*moves, "solve"] if by_choice else moves
+        questions = {} if by_choice else {"solvable": SOLVABLE_QUESTION}
+        if len(offered) > 1:
+            questions["action"] = choice("Which move should you make?", {kind: self._move_text(kind) for kind in offered})
         if "buy_vowel" in moves:
             questions["vowel"] = choice("If you buy a vowel, which one?", self._letters(view, VOWELS))
         if view.express and "call_consonant" in moves:
             questions["consonant"] = choice("If you call a consonant, which one?", self._letters(view, CONSONANTS))
         chosen = self._ask(view, questions)
+        if by_choice:
+            if chosen.get("action") == "solve":
+                return self._solve(view)
+            return self._move(chosen, moves)
         p_yes = chosen["solvable"]
         if not isinstance(p_yes, (int, float)):
             raise InvalidResponse("bad_decision", f"P(yes) should be a number, got {p_yes!r}")
         if p_yes >= self.threshold:
             self._record["solve_check"] = p_yes
             return self._solve(view)
+        return self._move(chosen, moves)
+
+    def _move(self, chosen: dict, moves: list[str]) -> Action:
         move = chosen.get("action", moves[0])
         if move == "spin":
             return Spin()
@@ -234,4 +244,5 @@ class DecisionPlayer(Player):
             "spin": "Spin the wheel, then call a consonant for the wedge's value. Risks Bankrupt and Lose a Turn.",
             "buy_vowel": f"Buy a vowel from your round bank for {money(self.rules.vowel_cost)}.",
             "call_consonant": f"Call a consonant at {money(self.spec.express)}, with no spin. A miss is Bankrupt.",
+            "solve": "Solve: give the whole answer now. A correct solve banks the round; a wrong one passes your turn.",
         }[kind]

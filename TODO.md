@@ -13,7 +13,7 @@ Commands for every lineup are in `GRADING_PLAN.md`.
 - Lineups **4** (Sol, hybrid, bot) and **5** (Sol, two hybrids): Sol and the hybrid at one table. About $13; skipped for now.
 - Lineup 2 rerun with v3 bots: does v4 help against an LLM? About $6.
 - Blank-board memory probe on aired bonus puzzles: about $1.
-- **Decision seat with d1-ultra** (the top of Artificial Analysis's Decision Index) alone against two bots, Luna writing the solves: about $2. Calibrate its threshold first (`calibrate --models liquid/d1-ultra --puzzles puzzles/generated/tuning-101.json --count 50`, a few cents; never on dev.json). Same reader, three deciders: Luna itself (17.5%), the bot (the hybrid, 45%), or a decision model.
+- **Decision seat with d1-ultra** (the top of Artificial Analysis's Decision Index) alone against two bots, Luna writing the solves: about $2. In choice mode (config's default) d1-ultra decides when to solve itself, so it needs no calibration: `--seats decision:liquid/d1-ultra,bot,bot`. Same reader, three deciders: Luna itself (17.5%), the bot (the hybrid, 45%), or a decision model.
 
 ## Waiting for a grant
 

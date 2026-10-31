@@ -80,9 +80,11 @@ def test_a_decision_model_game_runs_from_the_command_line(tmp_path):
     assert final.phase.value == "game_over"
     header = json.loads(next(tmp_path.glob("*.jsonl")).read_text().splitlines()[0])
     decision = settings.load_config()["decision"]
-    threshold = decision["thresholds"].get(decision["decision_model"], decision["solve_threshold"])
+    choosing = decision.get("solve", "threshold") == "choice"
+    threshold = None if choosing else decision["thresholds"].get(decision["decision_model"], decision["solve_threshold"])
     assert header["seats"][0] == {
-        "kind": "decision", "model": decision["decision_model"], "solver": decision["solver_model"], "threshold": threshold,
+        "kind": "decision", "model": decision["decision_model"], "solver": decision["solver_model"],
+        "solve": "choice" if choosing else "threshold", "threshold": threshold,
     }
     assert {c["session_id"] for c in decisions.calls} >= {f"{next(tmp_path.glob('*.jsonl')).stem}-seat1"}
 

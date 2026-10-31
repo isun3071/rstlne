@@ -224,7 +224,38 @@ def test_log_records_distributions_choices_threshold_and_usage(rules, wheel_spec
 
 def test_describe_names_both_models_and_the_threshold(rules, wheel_spec):
     player, _, _ = seat(rules, wheel_spec, decide_by())
-    assert player.describe() == {"kind": "decision", "model": "typesafe/jev-1.14", "solver": "openai/gpt-6-luna", "threshold": 0.8}
+    assert player.describe() == {"kind": "decision", "model": "typesafe/jev-1.14", "solver": "openai/gpt-6-luna",
+                                 "solve": "threshold", "threshold": 0.8}
+
+
+# Solve as a choice: the decision model picks solving like any other move, with no threshold
+
+
+def test_in_choice_mode_solving_is_one_of_the_moves_and_nothing_asks_whether_to_solve(rules, wheel_spec, game):
+    player, decisions, solver_calls = seat(rules, wheel_spec, decide_by(0.99, {"action": "spin"}), threshold=None)
+    assert player.decide(public_view(game, 0)) == Spin()  # $0 bank: spin or solve
+    (call,) = decisions.calls
+    assert set(call["questions"]) == {"action"} and options(call, "action") == ["spin", "solve"]
+    assert solver_calls == [] and player.last_call.raw["threshold"] is None
+
+
+def test_in_choice_mode_picking_solve_hands_off_to_the_solver(rules, wheel_spec, game):
+    replies = [completion(("solve", {"answer": "WHEEL OF FORTUNE"}))]
+    player, decisions, solver_calls = seat(rules, wheel_spec, decide_by(0.0, {"action": "solve"}), replies, threshold=None)
+    assert player.decide(public_view(set_seat(game, 0, bank=1000), 0)) == Solve("WHEEL OF FORTUNE")
+    (call,) = decisions.calls
+    assert options(call, "action") == ["spin", "buy_vowel", "solve"]
+    assert [t["function"]["name"] for t in solver_calls[0]["tools"]] == ["solve"]
+    assert player.describe()["solve"] == "choice"
+
+
+def test_config_picks_the_solve_mode(rules, wheel_spec):
+    from rstlne import cli, settings
+    config = settings.load_config()
+    for mode, threshold in (("choice", None), ("threshold", config["decision"]["thresholds"]["typesafe/jev-1.14"])):
+        cfg = {**config, "decision": {**config["decision"], "solve": mode}}
+        (player,) = cli.build_players([("decision", "typesafe/jev-1.14")], rules, wheel_spec, cfg, router([]), FakeDecisions(decide_by()), "g")
+        assert player.describe()["solve"] == mode and player.threshold == threshold
 
 
 def test_three_decision_seats_finish_a_game(rules, wheel_spec, game):

@@ -69,7 +69,7 @@ def test_calibration_shares_solver_attempts_and_picks_thresholds(tmp_path):
 
 def test_decision_seats_use_their_calibrated_threshold(rules, wheel_spec):
     config = settings.load_config()
-    config = {**config, "decision": {**config["decision"], "thresholds": {"typesafe/jev-1.14": 0.55}}}
+    config = {**config, "decision": {**config["decision"], "solve": "threshold", "thresholds": {"typesafe/jev-1.14": 0.55}}}
     seats = [("decision", "typesafe/jev-1.14"), ("decision", None), ("llm", "a/one")]
     players = build_players(seats, rules, wheel_spec, config, router([]), FakeDecisions(decide_by()), "game")
     assert players[0].threshold == 0.55

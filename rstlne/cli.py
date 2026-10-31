@@ -125,7 +125,8 @@ def build_players(
             reasoning_effort=effort_for(solver_model), provider=providers.get(solver_model),
         )
         model = model or decision["decision_model"]
-        threshold = decision.get("thresholds", {}).get(model, decision["solve_threshold"])
+        threshold = (None if decision.get("solve", "threshold") == "choice"
+                     else decision.get("thresholds", {}).get(model, decision["solve_threshold"]))
         return DecisionPlayer(i, model, decisions, solver, rules, spec, threshold, session)
 
     return [seat(i, kind, model) for i, (kind, model) in enumerate(seats)]

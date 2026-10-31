@@ -64,6 +64,10 @@ tools = "all"
 # Decision seats: a decision model makes every choice, and the solver writes the answers.
 decision_model = "openai/gpt-6-luna-decisions"  # its probabilities fit the threshold; Jev's run low
 solver_model = "openai/gpt-6-luna"    # writes the decision seat's solves
+# "choice": solving is one of the moves the decision model picks, as it sees fit, and the solver writes the
+# answer when it does; no calibrated threshold, so the model plays as it comes (Ian, 2026-10-31).
+# "threshold": ask P(solvable) every turn and solve at the model's calibrated threshold below.
+solve = "choice"
 solve_threshold = 0.8                 # solve once P(solvable) reaches this
 
 [decision.thresholds]
