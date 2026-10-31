@@ -63,6 +63,21 @@ Every gap clears zero: Sol leads DeepSeek by 41 points (34 to 49), and DeepSeek 
 
 Sol leads each bot by 37 to 38 points (27 to 47). Set by set, Sol wins 7.8 points less against two bots than against DeepSeek and Haiku in lineup 1 (−15.0 to −0.6), with the caveat that lineup 1 ran under the old round 4 rule (worth under a point in self-play). Sol takes 56% of rounds, but the bots bank half again as much when they win one, and in 125 of Sol's 151 losses a bot took round 4. The bots read Sol as LLM-like (median w 0.87 at game end), so v4's per-opponent gain was in use; only a rerun with v3 seats would show whether it helped.
 
+## Lineup 3 result (2026-10-31): the hybrid beats two bots, but Sol alone does better
+
+360 games in 60 sets, `logs/tournaments/seed707-ca968604`, $1.93, bot v4, round 3's solver starting round 4.
+
+| | Hybrid (bot + Luna) | Each bot | Sol in lineup 2, same bots |
+|---|---|---|---|
+| Win rate | **45%** (40–51%) | 27–28% | 58% |
+| Rounds won per game | 1.74 | 1.13 | 2.26 |
+| Median bank when winning a round (rounds 1–3) | $4,900–5,375 | $4,900–6,550 | $3,350–3,975 |
+| Solves right | 97.5% | 92.5% | 96% |
+| Board showing at a correct solve | 65% | 66% | 52% |
+| Bonus won | 147 / 163 | 169 / 197 (both bots) | 205 / 209 |
+
+The hybrid leads each bot by 17 to 19 points (9 to 27). Set by set, it wins 12.8 points less than Sol did against the same two bots (−20.0 to −5.6). It asked Luna 5,817 times (16 a game, about 6 seconds each): Luna called the board not solvable 2,484 times and gave an answer 3,333 times, 84% of them right. Luna's reads made the hybrid surer (median +0.20 confidence) and more accurate, but it still solved at the bots' 65% of the board, milking as they do. The bots read it as bot-like (median w 0.31). A Luna-alone lineup on the same sets would show what the bot's strategy adds to Luna.
+
 ## Order
 
 1. **Now:** run lineup 1 (LLMs only, so the bot version doesn't matter). Alongside it, run v4's data run:
