@@ -29,6 +29,23 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 - **The record:** its partial run (23 games, all won by Sol) was scrubbed at Ian's request.
 - **The replacement:** Claude Haiku 5.5, for Anthropic.
 
+## Lineup 1 result (2026-10-31): W is Sol
+
+360 games in 60 sets, `logs/tournaments/seed707-d7589355`, $12.46 in all.
+
+| | Sol | DeepSeek | Haiku |
+|---|---|---|---|
+| Win rate | **66%** (61–70%) | 25% (21–29%) | 9% (6–13%) |
+| 1st / 2nd / 3rd | 237 / 75 / 48 | 89 / 186 / 85 | 34 / 99 / 227 |
+| Rounds won per game | 1.92 | 1.54 | 0.55 |
+| Solves right | 96% | 89% | 91% |
+| Board showing at a correct solve | 48% | 46% | 67% |
+| Bonus won | 236 / 237 | 84 / 89 | 28 / 34 |
+| Invalid moves per game | 0.02 | 0.39 | 0.20 |
+| Cost per game | $0.015 | $0.014 | $0.005 |
+
+Every gap clears zero: Sol leads DeepSeek by 41 points (34 to 49), and DeepSeek leads Haiku by 15 (9 to 21). In Sol's 123 losses it won no round 40 times, won at least as many rounds as the winner 31 times, and made a wrong solve in only 12.
+
 ## Order
 
 1. **Now:** run lineup 1 (LLMs only, so the bot version doesn't matter). Alongside it, run v4's data run:
