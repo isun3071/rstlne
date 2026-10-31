@@ -19,7 +19,20 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 | 3b | Luna, bot, bot | What does the bot's strategy add to Luna? (added 2026-10-31) | 60 |
 | 4 | W, hybrid, bot | All three player types at one table | 60 |
 | 5 | W, hybrid, hybrid | Can an LLM beat the strongest seats? | 60 |
-| 6 | bot, W, W | Can the bot beat two good LLMs? | 60 |
+| 6 | bot, W, W | Can the bot beat two good LLMs? Optional now (see below) | 60 |
+| 6a | bot, Luna, Luna | Can the bot beat a pair of reckless guessers? | 60 |
+| 6b | bot, Haiku, Haiku | ...a pair of passive readers? | 60 |
+| 6c | bot, DeepSeek, DeepSeek | ...a pair of eager readers? | 60 |
+
+**Lineup 6 against weaker pairs (Ian, 2026-10-31).** One Sol beat two bots 58% to 21% each, so against two Sols the bot would be a massive underdog: in betting terms, a long shot, likely winning 10% or less. That makes lineup 6 a predictable answer for about $12. Lineup 6 keeps its format, the bot against two copies of one model, but against weaker models from three labs (6a to 6c). Each mirrors that model's solo run against two bots, so the matchup is seen from both sides. Lineup 6 with Sol stays optional; if run, 20 sets (about $4) would do, since its first 20 sets pair with every lineup's first 20.
+
+**Spreading across labs (2026-10-31).** After lineup 1 every LLM seat was OpenAI's (Sol, and Luna in the hybrid and alone). To keep this from becoming a test of one lab's models, the same yardstick, a model alone against two bots, also runs for DeepSeek and Haiku, and a DeepSeek hybrid repeats the hybrid's lift on a second lab. MiniMax and Z.ai can't sit, since they write and judge the puzzles.
+
+| # | Seats | Question | Sets |
+|---|---|---|---|
+| 3c | DeepSeek, bot, bot | DeepSeek's solo yardstick | 60 |
+| 3d | Haiku, bot, bot | Haiku's solo yardstick | 60 |
+| 3e | hybrid:DeepSeek, bot, bot | does wrapping DeepSeek lift it too? | 60 |
 
 **Sets:** 60 for every lineup, matching lineup 1, so any two lineups pair up set by set (Ian, 2026-10-31; lineup 3 was planned at 100 until its early gap proved large). **More sets if needed:** if a result is too close to call, rerun the commands of both lineups being compared with `--sets 100`, so the extra sets still pair; a rerun picks up where its folder stopped.
 
@@ -120,7 +133,13 @@ The same flags go at the end of every command:
 | 2 | `uv run python -m rstlne.tournament --seats llm:W,bot,bot --sets 60 --parallel 5 --max-cost 10` |
 | 4 | `uv run python -m rstlne.tournament --seats llm:W,hybrid:openai/gpt-6-luna,bot --sets 60 --parallel 5 --max-cost 10` |
 | 5 | `uv run python -m rstlne.tournament --seats llm:W,hybrid:openai/gpt-6-luna,hybrid:openai/gpt-6-luna --sets 60 --parallel 5 --max-cost 10` |
-| 6 | `uv run python -m rstlne.tournament --seats bot,llm:W,llm:W --sets 60 --parallel 5 --max-cost 15` |
+| 6 | `uv run python -m rstlne.tournament --seats bot,llm:W,llm:W --sets 20 --parallel 5 --max-cost 5` (optional) |
+| 6a | `uv run python -m rstlne.tournament --seats bot,llm:openai/gpt-6-luna,llm:openai/gpt-6-luna --sets 60 --parallel 8 --max-cost 4` |
+| 6b | `uv run python -m rstlne.tournament --seats bot,llm:anthropic/claude-haiku-5.5,llm:anthropic/claude-haiku-5.5 --sets 60 --parallel 8 --max-cost 6` |
+| 6c | `uv run python -m rstlne.tournament --seats bot,llm:deepseek/deepseek-v4.1-flash-1017,llm:deepseek/deepseek-v4.1-flash-1017 --sets 60 --parallel 8 --max-cost 14` |
+| 3c | `uv run python -m rstlne.tournament --seats llm:deepseek/deepseek-v4.1-flash-1017,bot,bot --sets 60 --parallel 8 --max-cost 8` |
+| 3d | `uv run python -m rstlne.tournament --seats llm:anthropic/claude-haiku-5.5,bot,bot --sets 60 --parallel 8 --max-cost 4` |
+| 3e | `uv run python -m rstlne.tournament --seats hybrid:deepseek/deepseek-v4.1-flash-1017,bot,bot --sets 60 --parallel 8 --max-cost 5` |
 
 Replace `W` with the winner's model name, such as `openai/gpt-6.1-sol`.
 

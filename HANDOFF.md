@@ -178,7 +178,13 @@ All grid lineups use the grid deck, one seed, 60 sets (360 games) and bot versio
 | 3b | Luna alone, bot, bot | what does the bot's strategy add to Luna? | done |
 | 4 | Sol, hybrid, bot | all three player types at one table | not started |
 | 5 | Sol, hybrid, hybrid | can an LLM beat the strongest seats? | not started |
-| 6 | bot, Sol, Sol | can the bot beat two good LLMs? | held back by Ian |
+| 6 | bot, Sol, Sol | can the bot beat two good LLMs? | optional: the bot would be a massive underdog |
+| 6a | bot, Luna, Luna | can the bot beat a pair of reckless guessers? | planned |
+| 6b | bot, Haiku, Haiku | ...a pair of passive readers? | planned |
+| 6c | bot, DeepSeek, DeepSeek | ...a pair of eager readers? | planned |
+| 3c | DeepSeek alone, bot, bot | DeepSeek's solo yardstick | planned |
+| 3d | Haiku alone, bot, bot | Haiku's solo yardstick | planned |
+| 3e | DeepSeek hybrid, bot, bot | does wrapping DeepSeek lift it too? | planned |
 
 ### Lineup 1: Sol, DeepSeek, Haiku ($12.46)
 
@@ -302,12 +308,18 @@ Every gap clears zero (Sol over DeepSeek +41, DeepSeek over Haiku +15). Haiku is
 ## 10. What's next
 
 1. **Terra alone against two bots** (about $3): a middle point between Luna (17.5%) and Sol (58%), testing whether a mid-tier model is disciplined enough to play on its own. Terra was left out of lineup 1 only because it's from the same lab as Sol.
-2. **The rest of the grid:** lineup 6 when Ian wants it, then lineups 4 and 5, which show whether the hybrid solves sooner against a fast opponent like Sol.
-3. **Optional checks:**
+2. **Spread across labs.** After lineup 1 every LLM seat was OpenAI's, so the next runs keep the study from becoming a test of one lab:
+   - **The solo yardstick** (a model alone against two bots) for DeepSeek and Haiku.
+   - **A DeepSeek hybrid,** to show the hybrid's lift on a second lab. DeepSeek already has its trust and steal curves.
+   - **Lineup 6's format against weaker pairs:** the bot against two Lunas, two Haikus, and two DeepSeeks. Each mirrors that model's solo run.
+   - **Why not two Sols:** one Sol beat two bots 58% to 21% each, so against two Sols the bot would be a massive underdog, in betting terms a long shot likely winning 10% or less. That's a predictable result for about $12. It stays optional, at 20 sets if run.
+   - **Who can't play:** MiniMax and Z.ai, since they write and judge the puzzles. Sonnet and Gemini are off for now.
+3. **Lineups 4 and 5** (Sol with the hybrid at one table): whether the hybrid solves sooner against a fast opponent.
+4. **Optional checks:**
    - The Sol-against-bots lineup rerun with version 3 bots (does version 4 help against LLMs?).
    - The blank-board memory probe on aired bonus puzzles (about $1).
    - The bot's habits measured against Sol, a real stealer.
-4. **Later:**
+5. **Later:**
    - A bot version 5 that refits its tables under the new start rule.
    - A tighter near-repeat check in puzzle generation.
    - The write-up.
