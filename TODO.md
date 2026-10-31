@@ -21,6 +21,6 @@ Commands for every lineup are in `GRADING_PLAN.md`.
 
 ## Later
 
-- Bot v5: refit the win table and the stealer's gain under the round 4 start rule.
+- Bot v5: refit the win table and the stealer's gain under the round 4 start rule. The grid stays on v4; no lineup needs redoing. Check v5 against v4 in self-play first, and rerun only the lineups where the bot's strength matters (2 and the solo yardsticks), reported as a v5 update. Probably not worth it before the write-up.
 - Tighten the puzzle generator's near-repeat check.
 - The write-up, framed by the four questions.
