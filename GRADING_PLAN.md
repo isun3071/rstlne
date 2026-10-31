@@ -14,13 +14,13 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 | # | Seats | What it tells us | Sets |
 |---|---|---|---|
 | 1 | Sol, DeepSeek, Haiku | Which LLM is best, with no bot around: three labs (OpenAI, DeepSeek, Anthropic) | 60 |
-| 2 | W, bot, bot | Can a good LLM beat the bot? | 50 |
-| 3 | hybrid, bot, bot | How much does Luna's reading add to the bot? | 100 |
-| 4 | W, hybrid, bot | All three player types at one table | 50 |
-| 5 | W, hybrid, hybrid | Can an LLM beat the strongest seats? | 50 |
-| 6 | bot, W, W | Can the bot beat two good LLMs? | 50 |
+| 2 | W, bot, bot | Can a good LLM beat the bot? | 60 |
+| 3 | hybrid, bot, bot | How much does Luna's reading add to the bot? | 60 |
+| 4 | W, hybrid, bot | All three player types at one table | 60 |
+| 5 | W, hybrid, hybrid | Can an LLM beat the strongest seats? | 60 |
+| 6 | bot, W, W | Can the bot beat two good LLMs? | 60 |
 
-**More sets if needed:** if a lineup's key result is too close to call, rerun its command with `--sets 100`. It picks up from set 51.
+**Sets:** 60 for every lineup, matching lineup 1, so any two lineups pair up set by set (Ian, 2026-10-31; lineup 3 was planned at 100 until its early gap proved large). **More sets if needed:** if a result is too close to call, rerun the commands of both lineups being compared with `--sets 100`, so the extra sets still pair; a rerun picks up where its folder stopped.
 
 **Lineup 1 was cut to 50 sets on 2026-10-31, at 10 games at a time:** Sol won its first 19 games outright, and 24 at a time made MiMo's host time out. Second place goes on rounds won, money, and second-place finishes, since DeepSeek and MiMo barely win.
 
@@ -86,11 +86,11 @@ The same flags go at the end of every command:
 | # | Command |
 |---|---|
 | 1 | `uv run python -m rstlne.tournament --seats llm:openai/gpt-6.1-sol,llm:deepseek/deepseek-v4.1-flash-1017,llm:anthropic/claude-haiku-5.5 --sets 60 --parallel 16 --max-cost 20` |
-| 3 | `uv run python -m rstlne.tournament --seats hybrid:openai/gpt-6-luna,bot,bot --sets 100 --parallel 5 --max-cost 5` |
-| 2 | `uv run python -m rstlne.tournament --seats llm:W,bot,bot --sets 50 --parallel 5 --max-cost 10` |
-| 4 | `uv run python -m rstlne.tournament --seats llm:W,hybrid:openai/gpt-6-luna,bot --sets 50 --parallel 5 --max-cost 10` |
-| 5 | `uv run python -m rstlne.tournament --seats llm:W,hybrid:openai/gpt-6-luna,hybrid:openai/gpt-6-luna --sets 50 --parallel 5 --max-cost 10` |
-| 6 | `uv run python -m rstlne.tournament --seats bot,llm:W,llm:W --sets 50 --parallel 5 --max-cost 15` |
+| 3 | `uv run python -m rstlne.tournament --seats hybrid:openai/gpt-6-luna,bot,bot --sets 60 --parallel 10 --max-cost 5` |
+| 2 | `uv run python -m rstlne.tournament --seats llm:W,bot,bot --sets 60 --parallel 5 --max-cost 10` |
+| 4 | `uv run python -m rstlne.tournament --seats llm:W,hybrid:openai/gpt-6-luna,bot --sets 60 --parallel 5 --max-cost 10` |
+| 5 | `uv run python -m rstlne.tournament --seats llm:W,hybrid:openai/gpt-6-luna,hybrid:openai/gpt-6-luna --sets 60 --parallel 5 --max-cost 10` |
+| 6 | `uv run python -m rstlne.tournament --seats bot,llm:W,llm:W --sets 60 --parallel 5 --max-cost 15` |
 
 Replace `W` with the winner's model name, such as `openai/gpt-6.1-sol`.
 
