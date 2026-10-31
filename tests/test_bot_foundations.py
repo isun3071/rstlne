@@ -116,6 +116,16 @@ def test_frozen_versions_never_change():
     v3 = {k: v for k, v in asdict(versions.knobs(3)).items() if k not in V4_KNOBS}
     assert hashlib.sha256(json.dumps(v3, sort_keys=True).encode()).hexdigest()[:12] == "342c440f08d6"
     assert all(getattr(versions.knobs(v), k) == () for v in (1, 2, 3) for k in V4_KNOBS)
+    assert hashlib.sha256(json.dumps(asdict(versions.knobs(4)), sort_keys=True).encode()).hexdigest()[:12] == "4c039cc65dbf"
+
+
+def test_v4_is_v3_with_a_gain_table_per_opponent_kind_and_a_bot_solve_curve():
+    v3, v4 = versions.knobs(3), versions.knobs(4)
+    assert replace(v4, stealer_gain_llm=(), stealer_gain_bot=(), steal_bot=()) == v3
+    assert len(v4.steal_bot) == 3
+    for table in (v4.stealer_gain_llm, v4.stealer_gain_bot):
+        assert [start for start, _ in table] == [1, 4]
+        assert all(len(gains) == 20 and bands[0][0] == 0 for _, bands in table for _, gains in bands)
 
 
 def test_v3_is_v1_with_the_stealers_gain_and_flat_choices_for_dollars():
@@ -126,7 +136,7 @@ def test_v3_is_v1_with_the_stealers_gain_and_flat_choices_for_dollars():
 
 
 def test_both_versions_are_pinned_to_the_same_word_data():
-    assert versions.DATA[1] == versions.DATA[2] == versions.DATA[3] == "0640bcd6a420"
+    assert versions.DATA[1] == versions.DATA[2] == versions.DATA[3] == versions.DATA[4] == "0640bcd6a420"
 
 
 class _Reader:

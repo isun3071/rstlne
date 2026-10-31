@@ -607,7 +607,7 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
     players = [BotPlayer(i, rules, spec, reader, version=1, knobs=e.knobs(base)) for i, e in enumerate(seats)]
     state = new_game(game.seed, rules, spec, puzzles, bonus_puzzle)
     stats = [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0, "certain_win": False, "certain_loss": False,
-              "flat": 0} for _ in seats]
+              "flat": 0, "llm_like": {}} for _ in seats]
     round_totals, moves, steps, chances = [], 0, [], []
     while state.phase is not Phase.GAME_OVER:
         before = state
@@ -631,6 +631,8 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
             seat["certain_win"] |= values == {1.0}
             seat["certain_loss"] |= values == {0.0}
         seat["flat"] += bool((raw or {}).get("flat"))
+        if (raw or {}).get("llm_like"):  # version 4: how LLM-like it finds each opponent, kept as of its last decision
+            seat["llm_like"] = raw["llm_like"]
         if r.action.kind == "solve":
             seat["attempts"] += 1
             if r.outcome == "solved":
@@ -721,7 +723,8 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
     per_set: dict[int, dict[str, list[float]]] = {}
     acc = {name: {"games": 0, "wins": 0.0, "seat_games": [0, 0, 0], "seat_wins": [0.0, 0.0, 0.0], "total": 0,
                   "main": 0, "bonus_played": 0, "bonus_won": 0, "attempts": 0, "right": 0, "shown": [], "bankrupts": 0,
-                  "certain_win": 0, "certain_win_lost": 0, "certain_loss": 0, "certain_loss_won": 0, "flat": 0}
+                  "certain_win": 0, "certain_win_lost": 0, "certain_loss": 0, "certain_loss_won": 0, "flat": 0,
+                  "llm_like": {}}
            for name in names}
     for g in games:
         shares = tournament.split_wins(g["totals"])
@@ -748,6 +751,8 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
                 a["certain_loss"] += 1
                 a["certain_loss_won"] += w > 0
             a["flat"] += st.get("flat", 0)
+            for other, w in st.get("llm_like", {}).items():  # keyed by seat number
+                a["llm_like"].setdefault(g["seats"][int(other) - 1], []).append(w)
             per_set.setdefault(g["set"], {}).setdefault(name, []).append(w)
     rows = list(per_set.values())
 
@@ -770,6 +775,7 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
             "certain_win": a["certain_win"], "certain_win_lost": a["certain_win_lost"],
             "certain_loss": a["certain_loss"], "certain_loss_won": a["certain_loss_won"],
             "flat_per_game": a["flat"] / a["games"],
+            "llm_like": {other: sum(ws) / len(ws) for other, ws in sorted(a["llm_like"].items())},  # average w at game end
         })
     pairwise = []
     for x in range(len(names)):
@@ -794,6 +800,9 @@ def summary_lines(summary: dict) -> list[str]:
             lines.append(f"  {'':12s} sure it had won in {e['certain_win']} games, lost {e['certain_win_lost']} · "
                          f"sure it had lost in {e['certain_loss']}, won {e['certain_loss_won']} · "
                          f"{e['flat_per_game']:.2f} choices a game went to dollars")
+        if e.get("llm_like"):
+            found = ", ".join(f"{other} {w:.2f}" for other, w in e["llm_like"].items())
+            lines.append(f"  {'':12s} its chance each opponent plays like an LLM, at game end: {found}")
     for p in summary["pairwise"]:
         ci = f" [{p['ci95'][0]:+.0%} to {p['ci95'][1]:+.0%}]" if p["ci95"] else ""
         lines.append(f"  {p['a']} minus {p['b']}: {p['gap']:+.0%}{ci}")

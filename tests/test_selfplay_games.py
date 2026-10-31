@@ -197,3 +197,21 @@ def test_games_count_when_a_bot_thought_the_result_settled(tmp_path, rules, whee
     assert {"certain_win", "certain_loss", "flat"} <= set(g["seat_stats"][0])
     e = selfplay.games_summary(tmp_path)["entrants"][0]
     assert {"certain_win", "certain_win_lost", "certain_loss", "certain_loss_won", "flat_per_game"} <= set(e)
+
+
+def test_games_report_how_llm_like_each_v4_seat_found_each_opponent(tmp_path, rules, wheel_spec):
+    tables = ((1, ((0, (0.0,) * 20),)),)
+    files = {}
+    for name, knob in (("llm", tables), ("bot", tables), ("steal", (-6.0, 2.0, 1.0))):
+        files[name] = tmp_path / f"{name}.json"
+        files[name].write_text(json.dumps({"knob": knob}))
+    four = selfplay.Entrant.parse(f"v4:stealer_gain_llm=@{files['llm']}+stealer_gain_bot=@{files['bot']}+steal_bot=@{files['steal']}")
+    entrants = [four, selfplay.Entrant("plain"), selfplay.Entrant.parse("eager:eager_solve=0.65")]
+    path = selfplay.play_games(entrants, POOL, 1, 7, tmp_path, rules, wheel_spec, KNOBS, reader)
+    g = json.loads(path.read_text().splitlines()[0])
+    seat = g["seats"].index("v4")
+    assert set(g["seat_stats"][seat]["llm_like"]) == {str(s + 1) for s in range(3) if s != seat}
+    e = {r["entrant"]: r for r in selfplay.games_summary(tmp_path)["entrants"]}
+    assert set(e["v4"]["llm_like"]) == {"plain", "eager"} and all(0 <= w <= 1 for w in e["v4"]["llm_like"].values())
+    assert e["plain"]["llm_like"] == {}
+    assert any("plays like an LLM" in line for line in selfplay.summary_lines(selfplay.games_summary(tmp_path)))

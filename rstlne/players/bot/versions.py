@@ -64,13 +64,20 @@ def _knob_file(name: str) -> tuple:
 # so both are kept. v1 reads win chances from the formula; v2 from the win table built in self-play.
 # v3 frozen 2026-10-30: v1 plus what a stealer banks before solving, fit from LLM and bot games on tuning puzzles,
 # and choices where every option wins equally played for dollars.
+# v4 frozen 2026-10-31: v3 plus a stealer's gain for each opponent, mixed from an LLM table and a bot table by how
+# LLM-like that seat has played this game, with a solve curve fit on bot play.
 # A change to any of them is a new version, never an edit here.
 VERSIONS = {
     1: Knobs(),
     2: Knobs(win_table=_knob_file("win-table-v2.json")),
     3: Knobs(stealer_gain=_knob_file("stealer-gain-v3.json"), flat_dollars=True),
+    4: Knobs(
+        stealer_gain=_knob_file("stealer-gain-v3.json"), flat_dollars=True,
+        stealer_gain_llm=_knob_file("stealer-gain-llm-v4.json"), stealer_gain_bot=_knob_file("stealer-gain-bot-v4.json"),
+        steal_bot=_knob_file("steal-bot-v4.json"),
+    ),
 }
-DATA = {1: "0640bcd6a420", 2: "0640bcd6a420", 3: "0640bcd6a420"}  # the word data each was frozen with, by fingerprint
+DATA = {1: "0640bcd6a420", 2: "0640bcd6a420", 3: "0640bcd6a420", 4: "0640bcd6a420"}  # the word data each was frozen with, by fingerprint
 
 
 def current(config: dict) -> int:

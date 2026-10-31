@@ -158,9 +158,9 @@ Version 3 is version 1 with two changes. Every other knob, the reader, the calib
 - **Logging.** Each bot decision records `flat: true` when change 2 chose it.
 - **Adopted.** `config.toml` moved to version 3 on 2026-10-30. In the full check, 2,004 games against two v1 bots on grading-202, it won 43% (95% interval 41% to 46%) to their 28% each, a gap of +15 points (+12 to +18). v1 was sure it had won in 473 games and lost 114 of them; v3 was sure in 186 and lost 2. It played about 5 choices a game for dollars, and won $6,758 a game in the main rounds to v1's $4,727. It is sure it has lost more often than v1 (542 games to 460) and wrong about it 4% of the time: the stealer's gain makes it expect opponents to build big banks, while its own comeback chances weren't modeled the same way.
 
-### Version 4 (built 2026-10-31, not yet fit)
+### Version 4 (frozen 2026-10-31, being checked)
 
-Version 4 is version 3 with one change: each opponent gets its own stealer's gain, from how that seat plays this game. Everything else stays as in version 3. The grading grid runs on version 3, and version 4 is checked after it.
+Version 4 is version 3 with one change: each opponent gets its own stealer's gain, from how that seat plays this game. Everything else stays as in version 3. It is checked against version 3 before the grading grid's bot lineups; the grid runs on whichever wins.
 
 - **Why.** Version 3's gain G blends two kinds of opponents half and half. LLM opponents pounce and add little before solving. With 10 to 14 squares hidden in rounds 1 to 3, an LLM's median is $350 and its 90th percentile $3,200. Bot opponents milk the board: a median of $2,500 and a 90th percentile of $6,800. Against an eager LLM, version 3 overrates how much it might add; against a patient seat, it underrates it.
 - **Two gain tables.** G_llm is fit from LLM opponents only and G_bot from bot opponents only. Both use version 3's bands, its 20 values per band, and its merging of sparse bands, applied within each source.
@@ -172,7 +172,11 @@ Version 4 is version 3 with one change: each opponent gets its own stealer's gai
 - **Using it.** When the bot weighs that seat taking the round, it averages its win chance over G_llm with weight w and over G_bot with weight 1 − w, in place of version 3's single table. The steal odds themselves are unchanged. At w = 1/2 this is close to version 3: the average of the two tables against their pooled one.
 - **No identities and no memory.** w comes only from what the seat does at this table, and resets every game.
 - **Fitting.** `selfplay round-banks` gains a record of every opportunity: the share showing, the deciding bot's confidence, and whether it solved correctly. In self-play every seat runs the same bot and reader, so the deciding bot's confidence stands in for the observer's. A new run of about 2,000 version 3 games on the tuning puzzles fits both G_bot and q_bot. G_llm is refit from prior-101 on its own. All three are frozen into version 4 with its word data pin. Nothing is fit on grading, dev, or private puzzles.
-- **Logging.** Each bot decision records every opponent's w as `llm_like`, keyed by seat number.
+- **Frozen fit.** `stealer-gain-llm-v4.json`, `stealer-gain-bot-v4.json`, and `steal-bot-v4.json`, from `v4-fit` on prior-101 and 2,004 version 3 round-banks games on tuning-101:
+  - G_llm: 2,043 points. LLM data is sparse, so rounds 1 to 3 merge into three bands (0–9 hidden squares, 10–14, 15 or more), with mean gains of $735, $1,015, and $1,060, and round 4 on is one band, a mean of $935.
+  - G_bot: 29,352 points. Rounds 1 to 3 keep all five bands, with means of $445, $890, $1,978, $3,128, and $4,632; round 4 on has four (0–5, 6–9, 10–14, 15 or more), with means of $1,058, $1,522, $2,635, and $3,410.
+  - q_bot: a = −12.93, b = 5.79, c = 9.35, from 71,778 chances to solve. Bots wait far longer than LLMs: with half the board showing at confidence 0.8, q_llm is 39% and q_bot 7%. Near a full board they are surer: at 80% showing and confidence 0.99, 67% against 72%.
+- **Logging.** Each bot decision records every opponent's w as `llm_like`, keyed by seat number. Each `selfplay games` record keeps, per seat, the w it held for each opponent at its last decision, and `games-summary` averages them per pair of variants.
 - **Commands.** `selfplay round-banks` now records every chance to solve beside the gain points. `selfplay v4-fit --logs <tournament folders> --games <round-banks folders> --out <folder>` writes `stealer-gain-llm.json`, `stealer-gain-bot.json`, and `steal-bot.json`, the three knobs version 4 freezes.
 - **Checking it.** `selfplay games` with v4, v3, and an eager v3 (`eager_solve=0.65`, which pounces like an LLM) on grading-202, about 2,000 games. It reports:
   - win rates with 95% intervals
