@@ -133,7 +133,7 @@ On the same set, Sol won 3 of 6, the hybrid 3, and Luna 2. One set is too small 
 
 ## Folders (resume or extend with `--out`)
 
-On 2026-10-31 folder names stopped counting provider pins of models that don't play, which renamed every tournament once. To resume or extend a tournament started before that, pass its folder: `--out logs/tournaments/<folder>`.
+On 2026-10-31 folder names stopped counting provider pins of models that don't play, and decision settings when no decision seat plays. Each change renamed tournaments once. To resume or extend a tournament started before that, pass its folder: `--out logs/tournaments/<folder>`.
 
 | Lineup | Folder |
 |---|---|
@@ -143,6 +143,8 @@ On 2026-10-31 folder names stopped counting provider pins of models that don't p
 | 3b | `seed707-e71dd1af` |
 | 6a | `seed707-6496578d` |
 | 3d | `seed707-4ef950be` |
+| 6b | `seed707-261dfa12` |
+| 3c | `seed707-6fa48eea` |
 
 ## Order
 

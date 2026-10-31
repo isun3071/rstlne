@@ -128,7 +128,9 @@ def labels(entrants: Sequence[str]) -> list[str]:
 
 def folder_name(entrants: Sequence[str], seed: int, puzzles_path: Path, config: dict) -> str:
     """Covers everything that changes play, so a rerun resumes only an identical tournament."""
-    play = {key: config.get(key) for key in ("tournament", "llm", "decision")}
+    play = {key: config.get(key) for key in ("tournament", "llm")}
+    if any(e.split(":")[0] == "decision" for e in entrants):  # only then, like the bot version
+        play["decision"] = config.get("decision")
     if any(_plays_bot(e) for e in entrants):  # only then, so model-only folders keep their names
         play["bot_version"] = config.get("bot", {}).get("version")
     if any(e.startswith("hybrid:") for e in entrants):

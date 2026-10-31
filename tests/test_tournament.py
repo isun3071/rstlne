@@ -196,6 +196,13 @@ def test_parse_entrants():
         parse_entrants(seats=None, models=None)
 
 
+def test_decision_settings_count_only_when_a_decision_seat_plays():
+    config = settings.load_config()
+    changed = {**config, "decision": {**config["decision"], "solve": "something else"}}
+    assert folder_name(["llm:a/one", "bot", "bot"], 42, DEV, changed) == folder_name(["llm:a/one", "bot", "bot"], 42, DEV, config)
+    assert folder_name(["decision", "bot", "bot"], 42, DEV, changed) != folder_name(["decision", "bot", "bot"], 42, DEV, config)
+
+
 def test_pinning_a_model_that_isn_t_seated_keeps_a_tournament_s_folder():
     config = settings.load_config()
     base = folder_name(["llm:a/one", "bot", "bot"], 42, DEV, config)
