@@ -80,6 +80,9 @@ def build_players(
     """A player per (kind, model) seat. Each model seat gets its own session, `<prefix>-seat<n>`."""
     temperature = config["llm"].get("temperature")
     effort = config["llm"].get("reasoning_effort")
+    tool_list = config["llm"].get("tools", "legal")
+    if tool_list not in ("legal", "all"):
+        raise ValueError(f'[llm] tools must be "legal" or "all", not {tool_list!r}')
     decision = config["decision"]
     providers = config.get("providers", {})
     hybrid = config.get("hybrid", {})
@@ -104,7 +107,8 @@ def build_players(
             )
         if kind == "llm":
             return LLMPlayer(
-                i, model, client, rules, spec, temperature, session, reasoning_effort=effort, provider=providers.get(model)
+                i, model, client, rules, spec, temperature, session, reasoning_effort=effort, provider=providers.get(model),
+                all_tools=tool_list == "all",
             )
         solver_model = decision["solver_model"]
         solver = LLMPlayer(

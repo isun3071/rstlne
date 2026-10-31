@@ -275,3 +275,42 @@ def test_a_pinned_provider_reaches_every_request_and_the_log(rules, wheel_spec, 
     llm.decide(public_view(game, 0))
     assert client.client.calls[0]["extra_body"]["provider"]["order"] == ["deepseek"]
     assert llm.describe()["provider"] == "deepseek"
+
+
+# Every tool on every request, for the cache
+
+
+def test_all_tools_offers_the_same_full_list_on_every_request(rules, wheel_spec, game):
+    client = router([completion(("spin", {})), completion(("call_consonant", {"letter": "T"}))])
+    llm = LLMPlayer(0, "test/model", client, rules, wheel_spec, all_tools=True)
+    assert llm.decide(public_view(game, 0)) == Spin()
+    assert llm.decide(public_view(spin_to(game, 3), 0)) == CallConsonant("T")
+    first, second = ([t["function"]["name"] for t in call["tools"]] for call in client.client.calls)
+    assert first == second == list(llm.tools)  # one fixed list, so the cached prefix never changes
+    assert "Legal: call_consonant" in client.client.calls[1]["messages"][-1]["content"]
+    assert llm.describe()["tools"] == "all"
+
+
+def test_all_tools_still_refuses_a_move_that_isnt_legal(rules, wheel_spec, game):
+    llm = LLMPlayer(0, "test/model", router([completion(("spin", {}))]), rules, wheel_spec, all_tools=True)
+    with pytest.raises(InvalidResponse, match="not on offer"):
+        llm.decide(public_view(spin_to(game, 3), 0))  # after a spin only a consonant call is legal
+
+
+def test_legal_tools_stay_the_default(rules, wheel_spec, game):
+    llm, client = player(rules, wheel_spec, [completion(("spin", {}))])
+    llm.decide(public_view(game, 0))
+    assert [t["function"]["name"] for t in client.calls[0]["tools"]] == ["spin", "solve"]
+    assert "tools" not in llm.describe()
+
+
+def test_the_config_picks_the_tool_list(rules, wheel_spec):
+    from rstlne import cli, settings
+    config = settings.load_config()
+    all_tools = {**config, "llm": {**config["llm"], "tools": "all"}}
+    seat = cli.build_players([("llm", "a/one"), ("bot", None), ("bot", None)], rules, wheel_spec, all_tools,
+                             router([]), None, "g")[0]
+    assert seat.all_tools is True
+    with pytest.raises(ValueError, match="legal.*all"):
+        cli.build_players([("llm", "a/one"), ("bot", None), ("bot", None)], rules, wheel_spec,
+                          {**config, "llm": {**config["llm"], "tools": "some"}}, router([]), None, "g")

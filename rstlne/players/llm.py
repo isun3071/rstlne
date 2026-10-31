@@ -275,6 +275,7 @@ class LLMPlayer(Player):
         session_id: str | None = None,  # keeps this seat on one provider so its cache stays warm
         reasoning_effort: str | None = None,  # None keeps each model's own default
         provider: str | None = None,  # an OpenRouter provider tag to pin this model to
+        all_tools: bool = False,  # offer every tool on every request, so the cached prefix never changes
     ):
         self.seat = seat
         self.model = model
@@ -285,6 +286,7 @@ class LLMPlayer(Player):
         self.session_id = session_id
         self.reasoning_effort = reasoning_effort
         self.provider = provider
+        self.all_tools = all_tools
         self.tools = tool_specs(rules, spec)
         self.system = rules_prompt(rules, spec, seat)
         self.usage = Usage()
@@ -301,6 +303,7 @@ class LLMPlayer(Player):
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
             "provider": self.provider,
+            **({"tools": "all"} if self.all_tools else {}),
         }
 
     def label(self) -> str:
@@ -324,7 +327,7 @@ class LLMPlayer(Player):
         reply = self.client.chat(
             model=self.model,
             messages=self.messages,
-            tools=[self.tools[kind] for kind in view.legal_actions],
+            tools=list(self.tools.values()) if self.all_tools else [self.tools[kind] for kind in view.legal_actions],
             temperature=self.temperature,
             session_id=self.session_id,
             reasoning_effort=self.reasoning_effort,

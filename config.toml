@@ -46,6 +46,10 @@ bonus_mix = { "Phrase" = 26, "Thing" = 18, "What Are You Doing?" = 12, "Food & D
 # thinking switched on, since OpenRouter leaves it off unless asked. Set one level for every
 # model with "none", "low", "medium", "high", "xhigh", or "max".
 # reasoning_effort = "medium"
+# "legal" (the default) offers only the tools that are legal right now. "all" offers every tool on every
+# request in one fixed order, so the model's cached prompt prefix never changes and more input is billed
+# at the cached rate; the engine still refuses an illegal move. Being tested, so it stays off for now.
+# tools = "all"
 
 [decision]
 # Decision seats: a decision model makes every choice, and the solver writes the answers.
@@ -98,6 +102,10 @@ solve_pause = 10          # seconds to hold a solved board before the next round
 # MiMo V2.6 Flash: in a screen of one game per host on 2026-10-30, Cohere took about 13 s a move with full
 # thinking; the next fastest took 43 s, Makora dropped the thinking, and four hosts refused forced tool calls.
 "xiaomi/mimo-v2.6-flash" = "cohere"
+# OpenAI's flex tier: the same models at half price, served at lower priority, so calls can be slower and
+# sometimes busy (retried). Fine for tournaments; remove these lines for snappier live games.
+"openai/gpt-6.1-terra" = "openai/flex"
+"openai/gpt-6.1-sol" = "openai/flex"
 "mistralai/mistral-small-3.2-24b-instruct" = "deepinfra/fp8"  # the puzzle generator until 2026-10-29
 "minimax/minimax-m3" = "together"  # the puzzle generator: one of three hosts that take a JSON schema; not FP4, up 100%
 "google/gemma-3-27b-it" = "deepinfra/fp8"  # the puzzle judge until 2026-10-29; some of its other hosts stall
