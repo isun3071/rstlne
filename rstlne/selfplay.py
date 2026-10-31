@@ -751,8 +751,8 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
                 a["certain_loss"] += 1
                 a["certain_loss_won"] += w > 0
             a["flat"] += st.get("flat", 0)
-            for other, w in st.get("llm_like", {}).items():  # keyed by seat number
-                a["llm_like"].setdefault(g["seats"][int(other) - 1], []).append(w)
+            for other, like in st.get("llm_like", {}).items():  # keyed by seat number
+                a["llm_like"].setdefault(g["seats"][int(other) - 1], []).append(like)
             per_set.setdefault(g["set"], {}).setdefault(name, []).append(w)
     rows = list(per_set.values())
 

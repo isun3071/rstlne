@@ -215,3 +215,16 @@ def test_games_report_how_llm_like_each_v4_seat_found_each_opponent(tmp_path, ru
     assert set(e["v4"]["llm_like"]) == {"plain", "eager"} and all(0 <= w <= 1 for w in e["v4"]["llm_like"].values())
     assert e["plain"]["llm_like"] == {}
     assert any("plays like an LLM" in line for line in selfplay.summary_lines(selfplay.games_summary(tmp_path)))
+
+
+def test_the_llm_likeness_a_v4_seat_records_never_stands_in_for_its_wins(tmp_path):
+    game = {"set": 0, "seats": ["v4", "v3", "eager"], "totals": [0, 9000, 100], "round_totals": [], "bonus": None,
+            "seat_stats": [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0, "llm_like": {"2": 0.3, "3": 0.6}},
+                           {"attempts": 0, "right": 0, "shown": [], "bankrupts": 0},
+                           {"attempts": 0, "right": 0, "shown": [], "bankrupts": 0}]}
+    (tmp_path / "games-shard1of1.jsonl").write_text(json.dumps(game) + "\n")
+    s = selfplay.games_summary(tmp_path, resamples=10)
+    e = {r["entrant"]: r for r in s["entrants"]}
+    assert e["v4"]["win_rate"] == 0 and e["v4"]["ci95"] == [0, 0]  # v4 lost; its 0.6 for eager is no win
+    gap = next(p for p in s["pairwise"] if {p["a"], p["b"]} == {"v3", "v4"})
+    assert gap["gap"] == (1 if gap["a"] == "v3" else -1)
