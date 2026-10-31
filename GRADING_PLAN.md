@@ -6,7 +6,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 
 - **Same deck:** `puzzles/generated/grading-505.json`, the realistic v6 puzzles (400 main, 100 bonus).
 - **Same seed:** `707`. Set 17 has the same spins and puzzles in every lineup, so differences between lineups come from the players, not luck.
-- **Bot v3**, set in `config.toml`.
+- **Bot v4**, once its self-play check confirms it. `config.toml` moves to version 4 only then. Lineup 3 first ran on v3 and was scrubbed on 2026-10-31, so every bot lineup runs on one version.
 - **W** is the winner of lineup 1 (the highest win rate). W fills every LLM seat in lineups 2 to 6.
 
 ## The six lineups
@@ -24,11 +24,15 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 
 ## Order
 
-1. **Wait:** the v3 faceoff must finish.
-2. **Make the deck:** generate `grading-505`, then copy it back so the bad puzzles get fixed by hand.
-3. **Run 1 and 3** together.
-4. **Pick W** from lineup 1. If #1 and #2 are within each other's error bars, note that it's a close call.
-5. **Run 2, 4, 5, and 6** together.
+1. **Now:** run lineup 1 (LLMs only, so the bot version doesn't matter). Alongside it, run v4's data run:
+   ```
+   uv run python -m rstlne.selfplay round-banks --puzzles puzzles/generated/tuning-101.json --sets 334 --seed 909 --out logs/selfplay/round-banks-v3 --workers 4
+   ```
+2. **Fit and freeze v4:** copy the data run back, run `selfplay v4-fit`, and freeze v4.
+3. **Check v4:** in self-play, v4 against v3 against an eager v3, on grading-202, about 2,000 games.
+4. **If v4 beats v3,** move `[bot] version` to 4. If not, stay on v3.
+5. **Pick W** from lineup 1. If #1 and #2 are within each other's error bars, note that it's a close call.
+6. **Run 3, 2, 4, 5, and 6.**
 
 ## Commands (on the server)
 
