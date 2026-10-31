@@ -13,10 +13,12 @@ bonus_letters = ["R", "S", "T", "L", "N", "E"]
 bonus_consonants = 3  # plus one vowel; a held Wild Card adds one more consonant
 
 [bot]
-version = 3  # picks the bot's code, data, and knobs; tournaments never mix versions
+version = 4  # picks the bot's code, data, and knobs; tournaments never mix versions
 # 1: win chances from the formula. 2: from the win table built in self-play. They tied in bot games.
 # 3: v1 plus what a stealer banks before solving, and flat choices for dollars. In 2,004 games against
 # two v1 bots on grading-202 it won 43% to their 28% each (gap +15 points, 95% interval +12 to +18).
+# 4: v3 with a stealer's gain per opponent, by how LLM-like it plays. In 2,004 games against v3 and an
+# eager v3 it tied v3 (gap -0.05 points, -0.65 to +0.55); adopted as no worse, for LLM tables.
 
 [puzzlegen]
 # Fresh puzzles: a generator writes them, code checks them, and a judge from another lab confirms the

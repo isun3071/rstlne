@@ -6,7 +6,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 
 - **Same deck:** `puzzles/generated/grading-505.json`, the realistic v6 puzzles (400 main, 100 bonus).
 - **Same seed:** `707`. Set 17 has the same spins and puzzles in every lineup, so differences between lineups come from the players, not luck.
-- **Bot v4**, once its self-play check confirms it. `config.toml` moves to version 4 only then. Lineup 3 first ran on v3 and was scrubbed on 2026-10-31, so every bot lineup runs on one version.
+- **Bot v4**, adopted on 2026-10-31: in its self-play check it tied v3 (−0.05 points, −0.65 to +0.55), and Ian adopted it as no worse. Lineup 3 first ran on v3 and was scrubbed, so every bot lineup runs on v4.
 - **W** is the winner of lineup 1 (the highest win rate). W fills every LLM seat in lineups 2 to 6.
 
 ## The six lineups

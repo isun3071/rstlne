@@ -159,9 +159,9 @@ Version 3 is version 1 with two changes. Every other knob, the reader, the calib
 - **Logging.** Each bot decision records `flat: true` when change 2 chose it.
 - **Adopted.** `config.toml` moved to version 3 on 2026-10-30. In the full check, 2,004 games against two v1 bots on grading-202, it won 43% (95% interval 41% to 46%) to their 28% each, a gap of +15 points (+12 to +18). v1 was sure it had won in 473 games and lost 114 of them; v3 was sure in 186 and lost 2. It played about 5 choices a game for dollars, and won $6,758 a game in the main rounds to v1's $4,727. It is sure it has lost more often than v1 (542 games to 460) and wrong about it 4% of the time: the stealer's gain makes it expect opponents to build big banks, while its own comeback chances weren't modeled the same way.
 
-### Version 4 (frozen 2026-10-31, being checked)
+### Version 4 (frozen 2026-10-31, adopted)
 
-Version 4 is version 3 with one change: each opponent gets its own stealer's gain, from how that seat plays this game. Everything else stays as in version 3. It is checked against version 3 before the grading grid's bot lineups; the grid runs on whichever wins.
+Version 4 is version 3 with one change: each opponent gets its own stealer's gain, from how that seat plays this game. Everything else stays as in version 3. It was checked against version 3 before the grading grid's bot lineups, and the grid runs on it.
 
 - **Why.** Version 3's gain G blends two kinds of opponents half and half. LLM opponents pounce and add little before solving. With 10 to 14 squares hidden in rounds 1 to 3, an LLM's median is $350 and its 90th percentile $3,200. Bot opponents milk the board: a median of $2,500 and a 90th percentile of $6,800. Against an eager LLM, version 3 overrates how much it might add; against a patient seat, it underrates it.
 - **Two gain tables.** G_llm is fit from LLM opponents only and G_bot from bot opponents only. Both use version 3's bands, its 20 values per band, and its merging of sparse bands, applied within each source.
@@ -186,6 +186,8 @@ Version 4 is version 3 with one change: each opponent gets its own stealer's gai
   - money
   If version 4 beats version 3 with the interval clear of zero, Ian decides whether `[bot] version` moves to 4. Lineups 2 or 6 of the grid can then be rerun on version 4 to check the gain against real LLMs.
 - **Expected gain:** a few points. Version 3 already closed the big gap (+15). Version 4 sharpens G for opponents that differ from the blend: against a patient opponent, close out rounds sooner; against an eager one, milk a little more.
+- **Result (2026-10-31).** In 2,004 games on grading-202 (334 sets, seed 808), version 4 won 37.8% (36.6% to 39.0%) and version 3 37.9% (36.7% to 39.1%): a gap of −0.05 points (−0.65 to +0.55). The eager seat won 24.3%. Version 4 saw the difference between its opponents, though not strongly: it ended games giving the eager seat w = 0.58 and version 3 w = 0.27. Eager is LLM-like only in when it solves, so the two gain tables rarely chose differently.
+- **Adopted** on 2026-10-31. Ian changed the bar after the result, from beating version 3 to being no worse than it, with no worse meaning the interval's low end within 1 point of version 3. Version 4 meets that bar, and its case rests on LLM opponents, which self-play can't put at the table. `config.toml` moved to version 4.
 
 ### Objective
 
