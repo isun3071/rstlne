@@ -13,7 +13,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 
 | # | Seats | What it tells us | Sets |
 |---|---|---|---|
-| 1 | Sol, DeepSeek, Haiku | Which LLM is best, with no bot around: three labs (OpenAI, DeepSeek, Anthropic) | 50 |
+| 1 | Sol, DeepSeek, Haiku | Which LLM is best, with no bot around: three labs (OpenAI, DeepSeek, Anthropic) | 60 |
 | 2 | W, bot, bot | Can a good LLM beat the bot? | 50 |
 | 3 | hybrid, bot, bot | How much does Luna's reading add to the bot? | 100 |
 | 4 | W, hybrid, bot | All three player types at one table | 50 |
@@ -51,7 +51,7 @@ The same flags go at the end of every command:
 
 | # | Command |
 |---|---|
-| 1 | `uv run python -m rstlne.tournament --seats llm:openai/gpt-6.1-sol,llm:deepseek/deepseek-v4.1-flash-1017,llm:anthropic/claude-haiku-5.5 --sets 50 --parallel 16 --max-cost 20` |
+| 1 | `uv run python -m rstlne.tournament --seats llm:openai/gpt-6.1-sol,llm:deepseek/deepseek-v4.1-flash-1017,llm:anthropic/claude-haiku-5.5 --sets 60 --parallel 16 --max-cost 20` |
 | 3 | `uv run python -m rstlne.tournament --seats hybrid:openai/gpt-6-luna,bot,bot --sets 100 --parallel 5 --max-cost 5` |
 | 2 | `uv run python -m rstlne.tournament --seats llm:W,bot,bot --sets 50 --parallel 5 --max-cost 10` |
 | 4 | `uv run python -m rstlne.tournament --seats llm:W,hybrid:openai/gpt-6-luna,bot --sets 50 --parallel 5 --max-cost 10` |
