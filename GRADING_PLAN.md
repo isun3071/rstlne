@@ -106,6 +106,18 @@ The hybrid leads each bot by 17 to 19 points (9 to 27). Set by set, it wins 12.8
 
 Set by set: hybrid − Luna alone +27.8 points (+20.8 to +34.7), Sol − Luna alone +40.6 (+32.5 to +48.3), Sol − hybrid +12.8 (+5.6 to +20.0). Luna's losses are discipline: 219 solves that don't fit the board (it puts already-called letters in hidden squares, repeats refuted answers, guesses on near-empty boards) and 150 bad tool calls, almost all a consonant called without spinning first (every tool is offered on every move, for prompt caching). The hybrid's fit check, refuted-answer list, and the bot's choice of when to trust a read remove those faults. The two identical bots differed by 8 points (+0.6 to +16), most likely chance.
 
+## Frontier and other labs: trials only, until there's a grant (2026-10-31)
+
+Three more models had one-set trials (set 0, six games, alone against two bots, on the laptop):
+
+| Model | Set 0 games won | Cost per game | Why it costs more than Sol (1.8¢) |
+|---|---|---|---|
+| Gemini 4 Argon (flex) | 5 of 6 | 9.6¢ | Google caches only prompts of 4,096 tokens or more; our rounds start at about 1,700 |
+| Gemini 3.8 Flash (flex) | 5 of 6 | 6.9¢ | the same cache floor, and about 1,500 output tokens a move |
+| GLM 5.3 (Morph FP8) | stopped | about 8–12¢ | about 1,500 output tokens a move and 11,500-token prompts; Morph was very slow (one game made one move in six minutes) |
+
+On the same set, Sol won 3 of 6, the hybrid 3, and Luna 2. One set is too small to rank anyone. Ian set these models aside until he has a grant. Argon's and Flash's set 0 folders (`seed707-d589e90f`, `seed707-07858ca3`) are on the laptop; a later run that continues them skips set 0. GLM 5.3 would be a disclosed exception to the rule that puzzle labs don't play (Z.ai's GLM 4.7 judged the puzzles); if it ever plays, the bonus test on aired and generated puzzles would check whether the judge's taste helps it.
+
 ## Folders (resume or extend with `--out`)
 
 On 2026-10-31 folder names stopped counting provider pins of models that don't play, which renamed every tournament once. To resume or extend a tournament started before that, pass its folder: `--out logs/tournaments/<folder>`.

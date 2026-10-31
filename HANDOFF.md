@@ -313,6 +313,9 @@ Every gap clears zero (Sol over DeepSeek +41, DeepSeek over Haiku +15). Haiku is
    - **Lineup 6's format against weaker pairs:** the bot against two Lunas, two Haikus, and two DeepSeeks. Each mirrors that model's solo run.
    - **Why not two Sols:** one Sol beat two bots 58% to 21% each, so against two Sols the bot would be a massive underdog, in betting terms a long shot likely winning 10% or less. That's a predictable result for about $12. It stays optional, at 20 sets if run.
    - **Who can't play:** MiniMax and Z.ai, since they write and judge the puzzles. Sonnet and Gemini are off for now.
+   - **Frontier and pricier models wait for a grant.** One-set trials (alone against two bots, set 0): Gemini 4 Argon won 5 of 6 at 9.6¢ a game, Gemini 3.8 Flash 5 of 6 at 6.9¢, against Sol's 3 of 6 at 1.8¢. GLM 5.3 was stopped: very slow on its host and about 8–12¢ a game. One set is too small to rank anyone.
+   - **Why Google costs more here:** Gemini caches only prompts of 4,096 tokens or more, and each round's conversation starts at about 1,700; Flash also writes about 1,500 tokens a move. Sol is the rare model with expensive tokens and very few of them (about 880 a game, 83% of its prompt cached).
+   - **GLM would be a disclosed exception** to the rule that puzzle labs don't play, since Z.ai's older GLM 4.7 judged the puzzles. It only filtered answers, it didn't write them; MiniMax, which wrote them, stays out without exception.
 2. **Lineups 4 and 5** (Sol with the hybrid at one table): whether the hybrid solves sooner against a fast opponent.
 3. **Optional checks:**
    - Terra alone against two bots (about $3): one more OpenAI point between Luna (17.5%) and Sol (58%). Optional now that DeepSeek and Haiku give middle points from other labs.
