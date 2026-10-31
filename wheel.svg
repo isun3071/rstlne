@@ -1,0 +1,301 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 760" width="1080" height="760">
+<rect width="1080" height="760" fill="#ffffff"/>
+<text x="540" y="34" font-size="22" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" fill="#111">The rstlne wheel, from wheel.toml</text>
+<text x="540" y="58" font-size="13" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" fill="#444">24 equal wedges, clockwise from wedge 1 (the pointer). Each round as it starts, before any card is claimed.</text>
+<circle cx="190" cy="250" r="154" fill="#333"/>
+<path d="M190.00,100.00 A150,150 0 0 1 228.82,105.11 L196.99,223.92 A27.0,27.0 0 0 0 190.00,223.00 Z" fill="#d4a017" stroke="#444" stroke-width="0.6"/>
+<text x="202.73" y="153.33" transform="rotate(-82.50 202.73 153.33)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$2,500</text>
+<path d="M228.82,105.11 A150,150 0 0 1 265.00,120.10 L203.50,226.62 A27.0,27.0 0 0 0 196.99,223.92 Z" fill="#1f78b4" stroke="#444" stroke-width="0.6"/>
+<text x="227.31" y="159.92" transform="rotate(-67.50 227.31 159.92)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">WILD $800</text>
+<path d="M265.00,120.10 A150,150 0 0 1 296.07,143.93 L209.09,230.91 A27.0,27.0 0 0 0 203.50,226.62 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="249.35" y="172.65" transform="rotate(-52.50 249.35 172.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M296.07,143.93 A150,150 0 0 1 319.90,175.00 L213.38,236.50 A27.0,27.0 0 0 0 209.09,230.91 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="267.35" y="190.65" transform="rotate(-37.50 267.35 190.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M319.90,175.00 A150,150 0 0 1 334.89,211.18 L216.08,243.01 A27.0,27.0 0 0 0 213.38,236.50 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="280.08" y="212.69" transform="rotate(-22.50 280.08 212.69)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M334.89,211.18 A150,150 0 0 1 340.00,250.00 L217.00,250.00 A27.0,27.0 0 0 0 216.08,243.01 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="286.67" y="237.27" transform="rotate(-7.50 286.67 237.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M340.00,250.00 A150,150 0 0 1 334.89,288.82 L216.08,256.99 A27.0,27.0 0 0 0 217.00,250.00 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="286.67" y="262.73" transform="rotate(7.50 286.67 262.73)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M334.89,288.82 A150,150 0 0 1 319.90,325.00 L213.38,263.50 A27.0,27.0 0 0 0 216.08,256.99 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="280.08" y="287.31" transform="rotate(22.50 280.08 287.31)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M319.90,325.00 A150,150 0 0 1 312.87,336.04 L212.12,265.49 A27.0,27.0 0 0 0 213.38,263.50 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<path d="M312.87,336.04 A150,150 0 0 1 304.91,346.42 L210.68,267.36 A27.0,27.0 0 0 0 212.12,265.49 Z" fill="#c0c0c0" stroke="#444" stroke-width="0.6"/>
+<path d="M304.91,346.42 A150,150 0 0 1 296.07,356.07 L209.09,269.09 A27.0,27.0 0 0 0 210.68,267.36 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="267.35" y="309.35" transform="rotate(37.50 267.35 309.35)" font-size="7.8" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">ONE MILLION</text>
+<path d="M296.07,356.07 A150,150 0 0 1 265.00,379.90 L203.50,273.38 A27.0,27.0 0 0 0 209.09,269.09 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="249.35" y="327.35" transform="rotate(52.50 249.35 327.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M265.00,379.90 A150,150 0 0 1 228.82,394.89 L196.99,276.08 A27.0,27.0 0 0 0 203.50,273.38 Z" fill="#fbd3e9" stroke="#444" stroke-width="0.6"/>
+<text x="227.31" y="340.08" transform="rotate(67.50 227.31 340.08)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$550</text>
+<path d="M228.82,394.89 A150,150 0 0 1 190.00,400.00 L190.00,277.00 A27.0,27.0 0 0 0 196.99,276.08 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="202.73" y="346.67" transform="rotate(82.50 202.73 346.67)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M190.00,400.00 A150,150 0 0 1 151.18,394.89 L183.01,276.08 A27.0,27.0 0 0 0 190.00,277.00 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="177.27" y="346.67" transform="rotate(277.50 177.27 346.67)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M151.18,394.89 A150,150 0 0 1 115.00,379.90 L176.50,273.38 A27.0,27.0 0 0 0 183.01,276.08 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="152.69" y="340.08" transform="rotate(292.50 152.69 340.08)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">BANKRUPT</text>
+<path d="M115.00,379.90 A150,150 0 0 1 83.93,356.07 L170.91,269.09 A27.0,27.0 0 0 0 176.50,273.38 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="130.65" y="327.35" transform="rotate(307.50 130.65 327.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M83.93,356.07 A150,150 0 0 1 60.10,325.00 L166.62,263.50 A27.0,27.0 0 0 0 170.91,269.09 Z" fill="#2e8b57" stroke="#444" stroke-width="0.6"/>
+<text x="112.65" y="309.35" transform="rotate(322.50 112.65 309.35)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">FREE PLAY</text>
+<path d="M60.10,325.00 A150,150 0 0 1 45.11,288.82 L163.92,256.99 A27.0,27.0 0 0 0 166.62,263.50 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="99.92" y="287.31" transform="rotate(337.50 99.92 287.31)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M45.11,288.82 A150,150 0 0 1 40.00,250.00 L163.00,250.00 A27.0,27.0 0 0 0 163.92,256.99 Z" fill="#ffffff" stroke="#444" stroke-width="0.6"/>
+<text x="93.33" y="262.73" transform="rotate(352.50 93.33 262.73)" font-size="7.5" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">LOSE A TURN</text>
+<path d="M40.00,250.00 A150,150 0 0 1 45.11,211.18 L163.92,243.01 A27.0,27.0 0 0 0 163.00,250.00 Z" fill="#f9c6b6" stroke="#444" stroke-width="0.6"/>
+<text x="93.33" y="237.27" transform="rotate(367.50 93.33 237.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$800</text>
+<path d="M45.11,211.18 A150,150 0 0 1 60.10,175.00 L166.62,236.50 A27.0,27.0 0 0 0 163.92,243.01 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="99.92" y="212.69" transform="rotate(382.50 99.92 212.69)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M60.10,175.00 A150,150 0 0 1 83.93,143.93 L170.91,230.91 A27.0,27.0 0 0 0 166.62,236.50 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="112.65" y="190.65" transform="rotate(397.50 112.65 190.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M83.93,143.93 A150,150 0 0 1 115.00,120.10 L176.50,226.62 A27.0,27.0 0 0 0 170.91,230.91 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="130.65" y="172.65" transform="rotate(412.50 130.65 172.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M115.00,120.10 A150,150 0 0 1 151.18,105.11 L183.01,223.92 A27.0,27.0 0 0 0 176.50,226.62 Z" fill="#e2d4f0" stroke="#444" stroke-width="0.6"/>
+<text x="152.69" y="159.92" transform="rotate(427.50 152.69 159.92)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$900</text>
+<path d="M151.18,105.11 A150,150 0 0 1 190.00,100.00 L190.00,223.00 A27.0,27.0 0 0 0 183.01,223.92 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="177.27" y="153.33" transform="rotate(442.50 177.27 153.33)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">BANKRUPT</text>
+<circle cx="190" cy="250" r="27.0" fill="#fafafa" stroke="#444"/>
+<text x="190" y="250" font-size="16.5" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="700" fill="#111">R1</text>
+<path d="M203.1,83.3 L217.1,83.3 L210.1,99.3 Z" fill="#111"/>
+<circle cx="540" cy="250" r="154" fill="#333"/>
+<path d="M540.00,100.00 A150,150 0 0 1 578.82,105.11 L546.99,223.92 A27.0,27.0 0 0 0 540.00,223.00 Z" fill="#d4a017" stroke="#444" stroke-width="0.6"/>
+<text x="552.73" y="153.33" transform="rotate(-82.50 552.73 153.33)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$3,500</text>
+<path d="M578.82,105.11 A150,150 0 0 1 615.00,120.10 L553.50,226.62 A27.0,27.0 0 0 0 546.99,223.92 Z" fill="#1f78b4" stroke="#444" stroke-width="0.6"/>
+<text x="577.31" y="159.92" transform="rotate(-67.50 577.31 159.92)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">WILD $800</text>
+<path d="M615.00,120.10 A150,150 0 0 1 646.07,143.93 L559.09,230.91 A27.0,27.0 0 0 0 553.50,226.62 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="599.35" y="172.65" transform="rotate(-52.50 599.35 172.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M646.07,143.93 A150,150 0 0 1 669.90,175.00 L563.38,236.50 A27.0,27.0 0 0 0 559.09,230.91 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="617.35" y="190.65" transform="rotate(-37.50 617.35 190.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M669.90,175.00 A150,150 0 0 1 684.89,211.18 L566.08,243.01 A27.0,27.0 0 0 0 563.38,236.50 Z" fill="#6a3d9a" stroke="#444" stroke-width="0.6"/>
+<text x="630.08" y="212.69" transform="rotate(-22.50 630.08 212.69)" font-size="7.5" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">MYSTERY $1,000</text>
+<path d="M684.89,211.18 A150,150 0 0 1 690.00,250.00 L567.00,250.00 A27.0,27.0 0 0 0 566.08,243.01 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="636.67" y="237.27" transform="rotate(-7.50 636.67 237.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M690.00,250.00 A150,150 0 0 1 684.89,288.82 L566.08,256.99 A27.0,27.0 0 0 0 567.00,250.00 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="636.67" y="262.73" transform="rotate(7.50 636.67 262.73)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M684.89,288.82 A150,150 0 0 1 669.90,325.00 L563.38,263.50 A27.0,27.0 0 0 0 566.08,256.99 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="630.08" y="287.31" transform="rotate(22.50 630.08 287.31)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M669.90,325.00 A150,150 0 0 1 662.87,336.04 L562.12,265.49 A27.0,27.0 0 0 0 563.38,263.50 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<path d="M662.87,336.04 A150,150 0 0 1 654.91,346.42 L560.68,267.36 A27.0,27.0 0 0 0 562.12,265.49 Z" fill="#c0c0c0" stroke="#444" stroke-width="0.6"/>
+<path d="M654.91,346.42 A150,150 0 0 1 646.07,356.07 L559.09,269.09 A27.0,27.0 0 0 0 560.68,267.36 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="617.35" y="309.35" transform="rotate(37.50 617.35 309.35)" font-size="7.8" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">ONE MILLION</text>
+<path d="M646.07,356.07 A150,150 0 0 1 615.00,379.90 L553.50,273.38 A27.0,27.0 0 0 0 559.09,269.09 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="599.35" y="327.35" transform="rotate(52.50 599.35 327.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M615.00,379.90 A150,150 0 0 1 578.82,394.89 L546.99,276.08 A27.0,27.0 0 0 0 553.50,273.38 Z" fill="#fbd3e9" stroke="#444" stroke-width="0.6"/>
+<text x="577.31" y="340.08" transform="rotate(67.50 577.31 340.08)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$550</text>
+<path d="M578.82,394.89 A150,150 0 0 1 540.00,400.00 L540.00,277.00 A27.0,27.0 0 0 0 546.99,276.08 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="552.73" y="346.67" transform="rotate(82.50 552.73 346.67)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M540.00,400.00 A150,150 0 0 1 501.18,394.89 L533.01,276.08 A27.0,27.0 0 0 0 540.00,277.00 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="527.27" y="346.67" transform="rotate(277.50 527.27 346.67)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M501.18,394.89 A150,150 0 0 1 465.00,379.90 L526.50,273.38 A27.0,27.0 0 0 0 533.01,276.08 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="502.69" y="340.08" transform="rotate(292.50 502.69 340.08)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">BANKRUPT</text>
+<path d="M465.00,379.90 A150,150 0 0 1 433.93,356.07 L520.91,269.09 A27.0,27.0 0 0 0 526.50,273.38 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="480.65" y="327.35" transform="rotate(307.50 480.65 327.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M433.93,356.07 A150,150 0 0 1 410.10,325.00 L516.62,263.50 A27.0,27.0 0 0 0 520.91,269.09 Z" fill="#2e8b57" stroke="#444" stroke-width="0.6"/>
+<text x="462.65" y="309.35" transform="rotate(322.50 462.65 309.35)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">FREE PLAY</text>
+<path d="M410.10,325.00 A150,150 0 0 1 395.11,288.82 L513.92,256.99 A27.0,27.0 0 0 0 516.62,263.50 Z" fill="#6a3d9a" stroke="#444" stroke-width="0.6"/>
+<text x="449.92" y="287.31" transform="rotate(337.50 449.92 287.31)" font-size="7.5" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">MYSTERY $1,000</text>
+<path d="M395.11,288.82 A150,150 0 0 1 390.00,250.00 L513.00,250.00 A27.0,27.0 0 0 0 513.92,256.99 Z" fill="#ffffff" stroke="#444" stroke-width="0.6"/>
+<text x="443.33" y="262.73" transform="rotate(352.50 443.33 262.73)" font-size="7.5" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">LOSE A TURN</text>
+<path d="M390.00,250.00 A150,150 0 0 1 395.11,211.18 L513.92,243.01 A27.0,27.0 0 0 0 513.00,250.00 Z" fill="#f9c6b6" stroke="#444" stroke-width="0.6"/>
+<text x="443.33" y="237.27" transform="rotate(367.50 443.33 237.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$800</text>
+<path d="M395.11,211.18 A150,150 0 0 1 410.10,175.00 L516.62,236.50 A27.0,27.0 0 0 0 513.92,243.01 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="449.92" y="212.69" transform="rotate(382.50 449.92 212.69)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M410.10,175.00 A150,150 0 0 1 433.93,143.93 L520.91,230.91 A27.0,27.0 0 0 0 516.62,236.50 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="462.65" y="190.65" transform="rotate(397.50 462.65 190.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M433.93,143.93 A150,150 0 0 1 465.00,120.10 L526.50,226.62 A27.0,27.0 0 0 0 520.91,230.91 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="480.65" y="172.65" transform="rotate(412.50 480.65 172.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M465.00,120.10 A150,150 0 0 1 501.18,105.11 L533.01,223.92 A27.0,27.0 0 0 0 526.50,226.62 Z" fill="#e2d4f0" stroke="#444" stroke-width="0.6"/>
+<text x="502.69" y="159.92" transform="rotate(427.50 502.69 159.92)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$900</text>
+<path d="M501.18,105.11 A150,150 0 0 1 540.00,100.00 L540.00,223.00 A27.0,27.0 0 0 0 533.01,223.92 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="527.27" y="153.33" transform="rotate(442.50 527.27 153.33)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">BANKRUPT</text>
+<circle cx="540" cy="250" r="27.0" fill="#fafafa" stroke="#444"/>
+<text x="540" y="250" font-size="16.5" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="700" fill="#111">R2</text>
+<path d="M553.1,83.3 L567.1,83.3 L560.1,99.3 Z" fill="#111"/>
+<circle cx="890" cy="250" r="154" fill="#333"/>
+<path d="M890.00,100.00 A150,150 0 0 1 928.82,105.11 L896.99,223.92 A27.0,27.0 0 0 0 890.00,223.00 Z" fill="#d4a017" stroke="#444" stroke-width="0.6"/>
+<text x="902.73" y="153.33" transform="rotate(-82.50 902.73 153.33)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$3,500</text>
+<path d="M928.82,105.11 A150,150 0 0 1 965.00,120.10 L903.50,226.62 A27.0,27.0 0 0 0 896.99,223.92 Z" fill="#1f78b4" stroke="#444" stroke-width="0.6"/>
+<text x="927.31" y="159.92" transform="rotate(-67.50 927.31 159.92)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">WILD $800</text>
+<path d="M965.00,120.10 A150,150 0 0 1 996.07,143.93 L909.09,230.91 A27.0,27.0 0 0 0 903.50,226.62 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="949.35" y="172.65" transform="rotate(-52.50 949.35 172.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M996.07,143.93 A150,150 0 0 1 1019.90,175.00 L913.38,236.50 A27.0,27.0 0 0 0 909.09,230.91 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="967.35" y="190.65" transform="rotate(-37.50 967.35 190.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M1019.90,175.00 A150,150 0 0 1 1034.89,211.18 L916.08,243.01 A27.0,27.0 0 0 0 913.38,236.50 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="980.08" y="212.69" transform="rotate(-22.50 980.08 212.69)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M1034.89,211.18 A150,150 0 0 1 1040.00,250.00 L917.00,250.00 A27.0,27.0 0 0 0 916.08,243.01 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="986.67" y="237.27" transform="rotate(-7.50 986.67 237.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M1040.00,250.00 A150,150 0 0 1 1034.89,288.82 L916.08,256.99 A27.0,27.0 0 0 0 917.00,250.00 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="986.67" y="262.73" transform="rotate(7.50 986.67 262.73)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M1034.89,288.82 A150,150 0 0 1 1019.90,325.00 L913.38,263.50 A27.0,27.0 0 0 0 916.08,256.99 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="980.08" y="287.31" transform="rotate(22.50 980.08 287.31)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M1019.90,325.00 A150,150 0 0 1 1012.87,336.04 L912.12,265.49 A27.0,27.0 0 0 0 913.38,263.50 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<path d="M1012.87,336.04 A150,150 0 0 1 1004.91,346.42 L910.68,267.36 A27.0,27.0 0 0 0 912.12,265.49 Z" fill="#c0c0c0" stroke="#444" stroke-width="0.6"/>
+<path d="M1004.91,346.42 A150,150 0 0 1 996.07,356.07 L909.09,269.09 A27.0,27.0 0 0 0 910.68,267.36 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="967.35" y="309.35" transform="rotate(37.50 967.35 309.35)" font-size="7.8" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">ONE MILLION</text>
+<path d="M996.07,356.07 A150,150 0 0 1 965.00,379.90 L903.50,273.38 A27.0,27.0 0 0 0 909.09,269.09 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="949.35" y="327.35" transform="rotate(52.50 949.35 327.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M965.00,379.90 A150,150 0 0 1 928.82,394.89 L896.99,276.08 A27.0,27.0 0 0 0 903.50,273.38 Z" fill="#fbd3e9" stroke="#444" stroke-width="0.6"/>
+<text x="927.31" y="340.08" transform="rotate(67.50 927.31 340.08)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$550</text>
+<path d="M928.82,394.89 A150,150 0 0 1 890.00,400.00 L890.00,277.00 A27.0,27.0 0 0 0 896.99,276.08 Z" fill="#d7301f" stroke="#444" stroke-width="0.6"/>
+<text x="902.73" y="346.67" transform="rotate(82.50 902.73 346.67)" font-size="7.5" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">EXPRESS $1,000</text>
+<path d="M890.00,400.00 A150,150 0 0 1 851.18,394.89 L883.01,276.08 A27.0,27.0 0 0 0 890.00,277.00 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="877.27" y="346.67" transform="rotate(277.50 877.27 346.67)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M851.18,394.89 A150,150 0 0 1 815.00,379.90 L876.50,273.38 A27.0,27.0 0 0 0 883.01,276.08 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="852.69" y="340.08" transform="rotate(292.50 852.69 340.08)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">BANKRUPT</text>
+<path d="M815.00,379.90 A150,150 0 0 1 783.93,356.07 L870.91,269.09 A27.0,27.0 0 0 0 876.50,273.38 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="830.65" y="327.35" transform="rotate(307.50 830.65 327.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M783.93,356.07 A150,150 0 0 1 760.10,325.00 L866.62,263.50 A27.0,27.0 0 0 0 870.91,269.09 Z" fill="#2e8b57" stroke="#444" stroke-width="0.6"/>
+<text x="812.65" y="309.35" transform="rotate(322.50 812.65 309.35)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">FREE PLAY</text>
+<path d="M760.10,325.00 A150,150 0 0 1 745.11,288.82 L863.92,256.99 A27.0,27.0 0 0 0 866.62,263.50 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="799.92" y="287.31" transform="rotate(337.50 799.92 287.31)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M745.11,288.82 A150,150 0 0 1 740.00,250.00 L863.00,250.00 A27.0,27.0 0 0 0 863.92,256.99 Z" fill="#ffffff" stroke="#444" stroke-width="0.6"/>
+<text x="793.33" y="262.73" transform="rotate(352.50 793.33 262.73)" font-size="7.5" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">LOSE A TURN</text>
+<path d="M740.00,250.00 A150,150 0 0 1 745.11,211.18 L863.92,243.01 A27.0,27.0 0 0 0 863.00,250.00 Z" fill="#f9c6b6" stroke="#444" stroke-width="0.6"/>
+<text x="793.33" y="237.27" transform="rotate(367.50 793.33 237.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$800</text>
+<path d="M745.11,211.18 A150,150 0 0 1 760.10,175.00 L866.62,236.50 A27.0,27.0 0 0 0 863.92,243.01 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="799.92" y="212.69" transform="rotate(382.50 799.92 212.69)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M760.10,175.00 A150,150 0 0 1 783.93,143.93 L870.91,230.91 A27.0,27.0 0 0 0 866.62,236.50 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="812.65" y="190.65" transform="rotate(397.50 812.65 190.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M783.93,143.93 A150,150 0 0 1 815.00,120.10 L876.50,226.62 A27.0,27.0 0 0 0 870.91,230.91 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="830.65" y="172.65" transform="rotate(412.50 830.65 172.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M815.00,120.10 A150,150 0 0 1 851.18,105.11 L883.01,223.92 A27.0,27.0 0 0 0 876.50,226.62 Z" fill="#e2d4f0" stroke="#444" stroke-width="0.6"/>
+<text x="852.69" y="159.92" transform="rotate(427.50 852.69 159.92)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$900</text>
+<path d="M851.18,105.11 A150,150 0 0 1 890.00,100.00 L890.00,223.00 A27.0,27.0 0 0 0 883.01,223.92 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="877.27" y="153.33" transform="rotate(442.50 877.27 153.33)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">BANKRUPT</text>
+<circle cx="890" cy="250" r="27.0" fill="#fafafa" stroke="#444"/>
+<text x="890" y="250" font-size="16.5" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="700" fill="#111">R3</text>
+<path d="M903.1,83.3 L917.1,83.3 L910.1,99.3 Z" fill="#111"/>
+<circle cx="190" cy="590" r="154" fill="#333"/>
+<path d="M190.00,440.00 A150,150 0 0 1 228.82,445.11 L196.99,563.92 A27.0,27.0 0 0 0 190.00,563.00 Z" fill="#d4a017" stroke="#444" stroke-width="0.6"/>
+<text x="202.73" y="493.33" transform="rotate(-82.50 202.73 493.33)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$5,000</text>
+<path d="M228.82,445.11 A150,150 0 0 1 265.00,460.10 L203.50,566.62 A27.0,27.0 0 0 0 196.99,563.92 Z" fill="#f9c6b6" stroke="#444" stroke-width="0.6"/>
+<text x="227.31" y="499.92" transform="rotate(-67.50 227.31 499.92)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$800</text>
+<path d="M265.00,460.10 A150,150 0 0 1 296.07,483.93 L209.09,570.91 A27.0,27.0 0 0 0 203.50,566.62 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="249.35" y="512.65" transform="rotate(-52.50 249.35 512.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M296.07,483.93 A150,150 0 0 1 319.90,515.00 L213.38,576.50 A27.0,27.0 0 0 0 209.09,570.91 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="267.35" y="530.65" transform="rotate(-37.50 267.35 530.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M319.90,515.00 A150,150 0 0 1 334.89,551.18 L216.08,583.01 A27.0,27.0 0 0 0 213.38,576.50 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="280.08" y="552.69" transform="rotate(-22.50 280.08 552.69)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M334.89,551.18 A150,150 0 0 1 340.00,590.00 L217.00,590.00 A27.0,27.0 0 0 0 216.08,583.01 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="286.67" y="577.27" transform="rotate(-7.50 286.67 577.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M340.00,590.00 A150,150 0 0 1 334.89,628.82 L216.08,596.99 A27.0,27.0 0 0 0 217.00,590.00 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="286.67" y="602.73" transform="rotate(7.50 286.67 602.73)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M334.89,628.82 A150,150 0 0 1 319.90,665.00 L213.38,603.50 A27.0,27.0 0 0 0 216.08,596.99 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="280.08" y="627.31" transform="rotate(22.50 280.08 627.31)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M319.90,665.00 A150,150 0 0 1 296.07,696.07 L209.09,609.09 A27.0,27.0 0 0 0 213.38,603.50 Z" fill="#f9c6b6" stroke="#444" stroke-width="0.6"/>
+<text x="267.35" y="649.35" transform="rotate(37.50 267.35 649.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$800</text>
+<path d="M296.07,696.07 A150,150 0 0 1 265.00,719.90 L203.50,613.38 A27.0,27.0 0 0 0 209.09,609.09 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="249.35" y="667.35" transform="rotate(52.50 249.35 667.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M265.00,719.90 A150,150 0 0 1 228.82,734.89 L196.99,616.08 A27.0,27.0 0 0 0 203.50,613.38 Z" fill="#fbd3e9" stroke="#444" stroke-width="0.6"/>
+<text x="227.31" y="680.08" transform="rotate(67.50 227.31 680.08)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$550</text>
+<path d="M228.82,734.89 A150,150 0 0 1 190.00,740.00 L190.00,617.00 A27.0,27.0 0 0 0 196.99,616.08 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="202.73" y="686.67" transform="rotate(82.50 202.73 686.67)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M190.00,740.00 A150,150 0 0 1 151.18,734.89 L183.01,616.08 A27.0,27.0 0 0 0 190.00,617.00 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="177.27" y="686.67" transform="rotate(277.50 177.27 686.67)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$600</text>
+<path d="M151.18,734.89 A150,150 0 0 1 115.00,719.90 L176.50,613.38 A27.0,27.0 0 0 0 183.01,616.08 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="152.69" y="680.08" transform="rotate(292.50 152.69 680.08)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">BANKRUPT</text>
+<path d="M115.00,719.90 A150,150 0 0 1 83.93,696.07 L170.91,609.09 A27.0,27.0 0 0 0 176.50,613.38 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="130.65" y="667.35" transform="rotate(307.50 130.65 667.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M83.93,696.07 A150,150 0 0 1 60.10,665.00 L166.62,603.50 A27.0,27.0 0 0 0 170.91,609.09 Z" fill="#2e8b57" stroke="#444" stroke-width="0.6"/>
+<text x="112.65" y="649.35" transform="rotate(322.50 112.65 649.35)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">FREE PLAY</text>
+<path d="M60.10,665.00 A150,150 0 0 1 45.11,628.82 L163.92,596.99 A27.0,27.0 0 0 0 166.62,603.50 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="99.92" y="627.31" transform="rotate(337.50 99.92 627.31)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$700</text>
+<path d="M45.11,628.82 A150,150 0 0 1 40.00,590.00 L163.00,590.00 A27.0,27.0 0 0 0 163.92,596.99 Z" fill="#ffffff" stroke="#444" stroke-width="0.6"/>
+<text x="93.33" y="602.73" transform="rotate(352.50 93.33 602.73)" font-size="7.5" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">LOSE A TURN</text>
+<path d="M40.00,590.00 A150,150 0 0 1 45.11,551.18 L163.92,583.01 A27.0,27.0 0 0 0 163.00,590.00 Z" fill="#f9c6b6" stroke="#444" stroke-width="0.6"/>
+<text x="93.33" y="577.27" transform="rotate(367.50 93.33 577.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$800</text>
+<path d="M45.11,551.18 A150,150 0 0 1 60.10,515.00 L166.62,576.50 A27.0,27.0 0 0 0 163.92,583.01 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="99.92" y="552.69" transform="rotate(382.50 99.92 552.69)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M60.10,515.00 A150,150 0 0 1 83.93,483.93 L170.91,570.91 A27.0,27.0 0 0 0 166.62,576.50 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="112.65" y="530.65" transform="rotate(397.50 112.65 530.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$650</text>
+<path d="M83.93,483.93 A150,150 0 0 1 115.00,460.10 L176.50,566.62 A27.0,27.0 0 0 0 170.91,570.91 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="130.65" y="512.65" transform="rotate(412.50 130.65 512.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$500</text>
+<path d="M115.00,460.10 A150,150 0 0 1 151.18,445.11 L183.01,563.92 A27.0,27.0 0 0 0 176.50,566.62 Z" fill="#e2d4f0" stroke="#444" stroke-width="0.6"/>
+<text x="152.69" y="499.92" transform="rotate(427.50 152.69 499.92)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$900</text>
+<path d="M151.18,445.11 A150,150 0 0 1 190.00,440.00 L190.00,563.00 A27.0,27.0 0 0 0 183.01,563.92 Z" fill="#111111" stroke="#444" stroke-width="0.6"/>
+<text x="177.27" y="493.33" transform="rotate(442.50 177.27 493.33)" font-size="9.3" fill="#ffffff" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">BANKRUPT</text>
+<circle cx="190" cy="590" r="27.0" fill="#fafafa" stroke="#444"/>
+<text x="190" y="590" font-size="16.5" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="700" fill="#111">R4</text>
+<path d="M203.1,423.3 L217.1,423.3 L210.1,439.3 Z" fill="#111"/>
+<circle cx="540" cy="590" r="154" fill="#333"/>
+<path d="M540.00,440.00 A150,150 0 0 1 578.82,445.11 L546.99,563.92 A27.0,27.0 0 0 0 540.00,563.00 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="552.73" y="493.33" transform="rotate(-82.50 552.73 493.33)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$40K</text>
+<path d="M578.82,445.11 A150,150 0 0 1 615.00,460.10 L553.50,566.62 A27.0,27.0 0 0 0 546.99,563.92 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="577.31" y="499.92" transform="rotate(-67.50 577.31 499.92)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$45K</text>
+<path d="M615.00,460.10 A150,150 0 0 1 646.07,483.93 L559.09,570.91 A27.0,27.0 0 0 0 553.50,566.62 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="599.35" y="512.65" transform="rotate(-52.50 599.35 512.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$50K</text>
+<path d="M646.07,483.93 A150,150 0 0 1 669.90,515.00 L563.38,576.50 A27.0,27.0 0 0 0 559.09,570.91 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="617.35" y="530.65" transform="rotate(-37.50 617.35 530.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$55K</text>
+<path d="M669.90,515.00 A150,150 0 0 1 684.89,551.18 L566.08,583.01 A27.0,27.0 0 0 0 563.38,576.50 Z" fill="#d4a017" stroke="#444" stroke-width="0.6"/>
+<text x="630.08" y="552.69" transform="rotate(-22.50 630.08 552.69)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$100K</text>
+<path d="M684.89,551.18 A150,150 0 0 1 690.00,590.00 L567.00,590.00 A27.0,27.0 0 0 0 566.08,583.01 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="636.67" y="577.27" transform="rotate(-7.50 636.67 577.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$40K</text>
+<path d="M690.00,590.00 A150,150 0 0 1 684.89,628.82 L566.08,596.99 A27.0,27.0 0 0 0 567.00,590.00 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="636.67" y="602.73" transform="rotate(7.50 636.67 602.73)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$45K</text>
+<path d="M684.89,628.82 A150,150 0 0 1 669.90,665.00 L563.38,603.50 A27.0,27.0 0 0 0 566.08,596.99 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="630.08" y="627.31" transform="rotate(22.50 630.08 627.31)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$50K</text>
+<path d="M669.90,665.00 A150,150 0 0 1 646.07,696.07 L559.09,609.09 A27.0,27.0 0 0 0 563.38,603.50 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="617.35" y="649.35" transform="rotate(37.50 617.35 649.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$55K</text>
+<path d="M646.07,696.07 A150,150 0 0 1 615.00,719.90 L553.50,613.38 A27.0,27.0 0 0 0 559.09,609.09 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="599.35" y="667.35" transform="rotate(52.50 599.35 667.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$40K</text>
+<path d="M615.00,719.90 A150,150 0 0 1 578.82,734.89 L546.99,616.08 A27.0,27.0 0 0 0 553.50,613.38 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="577.31" y="680.08" transform="rotate(67.50 577.31 680.08)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$45K</text>
+<path d="M578.82,734.89 A150,150 0 0 1 540.00,740.00 L540.00,617.00 A27.0,27.0 0 0 0 546.99,616.08 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="552.73" y="686.67" transform="rotate(82.50 552.73 686.67)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$50K</text>
+<path d="M540.00,740.00 A150,150 0 0 1 501.18,734.89 L533.01,616.08 A27.0,27.0 0 0 0 540.00,617.00 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="527.27" y="686.67" transform="rotate(277.50 527.27 686.67)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$55K</text>
+<path d="M501.18,734.89 A150,150 0 0 1 465.00,719.90 L526.50,613.38 A27.0,27.0 0 0 0 533.01,616.08 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="502.69" y="680.08" transform="rotate(292.50 502.69 680.08)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$40K</text>
+<path d="M465.00,719.90 A150,150 0 0 1 433.93,696.07 L520.91,609.09 A27.0,27.0 0 0 0 526.50,613.38 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="480.65" y="667.35" transform="rotate(307.50 480.65 667.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$45K</text>
+<path d="M433.93,696.07 A150,150 0 0 1 410.10,665.00 L516.62,603.50 A27.0,27.0 0 0 0 520.91,609.09 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="462.65" y="649.35" transform="rotate(322.50 462.65 649.35)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$50K</text>
+<path d="M410.10,665.00 A150,150 0 0 1 395.11,628.82 L513.92,596.99 A27.0,27.0 0 0 0 516.62,603.50 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="449.92" y="627.31" transform="rotate(337.50 449.92 627.31)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$55K</text>
+<path d="M395.11,628.82 A150,150 0 0 1 390.00,590.00 L513.00,590.00 A27.0,27.0 0 0 0 513.92,596.99 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="443.33" y="602.73" transform="rotate(352.50 443.33 602.73)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$40K</text>
+<path d="M390.00,590.00 A150,150 0 0 1 395.11,551.18 L513.92,583.01 A27.0,27.0 0 0 0 513.00,590.00 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="443.33" y="577.27" transform="rotate(367.50 443.33 577.27)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$45K</text>
+<path d="M395.11,551.18 A150,150 0 0 1 410.10,515.00 L516.62,576.50 A27.0,27.0 0 0 0 513.92,583.01 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="449.92" y="552.69" transform="rotate(382.50 449.92 552.69)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$50K</text>
+<path d="M410.10,515.00 A150,150 0 0 1 433.93,483.93 L520.91,570.91 A27.0,27.0 0 0 0 516.62,576.50 Z" fill="#fff2a8" stroke="#444" stroke-width="0.6"/>
+<text x="462.65" y="530.65" transform="rotate(397.50 462.65 530.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$55K</text>
+<path d="M433.93,483.93 A150,150 0 0 1 465.00,460.10 L526.50,566.62 A27.0,27.0 0 0 0 520.91,570.91 Z" fill="#fde0c5" stroke="#444" stroke-width="0.6"/>
+<text x="480.65" y="512.65" transform="rotate(412.50 480.65 512.65)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$40K</text>
+<path d="M465.00,460.10 A150,150 0 0 1 501.18,445.11 L533.01,563.92 A27.0,27.0 0 0 0 526.50,566.62 Z" fill="#d9f0d3" stroke="#444" stroke-width="0.6"/>
+<text x="502.69" y="499.92" transform="rotate(427.50 502.69 499.92)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$45K</text>
+<path d="M501.18,445.11 A150,150 0 0 1 540.00,440.00 L540.00,563.00 A27.0,27.0 0 0 0 533.01,563.92 Z" fill="#cfe3f7" stroke="#444" stroke-width="0.6"/>
+<text x="527.27" y="493.33" transform="rotate(442.50 527.27 493.33)" font-size="9.3" fill="#111" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="600">$50K</text>
+<circle cx="540" cy="590" r="27.0" fill="#fafafa" stroke="#444"/>
+<text x="540" y="590" font-size="13.5" text-anchor="middle" dominant-baseline="central" font-family="Helvetica, Arial, sans-serif" font-weight="700" fill="#111">BONUS</text>
+<text x="760" y="470" font-size="15" font-family="Helvetica, Arial, sans-serif" font-weight="700" fill="#111">Key</text>
+<rect x="760" y="486" width="16" height="16" fill="#d4a017" stroke="#444"/>
+<text x="784" y="498" font-size="13" font-family="Helvetica, Arial, sans-serif" fill="#111">Top value</text>
+<rect x="760" y="510" width="16" height="16" fill="#111111" stroke="#444"/>
+<text x="784" y="522" font-size="13" font-family="Helvetica, Arial, sans-serif" fill="#111">Bankrupt</text>
+<rect x="760" y="534" width="16" height="16" fill="#ffffff" stroke="#444"/>
+<text x="784" y="546" font-size="13" font-family="Helvetica, Arial, sans-serif" fill="#111">Lose a Turn</text>
+<rect x="760" y="558" width="16" height="16" fill="#2e8b57" stroke="#444"/>
+<text x="784" y="570" font-size="13" font-family="Helvetica, Arial, sans-serif" fill="#111">Free Play ($500)</text>
+<rect x="760" y="582" width="16" height="16" fill="#1f78b4" stroke="#444"/>
+<text x="784" y="594" font-size="13" font-family="Helvetica, Arial, sans-serif" fill="#111">Wild Card</text>
+<rect x="760" y="606" width="16" height="16" fill="#c0c0c0" stroke="#444"/>
+<text x="784" y="618" font-size="13" font-family="Helvetica, Arial, sans-serif" fill="#111">Million wedge (outer thirds Bankrupt)</text>
+<rect x="760" y="630" width="16" height="16" fill="#6a3d9a" stroke="#444"/>
+<text x="784" y="642" font-size="13" font-family="Helvetica, Arial, sans-serif" fill="#111">Mystery ($1,000; $10,000 or Bankrupt)</text>
+<rect x="760" y="654" width="16" height="16" fill="#d7301f" stroke="#444"/>
+<text x="784" y="666" font-size="13" font-family="Helvetica, Arial, sans-serif" fill="#111">Express ($1,000)</text>
+<rect x="760" y="678" width="16" height="16" fill="#fde0c5" stroke="#444"/>
+<text x="760" y="708" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#111">$500</text>
+<rect x="800" y="678" width="16" height="16" fill="#fbd3e9" stroke="#444"/>
+<text x="800" y="708" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#111">$550</text>
+<rect x="840" y="678" width="16" height="16" fill="#d9f0d3" stroke="#444"/>
+<text x="840" y="708" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#111">$600</text>
+<rect x="880" y="678" width="16" height="16" fill="#cfe3f7" stroke="#444"/>
+<text x="880" y="708" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#111">$650</text>
+<rect x="920" y="678" width="16" height="16" fill="#fff2a8" stroke="#444"/>
+<text x="920" y="708" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#111">$700</text>
+<rect x="960" y="678" width="16" height="16" fill="#f9c6b6" stroke="#444"/>
+<text x="960" y="708" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#111">$800</text>
+<rect x="1000" y="678" width="16" height="16" fill="#e2d4f0" stroke="#444"/>
+<text x="1000" y="708" font-size="11" font-family="Helvetica, Arial, sans-serif" fill="#111">$900</text>
+</svg>
