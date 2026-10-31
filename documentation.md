@@ -158,7 +158,7 @@ Version 3 is version 1 with two changes. Every other knob, the reader, the calib
 - **Logging.** Each bot decision records `flat: true` when change 2 chose it.
 - **Adopted.** `config.toml` moved to version 3 on 2026-10-30. In the full check, 2,004 games against two v1 bots on grading-202, it won 43% (95% interval 41% to 46%) to their 28% each, a gap of +15 points (+12 to +18). v1 was sure it had won in 473 games and lost 114 of them; v3 was sure in 186 and lost 2. It played about 5 choices a game for dollars, and won $6,758 a game in the main rounds to v1's $4,727. It is sure it has lost more often than v1 (542 games to 460) and wrong about it 4% of the time: the stealer's gain makes it expect opponents to build big banks, while its own comeback chances weren't modeled the same way.
 
-### Version 4 (specified 2026-10-31, not built yet)
+### Version 4 (built 2026-10-31, not yet fit)
 
 Version 4 is version 3 with one change: each opponent gets its own stealer's gain, from how that seat plays this game. Everything else stays as in version 3. The grading grid runs on version 3, and version 4 is checked after it.
 
@@ -172,7 +172,8 @@ Version 4 is version 3 with one change: each opponent gets its own stealer's gai
 - **Using it.** When the bot weighs that seat taking the round, it averages its win chance over G_llm with weight w and over G_bot with weight 1 − w, in place of version 3's single table. The steal odds themselves are unchanged. At w = 1/2 this is close to version 3: the average of the two tables against their pooled one.
 - **No identities and no memory.** w comes only from what the seat does at this table, and resets every game.
 - **Fitting.** `selfplay round-banks` gains a record of every opportunity: the share showing, the deciding bot's confidence, and whether it solved correctly. In self-play every seat runs the same bot and reader, so the deciding bot's confidence stands in for the observer's. A new run of about 2,000 version 3 games on the tuning puzzles fits both G_bot and q_bot. G_llm is refit from prior-101 on its own. All three are frozen into version 4 with its word data pin. Nothing is fit on grading, dev, or private puzzles.
-- **Logging.** Each bot decision records every opponent's w.
+- **Logging.** Each bot decision records every opponent's w as `llm_like`, keyed by seat number.
+- **Commands.** `selfplay round-banks` now records every chance to solve beside the gain points. `selfplay v4-fit --logs <tournament folders> --games <round-banks folders> --out <folder>` writes `stealer-gain-llm.json`, `stealer-gain-bot.json`, and `steal-bot.json`, the three knobs version 4 freezes.
 - **Checking it.** `selfplay games` with v4, v3, and an eager v3 (`eager_solve=0.65`, which pounces like an LLM) on grading-202, about 2,000 games. It reports:
   - win rates with 95% intervals
   - the average w each version 4 seat gave the eager seat and the plain version 3 seat, which should land high and low

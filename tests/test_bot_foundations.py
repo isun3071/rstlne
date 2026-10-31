@@ -97,7 +97,8 @@ def test_v1_plays_the_formula_and_v2_the_win_table():
     assert replace(v2, win_table=()) == v1  # the table is their only difference
 
 
-LATER_KNOBS = {"stealer_gain", "flat_dollars"}  # added after the freeze, off in versions 1 and 2
+LATER_KNOBS = {"stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot"}  # off in 1 and 2
+V4_KNOBS = {"stealer_gain_llm", "stealer_gain_bot", "steal_bot"}  # added after version 3's freeze, off in it
 
 
 def knob_hash(version):
@@ -112,8 +113,9 @@ def test_frozen_versions_never_change():
     from dataclasses import asdict
     import hashlib
     assert knob_hash(1) == "ee505edb9891" and knob_hash(2) == "4b391d4eb285"
-    every_knob = hashlib.sha256(json.dumps(asdict(versions.knobs(3)), sort_keys=True).encode()).hexdigest()[:12]
-    assert every_knob == "342c440f08d6"
+    v3 = {k: v for k, v in asdict(versions.knobs(3)).items() if k not in V4_KNOBS}
+    assert hashlib.sha256(json.dumps(v3, sort_keys=True).encode()).hexdigest()[:12] == "342c440f08d6"
+    assert all(getattr(versions.knobs(v), k) == () for v in (1, 2, 3) for k in V4_KNOBS)
 
 
 def test_v3_is_v1_with_the_stealers_gain_and_flat_choices_for_dollars():

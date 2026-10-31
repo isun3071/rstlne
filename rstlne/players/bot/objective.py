@@ -58,7 +58,8 @@ def win_chance(table, rounds_left: int, lead: float) -> float | None:
 
 
 class Objective:
-    def __init__(self, view: PublicView, rules: Rules, spec: WheelSpec, knobs: Knobs):
+    def __init__(self, view: PublicView, rules: Rules, spec: WheelSpec, knobs: Knobs,
+                 llm_share: Mapping[int, float] | None = None):
         self.seat = view.seat
         self.totals = view.totals
         self.banks = view.banks
@@ -68,6 +69,11 @@ class Objective:
         self.round_number = view.round_number
         self.hidden = view.board.count("_")  # letter squares still hidden
         self.gains = self.gains_for(self.hidden) if self.win_mode else None
+        # From version 4: each opponent's gain mixes the LLM and bot tables by how LLM-like that seat plays
+        mixing = bool(knobs.stealer_gain_llm and knobs.stealer_gain_bot and llm_share is not None)
+        self.llm_share = llm_share if mixing else None
+        self.gains_llm = self.gains_for(self.hidden, knobs.stealer_gain_llm) if mixing and self.win_mode else None
+        self.gains_bot = self.gains_for(self.hidden, knobs.stealer_gain_bot) if mixing and self.win_mode else None
         self.last_flat = False  # whether the latest choice went to dollars
         self._lost: dict = {}  # lose_round answers: one decision asks the same few questions many times
         self.rounds_left = rules.main_rounds - (view.round_number or rules.main_rounds)  # after this round
@@ -77,9 +83,10 @@ class Objective:
         self.wild_value = knobs.wild_bonus_lift * sum(envelopes) / len(envelopes) * self.reach_bonus
         self.million_value = knobs.bonus_solve * (million - replaced) / len(envelopes) * self.reach_bonus
 
-    def gains_for(self, hidden: int) -> tuple[float, ...] | None:
+    def gains_for(self, hidden: int, table=None) -> tuple[float, ...] | None:
         """What a stealer adds before solving, at this round and this many hidden squares; None without a table."""
-        rows = [bands for start, bands in self.knobs.stealer_gain if start <= (self.round_number or 0)]
+        table = self.knobs.stealer_gain if table is None else table
+        rows = [bands for start, bands in table if start <= (self.round_number or 0)]
         if not rows:
             return None
         return [gains for start, gains in rows[-1] if start <= hidden][-1]
@@ -119,9 +126,14 @@ class Objective:
 
     def _stolen(self, wild: bool, stealers: Mapping[int, float]) -> Value:
         total = sum(stealers.values())
-        gains = self.gains or (0.0,)
         value = ZERO
         for seat, weight in stealers.items():
+            if self.llm_share is not None and self.gains_llm and self.gains_bot:
+                w = self.llm_share.get(seat, 0.5)
+                taken = self._taken(seat, wild, self.gains_llm) * w + self._taken(seat, wild, self.gains_bot) * (1 - w)
+                value += taken * (weight / total)
+                continue
+            gains = self.gains or (0.0,)  # versions 1 to 3, summed in their original order so they play exactly as frozen
             taken = ZERO
             for gain in gains:
                 totals = list(self.totals)
@@ -129,6 +141,15 @@ class Objective:
                 taken += self._value(0, totals, self._cards(wild, False))
             value += taken * (weight / total / len(gains))
         return value
+
+    def _taken(self, seat: int, wild: bool, gains: Sequence[float]) -> Value:
+        """The bot's worth if `seat` takes the round, averaged over what it might add before solving."""
+        taken = ZERO
+        for gain in gains:
+            totals = list(self.totals)
+            totals[seat] += max(self.banks[seat] + gain, self.minimum)
+            taken += self._value(0, totals, self._cards(wild, False))
+        return taken * (1 / len(gains))
 
     def choose(self, options: Mapping[str, Value]) -> str:
         """The best move. From round 3, moves within the tie margin of the best go to bonus value, or from

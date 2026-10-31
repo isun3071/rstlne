@@ -45,6 +45,11 @@ class Knobs:
     stealer_gain: tuple[tuple[int, tuple[tuple[int, tuple[float, ...]], ...]], ...] = ()
     # From version 3. When every option scores within the tie margin, choose by dollars, as in rounds 1 and 2.
     flat_dollars: bool = False
+    # From version 4. The stealer's gain split by opponent kind, in stealer_gain's form, and a steal curve for bot play
+    # in steal_prior's form. With all three set, each opponent's gain mixes the two tables by how LLM-like it plays.
+    stealer_gain_llm: tuple[tuple[int, tuple[tuple[int, tuple[float, ...]], ...]], ...] = ()
+    stealer_gain_bot: tuple[tuple[int, tuple[tuple[int, tuple[float, ...]], ...]], ...] = ()
+    steal_bot: tuple[float, ...] = ()
 
 
 def _tuples(value):

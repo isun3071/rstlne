@@ -199,7 +199,10 @@ class BotPlayer(Player):
             share_after, confidence_after = share, seen.confidence
         odds = self.steal.odds(share, seen.confidence, share_after, confidence_after)
         self._record["p_steal"] = odds.total
-        goal = Objective(view, self.rules, self.spec, self.knobs)
+        shares = self.steal.llm_shares()
+        if shares is not None:
+            self._record["llm_like"] = {str(seat + 1): round(w, 3) for seat, w in shares.items()}
+        goal = Objective(view, self.rules, self.spec, self.knobs, llm_share=shares)
         self._goal = goal
         prior = self.steal.prior
         return Situation(view, belief, goal, odds, self.rules, self.spec, self.knobs,

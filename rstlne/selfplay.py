@@ -608,7 +608,7 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
     state = new_game(game.seed, rules, spec, puzzles, bonus_puzzle)
     stats = [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0, "certain_win": False, "certain_loss": False,
               "flat": 0} for _ in seats]
-    round_totals, moves, steps = [], 0, []
+    round_totals, moves, steps, chances = [], 0, [], []
     while state.phase is not Phase.GAME_OVER:
         before = state
         state = play_turn(state, players)
@@ -619,6 +619,11 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
         if gains:
             steps.append(Step(before.round.number, before.phase.value, r.seat, tuple(s.bank for s in before.seats),
                               _hidden(before.round.puzzle.answer, before.round.used), r.action.kind, r.outcome))
+            raw = players[r.seat].last_call.raw if players[r.seat].last_call else {}
+            if before.phase.value in _TURN_PHASES and r.action.kind in _TURN_KINDS and "confidence" in (raw or {}):
+                # a chance to solve: the share showing, the deciding bot's confidence, and whether it solved correctly
+                chances.append([round(_shown(before.round.puzzle.answer, before.round.used), 4),
+                                round(raw["confidence"], 4), int(r.action.kind == "solve" and r.outcome == "solved")])
         seat = stats[r.seat]
         raw = players[r.seat].last_call.raw if players[r.seat].last_call else {}
         values = {round(v, 9) for v in (raw or {}).get("values", {}).values()}
@@ -642,7 +647,7 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
         "totals": [s.total for s in state.seats], "round_totals": round_totals,
         "bonus": None if b is None else {"seat": b.seat, "solved": b.solved, "envelope": b.envelope},
         "moves": moves, "seconds": round(time.monotonic() - started, 2), "seat_stats": stats,
-        **({"gains": gain_points(steps)} if gains else {}),
+        **({"gains": gain_points(steps), "chances": chances} if gains else {}),
     }
 
 
@@ -1095,6 +1100,37 @@ def stealer_gain(logs: Sequence[Path], games: Sequence[Path], out: Path, say=pri
     return table
 
 
+def fit_steal_bot(games: Sequence[Path], resamples: int = 1000) -> dict:
+    """Version 4's bot solve curve: steal_prior's logistic form, fit on round-banks games' chances to solve."""
+    points = []
+    for folder in games:
+        meta = Path(folder) / "round-banks.json"
+        if not meta.exists():
+            raise ValueError(f"{folder} has no round-banks.json; make it with selfplay round-banks")
+        check_fit_puzzles(json.loads(meta.read_text())["puzzles"])
+        for path in sorted(Path(folder).glob("games-shard*.jsonl")):
+            for g in _rows(path):
+                points += [{"shown": s, "confidence": c, "solved": k, "set": f"{folder}:{g.get('set', 0)}"}
+                           for s, c, k in g.get("chances", [])]
+    if not points:
+        raise ValueError("no chances to solve in these folders; rerun round-banks with this version's code")
+    return {**fit_steal(points, resamples), "points": len(points)}
+
+
+def v4_fit(logs: Sequence[Path], games: Sequence[Path], out: Path, resamples: int = 1000, say=print) -> None:
+    """Version 4's three knobs: the stealer's gain from LLM and from bot opponents apart, and the bot solve curve."""
+    llm, bot = tournament_gain_points(logs), games_gain_points(games)
+    out.mkdir(parents=True, exist_ok=True)
+    for name, points in (("llm", llm), ("bot", bot)):
+        table, report = fit_stealer_gain(points, []) if name == "llm" else fit_stealer_gain([], points)
+        (out / f"stealer-gain-{name}.json").write_text(json.dumps({"knob": table, "report": report}, indent=1))
+        say(f"stealer_gain_{name}: {len(points)} points into {out / f'stealer-gain-{name}.json'}")
+    fit = fit_steal_bot(games, resamples)
+    (out / "steal-bot.json").write_text(json.dumps({"knob": [fit["a"], fit["b"], fit["c"]], "fit": fit}, indent=1))
+    say(f"steal_bot: a {fit['a']:.2f}, b {fit['b']:.2f}, c {fit['c']:.2f} from {fit['points']} chances, "
+        f"into {out / 'steal-bot.json'}")
+
+
 def round_banks(puzzles_path: Path, sets: int, seed: int, out: Path, rules: Rules, spec: WheelSpec,
                 base: versions.Knobs, make_reader, shard: tuple[int, int] = (1, 1), workers: int = 1,
                 say=print) -> Path:
@@ -1209,6 +1245,11 @@ def main(argv: Sequence[str] | None = None) -> None:
     rb.add_argument("--out", required=True, help="the folder for games-shard*.jsonl and round-banks.json")
     rb.add_argument("--shard", default="1/1", help="i/n: this machine's share of the games")
     rb.add_argument("--workers", type=int, default=4, help="processes, one per core")
+    v4 = jobs.add_parser("v4-fit", help="version 4's knobs: the stealer's gain by opponent kind, and the bot solve curve")
+    v4.add_argument("--logs", nargs="+", required=True, help="tournament folders: LLM opponents")
+    v4.add_argument("--games", nargs="+", required=True, help="round-banks folders: bot opponents, with chances to solve")
+    v4.add_argument("--out", required=True, help="the folder for the three knob files")
+    v4.add_argument("--resamples", type=int, default=1000, help="for the steal curve's 95%% intervals")
     sg = jobs.add_parser("stealer-gain", help="fit what an opponent adds to its bank before it solves")
     sg.add_argument("--logs", nargs="*", default=[], help="tournament folders: LLM opponents")
     sg.add_argument("--games", nargs="*", default=[], help="round-banks folders: bot opponents")
@@ -1222,6 +1263,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         return
     if args.job == "win-table":
         win_table([Path(f) for f in args.games], Path(args.out), settings.load_rules().main_rounds, say=print)
+        return
+    if args.job == "v4-fit":
+        try:
+            v4_fit([Path(f) for f in args.logs], [Path(f) for f in args.games], Path(args.out), args.resamples, say=print)
+        except ValueError as err:
+            sys.exit(str(err))
         return
     if args.job == "stealer-gain":
         try:
