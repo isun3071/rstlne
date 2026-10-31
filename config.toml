@@ -52,10 +52,11 @@ bonus_mix = { "Phrase" = 26, "Thing" = 18, "What Are You Doing?" = 12, "Food & D
 # the cost per game ($0.0146 to $0.0074), with no invalid moves either way.
 tools = "all"
 
-# One model's own reasoning effort, overriding reasoning_effort for it. GPT-6.1 Sol barely reasons at its
-# default: 26 output tokens a move and no reasoning text in its first game.
+# One model's own reasoning effort, overriding reasoning_effort for it, e.g.:
 # [llm.effort]
-# "openai/gpt-6.1-sol" = "medium"
+# "openai/gpt-6.1-sol" = "high"
+# GPT-6.1 Sol needs none: it reasons by default (25 to 40 hidden reasoning tokens on a simple solve, about
+# what medium gives), and at default and medium it played the same in 8 test games on 2026-10-31.
 
 [decision]
 # Decision seats: a decision model makes every choice, and the solver writes the answers.
