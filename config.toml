@@ -52,6 +52,11 @@ bonus_mix = { "Phrase" = 26, "Thing" = 18, "What Are You Doing?" = 12, "Food & D
 # the cost per game ($0.0146 to $0.0074), with no invalid moves either way.
 tools = "all"
 
+# One model's own reasoning effort, overriding reasoning_effort for it. GPT-6.1 Sol barely reasons at its
+# default: 26 output tokens a move and no reasoning text in its first game.
+# [llm.effort]
+# "openai/gpt-6.1-sol" = "medium"
+
 [decision]
 # Decision seats: a decision model makes every choice, and the solver writes the answers.
 decision_model = "openai/gpt-6-luna-decisions"  # its probabilities fit the threshold; Jev's run low

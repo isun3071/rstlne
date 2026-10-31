@@ -68,6 +68,9 @@ def clients(
     return client, decisions
 
 
+EFFORTS = ("none", "low", "medium", "high", "xhigh", "max")
+
+
 def build_players(
     seats: list[tuple[str, str | None]],
     rules,
@@ -79,7 +82,11 @@ def build_players(
 ) -> list[Player]:
     """A player per (kind, model) seat. Each model seat gets its own session, `<prefix>-seat<n>`."""
     temperature = config["llm"].get("temperature")
-    effort = config["llm"].get("reasoning_effort")
+    efforts = {None: config["llm"].get("reasoning_effort"), **config["llm"].get("effort", {})}  # [llm.effort] overrides per model
+    for model_name, level in efforts.items():
+        if level is not None and level not in EFFORTS:
+            raise ValueError(f"reasoning effort for {model_name or 'every model'} must be one of {', '.join(EFFORTS)}, not {level!r}")
+    effort_for = lambda model_name: efforts.get(model_name, efforts[None])  # noqa: E731
     tool_list = config["llm"].get("tools", "legal")
     if tool_list not in ("legal", "all"):
         raise ValueError(f'[llm] tools must be "legal" or "all", not {tool_list!r}')
@@ -102,18 +109,19 @@ def build_players(
             version = versions.current(config)
             return HybridPlayer(
                 i, model, client, tuple(trust), tuple(steal), rules, spec, make_reader(versions.knobs(version), version),
-                version=version, temperature=temperature, session_id=session, reasoning_effort=effort,
+                version=version, temperature=temperature, session_id=session, reasoning_effort=effort_for(model),
                 provider=providers.get(model),
             )
         if kind == "llm":
             return LLMPlayer(
-                i, model, client, rules, spec, temperature, session, reasoning_effort=effort, provider=providers.get(model),
+                i, model, client, rules, spec, temperature, session, reasoning_effort=effort_for(model),
+                provider=providers.get(model),
                 all_tools=tool_list == "all",
             )
         solver_model = decision["solver_model"]
         solver = LLMPlayer(
             i, solver_model, client, rules, spec, temperature, f"{session}-solver",
-            reasoning_effort=effort, provider=providers.get(solver_model),
+            reasoning_effort=effort_for(solver_model), provider=providers.get(solver_model),
         )
         model = model or decision["decision_model"]
         threshold = decision.get("thresholds", {}).get(model, decision["solve_threshold"])

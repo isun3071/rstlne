@@ -99,3 +99,16 @@ def test_without_show_puzzle_model_games_print_no_table(tmp_path, capsys):
     argv = ["--seats", "llm:a/one,llm:b/two,llm:c/three", "--seed", "3", "--pause", "0", "--log-dir", str(tmp_path)]
     cli.main(argv, client=router(board_reader))
     assert not any(line.strip().startswith("Board:") for line in capsys.readouterr().out.splitlines())
+
+
+def test_one_model_can_get_its_own_reasoning_effort(rules, wheel_spec):
+    from fakes import router
+    from rstlne import settings
+    config = settings.load_config()
+    tuned = {**config, "llm": {**config["llm"], "effort": {"a/one": "medium"}}}
+    seats = [("llm", "a/one"), ("llm", "b/two"), ("bot", None)]
+    one, two, _ = cli.build_players(seats, rules, wheel_spec, tuned, router([]), None, "g")
+    assert one.reasoning_effort == "medium" and two.reasoning_effort == config["llm"].get("reasoning_effort")
+    with pytest.raises(ValueError, match="effort"):
+        cli.build_players(seats, rules, wheel_spec, {**config, "llm": {**config["llm"], "effort": {"a/one": "lots"}}},
+                          router([]), None, "g")
