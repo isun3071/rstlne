@@ -26,7 +26,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 
 **MiMo was dropped from lineup 1 on 2026-10-31.**
 - **Why:** about 1 call in 4 ran away into 6,000 to 58,000 tokens of thinking. Those calls timed out games and made up two thirds of MiMo's spend, so it cost more per game than Sol and DeepSeek combined.
-- **The record:** its partial run stays in `seed707-08e8ad2c`, 23 games, every one won by Sol.
+- **The record:** its partial run (23 games, all won by Sol) was scrubbed at Ian's request.
 - **The replacement:** Claude Haiku 5.5, for Anthropic.
 
 ## Order
