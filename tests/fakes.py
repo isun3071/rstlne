@@ -73,11 +73,12 @@ def router(replies, **options):
 def board_reader(request):
     """A fake model that plays from its prompt alone: it calls letters in frequency
     order, keeps every safe default, and solves once the board is full."""
-    offered = [tool["function"]["name"] for tool in request["tools"]]
     text = next(
         m["content"] for m in reversed(request["messages"])
         if isinstance(m.get("content"), str) and "Board: " in m["content"]
     )
+    legal = re.search(r"^Your move\. Legal: (.*)\.$", text, re.M)  # the view names the legal moves, whatever tools are on offer
+    offered = legal.group(1).split(", ") if legal else [tool["function"]["name"] for tool in request["tools"]]
     board = re.search(r"^Board: (.*)$", text, re.M).group(1)
     used = re.search(r"^Used letters: (.*)$", text, re.M).group(1).split()
     answer = " ".join(word.replace(" ", "") for word in board.split("   "))

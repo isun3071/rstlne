@@ -59,7 +59,8 @@ def test_a_model_only_game_runs_from_the_command_line(tmp_path, capsys):
     logs = list(tmp_path.glob("*.jsonl"))
     assert len(logs) == 1
     records = [json.loads(line) for line in logs[0].read_text().splitlines()]
-    assert records[0]["seats"][0] == {"kind": "llm", "model": "a/one", "temperature": None, "reasoning_effort": None, "provider": None}
+    assert records[0]["seats"][0] == {"kind": "llm", "model": "a/one", "temperature": None, "reasoning_effort": None,
+                                      "provider": None, "tools": "all"}  # config.toml offers every tool
     assert records[-1]["type"] == "summary" and records[-1]["usage"]["calls"] > 0
     assert "cached_tokens" in records[-1]["usage"]
     sessions = {call["extra_body"]["session_id"] for call in client.client.calls}
