@@ -175,7 +175,7 @@ All grid lineups use the grid deck, one seed, 60 sets (360 games) and bot versio
 | 1 | Sol, DeepSeek, Haiku | which LLM is best (W) | done: W = Sol |
 | 2 | Sol, bot, bot | can a good LLM beat the bot? | done |
 | 3 | hybrid, bot, bot | how much does Luna's reading add to the bot? | done |
-| 3b | Luna alone, bot, bot | what does the bot's strategy add to Luna? | running |
+| 3b | Luna alone, bot, bot | what does the bot's strategy add to Luna? | done |
 | 4 | Sol, hybrid, bot | all three player types at one table | not started |
 | 5 | Sol, hybrid, hybrid | can an LLM beat the strongest seats? | not started |
 | 6 | bot, Sol, Sol | can the bot beat two good LLMs? | held back by Ian |
@@ -224,20 +224,31 @@ Every gap clears zero (Sol over DeepSeek +41, DeepSeek over Haiku +15). Haiku is
 - **Sol alone does better:** set by set, against the same two bots, the hybrid wins 12.8 points less than Sol did (−20.0 to −5.6).
 - **How it used Luna:** 5,817 asks (16 a game, about 6 seconds each, which is why these games were slow). Luna said "not solvable" 2,484 times and gave 3,333 answers, 84% of them right.
 - **Luna's reading raised accuracy and rounds won, not timing.** The hybrid still solved at 65% of the board, the same as the bots: its strategy judges both opponents slow and bot-like, so waiting looks safe.
-- **Reading so far:** strategy plus a weak reader beats pure strategy, but loses to a strong reader with no strategy.
+- **With lineup 3b:** strategy plus a weak reader beats pure strategy, but loses to a strong reader with no strategy.
 
-### Lineup 3b: Luna alone against two bots (running)
+### Lineup 3b: Luna alone against two bots ($1.33)
 
-About 0.2¢ and 70 seconds a game. Comparing it set by set with lineup 3 shows what the bot's strategy adds to Luna's reading:
-- **About 45%:** the strategy added nothing.
-- **Clearly lower (say 30–35%):** strategy matters, worth the gap.
-- **Below the bots (under 27%):** Luna's reading isn't enough on its own.
+| Against two bots | Luna alone | Hybrid (bot + Luna) | Sol alone |
+|---|---|---|---|
+| Win rate | **17.5%** (12–23%) | 45% | 58% |
+| 1st / 2nd / 3rd | 63 / 196 / 101 | 163 / 105 / 92 | 209 / 99 / 52 |
+| Rounds won per game | 1.79 | 1.74 | 2.26 |
+| Main-round winnings per round won | about $2,460 | about $5,400 | about $4,270 |
+| Wrong solves per game | 0.70 | 0.04 | 0.09 |
+| Solves right | 72% | 97.5% | 96% |
 
-My prediction was the low-to-mid 30s.
-
-Two caveats:
-- **The gap measures the bot's whole way of playing:** money decisions, letter choice, and its careful use of Luna's answers.
-- **It only holds for a Luna-level reader.** Whether strategy adds as much to a Sol-level reader is deliberately untested (no Sol hybrid).
+- **Set-by-set gaps:**
+  - hybrid − Luna alone **+27.8 points** (+20.8 to +34.7): what the bot's way of playing adds to Luna's reading
+  - Sol − Luna alone +40.6 (+32.5 to +48.3)
+  - Sol − hybrid +12.8 (+5.6 to +20.0)
+- **So the wrapper recovers about two-thirds of the gap between Luna and Sol.**
+- **Luna wins as many rounds as the hybrid, but cheap ones.** It keeps losing the wheel, so its bank is small when it finally solves, and it finishes second most often.
+- **Luna's losses are discipline, not tool support** (Luna supports tool calls):
+  - 219 solves that don't fit the board: an already-called letter put in a hidden square (LUCKY for L__KY with C already showing), a refuted answer repeated, wild guesses on near-empty boards
+  - 150 bad tool calls, almost all a consonant called without spinning first. Every tool is offered on every move to keep the prompt cacheable; the engine refuses illegal calls and reprompts.
+- **The hybrid's wrapper removes exactly these faults:** the fit check, the list of refuted answers, and the bot deciding when to trust a read.
+- **Ian's line:** no prompt engineering of the models. "LLMs in the wild" stay unprompted beyond the rules; every gain comes from code around them.
+- **The two identical bots differed by 8 points** (+0.6 to +16), most likely chance.
 
 ### Bonus test: each player alone on every bonus puzzle in a deck
 
@@ -290,7 +301,7 @@ Two caveats:
 
 ## 10. What's next
 
-1. **Lineup 3b's result,** compared set by set with lineups 2 and 3.
+1. **Terra alone against two bots** (about $3): a middle point between Luna (17.5%) and Sol (58%), testing whether a mid-tier model is disciplined enough to play on its own. Terra was left out of lineup 1 only because it's from the same lab as Sol.
 2. **The rest of the grid:** lineup 6 when Ian wants it, then lineups 4 and 5, which show whether the hybrid solves sooner against a fast opponent like Sol.
 3. **Optional checks:**
    - The Sol-against-bots lineup rerun with version 3 bots (does version 4 help against LLMs?).

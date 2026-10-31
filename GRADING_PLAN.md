@@ -16,6 +16,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 | 1 | Sol, DeepSeek, Haiku | Which LLM is best, with no bot around: three labs (OpenAI, DeepSeek, Anthropic) | 60 |
 | 2 | W, bot, bot | Can a good LLM beat the bot? | 60 |
 | 3 | hybrid, bot, bot | How much does Luna's reading add to the bot? | 60 |
+| 3b | Luna, bot, bot | What does the bot's strategy add to Luna? (added 2026-10-31) | 60 |
 | 4 | W, hybrid, bot | All three player types at one table | 60 |
 | 5 | W, hybrid, hybrid | Can an LLM beat the strongest seats? | 60 |
 | 6 | bot, W, W | Can the bot beat two good LLMs? | 60 |
@@ -77,6 +78,20 @@ Sol leads each bot by 37 to 38 points (27 to 47). Set by set, Sol wins 7.8 point
 | Bonus won | 147 / 163 | 169 / 197 (both bots) | 205 / 209 |
 
 The hybrid leads each bot by 17 to 19 points (9 to 27). Set by set, it wins 12.8 points less than Sol did against the same two bots (−20.0 to −5.6). It asked Luna 5,817 times (16 a game, about 6 seconds each): Luna called the board not solvable 2,484 times and gave an answer 3,333 times, 84% of them right. Luna's reads made the hybrid surer (median +0.20 confidence) and more accurate, but it still solved at the bots' 65% of the board, milking as they do. The bots read it as bot-like (median w 0.31). A Luna-alone lineup on the same sets would show what the bot's strategy adds to Luna.
+
+## Lineup 3b result (2026-10-31): Luna alone loses to two bots; the bot's strategy adds 28 points to Luna
+
+360 games in 60 sets, `logs/tournaments/seed707-e71dd1af`, $1.33. Luna, bot, bot: Luna playing every move itself, against the same two bots and sets as lineups 2 and 3.
+
+| Against two bots | Luna alone | Hybrid (bot + Luna) | Sol alone |
+|---|---|---|---|
+| Win rate | **17.5%** (12–23%) | 45% | 58% |
+| Rounds won per game | 1.79 | 1.74 | 2.26 |
+| Main-round winnings per round won | about $2,460 | about $5,400 | about $4,270 |
+| Wrong solves per game | 0.70 | 0.04 | 0.09 |
+| Solves right | 72% | 97.5% | 96% |
+
+Set by set: hybrid − Luna alone +27.8 points (+20.8 to +34.7), Sol − Luna alone +40.6 (+32.5 to +48.3), Sol − hybrid +12.8 (+5.6 to +20.0). Luna's losses are discipline: 219 solves that don't fit the board (it puts already-called letters in hidden squares, repeats refuted answers, guesses on near-empty boards) and 150 bad tool calls, almost all a consonant called without spinning first (every tool is offered on every move, for prompt caching). The hybrid's fit check, refuted-answer list, and the bot's choice of when to trust a read remove those faults. The two identical bots differed by 8 points (+0.6 to +16), most likely chance.
 
 ## Order
 
