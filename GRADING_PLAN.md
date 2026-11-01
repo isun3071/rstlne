@@ -32,7 +32,10 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 |---|---|---|---|
 | 3c | DeepSeek, bot, bot | DeepSeek's solo yardstick | 60 |
 | 3d | Haiku, bot, bot | Haiku's solo yardstick | 60 |
-| 3e | hybrid:DeepSeek, bot, bot | does wrapping DeepSeek lift it too? | 60 |
+| 3e | hybrid:DeepSeek, bot, bot | does wrapping DeepSeek lift it too? Stopped after 9 games (runaway thinking made it slow and costly) | 60 |
+| 3f | hybrid:Haiku, bot, bot | the hybrid's lift on a second lab, in place of 3e | 60 |
+| d1 | decision:d1-ultra, bot, bot | a decision model deciding everything, Luna solving | 60 |
+| d2 | decision:Luna Decisions, bot, bot | the same, with the solver's own family deciding | 60 |
 
 **Sets:** 60 for every lineup, matching lineup 1, so any two lineups pair up set by set (Ian, 2026-10-31; lineup 3 was planned at 100 until its early gap proved large). **More sets if needed:** if a result is too close to call, rerun the commands of both lineups being compared with `--sets 100`, so the extra sets still pair; a rerun picks up where its folder stopped.
 
@@ -157,6 +160,8 @@ d1-ultra and Jev are strongly underconfident on this task: they seem to judge so
 | DeepSeek | 1.87 (1.76–1.98) | 37 / 40 / 23% |
 | Luna | 2.12 (2.03–2.21) | 18 / 53 / 30% |
 | Haiku | 2.33 (2.24–2.41) | 14 / 38 / 47% |
+| Hybrid (Haiku) | 1.85 (1.77–1.94) | 44 / 28 / 29% |
+| Luna Decisions seat | 2.42 (2.35–2.48) | 8 / 42 / 50% |
 | d1-ultra seat | 2.63 (2.56–2.70) | 4 / 28 / 67% |
 
 DeepSeek ties the bots on wins but beats them on place: it rarely finishes last. Luna wins only 18% but is second 53% of the time and last no more often than a bot, so its average place is near par. The bots are boom or bust: against two Lunas the bot won 50% and was last 32%. Chart: `figures/7-finishing-places.png`.
@@ -172,6 +177,8 @@ Each player alone against two bots, then the bot against two copies; main-round 
 | DeepSeek | $4.9k ($6.2k, $5.5k) | 8% | 32% / 81% | 68% / 16% | 0.73 | 31.4% | 0 |
 | Luna | $3.5k ($4.4k, $3.8k) | 8% | 18% / 62% | 81% / 7% | 0.60 | 28.8% | 0 |
 | Haiku | $3.0k ($4.4k, $4.9k) | 21% | 18% / 56% | 82% / 5% | 1.04 | 30.4% | 0 |
+| Hybrid (Haiku) | $7.8k ($8.9k, $7.4k) | 18% | 38% / 80% | 62% / 21% | 1.33 | 34.5% | 2 |
+| Luna Decisions seat | $2.0k ($2.8k, $3.1k) | 18% | 11% / 61% | 89% / 2% | 0.75 | 20.2% | 0 |
 | d1-ultra seat | $0 ($2.1k, $3.5k) | 52% | 9% / 42% | 91% / 1% | 0.94 | 24.1% | 0 |
 | Bot, against two Lunas | $5.3k ($6.9k, $7.4k) | 35% | 49% / 87% | 51% / 14% | 1.25 | 37.6% | 2 |
 | Bot, against two Haikus | $7.3k ($8.9k, $8.1k) | 19% | 53% / 87% | 47% / 21% | 1.61 | 37.7% | 1 |
@@ -180,6 +187,37 @@ Each player alone against two bots, then the bot against two copies; main-round 
 - **Gaps between places** (median main-round money, per lineup): 1st to 2nd about $4.5–6.6k, 2nd to 3rd about $2.5–5.0k. 9–19% of games are won by under $1,000.
 - **Only bot-based players ever won the $1M envelope** (2–6 times per lineup, including in the bots' seats against Sol and DeepSeek); no LLM did. It needs the Million card kept into the bonus, which the bot values and holds.
 - **The bot is boom or bust:** against two Lunas it banked nothing in 35% of games and had the highest Bankrupt rate, yet won half. The LLMs bank something in about 92% of games.
+
+## Lineups 3f and d2 results (2026-11-01): the hybrid lifts a second lab; a decision model doesn't
+
+**3f, the Haiku hybrid** (the bot decides everything, Haiku reads the board), alone against two bots: **44%** (38–49%), the bots 28% and 29%. 360 games, $4.76 (1.3¢ a game), 2h34m. It replaces 3e, the DeepSeek hybrid, stopped after 9 games because DeepSeek's runaway thinking made it slow and costly. Haiku's trust and steal curves were measured on the tuning boards first (`calibrate trust`).
+
+| Set by set | Gap (95%) |
+|---|---|
+| **Haiku hybrid − Haiku alone** | **+29.2 (+22.2 to +36.1)** |
+| Haiku hybrid − Luna hybrid | −1.7 (−7.2 to +3.9) |
+| Haiku hybrid − DeepSeek alone | +6.9 (+0.3 to +13.6) |
+| Haiku hybrid − Sol alone | −14.4 (−20.0 to −8.6) |
+
+- **The lift replicates across labs and across opposite faults:** +27.8 for Luna (OpenAI, reckless) and +29.2 for Haiku (Anthropic, passive). The bot fixes whichever fault the model has.
+- **The two hybrids tie** on wins, place (1.81 and 1.85) and money. The bot's strategy sets the level; the reader matters only through accuracy, and both are accurate inside the hybrid (Haiku 95% of solves right, 0 invalid moves).
+- Haiku's hybrid wins slightly fewer rounds (1.58 a game against 1.74), since Haiku says "solvable" later, at the same bank per round (median about $4,800).
+- The two bots passed their A/A test: −1 point (−5 to +2).
+
+**d2, the Luna Decisions seat** (choice mode: GPT-6 Luna Decisions makes every move and decides when to solve; Luna writes the answer), alone against two bots: **8%** (4–12%), the bots 45% and 47%. 360 games, 96¢.
+
+- **Worse than Luna playing alone:** −9.4 points set by set (−15.8 to −3.6). Ahead of d1-ultra (4%).
+- **It solves as early as Luna and as often wrongly:** 695 attempts (1.9 a game), 65% right, at 54% of the board; 0.67 wrong solves a game (Luna alone 0.70).
+- **And it handles the wheel worse than Luna:** it misses consonants twice as often (1.56 a game against 0.75), almost never buys a vowel (0.08 a game against 2.67), and holds only 20% of turns (Luna alone 29%). Its rounds are cheap: median bank $1,000, the round minimum.
+- 0.53 invalid answers a game, from the Decisions API.
+
+**Who decides, holding the reader fixed** (alone against two bots):
+
+| Who decides | Luna reading | Haiku reading |
+|---|---|---|
+| A decision model | 8% (Luna Decisions), 4% (d1-ultra) | |
+| The model itself | 17.5% | 14% |
+| **The bot (hybrid)** | **45%** | **44%** |
 
 ## Frontier and other labs: trials only, until there's a grant (2026-10-31)
 
@@ -207,6 +245,10 @@ On 2026-10-31 folder names stopped counting provider pins of models that don't p
 | 3d | `seed707-4ef950be` |
 | 6b | `seed707-261dfa12` |
 | 3c | `seed707-6fa48eea` |
+| 3e (stopped, 9 games, server only) | `seed707-df31ddd4` |
+| 3f | `seed707-1a2b906a` |
+| d1 | `seed707-5e5a8958` on the server; copied to `seed707-d1-server` on the laptop |
+| d2 | `seed707-bd7e0c0b` on the server; copied to `seed707-lunadec-server` on the laptop (the laptop's `seed707-bd7e0c0b` is the one-set trial) |
 
 ## Order
 
@@ -242,6 +284,9 @@ The same flags go at the end of every command:
 | 3c | `uv run python -m rstlne.tournament --seats llm:deepseek/deepseek-v4.1-flash-1017,bot,bot --sets 60 --parallel 8 --max-cost 8` |
 | 3d | `uv run python -m rstlne.tournament --seats llm:anthropic/claude-haiku-5.5,bot,bot --sets 60 --parallel 8 --max-cost 4` |
 | 3e | `uv run python -m rstlne.tournament --seats hybrid:deepseek/deepseek-v4.1-flash-1017,bot,bot --sets 60 --parallel 8 --max-cost 5` |
+| 3f | `uv run python -m rstlne.tournament --seats hybrid:anthropic/claude-haiku-5.5,bot,bot --sets 60 --parallel 12 --max-cost 6` |
+| d1 | `uv run python -m rstlne.tournament --seats decision:liquid/d1-ultra,bot,bot --sets 60 --parallel 8 --max-cost 2` |
+| d2 | `uv run python -m rstlne.tournament --seats decision:openai/gpt-6-luna-decisions,bot,bot --sets 60 --parallel 8 --max-cost 2` |
 
 Replace `W` with the winner's model name, such as `openai/gpt-6.1-sol`.
 

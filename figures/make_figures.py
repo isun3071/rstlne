@@ -19,7 +19,8 @@ T = Path("logs/tournaments")
 
 # Reference palette (light): surface, ink, and one hue per kind of player, validated as a set
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df"
-KIND = {"LLM": "#2a78d6", "bot": "#eb6834", "hybrid": "#1baf7a"}
+KIND = {"LLM": "#2a78d6", "bot": "#eb6834", "hybrid": "#1baf7a",
+        "decision": "#8f8e89"}  # a neutral gray for the decision seat: neither an LLM's nor the bot's hue
 plt.rcParams.update({
     "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
     "font.family": "DejaVu Sans", "font.size": 11, "text.color": INK, "axes.labelcolor": INK2,
@@ -28,7 +29,8 @@ plt.rcParams.update({
 })
 
 NAMES = {"openai/gpt-6.1-sol": "Sol", "openai/gpt-6-luna": "Luna", "anthropic/claude-haiku-5.5": "Haiku",
-         "deepseek/deepseek-v4.1-flash-1017": "DeepSeek"}
+         "deepseek/deepseek-v4.1-flash-1017": "DeepSeek", "openai/gpt-6-luna-decisions": "Luna Decisions",
+         "liquid/d1-ultra": "d1-ultra"}
 
 
 def short(entrant):
@@ -36,11 +38,13 @@ def short(entrant):
     kind, _, slug = base.partition(":")
     if kind == "hybrid":
         name = f"Hybrid (bot + {NAMES.get(slug, slug)})"
+    elif kind == "decision":
+        name = f"{NAMES.get(slug, slug)} seat"
     elif kind == "llm":
         name = NAMES.get(slug, slug)
     else:
         name = "Bot"
-    return name + (f" #{tag}" if tag else ""), ("hybrid" if kind == "hybrid" else "LLM" if kind == "llm" else "bot")
+    return name + (f" #{tag}" if tag else ""), {"hybrid": "hybrid", "llm": "LLM", "decision": "decision"}.get(kind, "bot")
 
 
 def entrants(folder):
@@ -52,12 +56,14 @@ LINEUPS = [  # (label, folder)
     ("2  Sol · bot · bot", "seed707-e250a942"),
     ("3  Hybrid · bot · bot", "seed707-ca968604"),
     ("3b  Luna · bot · bot", "seed707-e71dd1af"),
+    ("3c  DeepSeek · bot · bot", "seed707-6fa48eea"),
     ("3d  Haiku · bot · bot", "seed707-4ef950be"),
+    ("3f  Haiku hybrid · bot · bot", "seed707-1a2b906a"),
     ("6a  bot · Luna · Luna", "seed707-6496578d"),
     ("6b  bot · Haiku · Haiku", "seed707-261dfa12"),
+    ("d1  d1-ultra · bot · bot", "seed707-d1-server"),
+    ("d2  Luna Decisions · bot · bot", "seed707-lunadec-server"),
 ]
-if (T / "seed707-6fa48eea" / "report.json").exists():
-    LINEUPS.insert(5, ("3c  DeepSeek · bot · bot", "seed707-6fa48eea"))
 REPORTS = {folder: entrants(folder) for _, folder in LINEUPS}
 
 
@@ -97,9 +103,9 @@ def check(fig, name):
 
 # 1. The yardstick: each player alone against two bots
 solo = [("seed707-e250a942", "openai/gpt-6.1-sol"), ("seed707-ca968604", "hybrid:openai/gpt-6-luna"),
-        ("seed707-e71dd1af", "openai/gpt-6-luna"), ("seed707-4ef950be", "anthropic/claude-haiku-5.5")]
-if "seed707-6fa48eea" in REPORTS:
-    solo.insert(2, ("seed707-6fa48eea", "deepseek/deepseek-v4.1-flash-1017"))
+        ("seed707-1a2b906a", "hybrid:anthropic/claude-haiku-5.5"), ("seed707-6fa48eea", "deepseek/deepseek-v4.1-flash-1017"),
+        ("seed707-e71dd1af", "llm:openai/gpt-6-luna"), ("seed707-4ef950be", "anthropic/claude-haiku-5.5"),
+        ("seed707-lunadec-server", "decision:openai/gpt-6-luna-decisions"), ("seed707-d1-server", "decision:liquid/d1-ultra")]
 rows = []
 for folder, key in solo:
     e = next(x for x in REPORTS[folder] if key in x["entrant"])
@@ -117,8 +123,9 @@ ax.text(100 / 3 + 0.6, len(rows) - 0.45, "fair share (33%)", fontsize=9.5, color
 ax.set_yticks(range(len(rows)), [r[0] for r in rows])
 ax.set_xlim(0, 80)
 tidy(ax, "games won against two bots, with 95% interval (%)")
-handles = [plt.Rectangle((0, 0), 1, 1, color=KIND[k]) for k in ("LLM", "hybrid")]
-ax.legend(handles, ["LLM playing alone", "hybrid: the bot decides, the LLM reads"], loc="lower right", frameon=False, fontsize=9.5)
+handles = [plt.Rectangle((0, 0), 1, 1, color=KIND[k]) for k in ("LLM", "hybrid", "decision")]
+ax.legend(handles, ["LLM playing alone", "hybrid: the bot decides, the LLM reads",
+                    "decision seat: a decision model decides, Luna reads"], loc="lower right", frameon=False, fontsize=9.5)
 save(fig, "1-alone-against-two-bots.png", "Alone against two bots",
      "One seat against two identical v4 bots, 60 sets (360 games) each, same puzzles and spins")
 
@@ -134,20 +141,22 @@ fig.subplots_adjust(left=0.1, right=0.96, top=0.84, bottom=0.12)
 for name, kind, x, y, w in pts:
     ax.scatter(x, y, s=110, color=KIND[kind], edgecolor=SURFACE, linewidth=2, zorder=3)
     label = f"{name}\n{w:.0%} of games" if kind != "bot" else f"{name}\n(against Sol: {w:.0%})"
-    ax.annotate(label, (x, y), textcoords="offset points", xytext=(9, -4), fontsize=10, color=INK, va="center")
+    dx, dy = {"Hybrid (bot + Luna)": (9, 12), "Hybrid (bot + Haiku)": (-9, -22)}.get(name, (9, -4))  # the two hybrids sit together
+    ax.annotate(label, (x, y), textcoords="offset points", xytext=(dx, dy), fontsize=10, color=INK, va="center",
+                ha="left" if dx > 0 else "right")
 ax.set_xlabel("board showing at a correct solve (%): left solves earlier")
 ax.set_ylabel("solves that were right (%)")
 ax.set_xlim(40, 80)
-ax.set_ylim(65, 100)
+ax.set_ylim(60, 100)
 ax.set_xticks(range(45, 81, 5))
 ax.grid(color=GRID, linewidth=0.8)
 ax.set_axisbelow(True)
 ax.tick_params(length=0)
-ax.text(41, 67, "reckless: early, often wrong", color=INK2, fontsize=9.5)
-ax.text(79, 67, "passive: right, but late", color=INK2, fontsize=9.5, ha="right")
+ax.text(41, 62, "reckless: early, often wrong", color=INK2, fontsize=9.5)
+ax.text(79, 62, "passive: right, but late", color=INK2, fontsize=9.5, ha="right")
 ax.text(41, 98.6, "early and right", color=INK2, fontsize=9.5)
 handles = [plt.Line2D([], [], marker="o", linestyle="", markersize=9, color=KIND[k]) for k in KIND]
-ax.legend(handles, ["LLM alone", "bot", "hybrid"], loc="center right", frameon=False, fontsize=9.5)
+ax.legend(handles, ["LLM alone", "bot", "hybrid", "decision seat"], loc="center right", frameon=False, fontsize=9.5)
 save(fig, "2-temperament.png", "Early and right wins",
      "Each player alone against two bots (the bot's point is from its games against Sol); labels give games won")
 
@@ -161,9 +170,9 @@ for i, (label, folder) in enumerate(reversed(LINEUPS)):
         name, kind = short(e["entrant"])
         width = e["win_rate"] * 100
         ax.barh(i, width - 0.4, left=left + 0.2, height=0.6, color=KIND[kind], zorder=2)
-        label = f"{name.split(' #')[0].replace('Hybrid (bot + Luna)', 'Hybrid')} {width:.0f}%"
+        label = f"{'Hybrid' if kind == 'hybrid' else name.split(' #')[0]} {width:.0f}%"
         t = ax.text(left + width / 2, i, label, ha="center", va="center", fontsize=9,
-                    color="#ffffff" if kind != "hybrid" else INK)
+                    color="#ffffff" if kind in ("LLM", "bot") else INK)
         segments.append((t, left, width))
         left += width
 ax.set_yticks(range(len(LINEUPS)), [l for l, _ in reversed(LINEUPS)])
@@ -179,7 +188,7 @@ ax.axvline(100 / 3, color=INK2, linewidth=0.8, linestyle=(0, (4, 3)), zorder=3)
 ax.axvline(200 / 3, color=INK2, linewidth=0.8, linestyle=(0, (4, 3)), zorder=3)
 tidy(ax, "share of games won (%); dashed lines mark equal thirds")
 handles = [plt.Rectangle((0, 0), 1, 1, color=KIND[k]) for k in KIND]
-fig.legend(handles, list(KIND), loc="lower center", ncol=3, frameon=False, fontsize=9.5)
+fig.legend(handles, ["LLM", "bot", "hybrid", "decision seat"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
 save(fig, "3-every-lineup.png", "Who won each lineup",
      "Share of games won per seat, 60 sets (360 games) per lineup; lineup 1 used the old round 4 rule")
 
@@ -202,14 +211,15 @@ def per_round(folder, key):
 
 
 groups = [("Sol vs bots", "seed707-e250a942", "openai/gpt-6.1-sol", "LLM"),
-          ("Hybrid vs bots", "seed707-ca968604", "hybrid:openai/gpt-6-luna", "hybrid"),
+          ("Hybrid (Luna) vs bots", "seed707-ca968604", "hybrid:openai/gpt-6-luna", "hybrid"),
+          ("Hybrid (Haiku) vs bots", "seed707-1a2b906a", "hybrid:anthropic/claude-haiku-5.5", "hybrid"),
+          ("DeepSeek vs bots", "seed707-6fa48eea", "deepseek/deepseek-v4.1-flash-1017", "LLM"),
           ("Luna vs bots", "seed707-e71dd1af", "openai/gpt-6-luna", "LLM"),
-          ("Haiku vs bots", "seed707-4ef950be", "anthropic/claude-haiku-5.5", "LLM")]
-if "seed707-6fa48eea" in REPORTS:
-    groups.insert(2, ("DeepSeek vs bots", "seed707-6fa48eea", "deepseek/deepseek-v4.1-flash-1017", "LLM"))
+          ("Haiku vs bots", "seed707-4ef950be", "anthropic/claude-haiku-5.5", "LLM"),
+          ("Luna Decisions seat vs bots", "seed707-lunadec-server", "openai/gpt-6-luna-decisions", "decision")]
 data = [(g, kind, per_round(f, key), per_round(f, "bot")) for g, f, key, kind in groups]
 fig, axes = plt.subplots(1, 2, figsize=(12, 4.9))
-fig.subplots_adjust(left=0.13, right=0.94, top=0.78, bottom=0.17, wspace=0.55)
+fig.subplots_adjust(left=0.19, right=0.95, top=0.78, bottom=0.17, wspace=0.62)
 for ax, idx, xlabel, fmt in ((axes[0], 0, "rounds won per game", "{:.2f}"),
                              (axes[1], 1, "median bank when it wins a round ($)", "${:,.0f}")):
     for j, (g, kind, star, bot) in enumerate(reversed(data)):
@@ -223,7 +233,7 @@ for ax, idx, xlabel, fmt in ((axes[0], 0, "rounds won per game", "{:.2f}"),
 axes[0].set_title("Rounds won", loc="left", fontsize=11.5, color=INK)
 axes[1].set_title("Money per round won", loc="left", fontsize=11.5, color=INK)
 handles = [plt.Rectangle((0, 0), 1, 1, color=KIND[k]) for k in KIND]
-fig.legend(handles, ["the LLM", "a bot (each)", "the hybrid"], loc="lower center", ncol=3, frameon=False, fontsize=9.5)
+fig.legend(handles, ["the LLM", "a bot (each)", "the hybrid", "the decision seat"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
 save(fig, "4-rounds-and-banks.png", "The bots win fewer rounds, but bigger ones",
      "Same lineups as chart 1: each player alone against two bots")
 
@@ -281,10 +291,12 @@ def places_of(folder, pick):
 
 rows7 = [("Sol", "seed707-e250a942", lambda s: s.get("model") == "openai/gpt-6.1-sol", "LLM"),
          ("Hybrid (bot + Luna)", "seed707-ca968604", lambda s: s["kind"] == "hybrid", "hybrid"),
+         ("Hybrid (bot + Haiku)", "seed707-1a2b906a", lambda s: s["kind"] == "hybrid", "hybrid"),
          ("DeepSeek", "seed707-6fa48eea", lambda s: s.get("model") == "deepseek/deepseek-v4.1-flash-1017", "LLM"),
          ("Luna", "seed707-e71dd1af", lambda s: s.get("model") == "openai/gpt-6-luna" and s["kind"] == "llm", "LLM"),
          ("Haiku", "seed707-4ef950be", lambda s: s.get("model") == "anthropic/claude-haiku-5.5", "LLM"),
-         ("d1-ultra decision seat", "seed707-d1-server", lambda s: s["kind"] == "decision", "decision"),
+         ("Luna Decisions seat", "seed707-lunadec-server", lambda s: s["kind"] == "decision", "decision"),
+         ("d1-ultra seat", "seed707-d1-server", lambda s: s["kind"] == "decision", "decision"),
          ("Bot, against two Lunas", "seed707-6496578d", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two Haikus", "seed707-261dfa12", lambda s: s["kind"] == "bot", "bot")]
 rows7 = [r for r in rows7 if (T / r[1]).exists()]
@@ -313,9 +325,6 @@ save(fig, "7-finishing-places.png", "Where each player finishes",
      "Each player alone against two bots, then the bot against two copies of a model; ties share places")
 
 # 8-11. Money spread, gaps between places, leads and comebacks, risk
-DECISION = "#8f8e89"  # a neutral gray for the decision seat: neither an LLM's nor the bot's hue
-
-
 def games_of(folder, pick):
     """Per matching seat and game: main-round money, all three seats' main money, money after round 3, and counts."""
     out = []
@@ -348,11 +357,7 @@ def games_of(folder, pick):
     return out
 
 
-def colour(kind):
-    return DECISION if kind == "decision" else KIND[kind]
-
-
-players = [(name, folder, pick, kind) for name, folder, pick, kind in rows7]
+players = rows7
 G = {name: games_of(folder, pick) for name, folder, pick, kind in players}
 
 fig, ax = plt.subplots(figsize=(11, 0.62 * len(players) + 2.4))
@@ -361,7 +366,7 @@ for i, (name, folder, pick, kind) in enumerate(reversed(players)):
     m = sorted(g["main"] / 1000 for g in G[name])
     q = lambda f: m[min(int(f * len(m)), len(m) - 1)]  # noqa: E731
     ax.plot([q(0.1), q(0.9)], [i, i], color=INK2, linewidth=1.4, zorder=2)
-    ax.barh(i, q(0.75) - q(0.25), left=q(0.25), height=0.46, color=colour(kind), zorder=3)
+    ax.barh(i, q(0.75) - q(0.25), left=q(0.25), height=0.46, color=KIND[kind], zorder=3)
     ax.plot([q(0.5)] * 2, [i - 0.23, i + 0.23], color=SURFACE, linewidth=2.2, zorder=4)
     ax.scatter([m[-1]], [i], marker="D", s=30, color=INK, zorder=4)
     ax.text(m[-1] + 0.6, i, f"max ${m[-1]:.1f}k", va="center", fontsize=9, color=INK2)
@@ -377,9 +382,7 @@ save(fig, "8-money-spread.png", "How much each player banks, game to game",
      "Main-round money (before the bonus), each player alone against two bots, then the bot against two copies")
 
 lineup_gaps = []
-for label, folder in LINEUPS + [("d1  d1-ultra · bot · bot", "seed707-d1-server")]:
-    if not (T / folder).exists():
-        continue
+for label, folder in LINEUPS:
     rows = games_of(folder, lambda seat: True)
     by_game = {}
     for g in rows:
@@ -398,7 +401,9 @@ for i, (label, g12, g23, close) in enumerate(reversed(lineup_gaps)):
     ax.text(g12 + 0.15, i + 0.17, f"${g12:.1f}k", va="center", fontsize=9, color=INK)
     ax.text(g23 + 0.15, i - 0.17, f"${g23:.1f}k", va="center", fontsize=9, color=INK)
 ax.set_yticks(range(len(lineup_gaps)), [l[0] for l in reversed(lineup_gaps)])
-ax.set_xlim(0, max(max(l[1], l[2]) for l in lineup_gaps) * 1.2)
+top = max(max(l[1], l[2]) for l in lineup_gaps) * 1.2
+ax.set_xlim(0, top)
+ax.set_xticks(range(0, int(top) + 1, 2))
 tidy(ax, "median gap in main-round money ($ thousands)")
 handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in (RAMP[0], RAMP[2])]
 fig.legend(handles, ["1st minus 2nd", "2nd minus 3rd"], loc="lower center", ncol=2, frameon=False, fontsize=9.5)
@@ -432,7 +437,7 @@ fig.subplots_adjust(left=0.2, right=0.96, top=0.8, bottom=0.12, wspace=0.6)
 for ax, key, title in ((axes[0], "bankrupts", "Bankrupts per game"), (axes[1], "wrong", "Wrong solves per game")):
     for i, (name, folder, pick, kind) in enumerate(reversed(players)):
         v = st.mean(g[key] for g in G[name])
-        ax.barh(i, v, height=0.56, color=colour(kind), zorder=2)
+        ax.barh(i, v, height=0.56, color=KIND[kind], zorder=2)
         ax.text(v + 0.02, i, f"{v:.2f}", va="center", fontsize=9, color=INK)
     ax.set_yticks(range(len(players)), [p[0] for p in reversed(players)])
     ax.set_xlim(0, max(st.mean(g[key] for g in G[n]) for n in G) * 1.3)

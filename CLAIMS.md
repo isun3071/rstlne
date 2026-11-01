@@ -1,4 +1,4 @@
-# What we can claim (2026-10-31)
+# What we can claim (2026-11-01)
 
 All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 60 sets (360 games each), duplicate scoring (every seating order on the same spins and puzzles), and bot version 4. Intervals are 95%, from resampling whole sets. "Against two bots" means one seat against two identical bots. A fair share at a three-seat table is 33%.
 
@@ -12,6 +12,8 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
    - Luna alone: 17.5% (12–23%).
    - Haiku alone: 14% (10–19%).
    - The bot against two Lunas: 50% (43–57%), leading each by about 25 points (13 to 36).
+   - The bot against two Haikus: 56% (50–63%).
+   - **DeepSeek is the exception: it ties the bot.** Alone against two bots it won 37% (31–43%), an interval that includes a fair share, and it beats them on average place (1.87), because it rarely finishes last.
 
 4. **Models fail in opposite ways and land in the same place.** Being early and being right are both needed; only Sol has both.
 
@@ -21,7 +23,14 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
    | Luna (reckless) | 17.5% | 72% | 51% | 0.70 |
    | Haiku (passive) | 14% | 95% | 72% | 0.07 |
 
-5. **Letting the LLM read and the bot decide lifts a weak model a lot.** The hybrid (the bot makes every move and decides when to solve; Luna only reads the board) won 45% against two bots. Luna alone won 17.5%. Set by set, that's +27.8 points (+20.8 to +34.7), about two-thirds of the 40.6-point gap between Luna and Sol.
+5. **Letting the LLM read and the bot decide lifts a weak model a lot, on two labs, whatever its fault.** In the hybrid, the bot makes every move and decides when to solve; the LLM only reads the board.
+
+   | Against two bots | Alone | As a hybrid | Set by set |
+   |---|---|---|---|
+   | Luna (OpenAI, reckless) | 17.5% | 45% | +27.8 (+20.8 to +34.7) |
+   | Haiku (Anthropic, passive) | 14% | 44% | +29.2 (+22.2 to +36.1) |
+
+   For Luna that's about two-thirds of the 40.6-point gap to Sol. The two hybrids tie (−1.7, −7.2 to +3.9): the bot's strategy sets the level, and the reader only has to be accurate.
 
 6. **A strong reader still beats a weak reader with good strategy.** Set by set against the same bots, Sol alone beat the hybrid by 12.8 points (+5.6 to +20.0).
 
@@ -34,7 +43,9 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
 
 9. **The bot's money strategy matters.** Version 3, which changed only how the bot values an opponent taking the round, beat version 1 by 15 points (+12 to +18) in 2,004 bot games.
 
-10. **Cheap tokens aren't a cheap game.** Cost per game depends on verbosity and caching as much as on token price. In a matching one-set trial, Gemini 3.8 Flash's cheaper tokens cost about four times as much per game as Sol.
+10. **Handing the decisions to a decision model makes things worse.** With Luna writing every solve, a decision model choosing every move and when to solve won 8% (GPT-6 Luna Decisions) or 4% (d1-ultra, first on Artificial Analysis's Decision Index), against 17.5% for Luna alone and 45% for the bot deciding. They fail in opposite ways: d1-ultra solves too late (median 75% of the board), Luna Decisions as early and as often wrong as Luna (65% right), while missing twice as many consonants and almost never buying a vowel.
+
+11. **Cheap tokens aren't a cheap game.** Cost per game depends on verbosity and caching as much as on token price. In a matching one-set trial, Gemini 3.8 Flash's cheaper tokens cost about four times as much per game as Sol.
 
     | Model | Cost per game |
     |---|---|
@@ -47,9 +58,9 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
 
 ## Moderate: supported, with caveats
 
-11. **The bot loses rounds to Sol mostly by reading late, not by milking.** In rounds Sol took, the bot already knew the answer only 3% of the time. Of the ~15-point gap in solve timing, about 4 points is milking and about 10 slower reading. *Caveat: one lineup.*
+12. **The bot loses rounds to Sol mostly by reading late, not by milking.** In rounds Sol took, the bot already knew the answer only 3% of the time. Of the ~15-point gap in solve timing, about 4 points is milking and about 10 slower reading. *Caveat: one lineup.*
 
-12. **LLMs beat contestants' bonus rate by a wide margin.** On 100 aired bonus puzzles:
+13. **LLMs beat contestants' bonus rate by a wide margin.** On 100 aired bonus puzzles:
 
     | Sol | DeepSeek | Haiku | Bot | Contestants |
     |---|---|---|---|---|
@@ -57,7 +68,7 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
 
     *Caveats: no 10-second clock, and models may remember aired puzzles (untested).*
 
-13. **The bot plays unlike a person; LLMs play more like contestants.** The bot:
+14. **The bot plays unlike a person; LLMs play more like contestants.** The bot:
     - keeps spinning once it knows the answer, hitting Bankrupt in 16% of those rounds
     - solves only when nearly certain
     - flips every Mystery wedge
@@ -66,13 +77,12 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
 
     *Caveat: the bot's habits were measured in 40 bot-only games.*
 
-14. **Our generated bonus puzzles can be made as hard as aired ones for LLMs, but not for the bot.** After a prompt change, DeepSeek and Haiku scored near their aired rates while the bot barely moved. What makes a puzzle hard differs between a word-list reader and an LLM.
+15. **Our generated bonus puzzles can be made as hard as aired ones for LLMs, but not for the bot.** After a prompt change, DeepSeek and Haiku scored near their aired rates while the bot barely moved. What makes a puzzle hard differs between a word-list reader and an LLM.
 
-## Pending: wait for the remaining runs
+## Not run
 
-- DeepSeek alone against two bots (the solo yardstick on a third lab).
-- **The DeepSeek hybrid.** Does the reading-and-deciding split lift a second lab's model too? Until it's in, claim 5 is shown for one model.
-- The bot against two Haikus and against two DeepSeeks.
+- **The DeepSeek hybrid** was stopped after 9 games (runaway thinking made it slow and costly); the Haiku hybrid took its place as the second lab.
+- **The bot against two DeepSeeks** (6c): undecided.
 
 ## Don't claim
 
@@ -80,10 +90,12 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
 - **"Frontier models generally have both reading and discipline."** Only Sol was fully tested. Two Gemini models each won 5 of 6 in one trial set: a hint, not evidence.
 - **"A verification wrapper explains the lift."** The hybrid hands the bot all decisions, of which checking answers is only one part; the parts weren't separated.
 - **"Bot v4 is better than v3 against LLMs."** It tied v3 in bot-only play and was adopted as no worse. The test against LLMs wasn't run.
+- **"Decision models are bad at decisions."** Two decision models on one task, with a solver from another model. Say "on this game, handing the choices to a decision model hurt", and note the probe: d1-ultra and Jev seemed to judge solvability by their own reading, not the solver's.
+- **"Any model works as the hybrid's reader."** Two readers were tested, both accurate inside the hybrid. A reader that's often wrong, or as slow as DeepSeek, wasn't.
 - **"The bot would lose to two Sols."** It's a reasonable inference from lineup 2, but it wasn't run.
 - **Broad real-world implications.** This is one game, with our rules (deliberately different from the show in places), one deck of generated puzzles, and one bot design. Lessons like "models can understand a problem and still break its rules" are illustrations, not general laws.
 - **Strategy advice for contestants, as proven.** Flip the Mystery, ride the Express only when sure: these are simulation results under our rules.
 
 ## How to frame the contribution
 
-> Recent work argues that benchmarks reward guessing and should penalize confident errors (Kalai et al., 2025). Wheel of Fortune is a natural instance of such a scoreboard, where guessing wrong and waiting too long both cost you, and opponents set the price. Here models show distinct temperaments (one guesses recklessly, one waits too long, one gets it right), and letting a model read while a calculating bot decides recovers about two-thirds of the gap between a weak model and a strong one. We don't rank models; capability indices do that. We watch how they behave when a wrong answer costs them.
+> Recent work argues that benchmarks reward guessing and should penalize confident errors (Kalai et al., 2025). Wheel of Fortune is a natural instance of such a scoreboard, where guessing wrong and waiting too long both cost you, and opponents set the price. Here models show distinct temperaments (one guesses recklessly, one waits too long, one gets it right), and letting a model read while a calculating bot decides lifts weak models from two labs by about 28 points, whichever fault they have, recovering about two-thirds of the gap between a weak model and a strong one. We don't rank models; capability indices do that. We watch how they behave when a wrong answer costs them.

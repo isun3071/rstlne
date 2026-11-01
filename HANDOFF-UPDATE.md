@@ -1,4 +1,4 @@
-# rstlne: update since the briefing (2026-10-31, evening)
+# rstlne: update since the briefing (2026-10-31 evening to 2026-11-01)
 
 This update follows the briefing you already have and covers only what changed since. Where the two disagree, this one is newer.
 
@@ -98,7 +98,7 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
   | d1-ultra seat | 2.63 | 4 / 28 / 67% |
 
 - **DeepSeek ties the bots on wins but beats them on place,** since it rarely finishes last. Luna is second 53% of the time, so its place is near par despite few wins. The bots are boom or bust: against two Lunas the bot won 50% and was last 32%. The LLMs' frequent small rounds buy consistency; the bot's milking buys big wins and big losses.
-- **Running next:** the Haiku hybrid against two bots (Haiku's hybrid curves are now measured: it says "solvable" rarely early and is right 85–100% from 20% of the board) and a full run of the Luna Decisions seat.
+- **Run next, and since reported below:** the Haiku hybrid against two bots (Haiku's hybrid curves were measured first: it says "solvable" rarely early and is right 85–100% from 20% of the board) and a full run of the Luna Decisions seat.
 
 ### Money, margins, leads, and risk (added later the same evening)
 
@@ -115,6 +115,39 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 - **Only bot-based players ever won the $1M envelope,** 2–6 times per lineup. No LLM did: the bot keeps the Million card into the bonus.
 - **Gaps between places:** 1st to 2nd is typically $4.5–6.6k, 2nd to 3rd $2.5–5.0k; 9–19% of games are won by under $1,000.
 
+### The Haiku hybrid and the Luna Decisions seat (2026-11-01)
+
+- **The DeepSeek hybrid was stopped after 9 games.** DeepSeek's runaway thinking made it slow and costly: some board reads ran past 10,000 tokens, mostly on boards less than 40% revealed. The Haiku hybrid replaced it as the second lab.
+- **The Haiku hybrid alone against two bots: 44%** (38–49%), the bots 28% and 29%. $4.76 for 360 games.
+
+  | Set by set | Gap (95%) |
+  |---|---|
+  | **Haiku hybrid − Haiku alone** | **+29.2 (+22.2 to +36.1)** |
+  | Haiku hybrid − Luna hybrid | −1.7 (−7.2 to +3.9), a tie |
+  | Haiku hybrid − DeepSeek alone | +6.9 (+0.3 to +13.6) |
+  | Haiku hybrid − Sol alone | −14.4 (−20.0 to −8.6) |
+
+- **The hybrid's lift replicates on a second lab, and on the opposite fault.** Luna (OpenAI, reckless) gains 28 points and Haiku (Anthropic, passive) 29. The bot stops Luna guessing too early and makes Haiku act sooner.
+- **The two hybrids tie** on wins, average place (1.81 and 1.85) and money. The bot's strategy sets the level; the reader only needs to be accurate. Inside the hybrid Haiku was right on 95% of solves, with no invalid moves.
+- **The Luna Decisions seat alone against two bots: 8%** (4–12%), the bots 45% and 47%. 96¢ for 360 games. GPT-6 Luna Decisions made every move and chose when to solve; Luna wrote the answers.
+  - **Worse than Luna alone:** −9.4 points set by set (−15.8 to −3.6).
+  - **It solves as early as Luna and as often wrongly:** 1.9 attempts a game, 65% right, at 54% of the board; 0.67 wrong solves a game (Luna alone 0.70).
+  - **And it plays the wheel worse:** it misses consonants twice as often as Luna (1.56 a game against 0.75), almost never buys a vowel (0.08 a game against 2.67), and holds only 20% of turns. Its median bank per round won is $1,000, the minimum.
+- **Who decides, with the reader fixed** (alone against two bots):
+
+  | Who decides | Luna reading | Haiku reading |
+  |---|---|---|
+  | A decision model | 8% (Luna Decisions), 4% (d1-ultra) | |
+  | The model itself | 17.5% | 14% |
+  | **The bot (the hybrid)** | **45%** | **44%** |
+
+  The two decision models fail in opposite ways: d1-ultra solves too late, Luna Decisions too early and too often wrong. Neither matches the bot.
+- **The full order, alone against two bots, by average place:**
+
+  | Sol | Hybrid (Luna) | Hybrid (Haiku) | DeepSeek | Luna | Haiku | Luna Decisions seat | d1-ultra seat |
+  |---|---|---|---|---|---|---|---|
+  | 1.57 | 1.81 | 1.85 | 1.87 | 2.12 | 2.33 | 2.42 | 2.63 |
+
 ## 2. Corrections to the briefing
 
 - **The hybrid is a division of labour, not a verification wrapper.** The bot makes every decision (money, letters, risk, and when to solve); Luna only reads the board. Checking answers for fit is one part of it. The parts weren't measured separately, so the lift belongs to the whole split: "the LLM reads, the bot decides". The chess "centaur" comparison fits.
@@ -127,12 +160,10 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 - **Lineup 6 changed opponents.** One Sol beat two bots 58% to 21% each, so the bot against two Sols would be a massive underdog, in betting terms a long shot likely winning 10% or less. That's a predictable result for about $12. Lineup 6 keeps its format (the bot against two copies of one model) but against weaker pairs: two Lunas (done), two Haikus, two DeepSeeks. Each mirrors that model's solo run. The two-Sols version is optional.
 - **Spreading across labs.** After lineup 1, every LLM seat was OpenAI's. To keep this from being a study of one lab:
   - **Solo yardsticks** (a model alone against two bots) for DeepSeek and Haiku.
-  - **A DeepSeek hybrid,** to test whether the hybrid's lift holds on a second lab.
+  - **A second lab's hybrid,** to test whether the hybrid's lift holds beyond OpenAI. DeepSeek's was stopped for cost and speed; Haiku's ran instead.
 - **Remaining today:**
   1. The bot against two Haikus, and DeepSeek alone (done)
-  2. The DeepSeek hybrid, and the bot against two DeepSeeks
-
-  About $22 in all. Ian plans to stop the day after these.
+  2. The DeepSeek hybrid (stopped; the Haiku hybrid ran instead), and the bot against two DeepSeeks (undecided)
 - **Skipped for now:** lineups 4 (Sol, hybrid, bot) and 5 (Sol, two hybrids). They'd show the hybrid against Sol face to face, and whether the bot's strategy speeds up against a fast opponent. That's a natural follow-up, not needed for the main story.
 - **Bot version 5 won't change the grid.** Every game records its bot version, and the grid stays on version 4. A future version would be checked against v4 in bot-only play first, and only the lineups where the bot's strength matters would be rerun, reported as an update. Probably not worth it before the write-up.
 
@@ -189,7 +220,7 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 
 ## 6. What's next
 
-1. The four remaining runs today, then a full grid write-up of results.
+1. **Done:** every planned lineup except the bot against two DeepSeeks, which is undecided. Next is the full write-up of results.
 2. **Optional, later:**
    - lineups 4 and 5
    - the Sol-against-bots lineup rerun with version 3 bots (does v4 help against LLMs?)
