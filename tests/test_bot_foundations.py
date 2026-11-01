@@ -97,7 +97,8 @@ def test_v1_plays_the_formula_and_v2_the_win_table():
     assert replace(v2, win_table=()) == v1  # the table is their only difference
 
 
-V5_KNOBS = {"cased_lexicon": False, "one_letter": ()}  # added after version 4's freeze, at these values in 1 to 4
+V5_KNOBS = {"cased_lexicon": False, "one_letter": (), "ngrams": False, "triple_weight": 0.0, "triple_smoothing": 1.0,
+            "vector_pair_weight": 0.0, "single_fit_weight": None}  # added after version 4's freeze, at these values in 1 to 4
 LATER_KNOBS = {"stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot", *V5_KNOBS}  # off in 1 and 2
 V4_KNOBS = {"stealer_gain_llm", "stealer_gain_bot", "steal_bot"}  # added after version 3's freeze, off in it
 
@@ -151,8 +152,8 @@ class _Reader:
 def test_a_version_refuses_word_data_it_wasnt_frozen_with(monkeypatch, found, ok):
     from rstlne.players.bot import lexicon, player
     monkeypatch.setattr(lexicon, "available", lambda root: True)
-    monkeypatch.setattr(lexicon, "load", lambda path, vocabulary, cased=False: None)
-    monkeypatch.setattr(lexicon, "fingerprint", lambda root, vocabulary: found)
+    monkeypatch.setattr(lexicon, "load", lambda path, vocabulary, *variant: None)
+    monkeypatch.setattr(lexicon, "fingerprint", lambda root, vocabulary, extra=(): found)
     monkeypatch.setattr(player, "FullReader", _Reader)
     assert player.make_reader(versions.knobs(1)).fingerprint == found  # self-play experiments aren't checked
     if ok:

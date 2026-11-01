@@ -240,3 +240,63 @@ def test_each_lexicon_variant_has_its_own_cache(tmp_path):
     from rstlne.players.bot.lexicon import cache_path
     assert cache_path(tmp_path, "abc123", cased=False).name == "compiled-abc123.pickle"  # version 4's, unchanged
     assert cache_path(tmp_path, "abc123", cased=True).name == "compiled-abc123-cased.pickle"
+
+
+# Version 5, R2 to R5: Wikipedia pairs and triples, vectors for unseen pairs, single words
+
+from rstlne.players.bot.lexicon import Ngrams  # noqa: E402
+
+V5 = replace(KNOBS, cased_lexicon=True, one_letter=("A", "I", "O"))
+
+
+def best(lex, knobs, rules, spec, answer, used, category="Thing"):
+    return FullReader(lex, knobs).read(view_for(rules, spec, answer, used=used, category=category)).best
+
+
+def test_wikipedia_pair_counts_join_the_links(rules, wheel_spec):
+    lex = Lexicon.build({"ramp": 1e-4, "damp": 1e-5, "socks": 1e-5})
+    lex.ngrams = Ngrams.build({"ramp": 900, "damp": 100, "socks": 300}, pairs={("damp", "socks"): 60})
+    assert best(lex, V5, rules, wheel_spec, "DAMP SOCKS", "AMPSOCK") == "RAMP SOCKS"  # version 4 never looks
+    assert best(lex, replace(V5, ngrams=True), rules, wheel_spec, "DAMP SOCKS", "AMPSOCK") == "DAMP SOCKS"
+
+
+def test_triples_judge_the_whole_phrase(rules, wheel_spec):
+    words = {"come": 1e-3, "down": 1e-3, "join": 1e-4, "the": 5e-2, "party": 1e-4}
+    unigrams = {"come": 20000, "down": 30000, "join": 3000, "the": 900000, "party": 4000}
+    pairs = {("come", "down"): 180, ("come", "join"): 40, ("down", "the"): 3300, ("join", "the"): 200, ("the", "party"): 800}
+    lex = Lexicon.build(words)
+    triples = {("join", "the", "party"): 300, ("come", "join", "the"): 30, ("come", "down", "the"): 5}  # never DOWN THE PARTY
+    lex.ngrams = Ngrams.build(unigrams, pairs=pairs, triples=triples)
+    knobs = replace(V5, ngrams=True)
+    assert best(lex, knobs, rules, wheel_spec, "COME JOIN THE PARTY", "CMEOHTPARYN") == "COME DOWN THE PARTY"
+    assert best(lex, replace(knobs, triple_weight=1.0), rules, wheel_spec, "COME JOIN THE PARTY", "CMEOHTPARYN") == "COME JOIN THE PARTY"
+
+
+def test_unseen_pairs_lean_on_how_close_the_words_are(rules, wheel_spec):
+    vectors = {"damp": np.array([1.0, 0.2, 0.0]), "socks": np.array([0.9, 0.3, 0.1]), "ramp": np.array([0.0, 0.1, 1.0])}
+    lex = Lexicon.build({"ramp": 2e-5, "damp": 1e-5, "socks": 1e-5}, vectors=vectors)
+    assert best(lex, V5, rules, wheel_spec, "DAMP SOCKS", "AMPSOCK") == "RAMP SOCKS"
+    assert best(lex, replace(V5, vector_pair_weight=4.0), rules, wheel_spec, "DAMP SOCKS", "AMPSOCK") == "DAMP SOCKS"
+
+
+def test_a_one_word_answer_leans_harder_on_the_category(rules, wheel_spec):
+    vectors = {"waving": np.array([1.0, 0.1]), "having": np.array([0.1, 1.0]), "doing": np.array([0.95, 0.2])}
+    lex = Lexicon.build({"having": 1e-3, "waving": 2e-5, "doing": 1e-3}, vectors=vectors)
+    category = "What Are You Doing?"
+    assert best(lex, V5, rules, wheel_spec, "WAVING", "AVING", category) == "HAVING"
+    assert best(lex, replace(V5, single_fit_weight=12.0), rules, wheel_spec, "WAVING", "AVING", category) == "WAVING"
+
+
+def test_wikipedia_counts_load_from_the_fetched_files(tmp_path):
+    from rstlne import data
+    words = ["damp", "socks", "the"]
+    counter = data.NgramCounter(words)
+    counter.add([["damp", "socks"], ["damp", "socks"], ["the", "damp", "socks"]])
+    unigrams, (pk, pc), (tk, tc) = counter.result()
+    (tmp_path / "enwiki-words.txt").write_text("\n".join(words) + "\n")
+    for name, array in (("unigrams", unigrams), ("pair-keys", pk), ("pair-counts", pc), ("triple-keys", tk), ("triple-counts", tc)):
+        np.save(tmp_path / f"enwiki-{name}.npy", array)
+    grams = Ngrams.load(tmp_path)
+    ids = grams.ids_of(["DAMP", "SOCKS", "THE", "ZEBRA"])
+    assert ids[-1] == -1 and grams.pair(ids[:1], ids[1:2])[0, 0] == 3
+    assert grams.triple(ids[2], ids[0], ids[1]) == 1 and grams.followers[ids[0]] == 1

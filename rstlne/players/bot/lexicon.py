@@ -72,6 +72,75 @@ class _Shape:
 
 
 @dataclass
+class Ngrams:
+    """Version 5's word, pair, and triple counts from full English Wikipedia, as sorted integer keys."""
+
+    ids: dict[str, int]  # uppercase word -> id
+    unigrams: np.ndarray
+    pair_keys: np.ndarray
+    pair_counts: np.ndarray
+    triple_keys: np.ndarray
+    triple_counts: np.ndarray
+    followers: np.ndarray  # distinct words seen after each word, for Witten-Bell smoothing
+
+    @classmethod
+    def build(cls, unigrams: Mapping[str, int], pairs: Mapping[tuple[str, str], int] | None = None,
+              triples: Mapping[tuple[str, str, str], int] | None = None) -> Ngrams:
+        """From plain counts, for tests."""
+        words = sorted(set(unigrams) | {w for p in [*(pairs or {}), *(triples or {})] for w in p})
+        ids = {w: i for i, w in enumerate(words)}
+        def keyed(table, width):
+            items = sorted((_key([ids[w] for w in k]), n) for k, n in (table or {}).items())
+            return (np.array([k for k, _ in items], np.int64), np.array([n for _, n in items], np.int64))
+        pk, pc = keyed(pairs, 2)
+        tk, tc = keyed(triples, 3)
+        counts = np.array([unigrams.get(w, 0) for w in words], np.int64)
+        return cls._made(words, counts, pk, pc, tk, tc)
+
+    @classmethod
+    def load(cls, root: Path) -> Ngrams:
+        """The fetched files, memory-mapped."""
+        root = Path(root)
+        words = (root / "enwiki-words.txt").read_text().split("\n")[:-1]
+        arrays = [np.load(root / f"enwiki-{name}.npy", mmap_mode="r")
+                  for name in ("unigrams", "pair-keys", "pair-counts", "triple-keys", "triple-counts")]
+        return cls._made(words, *arrays)
+
+    @classmethod
+    def _made(cls, words, unigrams, pk, pc, tk, tc) -> Ngrams:
+        followers = np.bincount(np.asarray(pk) >> NGRAM_BITS, minlength=len(words)) if len(pk) else np.zeros(len(words))
+        return cls({w.upper(): i for i, w in enumerate(words)}, unigrams, pk, pc, tk, tc, followers)
+
+    def ids_of(self, words: Iterable[str]) -> np.ndarray:
+        return np.array([self.ids.get(w.strip("&,.'-!?").upper(), -1) for w in words], dtype=np.int64)
+
+    def pair(self, first: np.ndarray, second: np.ndarray) -> np.ndarray:
+        """Counts for every (first[i], second[j]) pair, -1 meaning unknown. Shape (len(first), len(second))."""
+        known = (first[:, None] >= 0) & (second[None, :] >= 0)
+        return np.where(known, _lookup(self.pair_keys, self.pair_counts, _key([first[:, None], second[None, :]])), 0)
+
+    def triple(self, a: int, b: int, c: int) -> int:
+        return int(_lookup(self.triple_keys, self.triple_counts, np.array([_key([a, b, c])]))[0])
+
+
+NGRAM_BITS = 18  # as rstlne.data.WORD_BITS: a word's share of a pair or triple key
+
+
+def _key(ids):
+    key = np.asarray(ids[0], np.int64)
+    for i in ids[1:]:
+        key = (key << NGRAM_BITS) | np.asarray(i, np.int64)
+    return key
+
+
+def _lookup(keys: np.ndarray, counts: np.ndarray, wanted: np.ndarray) -> np.ndarray:
+    if not len(keys):
+        return np.zeros(np.shape(wanted), np.int64)
+    at = np.searchsorted(keys, wanted).clip(0, len(keys) - 1)
+    return np.where(np.asarray(keys)[at] == wanted, np.asarray(counts)[at], 0)
+
+
+@dataclass
 class Lexicon:
     frequency: dict[str, float]  # word -> share of English words, from wordfreq
     by_length: dict[int, list[str]]  # vocabulary by length, commonest first
@@ -88,6 +157,7 @@ class Lexicon:
     vector_ids: dict[str, int] = field(default_factory=dict)
     vectors: np.ndarray = field(default_factory=lambda: np.zeros((0, 1), np.float16))
     name: str = "full"
+    ngrams: Ngrams | None = None  # from version 5, attached at load, never pickled
 
     @classmethod
     def build(
@@ -240,6 +310,18 @@ class Lexicon:
             out[have] = self.vectors[[rows[i] for i in have]].astype(np.float32) @ target
         return out
 
+    def closeness(self, first: list[str], second: list[str]) -> np.ndarray:
+        """Cosine between every word of `first` and every word of `second`, 0 where either lacks a vector."""
+        a = [self.vector_ids.get(w.strip("&,.'-!?"), -1) for w in first]
+        b = [self.vector_ids.get(w.strip("&,.'-!?"), -1) for w in second]
+        out = np.zeros((len(a), len(b)))
+        ha, hb = [i for i, r in enumerate(a) if r >= 0], [j for j, r in enumerate(b) if r >= 0]
+        if ha and hb:
+            va = self.vectors[[a[i] for i in ha]].astype(np.float32)
+            vb = self.vectors[[b[j] for j in hb]].astype(np.float32)
+            out[np.ix_(ha, hb)] = va @ vb.T
+        return out
+
     def _category_vector(self, category: str) -> np.ndarray | None:
         words = [w for w in re.findall(r"[A-Z]+", category.upper()) if w not in _CATEGORY_STOP]
         rows = [self.vector_ids[w] for w in words if w in self.vector_ids]
@@ -287,7 +369,7 @@ def cache_path(root: Path, found: str, cased: bool) -> Path:
     return Path(root) / f"compiled-{found}{'-cased' if cased else ''}.pickle"
 
 
-def load(path: str, vocabulary: int, cased: bool = False) -> Lexicon:
+def load(path: str, vocabulary: int, cased: bool = False, ngrams: bool = False) -> Lexicon:
     """The full lexicon from data/, once per process, compiled to a pickle the first time."""
     root = Path(path)
     found = fingerprint(root, vocabulary)
@@ -305,6 +387,7 @@ def load(path: str, vocabulary: int, cased: bool = False) -> Lexicon:
             pickle.dump(lexicon, f, protocol=pickle.HIGHEST_PROTOCOL)
         partial.replace(cache)  # whole or not at all, if two processes compile at once
     lexicon.vectors = np.load(root / "vectors.npy", mmap_mode="r")  # shared by every process on the machine
+    lexicon.ngrams = Ngrams.load(root) if ngrams else None
     return lexicon
 
 

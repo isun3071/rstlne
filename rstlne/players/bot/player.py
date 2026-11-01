@@ -40,12 +40,12 @@ def make_reader(knobs: versions.Knobs, version: int | None = None) -> Reader:
     root = lexicon.data_dir()
     if not lexicon.available(root):
         return FrequencyReader()
-    found = lexicon.fingerprint(root, knobs.vocabulary)
+    found = lexicon.fingerprint(root, knobs.vocabulary, ("enwiki",) if knobs.ngrams else ())
     pinned = versions.DATA.get(version) if version is not None else None
     if pinned and found != pinned:
         raise ValueError(f"bot v{version} was frozen with word data {pinned}, but {root} holds {found}. "
                          "Fetch the data it was frozen with, or pick another version in config.toml.")
-    reader = FullReader(lexicon.load(str(root), knobs.vocabulary, knobs.cased_lexicon), knobs)
+    reader = FullReader(lexicon.load(str(root), knobs.vocabulary, knobs.cased_lexicon, knobs.ngrams), knobs)
     reader.fingerprint = found
     return reader
 

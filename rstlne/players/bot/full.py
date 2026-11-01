@@ -64,6 +64,7 @@ class _Slot:
     weight: np.ndarray  # each free word's odds before its neighbors
     ids: np.ndarray  # pair ids, -1 for words without pair counts
     unknown: float  # odds of a word the vocabulary doesn't know
+    eids: np.ndarray | None = None  # from version 5: ids in the Wikipedia counts, -1 for words without them
 
 
 @dataclass(frozen=True)
@@ -94,21 +95,27 @@ class FullReader:
         words, seps = tokens(text)
         category = view.category.upper()
         kinds = category_kinds(category)
-        slots = [self._slot(w, used, category) for w in words]
+        slots = [self._slot(w, used, category, single=len(words) == 1) for w in words]
         matches = self._matches(words, seps, used, kinds)
         rng = random.Random(view_seed(view))
         samples, unknown = self._sample(slots, matches, category, rng, pool)
         if "SAME NAME" in category or "RHYME" in category:
             samples, unknown = self._reweight(samples, unknown, category, rng)
+        if self.knobs.triple_weight and self._ngrams() is not None and len(words) > 2:
+            samples, unknown = self._triples(samples, unknown, rng)
         answers = [self._join(s, seps) for s in samples]
         return summarize(answers, unknown, text, pool, self.knobs, refuted, suggested)
 
     # Slots and phrase matches
 
-    def _slot(self, pattern: str, used: set[str], category: str) -> _Slot:
-        lex, knobs = self.lexicon, self.knobs
+    def _ngrams(self):
+        return self.lexicon.ngrams if self.knobs.ngrams else None
+
+    def _slot(self, pattern: str, used: set[str], category: str, single: bool = False) -> _Slot:
+        lex, knobs, ng = self.lexicon, self.knobs, self._ngrams()
         if "_" not in pattern:
-            return _Slot(pattern, [pattern], np.array([lex.freq(pattern)]), np.array([lex.pair_ids.get(pattern, -1)]), 0.0)
+            return _Slot(pattern, [pattern], np.array([lex.freq(pattern)]), np.array([lex.pair_ids.get(pattern, -1)]), 0.0,
+                         ng.ids_of([pattern]) if ng is not None else None)
         core = re.sub(r"^[^A-Z_']+|[^A-Z_']+$", "", pattern)  # punctuation around the word, like a comma
         lead, trail = pattern[: pattern.index(core)], pattern[pattern.index(core) + len(core):]
         fitting = []
@@ -118,7 +125,8 @@ class FullReader:
                 fitting.append(w)
         weight = np.array([lex.freq(w) for w in fitting])
         if fitting:
-            weight = weight * np.exp(knobs.fit_weight * lex.fit(fitting, category))
+            fit_weight = knobs.single_fit_weight if single and knobs.single_fit_weight is not None else knobs.fit_weight
+            weight = weight * np.exp(fit_weight * lex.fit(fitting, category))
             if any(c in category for c in ING_CATEGORIES):
                 weight = weight * np.where([w.endswith("ING") for w in fitting], knobs.ing_boost, 1.0)
             keep = np.argsort(-weight, kind="stable")[: knobs.slot_candidates]
@@ -128,7 +136,8 @@ class FullReader:
         for c in core:
             unknown *= open_square if c == "_" else _SHARE.get(c, 1.0)
         full = [lead + w + trail for w in fitting]
-        return _Slot(pattern, full, weight, np.array([lex.pair_ids.get(w, -1) for w in fitting], dtype=np.int64), unknown)
+        return _Slot(pattern, full, weight, np.array([lex.pair_ids.get(w, -1) for w in fitting], dtype=np.int64), unknown,
+                     ng.ids_of(fitting) if ng is not None else None)
 
     def _matches(self, words, seps, used: set[str], kinds: set[str]) -> list[_Match]:
         lex, knobs = self.lexicon, self.knobs
@@ -170,10 +179,17 @@ class FullReader:
         first = np.where(a.ids >= 0, first, 0.0)
         own = np.array([lex.freq(w) for w in b.words])
         seen = np.where(a.ids >= 0, lex.distinct[a.ids.clip(0)], 0.0) if len(lex.distinct) else np.zeros(len(a.ids))
+        ng = self._ngrams()
+        if ng is not None and a.eids is not None and b.eids is not None:  # Wikipedia's counts join the pair corpora's
+            counts = counts + ng.pair(a.eids, b.eids)
+            first = first + np.where(a.eids >= 0, np.asarray(ng.unigrams)[a.eids.clip(0)], 0)
+            seen = seen + np.where(a.eids >= 0, ng.followers[a.eids.clip(0)], 0)
         with np.errstate(divide="ignore", invalid="ignore"):
             # Witten-Bell: P(b | a) / P(b). Unseen pairs cost more after a word with plenty of evidence.
             lift = (counts / own[None, :] + seen[:, None]) / (first[:, None] + seen[:, None])
         links = np.where(first[:, None] > 0, (1 - knobs.pair_weight) + knobs.pair_weight * lift, 1.0)
+        if knobs.vector_pair_weight:  # an unseen pair leans on how close the two words are
+            links = np.where(counts == 0, links * np.exp(knobs.vector_pair_weight * lex.closeness(a.words, b.words)), links)
         if "SAME LETTER" in category:
             same = np.array([[x.strip("&,.'-")[:1] == y.strip("&,.'-")[:1] for y in b.words] for x in a.words])
             links = links * np.where(same, knobs.same_letter_boost, 1.0)
@@ -289,6 +305,26 @@ class FullReader:
             weights.append(w)
         picks = rng.choices(range(len(samples)), weights, k=len(samples))
         return [samples[i] for i in picks], [unknown[i] for i in picks]
+
+    def _triples(self, samples, unknown, rng):
+        """Resample whole answers by their word triples: each triple's count against the count its two pairs predict."""
+        weights = [self._triple_factor(words) ** self.knobs.triple_weight for words in samples]
+        picks = rng.choices(range(len(samples)), weights, k=len(samples))
+        return [samples[i] for i in picks], [unknown[i] for i in picks]
+
+    def _triple_factor(self, words: list[str]) -> float:
+        ng, smooth = self._ngrams(), self.knobs.triple_smoothing
+        ids = ng.ids_of(words)
+        factor = 1.0
+        for x, y, z in zip(ids, ids[1:], ids[2:]):
+            if min(x, y, z) < 0:
+                continue
+            xy, yz = ng.pair(np.array([x]), np.array([y]))[0, 0], ng.pair(np.array([y]), np.array([z]))[0, 0]
+            if not xy or not ng.unigrams[y]:
+                continue  # no evidence for the first pair: the triple can't be judged
+            expected = xy * yz / ng.unigrams[y]
+            factor *= (ng.triple(x, y, z) + smooth) / (expected + smooth)
+        return factor
 
     def _same_name(self, words: list[str]) -> bool:
         """`BIRTHDAY & WEDDING CAKE`: the left half plus the right half's ending is a known phrase too."""

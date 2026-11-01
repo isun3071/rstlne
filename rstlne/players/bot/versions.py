@@ -54,6 +54,14 @@ class Knobs:
     # overwrote I in earlier versions), and the only words a one-letter slot may hold; empty allows every letter.
     cased_lexicon: bool = False
     one_letter: tuple[str, ...] = ()
+    # From version 5. Word pair counts from full English Wikipedia join the links; triples reweight whole answers by
+    # their count against what their pairs predict (0 leaves them out), smoothed by a pseudo-count; an unseen pair's
+    # link scales by e^(weight x cosine of the two words' vectors); and a one-word answer's category fit weight.
+    ngrams: bool = False
+    triple_weight: float = 0.0
+    triple_smoothing: float = 1.0
+    vector_pair_weight: float = 0.0
+    single_fit_weight: float | None = None
 
 
 def _tuples(value):
