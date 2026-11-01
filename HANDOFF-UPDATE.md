@@ -64,6 +64,25 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 - **Both formats agree.** Luna and Haiku lose to the bot by similar margins whether alone against two bots or as two copies against one bot. The copies of each model passed their A/A test.
 - **The null:** if a model played like the bot, each seat would win a third. Win rate against that null shows whether a model is better or worse; the logs show why.
 
+### Decision models (added later the same evening)
+
+- **Decision seats now let the decision model decide when to solve** ("choice" mode, the default). Solve is one of the moves it can pick, and the solver (Luna) writes the answer when it does; no calibrated threshold. Ian wants decision models in the wild.
+- **Artificial Analysis's Decision Index** (v1.0, October 2026) ranks 17 decision models on knowledge, hard multiple choice, tool-use choices, and safety classification. d1-ultra (Liquid AI) leads at 65.2. GPT-6 Luna Decisions, the old default here, is 15th at 48.5. Decisions cost $8–200 per million.
+- **In a one-set trial, d1-ultra never chose to solve,** and won nothing.
+- **A probe explained why** (30 tuning puzzles revealed letter by letter, 289 boards):
+
+  | | First picks solve, on average |
+  |---|---|
+  | Luna, the solver | can solve from 30% of the board |
+  | Luna Decisions | 31% |
+  | d1-ultra | 86% |
+  | Jev 1.14 | 90% |
+
+  With 60–69% of the board showing, Luna solves every board, but d1-ultra rates it solvable at 0.17 and Jev at 0.35.
+- **On this task the top decision models are strongly underconfident.** They seem to judge by their own reading, though the seat hands the solve to a better reader. Luna Decisions, from the solver's own family, picks solve about as often as Luna can succeed. A capability index's measured overconfidence didn't carry over to reading a board.
+- **A d1-ultra lineup is running,** expected near 0%. A second, the bot against two d1-ultra seats, was skipped as predictable.
+- **3e (the DeepSeek hybrid) is slow,** about 6.5 minutes a game. DeepSeek's board reads take a median 4 seconds but average 27 (some take minutes), and the server's CPU was saturated by the d1-ultra lineup. It costs about 2.8¢ a game, roughly $10 for the run.
+
 ## 2. Corrections to the briefing
 
 - **The hybrid is a division of labour, not a verification wrapper.** The bot makes every decision (money, letters, risk, and when to solve); Luna only reads the board. Checking answers for fit is one part of it. The parts weren't measured separately, so the lift belongs to the whole split: "the LLM reads, the bot decides". The chess "centaur" comparison fits.

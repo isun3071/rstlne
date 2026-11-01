@@ -131,6 +131,19 @@ Luna is reckless (early, often wrong) and Haiku passive (right, but too late): o
 
 DeepSeek is eager and mostly right: it wins more rounds than any model but Sol, at small banks, and the bots' bigger banks balance it out (main-round money about $6,100 each). Set by set: Sol − DeepSeek +21 (+14 to +28), hybrid − DeepSeek +8.6 (+2.8 to +14.4), DeepSeek − Luna +19, DeepSeek − Haiku +22. Measured from either side (a model alone against two bots, or the bot against two copies), Luna and Haiku lose by similar margins in the same order. The copies of each model passed their A/A test (gaps +1 and +3, intervals across zero).
 
+## When decision models choose to solve (probe, 2026-10-31)
+
+In choice mode, d1-ultra (first on Artificial Analysis's Decision Index) never solved in a one-set trial, so a probe asked three decision models, on 30 tuning puzzles revealed letter by letter (289 boards), which move they'd make, and separately whether the board was solvable; Luna tried one solve on every board. Script: `logs/solve-probe.py`.
+
+| | First picks solve, on average | Luna right at 60–69% of the board | Model's P(solvable) there |
+|---|---|---|---|
+| Luna (the solver) | can solve from 30% of the board | 100% | |
+| GPT-6 Luna Decisions (index rank 15) | 31% | | 0.56 |
+| d1-ultra (rank 1) | 86% (26 of 30 puzzles) | | 0.17 |
+| Jev 1.14 (rank 5) | 90% (20 of 30) | | 0.35 |
+
+d1-ultra and Jev are strongly underconfident on this task: they seem to judge solvability by their own reading, though the seat hands the solve to Luna, who reads far better. Luna Decisions, the same family as its solver, picks solve about as often as Luna can succeed at every stage. The overconfidence the index found on knowledge questions doesn't carry over to reading a board. Expect d1-ultra's lineup near 0%: the bots usually solve by about 65% of the board.
+
 ## Frontier and other labs: trials only, until there's a grant (2026-10-31)
 
 Three more models had one-set trials (set 0, six games, alone against two bots, on the laptop):
