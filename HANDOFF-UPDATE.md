@@ -112,7 +112,7 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 - **Take-home money is skewed** by $40k+ bonus wins: Sol's median take-home is $49.6k, everyone else's under $17k. Medians tell the truth here.
 - **Leads hold:** a lead after round 3 holds 80–90% of the time for strong players. Sol comes back from behind 23% of the time, Luna 7%, and Haiku 5%.
 - **Risk:** the bot-based players hit Bankrupt 1.25–1.61 times a game, from milking; the early solvers Luna (0.60) and DeepSeek (0.73) least.
-- **Only bot-based players ever won the $1M envelope,** 2–6 times per lineup. No LLM did: the bot keeps the Million card into the bonus.
+- **Bot-based players won 37 of the 38 $1M envelopes,** 2–6 per lineup: the bot keeps the Million card into the bonus. Against bots, no LLM ever won it; the one LLM win was Haiku's, once, in the all-LLM lineup. (A correction: this first said no LLM ever won it.)
 - **Gaps between places:** 1st to 2nd is typically $4.5–6.6k, 2nd to 3rd $2.5–5.0k; 9–19% of games are won by under $1,000.
 
 ### The Haiku hybrid and the Luna Decisions seat (2026-11-01)
@@ -152,6 +152,7 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 
   From a blank board nobody recalls aired answers; with R S T L N E, aired and generated puzzles score alike. The bonus-round caveat narrows to the missing clock. Sol solves about 90% with only R S T L N E showing, before any picks.
 - **Ian has called the project done** after this: every planned lineup ran except the bot against two DeepSeeks.
+- **Long puzzles slow the bot down; the LLMs don't.** Against two bots, all 8 players won a larger share of rounds on the longest puzzles (27+ letters) than on the shortest (16–19): +7.9 points on average (+0.3 to +15.6), and +13.7 for Sol (+4.1 to +23.9), the only player clear on its own. The bots need more board as puzzles grow (59% showing at a solve on the shortest, 68% on the longest), while Sol, DeepSeek and Luna solve at about 50% whatever the length. The bot fits words into slots one by one; an LLM recognizes the phrase. Caveat: long puzzles are more often phrases and titles, so part of this may be category.
 - **The full order, alone against two bots, by average place:**
 
   | Sol | Hybrid (Luna) | Hybrid (Haiku) | DeepSeek | Luna | Haiku | Luna Decisions seat | d1-ultra seat |

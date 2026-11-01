@@ -446,6 +446,90 @@ for ax, key, title in ((axes[0], "bankrupts", "Bankrupts per game"), (axes[1], "
 save(fig, "11-risk.png", "Two ways to give a round away",
      "Bankrupts come from spinning; wrong solves from guessing. Same players as charts 7 and 8")
 
+
+# 12. Puzzle length: the bots slow down on long puzzles; the LLMs don't
+BANDS = [(16, 17), (18, 19), (20, 22), (23, 26), (27, 99)]
+band_names = ["16–17", "18–19", "20–22", "23–26", "27+"]
+
+
+def solved_rounds(folder, pick):
+    """Every solved main round in a lineup: its set, letters, the share showing, and whether the picked seat solved it."""
+    out = []
+    for p in glob.glob(str(T / folder / "*.jsonl")):
+        L = [json.loads(l) for l in open(p)]
+        if L[-1].get("type") != "summary":
+            continue
+        me = next(i for i, seat in enumerate(L[0]["seats"]) if pick(seat))
+        number = int(Path(p).name[3:6])
+        for l in L:
+            if l["type"] == "action" and l["result"]["outcome"] == "solved" and l["state"].get("round"):
+                r = l["state"]["round"]
+                letters = [c for c in r["puzzle"]["answer"] if c.isalpha()]
+                out.append({"set": number, "letters": len(letters), "mine": l["seat"] == me,
+                            "shown": sum(c in r["used"] for c in letters) / len(letters)})
+    return out
+
+
+def long_minus_short(rows):
+    share = lambda rs: sum(r["mine"] for r in rs) / len(rs)  # noqa: E731
+    return share([r for r in rows if r["letters"] >= 27]) - share([r for r in rows if r["letters"] <= 19])
+
+
+def by_set(rows):
+    sets = {}
+    for r in rows:
+        sets.setdefault(r["set"], []).append(r)
+    return sets
+
+
+import random  # noqa: E402
+rng = random.Random(12)
+solo12 = [r for r in rows7 if not r[0].startswith("Bot")]
+R = {name: solved_rounds(folder, pick) for name, folder, pick, kind in solo12}
+gaps12 = []
+for name, folder, pick, kind in solo12:
+    sets = by_set(R[name])
+    keys = sorted(sets)
+    boots = sorted(long_minus_short([r for k in rng.choices(keys, k=len(keys)) for r in sets[k]]) for _ in range(2000))
+    gaps12.append((name, kind, long_minus_short(R[name]), boots[50], boots[1949]))
+llm_names = [name for name, _, _, kind in solo12 if kind == "LLM"]
+fig, axes = plt.subplots(1, 2, figsize=(13, 5.6), gridspec_kw={"width_ratios": [1, 1.25]})
+fig.subplots_adjust(left=0.07, right=0.97, top=0.78, bottom=0.2, wspace=0.55)
+ax = axes[0]
+for label, rows, colour in (("bots", [r for rs in R.values() for r in rs if not r["mine"]], KIND["bot"]),
+                            ("LLMs alone", [r for n in llm_names for r in R[n] if r["mine"]], KIND["LLM"])):
+    ys = [100 * st.median([r["shown"] for r in rows if lo <= r["letters"] <= hi]) for lo, hi in BANDS]
+    ax.plot(range(len(BANDS)), ys, color=colour, linewidth=2, marker="o", markersize=8, zorder=3)
+    ax.text(len(BANDS) - 1 + 0.15, ys[-1], label, va="center", fontsize=10, color=INK)
+ax.set_xticks(range(len(BANDS)), band_names)
+ax.set_xlim(-0.3, len(BANDS) + 0.6)
+ax.set_ylim(40, 75)
+ax.set_yticks(range(40, 76, 5))
+ax.set_xlabel("letters in the puzzle")
+ax.set_ylabel("board showing at a correct solve (median, %)")
+ax.grid(axis="y", color=GRID, linewidth=0.8)
+ax.set_axisbelow(True)
+ax.tick_params(length=0)
+ax.set_title("How much board each needs", loc="left", fontsize=11.5, color=INK)
+ax = axes[1]
+for i, (name, kind, g, lo, hi) in enumerate(reversed(gaps12)):
+    ax.plot([lo * 100, hi * 100], [i, i], color=INK2, linewidth=1.4, zorder=2)
+    ax.scatter([g * 100], [i], s=70, color=KIND[kind], edgecolor=SURFACE, linewidth=1.5, zorder=3)
+    ax.text(hi * 100 + 1, i, f"{g * 100:+.0f}", va="center", fontsize=9.5, color=INK)
+ax.axvline(0, color=INK2, linewidth=1, linestyle=(0, (4, 3)))
+ax.set_yticks(range(len(gaps12)), [g[0] for g in reversed(gaps12)])
+ax.set_xlim(-12, 32)
+ax.set_xticks(range(-10, 31, 10))
+tidy(ax, "rounds won on 27+ letters minus on 16–19 (points, 95%)")
+ax.set_title("Each player against two bots", loc="left", fontsize=11.5, color=INK)
+handles = [plt.Line2D([], [], marker="o", linestyle="", color=KIND[k], markersize=8) for k in KIND]
+fig.legend(handles, ["LLM", "bot", "hybrid", "decision seat"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
+save(fig, "12-puzzle-length.png", "Long puzzles slow the bot down, not the LLMs",
+     "Every main round solved in the lineups against two bots; every player gains on long puzzles")
+print("\nPuzzle length (rounds won on 27+ letters minus 16–19):")
+for name, kind, g, lo, hi in gaps12:
+    print(f"  {name:26} {g * 100:+5.1f} [{lo * 100:+.1f}, {hi * 100:+.1f}]")
+
 print("\nExtra stats (main-round money):")
 for name, folder, pick, kind in players:
     gs = G[name]

@@ -76,9 +76,22 @@ Seen from the other side, it's the same. The bot against two Lunas won 50%, and 
 - **Luna** can read: 84% of the answers it gave inside the hybrid were right. Its losses are discipline. 219 of its solves didn't fit the board: a letter already called placed in a hidden square, an answer already ruled wrong guessed again, wild guesses with five letters showing.
 - **Haiku** is careful to a fault. It waits until about 72% of the board is showing, and by then the bots usually have the round.
 - **DeepSeek** is eager and mostly right. It wins more rounds than any model but Sol, but small ones (a median of $1,300), and the bots' bigger rounds balance it out. It rarely finishes last, so it beats the bots on average place while tying them on wins.
-- **The bot** wins fewer rounds but bigger ones. Once it knows the answer it keeps spinning to build its bank before solving, and it holds the Million card into the bonus round. Only bot-based players ever won the $1,000,000 envelope. That makes it boom or bust: against two Lunas it won half its games, banked nothing in 35%, and finished last in 32%.
+- **The bot** wins fewer rounds but bigger ones. Once it knows the answer it keeps spinning to build its bank before solving, and it holds the Million card into the bonus round. Bots and hybrids won 37 of the 38 $1,000,000 envelopes; the one LLM win came at a table with no bots. That makes it boom or bust: against two Lunas it won half its games, banked nothing in 35%, and finished last in 32%.
 
 ![Where each player finishes](figures/7-finishing-places.png)
+
+**Long puzzles favour the LLMs.** Against two bots, every player won a larger share of rounds on the longest puzzles (27+ letters) than on the shortest (16–19): about 8 points on average, and 14 for Sol. The bots need more of the board as puzzles grow, while the LLMs read a long phrase about as early as a short one.
+
+![Long puzzles slow the bot down, not the LLMs](figures/12-puzzle-length.png)
+
+| Board showing at a correct solve (median) | 16–17 letters | 27+ letters |
+|---|---|---|
+| The bots | 59% | 68% |
+| Sol | 50% | 48% |
+| DeepSeek | 47% | 50% |
+| Luna | 53% | 50% |
+
+The bot fits words from its lists into slots, so every extra word is more to pin down; an LLM recognizes the phrase as a whole. Length goes with category, though: long puzzles are more often phrases and titles.
 
 ## 3. Can we do better?
 
@@ -160,6 +173,7 @@ All are in [figures/](figures/), drawn from the game logs.
 | [9](figures/9-gaps-between-places.png) | Gaps between places |
 | [10](figures/10-leads-and-comebacks.png) | Holding a lead, and coming back |
 | [11](figures/11-risk.png) | Bankrupts and wrong solves |
+| [12](figures/12-puzzle-length.png) | Puzzle length: how much board each needs, and each player's gain on long puzzles |
 
 ## Going further
 

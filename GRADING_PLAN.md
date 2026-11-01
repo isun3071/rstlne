@@ -185,7 +185,7 @@ Each player alone against two bots, then the bot against two copies; main-round 
 
 - **Take-home money** (with the bonus) is skewed by $40k+ bonus wins: Sol's median is $49.6k, everyone else's $0–16.5k. Report medians.
 - **Gaps between places** (median main-round money, per lineup): 1st to 2nd about $4.5–6.6k, 2nd to 3rd about $2.5–5.0k. 9–19% of games are won by under $1,000.
-- **Only bot-based players ever won the $1M envelope** (2–6 times per lineup, including in the bots' seats against Sol and DeepSeek); no LLM did. It needs the Million card kept into the bonus, which the bot values and holds.
+- **Bot-based players won 37 of the 38 $1M envelopes** (2–6 per lineup, including in the bots' seats against Sol and DeepSeek). Against bots, no LLM ever did; the one LLM win was Haiku's, once, in lineup 1, with no bots at the table. It needs the Million card kept into the bonus, which the bot values and holds. (Corrected 2026-11-01: this first said no LLM ever won it, from the lineups against bots only.)
 - **The bot is boom or bust:** against two Lunas it banked nothing in 35% of games and had the highest Bankrupt rate, yet won half. The LLMs bank something in about 92% of games.
 
 ## Lineups 3f and d2 results (2026-11-01): the hybrid lifts a second lab; a decision model doesn't
@@ -218,6 +218,24 @@ Each player alone against two bots, then the bot against two copies; main-round 
 | A decision model | 8% (Luna Decisions), 4% (d1-ultra) | |
 | The model itself | 17.5% | 14% |
 | **The bot (hybrid)** | **45%** | **44%** |
+
+## Puzzle length (2026-11-01)
+
+Share of solved main rounds each player won against two bots (a third is fair), by letters in the puzzle; 95% from resampling sets. Chart: `figures/12-puzzle-length.png`.
+
+| Player | 16–17 | 18–19 | 20–22 | 23–26 | 27+ | 27+ minus 16–19 |
+|---|---|---|---|---|---|---|
+| Sol | 49% | 54% | 55% | 53% | 65% | +13.7 (+4.1 to +23.9) |
+| Hybrid (Luna) | 40% | 39% | 46% | 41% | 47% | +7.8 (−1.1 to +16.8) |
+| Hybrid (Haiku) | 36% | 38% | 39% | 40% | 41% | +4.4 (−4.0 to +13.3) |
+| DeepSeek | 51% | 51% | 52% | 51% | 58% | +7.2 (−3.5 to +17.8) |
+| Luna | 44% | 43% | 46% | 41% | 49% | +5.4 (−7.4 to +18.6) |
+| Haiku | 28% | 22% | 31% | 31% | 34% | +8.4 (−1.4 to +18.6) |
+| Luna Decisions seat | 29% | 31% | 28% | 27% | 40% | +10.2 (−2.2 to +22.2) |
+| d1-ultra seat | 15% | 12% | 12% | 13% | 20% | +6.1 (−1.6 to +13.8) |
+| All 8, averaged | | | | | | +7.9 (+0.3 to +15.6) |
+
+Puzzles run 16 to 35 letters, median 23; solved rounds per band in Sol's lineup: 192, 138, 312, 402, 396. The bots' median board at their correct solves rises with length (59%, 67%, 65%, 68%, 68%), while Sol (50%, 53%, 50%, 52%, 48%), DeepSeek and Luna stay near 50%. On the shortest puzzles Sol beats the bots to the solve by about 6 points of board; on the longest, by about 20. Caveats: length goes with category, and the 8 lineups share the same bots and puzzles.
 
 ## Frontier and other labs: trials only, until there's a grant (2026-10-31)
 

@@ -79,6 +79,17 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
 
 15. **Our generated bonus puzzles can be made as hard as aired ones for LLMs, but not for the bot.** After a prompt change, DeepSeek and Haiku scored near their aired rates while the bot barely moved. What makes a puzzle hard differs between a word-list reader and an LLM.
 
+16. **Long puzzles slow the bot down; the LLMs read them as early as short ones.** Against two bots, every one of the 8 players won a larger share of rounds on the longest puzzles (27+ letters) than on the shortest (16–19): +7.9 points on average (+0.3 to +15.6), and +13.7 (+4.1 to +23.9) for Sol, the only player clear on its own.
+
+    | Board showing at a correct solve (median) | 16–17 letters | 27+ letters |
+    |---|---|---|
+    | The bots | 59% | 68% |
+    | Sol | 50% | 48% |
+    | DeepSeek | 47% | 50% |
+    | Luna | 53% | 50% |
+
+    The bot fits words from its lists into slots, and every extra word is another slot and another chance of a word it doesn't know; an LLM recognizes a long phrase as a whole. *Caveats: length goes with category (long puzzles are more often phrases and titles), and the 8 lineups share the same bots and puzzles, so they aren't independent.*
+
 ## Not run
 
 - **The DeepSeek hybrid** was stopped after 9 games (runaway thinking made it slow and costly); the Haiku hybrid took its place as the second lab.
