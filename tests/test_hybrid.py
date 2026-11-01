@@ -297,3 +297,36 @@ def test_a_hybrid_tournament_folder_covers_the_bot_version_and_the_curves(tmp_pa
     assert tournament.folder_name(entrants, 1, tmp_path / "p.json", other) != base
     newer = {**config, "bot": {"version": 2}}
     assert tournament.folder_name(entrants, 1, tmp_path / "p.json", newer) != base
+
+
+# What it says it's thinking
+
+def test_the_hybrid_shows_the_bots_read_and_what_the_model_said(rules, wheel_spec):
+    state = shown(start(rules, wheel_spec), "RLNEWH")
+    player, _ = hybrid(rules, wheel_spec, [says(True, "WHEEL OF FORTUNE")])
+    view = public_view(state, 0)
+    before = player.reader.read(view).confidence
+    player.decide(view)
+    lines = player.thoughts()
+    assert lines[0].startswith("Reads WHEEL OF FORTUNE, ")
+    after = player.last_call.raw["confidence"]
+    assert lines[-1] == (f"deepseek-v4.1-flash-1017 said: solvable, WHEEL OF FORTUNE · fits, trusted 80%"
+                         f" · the bot's read went from {before:.0%} to {after:.0%}")
+
+
+@pytest.mark.parametrize("reply, said", [
+    (says(False), "deepseek-v4.1-flash-1017 said: not solvable"),
+    (says(True, "WHEEL OF FORTUNES"), "deepseek-v4.1-flash-1017 said: solvable, WHEEL OF FORTUNES · doesn't fit the board, ignored"),
+])
+def test_an_unused_reply_says_why(rules, wheel_spec, reply, said):
+    player, _ = hybrid(rules, wheel_spec, [reply])
+    player.decide(public_view(shown(start(rules, wheel_spec), "RLNEWH"), 0))
+    assert player.thoughts()[-1] == said
+
+
+def test_a_board_asked_before_says_so(rules, wheel_spec):
+    state = spin_to(start(rules, wheel_spec), 3)
+    player, _ = hybrid(rules, wheel_spec, [says(False)])
+    player.decide(public_view(start(rules, wheel_spec), 0))
+    player.decide(public_view(state, 0))
+    assert player.thoughts()[-1] == "deepseek-v4.1-flash-1017 said: not solvable (asked about this board already)"

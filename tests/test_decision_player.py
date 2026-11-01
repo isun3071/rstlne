@@ -84,6 +84,17 @@ def test_a_pick_with_one_option_makes_no_call(rules, wheel_spec, game):
     assert player.thoughts() == ["consonant T (only option)"]
 
 
+def test_thoughts_give_each_questions_top_options_and_the_pick(rules, wheel_spec, game):
+    state = set_seat(game, 0, bank=1000)
+    player, _, _ = seat(rules, wheel_spec, decide_by(0.1, {"action": "buy_vowel", "vowel": "O"}))
+    player.decide(public_view(state, 0))
+    assert player.thoughts() == [
+        "solvable: 10% sure",
+        "move: buy a vowel 90%, spin 10% → buy a vowel",
+        "vowel: O 90%, A 2%, E 2% → O",
+    ]
+
+
 @pytest.mark.parametrize("p_yes, solves", [(0.8, True), (0.95, True), (0.79, False)])
 def test_solve_check_hands_off_to_the_solver_at_the_threshold(rules, wheel_spec, game, p_yes, solves):
     replies = [completion(("solve", {"answer": "WHEEL OF FORTUNE"}))]

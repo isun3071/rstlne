@@ -9,7 +9,7 @@ from rstlne.engine.puzzle import LETTERS
 from rstlne.engine.rules import public_view
 from rstlne.engine.state import Phase
 from rstlne.players.bot import versions
-from rstlne.players.bot.player import BotPlayer, guess
+from rstlne.players.bot.player import BotPlayer, explain, guess
 from rstlne.players.bot.reader import FrequencyReader, WordListReader
 from rstlne.runner import GameLog, play_game, play_turn
 from rstlne.tournament import run_tournament
@@ -132,3 +132,38 @@ def test_a_frequency_bot_never_guesses_unless_it_must(rules, wheel_spec, tmp_pat
     solves = [m for m in moves if m["type"] == "action" and m["action"]["kind"] == "solve"]
     wrong = [s for s in solves if s["result"]["outcome"] != "solved"]
     assert solves and all(set(s["raw"]["values"]) <= {"solve"} for s in wrong)  # forced: nothing else was legal
+
+
+# What the bot says it's thinking, for --show-thinking and --live
+
+def test_the_bot_says_what_it_reads_and_how_it_weighed_its_moves():
+    record = {"answers": [["WHEEL OF FORTUNE", 0.6], ["WHOOL OF FORTUNE", 0.25]], "oov": 0.05, "p_steal": 0.3,
+              "values": {"spin": 1234.4, "buy_vowel": 980.0, "solve": 1000.0}, "win_mode": False}
+    assert explain(record) == [
+        "Reads WHEEL OF FORTUNE, 60% sure (then WHOOL OF FORTUNE 25%) · 5% chance it's outside its word lists",
+        "Chance an opponent solves before its next turn: 30%",
+        "Worth: spin $1,234, buy a vowel $980, solve $1,000 → spin",
+    ]
+
+
+def test_from_round_3_the_bot_weighs_its_chance_to_win():
+    record = {"answers": [], "oov": 0.4, "p_steal": None, "values": {"spin": 0.612, "solve": 0.608}, "win_mode": True}
+    assert explain(record) == [
+        "No answer in sight yet · 40% chance it's outside its word lists",
+        "Chance to win: spin 61.2%, solve 60.8% → spin",
+    ]
+
+
+@pytest.mark.parametrize("kind, line", [("spin", "Knows the answer: spins to build its bank first"),
+                                        ("solve", "Knows the answer: solves now")])
+def test_with_the_answer_known_the_bot_says_whether_it_milks_or_solves(kind, line):
+    record = {"answers": [["WHEEL OF FORTUNE", 0.98]], "oov": 0.0, "p_steal": 0.5, "values": {}, "planner": kind}
+    assert explain(record)[-1] == line
+
+
+def test_a_decision_records_what_explain_reads(rules, wheel_spec):
+    bot = bots(rules, wheel_spec)[0]
+    bot.decide(public_view(start(rules, wheel_spec), 0))
+    raw = bot.last_call.raw
+    assert "answers" in raw and raw["win_mode"] is False
+    assert bot.thoughts() == explain(raw)

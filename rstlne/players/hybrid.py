@@ -210,11 +210,20 @@ class HybridPlayer(BotPlayer):
         lines = super().thoughts()
         ask = self._ask
         if ask:
-            reply = ask["reply"]
-            said = f"solvable, {reply['answer']}" if reply["solvable"] else "not solvable"
-            trust = f", trust {ask['trust']:.2f}" if ask["trust"] is not None else ""
-            again = f" (same board as ask {ask['n']})" if ask["reused"] else ""
-            lines.append(f"model: {said} · {ask['status']}{trust}{again}")
+            name, reply, status = self.model.split("/")[-1], ask["reply"], ask["status"]
+            if status == "failed":
+                said = f"{name} gave no answer (the call failed)"
+            elif not reply["solvable"]:
+                said = f"{name} said: not solvable"
+            elif not reply["answer"]:
+                said = f"{name} said: solvable, but gave no answer"
+            elif status == "used":
+                said = (f"{name} said: solvable, {reply['answer']} · fits, trusted {ask['trust']:.0%} · the bot's read "
+                        f"went from {ask['reader_confidence']:.0%} to {ask['merged_confidence']:.0%}")
+            else:
+                why = "already ruled wrong" if status == "refuted" else "doesn't fit the board"
+                said = f"{name} said: solvable, {reply['answer']} · {why}, ignored"
+            lines.append(said + (" (asked about this board already)" if ask["reused"] else ""))
         return lines
 
     # The bot's hooks

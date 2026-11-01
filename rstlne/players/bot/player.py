@@ -58,6 +58,32 @@ def share_revealed(board: str) -> float:
     return shown / (shown + hidden) if shown + hidden else 1.0
 
 
+MOVES = {"spin": "spin", "buy_vowel": "buy a vowel", "solve": "solve"}
+
+
+def explain(record: dict) -> list[str]:
+    """A decision record in plain words: what the bot reads, the steal odds, and how it weighed its moves."""
+    answers, oov = record.get("answers") or [], record.get("oov", 0.0)
+    if answers:
+        (best, p), rest = answers[0], answers[1:3]
+        then = f" (then {', '.join(f'{a} {q:.0%}' for a, q in rest)})" if rest else ""
+        read = f"Reads {best}, {p:.0%} sure{then}"
+    else:
+        read = "No answer in sight yet"
+    lines = [f"{read} · {oov:.0%} chance it's outside its word lists"]
+    if record.get("p_steal") is not None:
+        lines.append(f"Chance an opponent solves before its next turn: {record['p_steal']:.0%}")
+    values = record.get("values") or {}
+    if values:
+        win = record.get("win_mode")
+        worth = ", ".join(f"{MOVES.get(k, k)} {v:.1%}" if win else f"{MOVES.get(k, k)} ${v:,.0f}" for k, v in values.items())
+        chose = record.get("chose") or max(values, key=values.get)
+        lines.append(f"{'Chance to win' if win else 'Worth'}: {worth} → {MOVES.get(chose, chose)}")
+    if record.get("planner"):
+        lines.append("Knows the answer: " + ("solves now" if record["planner"] == "solve" else "spins to build its bank first"))
+    return lines
+
+
 def guess(belief: Belief, view: PublicView, refuted: frozenset[str] = frozenset()) -> str:
     """The best answer, or with none, the board with the commonest unused letter in every hidden square,
     skipping fills a wrong solve already refuted."""
@@ -118,7 +144,7 @@ class BotPlayer(Player):
     def decide(self, view: PublicView, error: str | None = None) -> Action:
         belief = self._belief(view)
         self._record = {"version": self.version, "confidence": belief.confidence, "best": belief.best,
-                        "oov": belief.oov, "p_steal": None, "values": {}}
+                        "answers": [list(a) for a in belief.answers[:3]], "oov": belief.oov, "p_steal": None, "values": {}}
         self._goal = None
         try:
             return self._decide(view, belief)
@@ -128,13 +154,7 @@ class BotPlayer(Player):
             self.last_call = CallRecord(raw=self._record, usage=Usage())
 
     def thoughts(self) -> list[str]:
-        r = self._record
-        if not r:
-            return []
-        values = ", ".join(f"{k} {v:.3f}" for k, v in r["values"].items())
-        steal = "" if r["p_steal"] is None else f" · steal odds {r['p_steal']:.2f}"
-        return [f"confidence {r['confidence']:.2f} in {r['best'] or 'nothing yet'} · unknown {r['oov']:.2f}{steal}"
-                + (f" · {values}" if values else "")]
+        return explain(self._record) if self._record else []
 
     def _decide(self, view: PublicView, belief: Belief) -> Action:
         legal = view.legal_actions
@@ -149,11 +169,11 @@ class BotPlayer(Player):
                 if eager is not None and belief.best and "solve" in legal and s.c >= eager:
                     return Solve(guess(belief, view, self._refuted_in(view)))
                 if s.c >= self.knobs.known_answer:
-                    kind = planner.decide(s, legal)
+                    kind = self._record["planner"] = planner.decide(s, legal)
                 else:
                     options = s.turn_options(legal)
                     self._note(options)
-                    kind = s.goal.choose(options)
+                    kind = self._record["chose"] = s.goal.choose(options)
                 if kind == "spin":
                     return Spin()
                 if kind == "buy_vowel":
@@ -211,6 +231,7 @@ class BotPlayer(Player):
 
     def _note(self, options: dict) -> None:
         self._record["values"] = {k: v.main for k, v in options.items()}
+        self._record["win_mode"] = self._goal.win_mode
 
     def _refuted_in(self, view: PublicView) -> frozenset[str]:
         return self._refuted.get(view.round_number, frozenset())

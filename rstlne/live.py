@@ -6,8 +6,9 @@ hidden then: a model's or the bot's thoughts would show the human its best guess
 
 from __future__ import annotations
 
-import time
 import re
+import textwrap
+import time
 from collections import deque
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -42,6 +43,8 @@ def board_rows(board: str) -> list[list[str]]:
 
 
 class LiveShow:
+    thinking_rows = 4  # rows of thinking a seat gets: the bot's three lines and a hybrid's model line
+
     def __init__(
         self,
         players: Sequence[Player],
@@ -61,7 +64,7 @@ class LiveShow:
         self.puzzle: Puzzle | None = None  # the puzzle on the board before the latest move
         self.round_number: int | None = None
         self.moves: deque[str] = deque(maxlen=moves_shown)
-        self.thoughts: dict[int, str] = {}  # each seat's latest thought
+        self.thoughts: dict[int, list[str]] = {}  # each seat's latest thought, line by line
         self.seed: int | None = None
         self.live: Live | None = None
         self.interactive = any(p.describe().get("kind") == "human" for p in players)
@@ -105,9 +108,9 @@ class LiveShow:
     def result(self, state: GameState) -> None:
         result = state.last
         self.moves.append(describe(result))
-        thoughts = self.players[result.seat].thoughts()
+        thoughts = [line for line in map(self.clean, self.players[result.seat].thoughts()) if line]
         if thoughts:
-            self.thoughts[result.seat] = self.clean(thoughts[-1])
+            self.thoughts[result.seat] = thoughts
         if result.outcome == "solved" and self.puzzle:
             self._show(self.render(state, solved_view(public_view(state, state.seat), self.round_number, self.puzzle)))
             if self.pause:
@@ -132,10 +135,9 @@ class LiveShow:
 
     @staticmethod
     def clean(thought: str) -> str:
-        """The first line of a thought, without its "reasoning:" label or markdown emphasis."""
-        line = thought.strip().splitlines()[0] if thought.strip() else ""
-        line = re.sub(r"^(reasoning|content):\s*", "", line)
-        return line.replace("**", "").replace("__", "").strip()
+        """A thought as one line, without its "reasoning:" label or bold markers. Underscores stay: they're board patterns."""
+        line = re.sub(r"^(reasoning|content):\s*", "", thought.strip())
+        return " ".join(line.replace("**", "").split())
 
     def stop(self) -> None:
         if self.live:
@@ -161,6 +163,7 @@ class LiveShow:
             self._board(view),
             self._letters(view),
             self._seats(state, view),
+            *([] if self.interactive else [self._thinking()]),
             Panel(Text("\n".join(self.moves) or "No moves yet."), title="Moves", title_align="left"),
         )
 
@@ -198,6 +201,21 @@ class LiveShow:
             wedge += "  ·  riding the Express"
         return Panel(Group(*lines, Text(""), Align.center(Text(wedge, style="italic"))), title=view.category)
 
+    def _thinking(self) -> Panel:
+        """Each seat's latest thought, wrapped and cut to `thinking_rows` rows a seat."""
+        width = max(20, self.console.width - 14)  # the panel's border and padding, and the seat column
+        table = Table.grid(padding=(0, 2))
+        table.add_column(no_wrap=True)
+        table.add_column(no_wrap=True, overflow="ellipsis")
+        for i in range(len(self.players)):
+            rows = [row for line in self.thoughts.get(i, []) for row in textwrap.wrap(line, width)] or [""]
+            if len(rows) > self.thinking_rows:
+                rows = rows[:self.thinking_rows]
+                rows[-1] = rows[-1][:width - 1].rstrip() + "…"
+            for k, row in enumerate(rows):
+                table.add_row(f"Seat {i + 1}" if k == 0 else "", row)
+        return Panel(table, title="Thinking", title_align="left")
+
     def _letters(self, view: PublicView) -> Align:
         letters = Text()
         for c in ALPHABET:
@@ -208,18 +226,14 @@ class LiveShow:
         return Align.center(letters)
 
     def _seats(self, state: GameState, view: PublicView) -> Table:
-        table = Table(expand=True, show_edge=False)
+        table = Table(show_edge=False)
         for column in ("", "Seat", "Player", "Round bank", "Total", "Cards"):
             table.add_column(column, no_wrap=True)
-        if not self.interactive:
-            table.add_column("Thinking", overflow="ellipsis", no_wrap=True, ratio=1)
         for i, player in enumerate(self.players):
             cards = ", ".join(
                 name for name, held in (("Wild Card", view.wild_cards[i]), ("Million", view.million_cards[i])) if held
             )
             up = i == state.seat and state.phase is not Phase.GAME_OVER
             cells = ["▶" if up else "", f"Seat {i + 1}", player.label(), money(view.banks[i]), money(view.totals[i]), cards]
-            if not self.interactive:
-                cells.append(self.thoughts.get(i, ""))
             table.add_row(*cells, style="bold" if up else None)
         return table

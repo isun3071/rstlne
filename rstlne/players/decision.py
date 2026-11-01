@@ -43,6 +43,9 @@ def decision_state(seat: int, rules: Rules, spec: WheelSpec, view: PublicView, n
     return "\n".join(lines)
 
 
+_MOVES = {"buy_vowel": "buy a vowel"}  # option names in plain words, for thoughts
+_QUESTIONS = {"action": "move"}
+
 class DecisionPlayer(Player):
     max_attempts = 3
 
@@ -92,18 +95,20 @@ class DecisionPlayer(Player):
             self.last_call = CallRecord(raw=self._record, usage=self._call_usage)
 
     def thoughts(self) -> list[str]:
+        """One line per question: P(yes), or the top three options with their probabilities and the pick."""
+        label = lambda option: _MOVES.get(option, option)  # noqa: E731
         lines = []
         for decision in self._record.get("decisions", []):
-            parts = []
             for name, picked in decision["chosen"].items():
                 answer = decision["answers"].get(name, {})
                 if answer.get("type") == "noul":
-                    parts.append(f"P(solvable) {picked:.2f}")
+                    lines.append(f"{name}: {picked:.0%} sure")
                 elif name in decision.get("only_option", ()):
-                    parts.append(f"{name} {picked} (only option)")
+                    lines.append(f"{name} {picked} (only option)")
                 else:
-                    parts.append(f"{name} {picked} ({answer.get('probabilities', {}).get(picked, 0):.2f})")
-            lines.append(", ".join(parts))
+                    top = sorted(answer.get("probabilities", {}).items(), key=lambda kv: -kv[1])[:3]
+                    odds = ", ".join(f"{label(o)} {p:.0%}" for o, p in top)
+                    lines.append(f"{_QUESTIONS.get(name, name)}: {odds} → {label(picked)}")
         return lines
 
     def _choose(self, view: PublicView) -> Action:

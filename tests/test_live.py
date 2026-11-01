@@ -76,7 +76,7 @@ def test_thinking_shows_the_decision_seat_probabilities(rules, wheel_spec):
     live.stop()
     screen = text(live, state)
     assert "typesafe/jev-1.14 + openai/gpt-6-luna" in screen
-    assert "P(solvable) 0.12" in screen
+    assert "solvable: 12% sure" in screen
 
 
 def cli_view(state):
@@ -190,9 +190,10 @@ def test_board_rows_have_space_between_them(rules, wheel_spec, players):
 
 def test_thinking_drops_labels_and_markdown(rules, wheel_spec, players):
     live = LiveShow(players, pause=0, console=console())
-    assert live.clean("reasoning: **Solving punctuation issues**\nmore") == "Solving punctuation issues"
+    assert live.clean("reasoning: **Solving punctuation issues**\nmore") == "Solving punctuation issues more"
     assert live.clean("content: I'll spin.") == "I'll spin."
-    assert live.clean("P(solvable) 0.12, action spin (0.90)") == "P(solvable) 0.12, action spin (0.90)"
+    assert live.clean("move: spin 90%, buy a vowel 10% → spin") == "move: spin 90%, buy a vowel 10% → spin"
+    assert live.clean("WH__L __ __R__N_") == "WH__L __ __R__N_"  # board patterns keep their underscores
 
 
 def solved_round_one(rules, wheel_spec):
@@ -246,3 +247,35 @@ def text_of(renderable):
     out = console()
     out.print(renderable)
     return out.export_text()
+
+
+def test_thinking_shows_every_line_of_each_seats_latest_thought(rules, wheel_spec, players):
+    live = LiveShow(players, pause=0, console=console())
+    live.thoughts[0] = ["Reads WHEEL OF FORTUNE, 60% sure", "Chance an opponent solves before its next turn: 30%",
+                        "Worth: spin $1,234, solve $1,000 → spin"]
+    live.thoughts[2] = ["move: spin 90%, buy a vowel 10% → spin"]
+    screen = text(live, start(rules, wheel_spec))
+    assert "Thinking" in screen
+    for expected in ("Reads WHEEL OF FORTUNE, 60% sure", "Chance an opponent solves", "Worth: spin $1,234", "move: spin 90%"):
+        assert expected in screen
+    row = next(line for line in screen.splitlines() if "Reads WHEEL OF FORTUNE" in line)
+    assert "Seat 1" in row
+
+
+def test_a_long_reasoning_is_cut_to_a_few_rows(rules, wheel_spec, players):
+    live = LiveShow(players, pause=0, console=console())
+    live.thoughts[1] = [LiveShow.clean("reasoning: **The board** shows\n\nWH__L and " + "more words " * 200)]
+    screen = text(live, start(rules, wheel_spec))
+    assert "The board shows WH__L and more words" in screen  # labels, emphasis, and line breaks gone
+    rows = [line for line in screen.splitlines() if "more words" in line]
+    assert len(rows) == LiveShow.thinking_rows and rows[-1].rstrip(" │").endswith("…")
+
+
+def test_a_move_keeps_all_its_thought_lines(rules, wheel_spec, players):
+    live = LiveShow(players, pause=0, console=console())
+    players[0].thoughts = lambda: ["reasoning: first", "content: second"]
+    state = start(rules, wheel_spec)
+    live.start(state)
+    live.result(spin_to(state, 3))
+    live.stop()
+    assert live.thoughts[0] == ["first", "second"]
