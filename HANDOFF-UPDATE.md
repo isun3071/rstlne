@@ -142,6 +142,16 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
   | **The bot (the hybrid)** | **45%** | **44%** |
 
   The two decision models fail in opposite ways: d1-ultra solves too late, Luna Decisions too early and too often wrong. Neither matches the bot.
+- **Memory probe: models don't remember aired bonus puzzles.** Sol, DeepSeek and Haiku each made one bonus solve on 100 aired and 100 generated bonus puzzles (the generated deck matches aired puzzles' share of stock phrases), first from a blank board, then with R S T L N E alone showing. $2.29.
+
+  | Solved | Blank board: aired | Blank board: generated | R S T L N E only: aired | R S T L N E only: generated | Gap with R S T L N E (95%) |
+  |---|---|---|---|---|---|
+  | Sol | 5% | 3% | 89% | 90% | −1 (−9 to +7) |
+  | DeepSeek | 4% | 5% | 72% | 67% | +5 (−8 to +18) |
+  | Haiku | 0% | 0% | 22% | 30% | −8 (−20 to +4) |
+
+  From a blank board nobody recalls aired answers; with R S T L N E, aired and generated puzzles score alike. The bonus-round caveat narrows to the missing clock. Sol solves about 90% with only R S T L N E showing, before any picks.
+- **Ian has called the project done** after this: every planned lineup ran except the bot against two DeepSeeks.
 - **The full order, alone against two bots, by average place:**
 
   | Sol | Hybrid (Luna) | Hybrid (Haiku) | DeepSeek | Luna | Haiku | Luna Decisions seat | d1-ultra seat |
@@ -224,6 +234,5 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 2. **Optional, later:**
    - lineups 4 and 5
    - the Sol-against-bots lineup rerun with version 3 bots (does v4 help against LLMs?)
-   - a blank-board memory probe on aired bonus puzzles (about $1)
 3. **When there's a grant:** the frontier models, starting with Gemini 4 Argon.
 4. **Later:** bot version 5 (probably skipped), a tighter near-repeat check in puzzle generation, and the write-up.

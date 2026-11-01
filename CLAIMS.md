@@ -66,7 +66,7 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
     |---|---|---|---|---|
     | 99% | 90% | 53% | 67% | about 38% |
 
-    *Caveats: no 10-second clock, and models may remember aired puzzles (untested).*
+    *Caveat: no 10-second clock. Memory was tested and isn't the reason: from a blank board no model recalls aired answers (0–5%, the same as on generated puzzles), and with R S T L N E showing, aired and generated puzzles score alike (gaps −8 to +5 points, every interval across zero).*
 
 14. **The bot plays unlike a person; LLMs play more like contestants.** The bot:
     - keeps spinning once it knows the answer, hitting Bankrupt in 16% of those rounds
@@ -86,7 +86,7 @@ All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 
 
 ## Don't claim
 
-- **"LLMs are superhuman at the bonus round."** No clock, possible memory. Say "far above contestants' rate, without the clock."
+- **"LLMs are superhuman at the bonus round."** No clock. Say "far above contestants' rate, without the clock." Memory, by contrast, was tested and ruled out.
 - **"Frontier models generally have both reading and discipline."** Only Sol was fully tested. Two Gemini models each won 5 of 6 in one trial set: a hint, not evidence.
 - **"A verification wrapper explains the lift."** The hybrid hands the bot all decisions, of which checking answers is only one part; the parts weren't separated.
 - **"Bot v4 is better than v3 against LLMs."** It tied v3 in bot-only play and was adopted as no worse. The test against LLMs wasn't run.

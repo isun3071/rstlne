@@ -287,6 +287,15 @@ Version 4 is version 3 with one change: each opponent gets its own stealer's gai
 - **Logs:** each player and puzzle is one game log in `logs/bonustest/<folder>/<player>/puzzleNNN.jsonl`. The folder name covers the puzzle file, the seed, and the settings that change play, but not the players, so a later run can add one. A rerun skips finished puzzles. `--max-cost` stops starting new puzzles at a budget, and `--limit` takes only the first puzzles.
 - **Report:** per player, puzzles solved with a Wilson 95% interval, the share of the board showing after the picks, the letters picked, refused responses, solves that don't fit the board, and cost. For each pair of players, the gap in solve rate on the puzzles both finished, with a 95% interval from resampling puzzles.
 - **Puzzles:** a scoring run, like a tournament. Aired puzzles (`private.json`) and generated ones (a grading batch) can be compared directly. Never tune on the results.
+- **Memory probe (2026-11-01):** do models remember aired bonus puzzles? Sol, DeepSeek V4.1 Flash and Claude Haiku 5.5 each made one bonus solve on every puzzle of two decks, with almost nothing showing: a blank board (the category and word lengths), then R S T L N E alone, with no picks. The test deck was `private.json`'s 100 aired bonus puzzles; the control was `trial-v7-bonus.json`'s 100 generated ones, which no model can have seen and which match aired puzzles' share of stock phrases (12%; grading-505 has 32%, and a stock phrase can be guessed from word lengths). 1,199 of 1,200 asks finished, $2.29. Script: `logs/memory-probe.py`.
+
+| Solved | Blank board: aired | Blank board: generated | R S T L N E only: aired | R S T L N E only: generated | Gap with R S T L N E (95%) |
+|---|---|---|---|---|---|
+| Sol | 5% | 3% | 89% | 90% | −1 (−9 to +7) |
+| DeepSeek | 4% | 5% | 72% | 67% | +5 (−8 to +18) |
+| Haiku | 0% | 0% | 22% | 30% | −8 (−20 to +4) |
+
+  No model recalls aired answers from a blank board (0–5% on both decks, guessing from the category and word lengths), and with R S T L N E showing, aired and generated puzzles score alike. The models' bonus rates on aired puzzles come from reading, not memory.
 
 ## Seats
 

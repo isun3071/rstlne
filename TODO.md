@@ -6,16 +6,19 @@ Commands for every lineup are in `GRADING_PLAN.md`.
 
 Every planned lineup but 6c: 1, 2, 3, 3b, 3c, 3d, 3f (the Haiku hybrid, in place of the stopped DeepSeek hybrid 3e), 6a, 6b, and the decision seats d1 (d1-ultra) and d2 (Luna Decisions). Recorded in `GRADING_PLAN.md`, `CLAIMS.md` and `HANDOFF-UPDATE.md`; charts redrawn.
 
+The memory probe is done too: no sign that models remember aired bonus puzzles (`documentation.md`, Bonus test).
+
 ## Next
 
-1. **6c** (bot, two DeepSeeks): undecided. About $10, slow.
+The project is done for now (Ian, 2026-11-01). If it reopens:
+
+1. **6c** (bot, two DeepSeeks): about $10, slow.
 2. The write-up, framed by the four questions.
 
 ## Optional
 
 - Lineups **4** (Sol, hybrid, bot) and **5** (Sol, two hybrids): Sol and the hybrid at one table. About $13; skipped for now.
 - Lineup 2 rerun with v3 bots: does v4 help against an LLM? About $6.
-- Blank-board memory probe on aired bonus puzzles: about $1.
 
 ## Waiting for a grant
 
