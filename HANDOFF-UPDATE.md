@@ -50,6 +50,20 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 - **150 bad tool calls,** almost all a consonant called without spinning first. Every tool is offered on every move to keep prompts cacheable (it halved costs), and the engine refuses illegal calls and reprompts. Strong models barely trip on this; it goes in the caveats.
 - **Its reading is decent:** inside the hybrid, 84% of the answers it gave were right.
 
+### Lineups 6b and 3c (added later the same evening)
+
+- **The bot against two Haikus:** bot 56% (50–63%), Haikus 23% and 20%. The Haikus both wait (71–74% of the board), so the bot milks freely: $8,933 a game in main-round money.
+- **DeepSeek alone against two bots: 37% (31–43%), a tie.** Its interval includes the 33% null. It's eager and mostly right: 2.12 rounds won a game (more than any model but Sol), at a median bank of only $1,300, 89% of solves right, 0.27 wrong solves a game. The bots' bigger banks balance its many small rounds.
+- **The yardstick, each alone against two bots:**
+
+  | Sol | Hybrid | DeepSeek | Luna | Haiku |
+  |---|---|---|---|---|
+  | 58% | 45% | 37% | 17.5% | 14% |
+
+  Set by set, the hybrid beats DeepSeek by 8.6 points (+2.8 to +14.4).
+- **Both formats agree.** Luna and Haiku lose to the bot by similar margins whether alone against two bots or as two copies against one bot. The copies of each model passed their A/A test.
+- **The null:** if a model played like the bot, each seat would win a third. Win rate against that null shows whether a model is better or worse; the logs show why.
+
 ## 2. Corrections to the briefing
 
 - **The hybrid is a division of labour, not a verification wrapper.** The bot makes every decision (money, letters, risk, and when to solve); Luna only reads the board. Checking answers for fit is one part of it. The parts weren't measured separately, so the lift belongs to the whole split: "the LLM reads, the bot decides". The chess "centaur" comparison fits.
@@ -64,7 +78,7 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
   - **Solo yardsticks** (a model alone against two bots) for DeepSeek and Haiku.
   - **A DeepSeek hybrid,** to test whether the hybrid's lift holds on a second lab.
 - **Remaining today:**
-  1. The bot against two Haikus, and DeepSeek alone
+  1. The bot against two Haikus, and DeepSeek alone (done)
   2. The DeepSeek hybrid, and the bot against two DeepSeeks
 
   About $22 in all. Ian plans to stop the day after these.

@@ -119,6 +119,18 @@ Set by set: hybrid − Luna alone +27.8 points (+20.8 to +34.7), Sol − Luna al
 
 Luna is reckless (early, often wrong) and Haiku passive (right, but too late): opposite faults, both well below a fair share. Sol, early and right, is the only one of the three that beats the bots. Folders `seed707-6496578d` (6a) and `seed707-4ef950be` (3d).
 
+## Lineups 6b and 3c results (2026-10-31)
+
+| | 6b: bot against two Haikus | 3c: DeepSeek alone against two bots |
+|---|---|---|
+| Win rate | bot **56%** (50–63%); Haikus 23% and 20% | DeepSeek **37%** (31–43%); bots 31% and 32% |
+| Against the 33% null | rejected: the bot is better | **not rejected: DeepSeek ties the bot** |
+| The LLM's solves | 93% right, at 71–74% of the board | 89% right, at 49% of the board |
+| Rounds won per game (the LLM) | | 2.12, at a median bank of $1,300 per round |
+| Cost | $5.55 | $6.20 |
+
+DeepSeek is eager and mostly right: it wins more rounds than any model but Sol, at small banks, and the bots' bigger banks balance it out (main-round money about $6,100 each). Set by set: Sol − DeepSeek +21 (+14 to +28), hybrid − DeepSeek +8.6 (+2.8 to +14.4), DeepSeek − Luna +19, DeepSeek − Haiku +22. Measured from either side (a model alone against two bots, or the bot against two copies), Luna and Haiku lose by similar margins in the same order. The copies of each model passed their A/A test (gaps +1 and +3, intervals across zero).
+
 ## Frontier and other labs: trials only, until there's a grant (2026-10-31)
 
 Three more models had one-set trials (set 0, six games, alone against two bots, on the laptop):
