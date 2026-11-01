@@ -161,6 +161,26 @@ d1-ultra and Jev are strongly underconfident on this task: they seem to judge so
 
 DeepSeek ties the bots on wins but beats them on place: it rarely finishes last. Luna wins only 18% but is second 53% of the time and last no more often than a bot, so its average place is near par. The bots are boom or bust: against two Lunas the bot won 50% and was last 32%. Chart: `figures/7-finishing-places.png`.
 
+## Money, margins, leads, and risk (2026-10-31)
+
+Each player alone against two bots, then the bot against two copies; main-round money is the total before the bonus. Charts 8–11 in `figures/`.
+
+| | Main-round money: median (mean, sd) | $0 games | Led after round 3 / held | Trailed / came back | Bankrupts a game | Turns held | $1M won |
+|---|---|---|---|---|---|---|---|
+| Sol | $8.6k ($9.6k, $6.4k) | 9% | 53% / 89% | 47% / 23% | 0.92 | 38.5% | 0 |
+| Hybrid (Luna) | $9.2k ($9.4k, $7.3k) | 14% | 43% / 78% | 57% / 20% | 1.32 | 35.5% | 2 |
+| DeepSeek | $4.9k ($6.2k, $5.5k) | 8% | 32% / 81% | 68% / 16% | 0.73 | 31.4% | 0 |
+| Luna | $3.5k ($4.4k, $3.8k) | 8% | 18% / 62% | 81% / 7% | 0.60 | 28.8% | 0 |
+| Haiku | $3.0k ($4.4k, $4.9k) | 21% | 18% / 56% | 82% / 5% | 1.04 | 30.4% | 0 |
+| d1-ultra seat | $0 ($2.1k, $3.5k) | 52% | 9% / 42% | 91% / 1% | 0.94 | 24.1% | 0 |
+| Bot, against two Lunas | $5.3k ($6.9k, $7.4k) | 35% | 49% / 87% | 51% / 14% | 1.25 | 37.6% | 2 |
+| Bot, against two Haikus | $7.3k ($8.9k, $8.1k) | 19% | 53% / 87% | 47% / 21% | 1.61 | 37.7% | 1 |
+
+- **Take-home money** (with the bonus) is skewed by $40k+ bonus wins: Sol's median is $49.6k, everyone else's $0–16.5k. Report medians.
+- **Gaps between places** (median main-round money, per lineup): 1st to 2nd about $4.5–6.6k, 2nd to 3rd about $2.5–5.0k. 9–19% of games are won by under $1,000.
+- **Only bot-based players ever won the $1M envelope** (2–6 times per lineup, including in the bots' seats against Sol and DeepSeek); no LLM did. It needs the Million card kept into the bonus, which the bot values and holds.
+- **The bot is boom or bust:** against two Lunas it banked nothing in 35% of games and had the highest Bankrupt rate, yet won half. The LLMs bank something in about 92% of games.
+
 ## Frontier and other labs: trials only, until there's a grant (2026-10-31)
 
 Three more models had one-set trials (set 0, six games, alone against two bots, on the laptop):

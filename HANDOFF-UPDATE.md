@@ -100,6 +100,21 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 - **DeepSeek ties the bots on wins but beats them on place,** since it rarely finishes last. Luna is second 53% of the time, so its place is near par despite few wins. The bots are boom or bust: against two Lunas the bot won 50% and was last 32%. The LLMs' frequent small rounds buy consistency; the bot's milking buys big wins and big losses.
 - **Running next:** the Haiku hybrid against two bots (Haiku's hybrid curves are now measured: it says "solvable" rarely early and is right 85–100% from 20% of the board) and a full run of the Luna Decisions seat.
 
+### Money, margins, leads, and risk (added later the same evening)
+
+- **Main-round money (before the bonus), median per game:**
+
+  | Hybrid | Sol | Bot, against two Haikus | Bot, against two Lunas | DeepSeek | Luna | Haiku | d1-ultra seat |
+  |---|---|---|---|---|---|---|---|
+  | $9.2k | $8.6k | $7.3k | $5.3k | $4.9k | $3.5k | $3.0k | $0 |
+
+  The bot banked nothing in 35% of its games against two Lunas, while the LLMs bank something in about 92% of games.
+- **Take-home money is skewed** by $40k+ bonus wins: Sol's median take-home is $49.6k, everyone else's under $17k. Medians tell the truth here.
+- **Leads hold:** a lead after round 3 holds 80–90% of the time for strong players. Sol comes back from behind 23% of the time, Luna 7%, and Haiku 5%.
+- **Risk:** the bot-based players hit Bankrupt 1.25–1.61 times a game, from milking; the early solvers Luna (0.60) and DeepSeek (0.73) least.
+- **Only bot-based players ever won the $1M envelope,** 2–6 times per lineup. No LLM did: the bot keeps the Million card into the bonus.
+- **Gaps between places:** 1st to 2nd is typically $4.5–6.6k, 2nd to 3rd $2.5–5.0k; 9–19% of games are won by under $1,000.
+
 ## 2. Corrections to the briefing
 
 - **The hybrid is a division of labour, not a verification wrapper.** The bot makes every decision (money, letters, risk, and when to solve); Luna only reads the board. Checking answers for fit is one part of it. The parts weren't measured separately, so the lift belongs to the whole split: "the LLM reads, the bot decides". The chess "centaur" comparison fits.

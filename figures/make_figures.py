@@ -312,4 +312,142 @@ fig.legend(handles, ["1st", "2nd", "3rd"], loc="lower center", ncol=3, frameon=F
 save(fig, "7-finishing-places.png", "Where each player finishes",
      "Each player alone against two bots, then the bot against two copies of a model; ties share places")
 
+# 8-11. Money spread, gaps between places, leads and comebacks, risk
+DECISION = "#8f8e89"  # a neutral gray for the decision seat: neither an LLM's nor the bot's hue
+
+
+def games_of(folder, pick):
+    """Per matching seat and game: main-round money, all three seats' main money, money after round 3, and counts."""
+    out = []
+    for p in glob.glob(str(T / folder / "*.jsonl")):
+        L = [json.loads(l) for l in open(p)]
+        if L[-1].get("type") != "summary":
+            continue
+        b, tot = L[-1]["bonus"], L[-1]["totals"]
+        main = [t - (b["envelope"] if b and b["solved"] and b["seat"] == i else 0) for i, t in enumerate(tot)]
+        after3, bankrupts, wrong, turns, r4 = [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], None
+        for l in L:
+            if l["type"] != "action" or not l["state"].get("round"):
+                continue
+            res, seat, rnd = l["result"], l["seat"], l["state"]["round"]["number"]
+            if l["state"]["phase"] == "turn":
+                turns[seat] += 1
+            if res["outcome"] == "solved":
+                if rnd <= 3:
+                    after3[seat] += res["earned"]
+                if rnd == 4:
+                    r4 = seat
+            if res["outcome"] == "wrong_solve":
+                wrong[seat] += 1
+            if res["outcome"] == "bankrupt" or "bankrupt" in res.get("events", []):
+                bankrupts[seat] += 1
+        for i, seat in enumerate(L[0]["seats"]):
+            if pick(seat):
+                out.append({"main": main[i], "all": main, "after3": after3, "seat": i, "bankrupts": bankrupts[i],
+                            "wrong": wrong[i], "turn_share": turns[i] / max(sum(turns), 1), "r4": r4 == i})
+    return out
+
+
+def colour(kind):
+    return DECISION if kind == "decision" else KIND[kind]
+
+
+players = [(name, folder, pick, kind) for name, folder, pick, kind in rows7]
+G = {name: games_of(folder, pick) for name, folder, pick, kind in players}
+
+fig, ax = plt.subplots(figsize=(11, 0.62 * len(players) + 2.4))
+fig.subplots_adjust(left=0.24, right=0.97, top=0.82, bottom=0.17)
+for i, (name, folder, pick, kind) in enumerate(reversed(players)):
+    m = sorted(g["main"] / 1000 for g in G[name])
+    q = lambda f: m[min(int(f * len(m)), len(m) - 1)]  # noqa: E731
+    ax.plot([q(0.1), q(0.9)], [i, i], color=INK2, linewidth=1.4, zorder=2)
+    ax.barh(i, q(0.75) - q(0.25), left=q(0.25), height=0.46, color=colour(kind), zorder=3)
+    ax.plot([q(0.5)] * 2, [i - 0.23, i + 0.23], color=SURFACE, linewidth=2.2, zorder=4)
+    ax.scatter([m[-1]], [i], marker="D", s=30, color=INK, zorder=4)
+    ax.text(m[-1] + 0.6, i, f"max ${m[-1]:.1f}k", va="center", fontsize=9, color=INK2)
+    ax.text(q(0.25) - 0.4, i + 0.34, f"median ${q(0.5):.1f}k", ha="left", fontsize=8.5, color=INK, va="bottom")
+ax.set_yticks(range(len(players)), [p[0] for p in reversed(players)])
+ax.set_xlim(0, max(max(g["main"] for g in G[n]) for n in G) / 1000 * 1.18)
+tidy(ax, "main-round money per game ($ thousands)")
+handles = [plt.Rectangle((0, 0), 1, 1, color=KIND["LLM"]), plt.Line2D([], [], color=INK2, linewidth=1.4),
+           plt.Line2D([], [], marker="D", linestyle="", color=INK, markersize=5)]
+fig.legend(handles, ["middle half of games (white tick: median)", "10th to 90th percentile", "best game"],
+           loc="lower center", ncol=3, frameon=False, fontsize=9.5)
+save(fig, "8-money-spread.png", "How much each player banks, game to game",
+     "Main-round money (before the bonus), each player alone against two bots, then the bot against two copies")
+
+lineup_gaps = []
+for label, folder in LINEUPS + [("d1  d1-ultra · bot · bot", "seed707-d1-server")]:
+    if not (T / folder).exists():
+        continue
+    rows = games_of(folder, lambda seat: True)
+    by_game = {}
+    for g in rows:
+        by_game.setdefault(tuple(g["all"]), g["all"])
+    gaps = []
+    for allm in by_game.values():
+        a, b2, c = sorted(allm, reverse=True)
+        gaps.append((a - b2, b2 - c))
+    lineup_gaps.append((label, st.median(x for x, _ in gaps) / 1000, st.median(y for _, y in gaps) / 1000,
+                        sum(x < 1000 for x, _ in gaps) / len(gaps)))
+fig, ax = plt.subplots(figsize=(11, 0.62 * len(lineup_gaps) + 2.4))
+fig.subplots_adjust(left=0.26, right=0.95, top=0.82, bottom=0.17)
+for i, (label, g12, g23, close) in enumerate(reversed(lineup_gaps)):
+    ax.barh(i + 0.17, g12, height=0.32, color=RAMP[0], zorder=2)
+    ax.barh(i - 0.17, g23, height=0.32, color=RAMP[2], zorder=2)
+    ax.text(g12 + 0.15, i + 0.17, f"${g12:.1f}k", va="center", fontsize=9, color=INK)
+    ax.text(g23 + 0.15, i - 0.17, f"${g23:.1f}k", va="center", fontsize=9, color=INK)
+ax.set_yticks(range(len(lineup_gaps)), [l[0] for l in reversed(lineup_gaps)])
+ax.set_xlim(0, max(max(l[1], l[2]) for l in lineup_gaps) * 1.2)
+tidy(ax, "median gap in main-round money ($ thousands)")
+handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in (RAMP[0], RAMP[2])]
+fig.legend(handles, ["1st minus 2nd", "2nd minus 3rd"], loc="lower center", ncol=2, frameon=False, fontsize=9.5)
+save(fig, "9-gaps-between-places.png", "How far apart the places finish",
+     "Median gap in main-round money between neighbouring places, per lineup")
+
+fig, ax = plt.subplots(figsize=(10.5, 0.62 * len(players) + 2.4))
+fig.subplots_adjust(left=0.24, right=0.95, top=0.82, bottom=0.17)
+for i, (name, folder, pick, kind) in enumerate(reversed(players)):
+    led = [g for g in G[name] if g["after3"][g["seat"]] > max(v for j, v in enumerate(g["after3"]) if j != g["seat"])]
+    trail = [g for g in G[name] if g["after3"][g["seat"]] < max(v for j, v in enumerate(g["after3"]) if j != g["seat"])]
+    won = lambda g: g["main"] > max(v for j, v in enumerate(g["all"]) if j != g["seat"])  # noqa: E731
+    held = 100 * sum(map(won, led)) / max(len(led), 1)
+    came = 100 * sum(map(won, trail)) / max(len(trail), 1)
+    ax.plot([came, held], [i, i], color=GRID, linewidth=2, zorder=1)
+    ax.scatter([held], [i], s=80, color=RAMP[0], edgecolor=SURFACE, linewidth=1.5, zorder=3)
+    ax.scatter([came], [i], s=80, color=RAMP[2], edgecolor=SURFACE, linewidth=1.5, zorder=3)
+    ax.text(held + 2, i, f"{held:.0f}% (led {100 * len(led) / len(G[name]):.0f}% of games)", va="center", fontsize=9, color=INK)
+    ax.text(came - 2, i, f"{came:.0f}%", va="center", ha="right", fontsize=9, color=INK)
+ax.set_yticks(range(len(players)), [p[0] for p in reversed(players)])
+ax.set_xlim(-8, 130)
+ax.set_xticks(range(0, 101, 20))
+tidy(ax, "share of games won (%)")
+handles = [plt.Line2D([], [], marker="o", linestyle="", color=c, markersize=8) for c in (RAMP[0], RAMP[2])]
+fig.legend(handles, ["led after round 3, and won", "trailed after round 3, and came back"], loc="lower center", ncol=2, frameon=False, fontsize=9.5)
+save(fig, "10-leads-and-comebacks.png", "Holding a lead, and coming back",
+     "Standings after round 3, then who finished first in main-round money")
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 0.55 * len(players) + 2.6))
+fig.subplots_adjust(left=0.2, right=0.96, top=0.8, bottom=0.12, wspace=0.6)
+for ax, key, title in ((axes[0], "bankrupts", "Bankrupts per game"), (axes[1], "wrong", "Wrong solves per game")):
+    for i, (name, folder, pick, kind) in enumerate(reversed(players)):
+        v = st.mean(g[key] for g in G[name])
+        ax.barh(i, v, height=0.56, color=colour(kind), zorder=2)
+        ax.text(v + 0.02, i, f"{v:.2f}", va="center", fontsize=9, color=INK)
+    ax.set_yticks(range(len(players)), [p[0] for p in reversed(players)])
+    ax.set_xlim(0, max(st.mean(g[key] for g in G[n]) for n in G) * 1.3)
+    ax.set_title(title, loc="left", fontsize=11.5, color=INK)
+    tidy(ax)
+save(fig, "11-risk.png", "Two ways to give a round away",
+     "Bankrupts come from spinning; wrong solves from guessing. Same players as charts 7 and 8")
+
+print("\nExtra stats (main-round money):")
+for name, folder, pick, kind in players:
+    gs = G[name]
+    margins = [abs(g["main"] - max(v for j, v in enumerate(g["all"]) if j != g["seat"])) for g in gs]
+    print(f"  {name:26} close games (within $1,000 of the leader or runner-up) {sum(m < 1000 for m in margins) / len(gs):4.0%}"
+          f" | share of turns {100 * st.mean(g['turn_share'] for g in gs):4.1f}% | won round 4 {100 * st.mean(g['r4'] for g in gs):4.0f}%")
+for label, g12, g23, close in lineup_gaps:
+    print(f"  {label:30} median 1st-2nd ${g12:.1f}k, 2nd-3rd ${g23:.1f}k, games won by under $1,000: {close:.0%}")
+
 print("written to", OUT, sorted(p.name for p in OUT.glob("*.png")))
