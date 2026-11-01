@@ -27,5 +27,6 @@ The project is done for now (Ian, 2026-11-01). If it reopens:
 
 ## Later
 
+- Bot v5: fix the Express. In 249 rides across the grid the bot busted 107 (43%): it boarded 106 times while under 50% sure and solved only 20% of those, and it never bought a vowel while riding, since its Express rule is "call every safe consonant, then solve". Two changes: let it buy a vowel ($250) when one separates its top answers, and board on its measured Express success, not the optimistic estimate (which assumes the safe consonants will make the answer clear). The hybrids, with the LLM's read, busted 2 of 20.
 - Bot v5: refit the win table and the stealer's gain under the round 4 start rule. The grid stays on v4; no lineup needs redoing. Check v5 against v4 in self-play first, and rerun only the lineups where the bot's strength matters (2 and the solo yardsticks), reported as a v5 update. Probably not worth it before the write-up.
 - Tighten the puzzle generator's near-repeat check.
