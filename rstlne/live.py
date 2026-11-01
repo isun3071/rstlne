@@ -43,7 +43,7 @@ def board_rows(board: str) -> list[list[str]]:
 
 
 class LiveShow:
-    thinking_rows = 4  # rows of thinking a seat gets: the bot's three lines and a hybrid's model line
+    thinking_rows = 5  # rows of thinking a seat gets: a model's reasoning, or a hybrid's four bot lines and its model's
 
     def __init__(
         self,

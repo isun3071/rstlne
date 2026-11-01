@@ -279,3 +279,7 @@ def test_a_move_keeps_all_its_thought_lines(rules, wheel_spec, players):
     live.result(spin_to(state, 3))
     live.stop()
     assert live.thoughts[0] == ["first", "second"]
+
+
+def test_a_seat_gets_five_rows_of_thinking():
+    assert LiveShow.thinking_rows == 5

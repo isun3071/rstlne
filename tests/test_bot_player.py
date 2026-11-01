@@ -177,7 +177,8 @@ def test_how_the_bot_weighed_its_turn_stays_up_through_the_consonant_call(rules,
     assert weighed.startswith("Worth: ")
     bot.decide(public_view(spin_to(state, 3), 0))  # the consonant call weighs no moves
     assert bot.last_call.raw["values"] == {}  # the log keeps only what this decision weighed
-    assert bot.thoughts()[-1] == weighed
+    lines = bot.thoughts()
+    assert lines[-2] == weighed and lines[-1].startswith("Calls ")
 
 
 def test_a_new_round_drops_the_last_rounds_weighing(rules, wheel_spec):
@@ -188,3 +189,17 @@ def test_a_new_round_drops_the_last_rounds_weighing(rules, wheel_spec):
     after = spin_to(replace(solve(state), seat=0), 3)  # round 2, seat 1 holding a cash wedge
     bot.decide(public_view(after, 0))
     assert not any(line.startswith(("Worth", "Chance to win")) for line in bot.thoughts())
+
+
+def test_the_bot_says_why_it_picked_its_letter():
+    record = {"answers": [], "oov": 0.1, "p_steal": None, "values": {},
+              "letter_pick": {"verb": "Calls", "ranked": [["T", 0.9, 1.84], ["N", 0.75, 1.0], ["S", 0.6, 1.2]]}}
+    assert explain(record)[-1] == "Calls T: 90% likely, about 1.8 copies (then N 75%, S 60%)"
+
+
+def test_a_consonant_call_records_its_top_letters(rules, wheel_spec):
+    bot = bots(rules, wheel_spec)[0]
+    bot.decide(public_view(spin_to(start(rules, wheel_spec), 3), 0))
+    pick = bot.last_call.raw["letter_pick"]
+    assert pick["verb"] == "Calls" and 1 <= len(pick["ranked"]) <= 3
+    assert all(letter not in "AEIOU" and 0 <= p <= 1 for letter, p, _ in pick["ranked"])

@@ -67,6 +67,7 @@ class Situation:
         self.vowels = sorted(VOWELS - used)
         a, b = odds.seats
         self.stealers = {a: odds.next, b: (1 - odds.next) * odds.after}
+        self.letter_options: dict[str, Value] = {}  # the letters the latest letter choice weighed, for thoughts
 
     # The race and the two ways a turn ends
 
@@ -242,5 +243,6 @@ class Situation:
         return hit * stats.p_hit + miss * (1 - stats.p_hit)
 
     def _best(self, options: dict[str, Value]) -> tuple[str, Value]:
+        self.letter_options = options
         best = self.goal.choose(options)
         return best, options[best]

@@ -138,10 +138,10 @@ uv run python -m rstlne.cli --seats hybrid:openai/gpt-6-luna,hybrid:anthropic/cl
 
 Options worth knowing:
 
-- `--live` turns the terminal into one fixed screen that redraws after every move: the board as tiles, the letters still available, each seat's bank, total, and cards, a Thinking panel with up to 4 lines per seat, and the last 10 moves. It needs a real terminal. With you seated, the screen redraws after every move with your prompt under it, and the Thinking panel stays hidden, since it would show you the other seats' best guesses. Combine it with `--pause 3` to follow along.
+- `--live` turns the terminal into one fixed screen that redraws after every move: the board as tiles, the letters still available, each seat's bank, total, and cards, a Thinking panel with up to 5 lines per seat, and the last 10 moves. It needs a real terminal. With you seated, the screen redraws after every move with your prompt under it, and the Thinking panel stays hidden, since it would show you the other seats' best guesses. Combine it with `--pause 3` to follow along.
 - After a correct solve, the solved board stays up for 10 seconds before the next round starts (`solve_pause` in `config.toml`). `--pause 0` skips that wait too.
 - `--show-puzzle` prints the table after every move: the board, category, used letters, round banks, game totals, held cards, and the current wedge.
-- `--show-thinking` prints what each seat weighed before its move. For a chat model, that's its reasoning. For a decision seat, it's each choice's top options with their probabilities. For the bot, it's its best answer, its confidence, and how it valued each move; a hybrid adds the model's reading and how much the bot trusted it. When you play, it shows you the other seats' guesses too, so leave it off unless you want hints.
+- `--show-thinking` prints what each seat weighed before its move. For a chat model, that's its reasoning. For a decision seat, it's each choice's top options with their probabilities. For the bot, it's its best answer, its confidence, how it valued each move, and why it picked its letter; a hybrid adds the model's reading and how much the bot trusted it. When you play, it shows you the other seats' guesses too, so leave it off unless you want hints.
 - `--pause 0` removes the pause after each move, so the game runs as fast as the models answer. `--pause 3` slows it down to read along.
 - `--seed N` replays a game's spins. Every game prints its seed at the start, so you can rerun a game you liked, or give different models the same spins.
 

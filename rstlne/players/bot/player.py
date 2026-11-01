@@ -65,15 +65,25 @@ def explain(record: dict) -> list[str]:
     """A decision record in plain words: what the bot reads, the steal odds, and how it weighed its moves."""
     answers, oov = record.get("answers") or [], record.get("oov", 0.0)
     if answers:
-        (best, p), rest = answers[0], answers[1:3]
-        then = f" (then {', '.join(f'{a} {q:.0%}' for a, q in rest)})" if rest else ""
+        (best, p), rest = answers[0], answers[1:2]  # one runner-up, so the line fits one row on a wide screen
+        then = f" (then {rest[0][0]} {rest[0][1]:.0%})" if rest else ""
         read = f"Reads {best}, {p:.0%} sure{then}"
     else:
         read = "No answer in sight yet"
     lines = [f"{read} · {oov:.0%} chance it's outside its word lists"]
     if record.get("p_steal") is not None:
         lines.append(f"Chance an opponent solves before its next turn: {record['p_steal']:.0%}")
-    return lines + weighing(record)
+    return lines + weighing(record) + picked(record)
+
+
+def picked(record: dict) -> list[str]:
+    """The letter the bot picked, how likely it is to be there, and the runners-up."""
+    pick = record.get("letter_pick")
+    if not pick:
+        return []
+    (letter, p, count), rest = pick["ranked"][0], pick["ranked"][1:]
+    then = f" (then {', '.join(f'{k} {q:.0%}' for k, q, _ in rest)})" if rest else ""
+    return [f"{pick['verb']} {letter}: {p:.0%} likely, about {count:.1f} copies{then}"]
 
 
 def weighing(record: dict) -> list[str]:
@@ -171,7 +181,8 @@ class BotPlayer(Player):
             return []
         lines = explain(self._record)
         if self._weighed and not (self._record["values"] or self._record.get("planner")):
-            lines += weighing(self._weighed[1])
+            at = len(lines) - len(picked(self._record))  # the turn's weighing goes before the letter it led to
+            lines[at:at] = weighing(self._weighed[1])
         return lines
 
     def _decide(self, view: PublicView, belief: Belief) -> Action:
@@ -195,17 +206,19 @@ class BotPlayer(Player):
                 if kind == "spin":
                     return Spin()
                 if kind == "buy_vowel":
-                    return BuyVowel(s.vowel()[0])
+                    return BuyVowel(self._pick(s, "Buys", s.vowel()[0]))
                 return Solve(guess(belief, view, self._refuted_in(view)))
             case Phase.EXPRESS:
                 kind, letter = s.express_move(legal)
-                return CallConsonant(letter) if kind == "call_consonant" else Solve(guess(belief, view, self._refuted_in(view)))
+                if kind == "call_consonant":
+                    return CallConsonant(self._pick(s, "Calls", letter))
+                return Solve(guess(belief, view, self._refuted_in(view)))
             case Phase.CALL_CONSONANT:
-                return CallConsonant(s.consonant(view.wedge)[0])
+                return CallConsonant(self._pick(s, "Calls", s.consonant(view.wedge)[0]))
             case Phase.WILD_CONSONANT:
-                return CallConsonant(s.consonant(replace(view.wedge, wild=False), spend_wild=True)[0])
+                return CallConsonant(self._pick(s, "Calls", s.consonant(replace(view.wedge, wild=False), spend_wild=True)[0]))
             case Phase.FREE_PLAY:
-                return CallLetter(s.free_play()[0])
+                return CallLetter(self._pick(s, "Free Play: calls", s.free_play()[0]))
             case Phase.MYSTERY_CHOICE:
                 return Choose(s.mystery(self._pending))
             case Phase.EXPRESS_CHOICE:
@@ -246,6 +259,14 @@ class BotPlayer(Player):
         return Situation(view, belief, goal, odds, self.rules, self.spec, self.knobs,
                          calibrate=calibration.curve(self.knobs.calibration),
                          turn_chance=lambda c: max(c, prior(share, c)))
+
+    def _pick(self, s: Situation, verb: str, letter: str) -> str:
+        """Record the letter picked and the next best the bot weighed, each with its chance to hit and copies."""
+        weighed = s.letter_options if letter in s.letter_options else {letter: None}
+        ranked = [letter] + sorted((k for k in weighed if k != letter), key=lambda k: -weighed[k].main)[:2]
+        self._record["letter_pick"] = {"verb": verb, "ranked": [
+            [k, s.belief.stats(k).p_hit, s.belief.stats(k).count] for k in ranked]}
+        return letter
 
     def _note(self, options: dict) -> None:
         self._record["values"] = {k: v.main for k, v in options.items()}
