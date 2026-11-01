@@ -268,11 +268,16 @@ def rhyme_key(phones: list[str]) -> str:
     return " ".join(phones)
 
 
-def fingerprint(root: Path, vocabulary: int) -> str:
-    """Names the data a lexicon came from: every fetched file's hash, and the vocabulary size."""
+OPTIONAL_SOURCES = ("enwiki",)  # fetched only for later versions; a fingerprint covers them only when asked
+
+
+def fingerprint(root: Path, vocabulary: int, extra: Iterable[str] = ()) -> str:
+    """Names the data a lexicon came from: every fetched file's hash, and the vocabulary size. Optional sources
+    count only when named in `extra`, so fetching one leaves earlier versions' fingerprints unchanged."""
     path = root / "manifest.json"
     manifest = json.loads(path.read_text()) if path.exists() else {}
-    hashes = sorted({(f, e["sha256"]) for entry in manifest.values() for f, e in entry["files"].items()})
+    hashes = sorted({(f, e["sha256"]) for source, entry in manifest.items()
+                     if source not in OPTIONAL_SOURCES or source in extra for f, e in entry["files"].items()})
     return hashlib.sha256(json.dumps([COMPILED, vocabulary, hashes]).encode()).hexdigest()[:12]
 
 

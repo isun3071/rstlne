@@ -62,7 +62,9 @@ SOURCES = {
                       "CC BY 2.0 FR, Tatoeba contributors"),
     "simplewiki": Source("https://dumps.wikimedia.org/simplewiki/latest/simplewiki-latest-pages-articles.xml.bz2",
                          "CC BY-SA 4.0, Simple English Wikipedia contributors"),
+    "enwiki": Source("https://dumps.wikimedia.org/enwiki/latest/", "CC BY-SA 4.0, English Wikipedia contributors"),
 }
+DEFAULT_SOURCES = ("cmudict", "wiktionary", "wikidata", "vectors", "tatoeba", "simplewiki")  # what version 4 reads
 PAIR_MINIMUM = 2  # pairs seen fewer times than this are dropped
 PAIR_PRUNE = 8_000_000  # while counting, past this many pairs, drop the ones seen once
 
@@ -380,16 +382,192 @@ def fetch_simplewiki(data_dir: Path, say) -> list[str]:
     return _fetch_pairs(data_dir, say, "simplewiki", wikitext_sentences)
 
 
+# Version 5: pairs and triples from full English Wikipedia, counted as integer keys in sorted numpy arrays
+
+WORD_BITS = 18  # a word's id in a pair or triple key; the counting vocabulary holds about 154,000 words
+NGRAM_CHUNK = 5_000_000  # tokens gathered before they're counted
+NGRAM_CAP = 60_000_000  # distinct keys of a kind a worker holds before it drops the ones seen once
+MERGE_CAP = 150_000_000  # the same while merging the parts
+NGRAM_ENTRIES = 40_000_000  # pairs, and triples, kept in the end: about 500 MB of each
+ENWIKI_FILES = ("enwiki-words.txt", "enwiki-unigrams.npy", "enwiki-pair-keys.npy", "enwiki-pair-counts.npy",
+                "enwiki-triple-keys.npy", "enwiki-triple-counts.npy", "enwiki-meta.json")
+_PART = re.compile(r'href="(enwiki-latest-pages-articles(\d+)\.xml-p\d+p\d+\.bz2)"')
+
+
+def pair_key(a, b):
+    return (a << WORD_BITS) | b
+
+
+def triple_key(a, b, c):
+    return (((a << WORD_BITS) | b) << WORD_BITS) | c
+
+
+def merge_counts(parts: Iterable[tuple[np.ndarray, np.ndarray]]) -> tuple[np.ndarray, np.ndarray]:
+    """Counts from several (sorted or not) key arrays, summed by key, keys ascending."""
+    parts = list(parts)
+    keys = np.concatenate([np.asarray(k, np.int64) for k, _ in parts]) if parts else np.zeros(0, np.int64)
+    counts = np.concatenate([np.asarray(c, np.int64) for _, c in parts]) if parts else np.zeros(0, np.int64)
+    if not len(keys):
+        return keys, counts
+    order = np.argsort(keys, kind="stable")
+    keys, counts = keys[order], counts[order]
+    starts = np.flatnonzero(np.r_[True, keys[1:] != keys[:-1]])
+    return keys[starts], np.add.reduceat(counts, starts)
+
+
+def _drop_once(held: tuple[np.ndarray, np.ndarray], cap: int) -> tuple[np.ndarray, np.ndarray]:
+    """Past `cap` distinct keys, drop the ones seen once: rare n-grams may be undercounted, never overcounted."""
+    keys, counts = held
+    if len(keys) > cap:
+        keep = counts > 1
+        return keys[keep], counts[keep]
+    return held
+
+
+def prune_to(keys: np.ndarray, counts: np.ndarray, entries: int) -> tuple[np.ndarray, np.ndarray, int]:
+    """The commonest keys, at most `entries`, by raising the minimum count. Returns them and the minimum used."""
+    if len(keys) <= entries:
+        return keys, counts, 1
+    minimum = int(np.sort(counts)[::-1][entries]) + 1
+    keep = counts >= minimum
+    return keys[keep], counts[keep], minimum
+
+
+class NgramCounter:
+    """Word, pair, and triple counts over a fixed word list. A word outside it, or a sentence end, breaks the chain."""
+
+    def __init__(self, words: Sequence[str], cap: int = NGRAM_CAP, chunk: int = NGRAM_CHUNK):
+        if len(words) >= 1 << WORD_BITS:
+            raise ValueError(f"{len(words)} words don't fit in {WORD_BITS} bits")
+        self.ids = {w: i for i, w in enumerate(words)}
+        self.unigrams = np.zeros(len(words), np.int64)
+        self.cap, self.chunk = cap, chunk
+        self.buffer: list[int] = []
+        self.pairs = self.triples = (np.zeros(0, np.int64), np.zeros(0, np.int64))
+        self.tokens = 0
+
+    def add(self, sentences: Iterable[list[str]]) -> None:
+        ids = self.ids
+        for sentence in sentences:
+            self.buffer.extend(ids.get(w, -1) for w in sentence)
+            self.buffer.append(-1)
+            if len(self.buffer) >= self.chunk:
+                self._count()
+
+    def _count(self) -> None:
+        if not self.buffer:
+            return
+        t = np.array(self.buffer, np.int64)
+        self.buffer = []
+        known = t[t >= 0]
+        self.tokens += len(known)
+        self.unigrams += np.bincount(known, minlength=len(self.unigrams))
+        a, b = t[:-1], t[1:]
+        ok = (a >= 0) & (b >= 0)
+        self.pairs = _drop_once(merge_counts([self.pairs, np.unique(pair_key(a[ok], b[ok]), return_counts=True)]), self.cap)
+        a, b, c = t[:-2], t[1:-1], t[2:]
+        ok = (a >= 0) & (b >= 0) & (c >= 0)
+        new = np.unique(triple_key(a[ok], b[ok], c[ok]), return_counts=True)
+        self.triples = _drop_once(merge_counts([self.triples, new]), self.cap)
+
+    def result(self) -> tuple[np.ndarray, tuple[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]:
+        self._count()
+        return self.unigrams, self.pairs, self.triples
+
+
+def part_counts(counter: NgramCounter) -> dict[str, np.ndarray]:
+    unigrams, (pk, pc), (tk, tc) = counter.result()
+    return {"unigrams": unigrams, "pair_keys": pk, "pair_counts": pc.astype(np.int32), "triple_keys": tk,
+            "triple_counts": tc.astype(np.int32), "tokens": np.array([counter.tokens])}  # a part's counts fit 32 bits
+
+
+def dump_parts(index: str) -> list[str]:
+    """The dump's numbered article parts, in order, from its directory listing."""
+    found = {name: int(n) for name, n in _PART.findall(index)}
+    return sorted(found, key=found.get)
+
+
+def _open_part(name: str):
+    return stream(SOURCES["enwiki"].url + name, timeout=600)
+
+
+def _count_part(job: tuple) -> str:
+    """One part of the dump, counted and saved, so a stopped fetch can resume. Runs in a worker process."""
+    name, words, parts_dir, opener = job
+    counter = NgramCounter(words)
+    with opener(name) as raw:
+        counter.add(wikitext_sentences(io.TextIOWrapper(bz2.BZ2File(raw), encoding="utf-8", errors="replace")))
+    partial = parts_dir / f"{name}.partial.npz"
+    np.savez(partial, **part_counts(counter))
+    partial.replace(parts_dir / f"{name}.npz")
+    return name
+
+
+def fetch_enwiki(data_dir: Path, say, parts: Sequence[str] | None = None, opener=_open_part, workers: int = 3) -> list[str]:
+    """Pairs and triples from every part of the English Wikipedia dump, merged and pruned to their budgets."""
+    import multiprocessing
+
+    words = sorted(vocabulary(data_dir))
+    if parts is None:
+        with stream(SOURCES["enwiki"].url) as raw:
+            parts = dump_parts(raw.read().decode("utf-8", "replace"))
+    parts_dir = data_dir / ".enwiki-parts"
+    parts_dir.mkdir(exist_ok=True)
+    todo = [p for p in parts if not (parts_dir / f"{p}.npz").exists()]
+    say(f"  {len(parts)} parts, {len(parts) - len(todo)} already counted, {len(words):,} words, {workers} workers")
+    jobs = [(p, words, parts_dir, opener) for p in todo]
+    if workers > 1 and jobs:
+        with multiprocessing.get_context("spawn").Pool(workers) as pool:
+            for k, name in enumerate(pool.imap_unordered(_count_part, jobs), 1):
+                say(f"  counted {name} ({len(parts) - len(todo) + k} of {len(parts)})")
+    else:
+        for k, job in enumerate(jobs, 1):
+            say(f"  counted {_count_part(job)} ({len(parts) - len(todo) + k} of {len(parts)})")
+    unigrams = np.zeros(len(words), np.int64)
+    pairs = triples = (np.zeros(0, np.int64), np.zeros(0, np.int64))
+    tokens = 0
+    for name in parts:
+        with np.load(parts_dir / f"{name}.npz") as part:
+            unigrams += part["unigrams"]
+            tokens += int(part["tokens"][0])
+            pairs = _drop_once(merge_counts([pairs, (part["pair_keys"], part["pair_counts"])]), MERGE_CAP)
+            triples = _drop_once(merge_counts([triples, (part["triple_keys"], part["triple_counts"])]), MERGE_CAP)
+    pk, pc, pair_minimum = prune_to(*pairs, NGRAM_ENTRIES)
+    tk, tc, triple_minimum = prune_to(*triples, NGRAM_ENTRIES)
+    (data_dir / "enwiki-words.txt").write_text("\n".join(words) + "\n")
+    np.save(data_dir / "enwiki-unigrams.npy", unigrams)
+    np.save(data_dir / "enwiki-pair-keys.npy", pk)
+    np.save(data_dir / "enwiki-pair-counts.npy", np.minimum(pc, np.iinfo(np.int32).max).astype(np.int32))
+    np.save(data_dir / "enwiki-triple-keys.npy", tk)
+    np.save(data_dir / "enwiki-triple-counts.npy", np.minimum(tc, np.iinfo(np.int32).max).astype(np.int32))
+    (data_dir / "enwiki-meta.json").write_text(json.dumps({
+        "parts": len(parts), "tokens": tokens, "pairs": len(pk), "pair_minimum": pair_minimum,
+        "triples": len(tk), "triple_minimum": triple_minimum}, indent=2) + "\n")
+    for f in parts_dir.iterdir():
+        f.unlink()
+    parts_dir.rmdir()
+    say(f"  {tokens:,} words counted; kept {len(pk):,} pairs seen {pair_minimum}+ times, {len(tk):,} triples seen {triple_minimum}+")
+    return list(ENWIKI_FILES)
+
+
+def load_ngrams(data_dir: Path) -> dict:
+    """Version 5's Wikipedia counts, memory-mapped."""
+    out = {"words": (data_dir / "enwiki-words.txt").read_text().split("\n")[:-1]}
+    for name in ("unigrams", "pair-keys", "pair-counts", "triple-keys", "triple-counts"):
+        out[name.replace("-", "_")] = np.load(data_dir / f"enwiki-{name}.npy", mmap_mode="r")
+    return out
+
+
 STEPS = {"cmudict": fetch_cmudict, "wiktionary": fetch_wiktionary, "wikidata": fetch_wikidata, "vectors": fetch_vectors,
-         "tatoeba": fetch_tatoeba, "simplewiki": fetch_simplewiki}
+         "tatoeba": fetch_tatoeba, "simplewiki": fetch_simplewiki, "enwiki": fetch_enwiki}
 
 
-def fetch(names: Sequence[str], data_dir: Path = DATA, say=print) -> None:
+def fetch(names: Sequence[str], data_dir: Path = DATA, say=print, workers: int = 3) -> None:
     data_dir.mkdir(exist_ok=True)
     for name in names:
         say(f"{name}: streaming from {SOURCES[name].url}")
         start = time.monotonic()
-        files = STEPS[name](data_dir, say)
+        files = STEPS[name](data_dir, say, workers=workers) if name == "enwiki" else STEPS[name](data_dir, say)
         entry = record(data_dir, name, files)
         size = sum(f["bytes"] for f in entry["files"].values())
         say(f"  done in {time.monotonic() - start:.0f} s, {size / 1e6:.1f} MB")
@@ -418,7 +596,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m rstlne.data", description="Fetch the bot's word data.")
     commands = parser.add_subparsers(dest="command", required=True)
     get = commands.add_parser("fetch", help="stream and prune sources into data/")
-    get.add_argument("sources", nargs="*", default=list(STEPS), help=f"any of: {', '.join(STEPS)}")
+    get.add_argument("sources", nargs="*", default=list(DEFAULT_SOURCES),
+                     help=f"any of: {', '.join(STEPS)}; version 4's sources by default (enwiki is version 5's, by name)")
+    get.add_argument("--workers", type=int, default=3,
+                     help="processes for enwiki, one part of the dump each; Wikimedia asks for few parallel downloads")
     commands.add_parser("status", help="list what's fetched and how much space it takes")
     args = parser.parse_args(argv)
     if args.command == "status":
@@ -427,7 +608,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     unknown = set(args.sources) - set(STEPS)
     if unknown:
         sys.exit(f"unknown sources: {', '.join(sorted(unknown))}")
-    fetch(args.sources)
+    fetch(args.sources, workers=args.workers)
 
 
 if __name__ == "__main__":

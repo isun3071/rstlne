@@ -121,3 +121,89 @@ def test_status_counts_a_shared_file_once(tmp_path):
     data.status(tmp_path, say=lines.append)
     assert lines[-1].startswith("total 0.00 GB") and "30" not in lines[-1]
     assert data.total_bytes(tmp_path) == 30 + (tmp_path / "manifest.json").stat().st_size
+
+
+# Version 5: pairs and triples from full English Wikipedia
+
+WORDS = ["the", "red", "door", "is", "open", "barn"]
+
+
+def test_ngrams_count_pairs_and_triples_and_break_at_unknown_words():
+    counter = data.NgramCounter(WORDS)
+    counter.add([["the", "red", "door", "is", "open"], ["the", "red", "zzz", "barn"]])
+    unigrams, pairs, triples = counter.result()
+    ids = {w: i for i, w in enumerate(WORDS)}
+    assert unigrams[ids["red"]] == 2 and unigrams[ids["barn"]] == 1
+    assert dict(zip(*pairs)) == {data.pair_key(ids["the"], ids["red"]): 2, data.pair_key(ids["red"], ids["door"]): 1,
+                                 data.pair_key(ids["door"], ids["is"]): 1, data.pair_key(ids["is"], ids["open"]): 1}
+    assert dict(zip(*triples)) == {data.triple_key(ids["the"], ids["red"], ids["door"]): 1,
+                                   data.triple_key(ids["red"], ids["door"], ids["is"]): 1,
+                                   data.triple_key(ids["door"], ids["is"], ids["open"]): 1}
+
+
+def test_a_full_counter_drops_what_it_saw_once_and_keeps_the_rest():
+    counter = data.NgramCounter(WORDS, cap=2, chunk=4)
+    counter.add([["the", "red", "door"]] * 5 + [["is", "open"], ["open", "barn"]])
+    _, pairs, _ = counter.result()
+    ids = {w: i for i, w in enumerate(WORDS)}
+    kept = dict(zip(*pairs))
+    assert kept[data.pair_key(ids["the"], ids["red"])] == 5 and kept[data.pair_key(ids["red"], ids["door"])] == 5
+    assert data.pair_key(ids["open"], ids["barn"]) not in kept  # seen once, dropped when the counter filled
+
+
+def test_counts_from_parts_merge_by_key():
+    keys, counts = data.merge_counts([(np.array([1, 5]), np.array([2, 3])), (np.array([5, 9]), np.array([4, 1]))])
+    assert keys.tolist() == [1, 5, 9] and counts.tolist() == [2, 7, 1]
+
+
+def test_pruning_keeps_the_commonest_under_a_budget():
+    keys, counts = np.arange(6), np.array([1, 2, 2, 5, 9, 3])
+    kept_keys, kept_counts, minimum = data.prune_to(keys, counts, entries=3)
+    assert minimum == 3 and kept_keys.tolist() == [3, 4, 5] and kept_counts.tolist() == [5, 9, 3]
+    assert data.prune_to(keys, counts, entries=10)[2] == 1  # everything fits
+
+
+def test_the_dump_index_lists_its_numbered_parts_in_order():
+    index = ('<a href="enwiki-latest-pages-articles10.xml-p100p200.bz2">x</a>'
+             '<a href="enwiki-latest-pages-articles2.xml-p10p20.bz2">x</a>'
+             '<a href="enwiki-latest-pages-articles-multistream2.xml-p10p20.bz2">x</a>'
+             '<a href="enwiki-latest-pages-articles2.xml-p10p20.bz2-rss.xml">x</a>')
+    assert data.dump_parts(index) == ["enwiki-latest-pages-articles2.xml-p10p20.bz2",
+                                      "enwiki-latest-pages-articles10.xml-p100p200.bz2"]
+
+
+def wiki_part(*texts):
+    xml = "".join(f"<page><text xml:space=\"preserve\">{t}</text></page>\n" for t in texts)
+    return io.BytesIO(__import__("bz2").compress(xml.encode()))
+
+
+def test_the_wikipedia_fetch_counts_every_part_resumes_and_writes_its_files(tmp_path, monkeypatch):
+    monkeypatch.setattr(data, "vocabulary", lambda data_dir: set(WORDS))
+    parts = {"p1.bz2": wiki_part("The red door is open."), "p2.bz2": wiki_part("The red barn. The red door.")}
+    opened = []
+    def opener(name):
+        opened.append(name)
+        return io.BytesIO(parts[name].getvalue())
+    files = data.fetch_enwiki(tmp_path, say=lambda line: None, parts=list(parts), opener=opener, workers=1)
+    assert set(files) == {"enwiki-words.txt", "enwiki-unigrams.npy", "enwiki-pair-keys.npy", "enwiki-pair-counts.npy",
+                          "enwiki-triple-keys.npy", "enwiki-triple-counts.npy", "enwiki-meta.json"}
+    grams = data.load_ngrams(tmp_path)
+    ids = {w: i for i, w in enumerate(grams["words"])}
+    pairs = dict(zip(grams["pair_keys"].tolist(), grams["pair_counts"].tolist()))
+    assert pairs[data.pair_key(ids["the"], ids["red"])] == 3 and pairs[data.pair_key(ids["red"], ids["door"])] == 2
+    assert not (tmp_path / ".enwiki-parts").exists()  # the per-part counts go once merged
+    opened.clear()
+    (tmp_path / ".enwiki-parts").mkdir()
+    np.savez(tmp_path / ".enwiki-parts" / "p1.bz2.npz", **data.part_counts(data.NgramCounter(sorted(set(WORDS)))))
+    data.fetch_enwiki(tmp_path, say=lambda line: None, parts=list(parts), opener=opener, workers=1)
+    assert opened == ["p2.bz2"]  # a part already counted isn't read again
+
+
+def test_version_4_s_fingerprint_leaves_out_wikipedia(tmp_path):
+    from rstlne.players.bot import lexicon
+    entry = {"files": {"pairs.sqlite": {"sha256": "aa", "bytes": 1}}}
+    (tmp_path / "manifest.json").write_text(json.dumps({"tatoeba": entry}))
+    before = lexicon.fingerprint(tmp_path, 100)
+    (tmp_path / "manifest.json").write_text(json.dumps({"tatoeba": entry, "enwiki": {"files": {"enwiki-words.txt": {"sha256": "bb", "bytes": 1}}}}))
+    assert lexicon.fingerprint(tmp_path, 100) == before
+    assert lexicon.fingerprint(tmp_path, 100, extra=("enwiki",)) != before
