@@ -82,10 +82,11 @@ class Ngrams:
     triple_keys: np.ndarray
     triple_counts: np.ndarray
     followers: np.ndarray  # distinct words seen after each word, for Witten-Bell smoothing
+    triple_minimum: int = 1  # triples seen fewer times were pruned away: a missing one was seen 0 to this minus 1 times
 
     @classmethod
     def build(cls, unigrams: Mapping[str, int], pairs: Mapping[tuple[str, str], int] | None = None,
-              triples: Mapping[tuple[str, str, str], int] | None = None) -> Ngrams:
+              triples: Mapping[tuple[str, str, str], int] | None = None, triple_minimum: int = 1) -> Ngrams:
         """From plain counts, for tests."""
         words = sorted(set(unigrams) | {w for p in [*(pairs or {}), *(triples or {})] for w in p})
         ids = {w: i for i, w in enumerate(words)}
@@ -95,7 +96,7 @@ class Ngrams:
         pk, pc = keyed(pairs, 2)
         tk, tc = keyed(triples, 3)
         counts = np.array([unigrams.get(w, 0) for w in words], np.int64)
-        return cls._made(words, counts, pk, pc, tk, tc)
+        return cls._made(words, counts, pk, pc, tk, tc, triple_minimum)
 
     @classmethod
     def load(cls, root: Path) -> Ngrams:
@@ -104,16 +105,18 @@ class Ngrams:
         words = (root / "enwiki-words.txt").read_text().split("\n")[:-1]
         arrays = [np.load(root / f"enwiki-{name}.npy", mmap_mode="r")
                   for name in ("unigrams", "pair-keys", "pair-counts", "triple-keys", "triple-counts")]
-        return cls._made(words, *arrays)
+        meta = root / "enwiki-meta.json"
+        minimum = json.loads(meta.read_text()).get("triple_minimum", 1) if meta.exists() else 1
+        return cls._made(words, *arrays, minimum)
 
     @classmethod
-    def _made(cls, words, unigrams, pk, pc, tk, tc) -> Ngrams:
+    def _made(cls, words, unigrams, pk, pc, tk, tc, triple_minimum: int = 1) -> Ngrams:
         followers = np.bincount(np.asarray(pk) >> NGRAM_BITS, minlength=len(words)) if len(pk) else np.zeros(len(words))
         ids: dict[str, int] = {}
         for i, w in enumerate(words):  # the dotless ı uppercases to I: of two such words, the commoner keeps the name
             if w.upper() not in ids or unigrams[i] > unigrams[ids[w.upper()]]:
                 ids[w.upper()] = i
-        return cls(ids, unigrams, pk, pc, tk, tc, followers)
+        return cls(ids, unigrams, pk, pc, tk, tc, followers, triple_minimum)
 
     def ids_of(self, words: Iterable[str]) -> np.ndarray:
         return np.array([self.ids.get(w.strip("&,.'-!?").upper(), -1) for w in words], dtype=np.int64)

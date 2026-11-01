@@ -324,3 +324,35 @@ def test_processes_compiling_the_same_lexicon_at_once_each_finish(tmp_path, monk
         monkeypatch.setattr(lexicon_module.os, "getpid", lambda pid=pid: pid)
         lexicon_module.save_cache(Lexicon.build({"a": 1.0}), cache)
     assert cache.exists() and not list(tmp_path.glob("*.partial"))
+
+
+def test_answers_whose_triples_all_look_impossible_can_still_be_read(rules, wheel_spec, monkeypatch):
+    lex = Lexicon.build({"come": 1e-3, "down": 1e-3, "the": 5e-2, "party": 1e-4})
+    lex.ngrams = Ngrams.build({"come": 10, "down": 10, "the": 10, "party": 10})
+    r = FullReader(lex, replace(V5, ngrams=True, triple_weight=1.0))
+    monkeypatch.setattr(r, "_triple_log", lambda words: -2000.0)  # e^-2000 is 0 to a float: every weight would vanish
+    view = view_for(rules, wheel_spec, "COME DOWN THE PARTY", used="CMEOHTPARYN", category="Phrase")
+    assert r.read(view).best == "COME DOWN THE PARTY"
+
+
+def test_a_triple_missing_from_pruned_counts_was_seen_a_little_not_never():
+    unigrams = {"down": 30000, "the": 900000, "party": 4000}
+    pairs = {("down", "the"): 3300, ("the", "party"): 800}
+    expected = 3300 * 800 / 900000
+    r = FullReader(Lexicon.build({w: 1e-3 for w in unigrams}), replace(V5, ngrams=True, triple_weight=1.0))
+    r.lexicon.ngrams = Ngrams.build(unigrams, pairs=pairs)  # nothing pruned: missing means never seen
+    assert r._triple_log(["DOWN", "THE", "PARTY"]) == pytest.approx(math.log(1 / (expected + 1)))
+    r.lexicon.ngrams = Ngrams.build(unigrams, pairs=pairs, triple_minimum=4)  # pruned below 4: seen 0 to 3 times
+    assert r._triple_log(["DOWN", "THE", "PARTY"]) == pytest.approx(math.log(2.5 / (expected + 1)))
+
+
+def test_the_pruning_minimum_loads_with_the_counts(tmp_path):
+    from rstlne import data
+    counter = data.NgramCounter(["red", "door"])
+    counter.add([["red", "door"]])
+    unigrams, (pk, pc), (tk, tc) = counter.result()
+    (tmp_path / "enwiki-words.txt").write_text("red\ndoor\n")
+    for name, array in (("unigrams", unigrams), ("pair-keys", pk), ("pair-counts", pc), ("triple-keys", tk), ("triple-counts", tc)):
+        np.save(tmp_path / f"enwiki-{name}.npy", array)
+    (tmp_path / "enwiki-meta.json").write_text('{"triple_minimum": 4}')
+    assert Ngrams.load(tmp_path).triple_minimum == 4

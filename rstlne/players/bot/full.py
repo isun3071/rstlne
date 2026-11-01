@@ -311,12 +311,14 @@ class FullReader:
         count its two pairs predict) and how related all their content words are, not just neighbours."""
         knobs = self.knobs
         triples = knobs.triple_weight and self._ngrams() is not None
-        weights = []
+        logs = []  # in logs: a long answer's factors can multiply past what a float holds, toward 0 or infinity
         for words in samples:
-            w = self._triple_factor(words) ** knobs.triple_weight if triples and len(words) > 2 else 1.0
+            log = knobs.triple_weight * self._triple_log(words) if triples and len(words) > 2 else 0.0
             if knobs.coherence_weight:
-                w *= math.exp(knobs.coherence_weight * self._coherence(words))
-            weights.append(w)
+                log += knobs.coherence_weight * self._coherence(words)
+            logs.append(log)
+        top = max(logs)
+        weights = [math.exp(log - top) for log in logs]  # the best answer weighs 1, so the total never vanishes
         picks = rng.choices(range(len(samples)), weights, k=len(samples))
         return [samples[i] for i in picks], [unknown[i] for i in picks]
 
@@ -329,10 +331,13 @@ class FullReader:
         close = lex.closeness(content, content)
         return float(close[np.triu_indices(len(content), 1)].mean())
 
-    def _triple_factor(self, words: list[str]) -> float:
+    def _triple_log(self, words: list[str]) -> float:
+        """The log of the product of every triple's factor: its sightings against what its two pairs predict.
+        A triple pruned from the counts was seen fewer than the minimum times, so it counts as half of that."""
         ng, smooth = self._ngrams(), self.knobs.triple_smoothing
+        unseen = (ng.triple_minimum - 1) / 2
         ids = ng.ids_of(words)
-        factor = 1.0
+        log = 0.0
         for x, y, z in zip(ids, ids[1:], ids[2:]):
             if min(x, y, z) < 0:
                 continue
@@ -340,8 +345,9 @@ class FullReader:
             if not xy or not ng.unigrams[y]:
                 continue  # no evidence for the first pair: the triple can't be judged
             expected = xy * yz / ng.unigrams[y]
-            factor *= (ng.triple(x, y, z) + smooth) / (expected + smooth)
-        return factor
+            seen = ng.triple(x, y, z) or unseen
+            log += math.log((seen + smooth) / (expected + smooth))
+        return log
 
     def _same_name(self, words: list[str]) -> bool:
         """`BIRTHDAY & WEDDING CAKE`: the left half plus the right half's ending is a known phrase too."""
