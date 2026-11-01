@@ -83,6 +83,23 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
 - **A d1-ultra lineup is running,** expected near 0%. A second, the bot against two d1-ultra seats, was skipped as predictable.
 - **3e (the DeepSeek hybrid) is slow,** about 6.5 minutes a game. DeepSeek's board reads take a median 4 seconds but average 27 (some take minutes), and the server's CPU was saturated by the d1-ultra lineup. It costs about 2.8¢ a game, roughly $10 for the run.
 
+### d1-ultra's full run, and finishing places (added later the same evening)
+
+- **The d1-ultra decision seat alone against two bots: 4%** (2–7%), the weakest player tested, for 35¢ over 360 games. It did solve 243 times, 87% right, but late (median 75% of the board) and often for the $1,000 minimum.
+- **Finishing places**, with 2.00 as par (contestants keep what they bank even if they miss the bonus, so place matters too). Alone against two bots:
+
+  | | Average place | 1st / 2nd / 3rd |
+  |---|---|---|
+  | Sol | 1.57 | 58 / 27 / 15% |
+  | Hybrid (Luna) | 1.81 | 45 / 28 / 27% |
+  | DeepSeek | 1.87 | 37 / 40 / 23% |
+  | Luna | 2.12 | 18 / 53 / 30% |
+  | Haiku | 2.33 | 14 / 38 / 47% |
+  | d1-ultra seat | 2.63 | 4 / 28 / 67% |
+
+- **DeepSeek ties the bots on wins but beats them on place,** since it rarely finishes last. Luna is second 53% of the time, so its place is near par despite few wins. The bots are boom or bust: against two Lunas the bot won 50% and was last 32%. The LLMs' frequent small rounds buy consistency; the bot's milking buys big wins and big losses.
+- **Running next:** the Haiku hybrid against two bots (Haiku's hybrid curves are now measured: it says "solvable" rarely early and is right 85–100% from 20% of the board) and a full run of the Luna Decisions seat.
+
 ## 2. Corrections to the briefing
 
 - **The hybrid is a division of labour, not a verification wrapper.** The bot makes every decision (money, letters, risk, and when to solve); Luna only reads the board. Checking answers for fit is one part of it. The parts weren't measured separately, so the lift belongs to the whole split: "the LLM reads, the bot decides". The chess "centaur" comparison fits.

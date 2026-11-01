@@ -263,4 +263,53 @@ handles = [plt.Rectangle((0, 0), 1, 1, color=s) for s in shades] + [plt.Line2D([
 fig.legend(handles, decks + ["contestants, 10 s clock (~38%)"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
 save(fig, "6-bonus-test.png", "The bonus round, alone",
      "Each player on 100 bonus puzzles per deck, one solve each, no clock for the models")
+# 7. Finishing places: 1st, 2nd, 3rd, and the average place (2.00 is par)
+def places_of(folder, pick):
+    """Each matching seat's places in a lineup; ties share the average place."""
+    out = []
+    for p in glob.glob(str(T / folder / "*.jsonl")):
+        L = [json.loads(l) for l in open(p)]
+        if L[-1].get("type") != "summary":
+            continue
+        tot = L[-1]["totals"]
+        for i, seat in enumerate(L[0]["seats"]):
+            if pick(seat):
+                above, tied = sum(x > tot[i] for x in tot), sum(x == tot[i] for x in tot)
+                out.append(above + 1 + (tied - 1) / 2)
+    return out
+
+
+rows7 = [("Sol", "seed707-e250a942", lambda s: s.get("model") == "openai/gpt-6.1-sol", "LLM"),
+         ("Hybrid (bot + Luna)", "seed707-ca968604", lambda s: s["kind"] == "hybrid", "hybrid"),
+         ("DeepSeek", "seed707-6fa48eea", lambda s: s.get("model") == "deepseek/deepseek-v4.1-flash-1017", "LLM"),
+         ("Luna", "seed707-e71dd1af", lambda s: s.get("model") == "openai/gpt-6-luna" and s["kind"] == "llm", "LLM"),
+         ("Haiku", "seed707-4ef950be", lambda s: s.get("model") == "anthropic/claude-haiku-5.5", "LLM"),
+         ("d1-ultra decision seat", "seed707-d1-server", lambda s: s["kind"] == "decision", "decision"),
+         ("Bot, against two Lunas", "seed707-6496578d", lambda s: s["kind"] == "bot", "bot"),
+         ("Bot, against two Haikus", "seed707-261dfa12", lambda s: s["kind"] == "bot", "bot")]
+rows7 = [r for r in rows7 if (T / r[1]).exists()]
+RAMP = ["#104281", "#2a78d6", "#86b6ef"]  # 1st, 2nd, 3rd: one hue, darkest first
+fig, ax = plt.subplots(figsize=(11, 0.6 * len(rows7) + 2.6))
+fig.subplots_adjust(left=0.24, right=0.86, top=0.82, bottom=0.17)
+for i, (name, folder, pick, kind) in enumerate(reversed(rows7)):
+    pl = places_of(folder, pick)
+    shares = [sum(1 if x == r else 0.5 if abs(x - r) == 0.5 else 0 for x in pl) / len(pl) * 100 for r in (1, 2, 3)]
+    left = 0
+    for r, (share, colour) in enumerate(zip(shares, RAMP)):
+        ax.barh(i, share - 0.4, left=left + 0.2, height=0.6, color=colour, zorder=2)
+        if share >= 8:
+            ax.text(left + share / 2, i, f"{share:.0f}%", ha="center", va="center", fontsize=9,
+                    color="#ffffff" if r < 2 else INK)
+        left += share
+    ax.text(102, i, f"{st.mean(pl):.2f}", va="center", fontsize=10.5, color=INK, fontweight="bold")
+ax.text(102, len(rows7) - 0.35, "average\nplace", fontsize=9, color=INK2, va="bottom")
+ax.set_yticks(range(len(rows7)), [r[0] for r in reversed(rows7)])
+ax.set_xlim(0, 100)
+ax.axhline(1.5, color=GRID, linewidth=1)
+tidy(ax, "share of games finished in each place (%); an average place of 2.00 is par")
+handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in RAMP]
+fig.legend(handles, ["1st", "2nd", "3rd"], loc="lower center", ncol=3, frameon=False, fontsize=9.5)
+save(fig, "7-finishing-places.png", "Where each player finishes",
+     "Each player alone against two bots, then the bot against two copies of a model; ties share places")
+
 print("written to", OUT, sorted(p.name for p in OUT.glob("*.png")))

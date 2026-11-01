@@ -144,6 +144,23 @@ In choice mode, d1-ultra (first on Artificial Analysis's Decision Index) never s
 
 d1-ultra and Jev are strongly underconfident on this task: they seem to judge solvability by their own reading, though the seat hands the solve to Luna, who reads far better. Luna Decisions, the same family as its solver, picks solve about as often as Luna can succeed at every stage. The overconfidence the index found on knowledge questions doesn't carry over to reading a board. Expect d1-ultra's lineup near 0%: the bots usually solve by about 65% of the board.
 
+## d1-ultra lineup, and finishing places (2026-10-31)
+
+**d1-ultra decision seat (choice mode, Luna solving) alone against two bots:** 4% (2–7%), 35¢ for 360 games. It solved 243 times, 87% right, but at a median 75% of the board, after the bots' usual 63–65%, and often for the $1,000 minimum. The top model on Artificial Analysis's Decision Index is the weakest player tested.
+
+**Finishing places** (ties share places; 2.00 is par). Contestants keep what they bank even without reaching the bonus, so placement matters as well as winning.
+
+| Alone against two bots | Average place (95%) | 1st / 2nd / 3rd |
+|---|---|---|
+| Sol | 1.57 (1.48–1.67) | 58 / 27 / 15% |
+| Hybrid (Luna) | 1.81 (1.72–1.91) | 45 / 28 / 27% |
+| DeepSeek | 1.87 (1.76–1.98) | 37 / 40 / 23% |
+| Luna | 2.12 (2.03–2.21) | 18 / 53 / 30% |
+| Haiku | 2.33 (2.24–2.41) | 14 / 38 / 47% |
+| d1-ultra seat | 2.63 (2.56–2.70) | 4 / 28 / 67% |
+
+DeepSeek ties the bots on wins but beats them on place: it rarely finishes last. Luna wins only 18% but is second 53% of the time and last no more often than a bot, so its average place is near par. The bots are boom or bust: against two Lunas the bot won 50% and was last 32%. Chart: `figures/7-finishing-places.png`.
+
 ## Frontier and other labs: trials only, until there's a grant (2026-10-31)
 
 Three more models had one-set trials (set 0, six games, alone against two bots, on the laptop):
