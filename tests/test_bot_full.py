@@ -309,3 +309,9 @@ def test_coherence_links_words_that_aren_t_neighbours(rules, wheel_spec):
     answer, used = "BAKING A POUND CAKE", "AINGPOUDCE"  # _A_ING: HAVING or BAKING, three words from CA_E
     assert best(lex, V5, rules, wheel_spec, answer, used) == "HAVING A POUND CAKE"
     assert best(lex, replace(V5, coherence_weight=8.0), rules, wheel_spec, answer, used) == "BAKING A POUND CAKE"
+
+
+def test_wikipedia_s_word_list_keeps_i_when_the_dotless_one_uppercases_alike():
+    grams = Ngrams.build({"i": 4_000_000, "ı": 0, "have": 4_000_000}, pairs={("i", "have"): 90_000})
+    ids = grams.ids_of(["I", "HAVE"])
+    assert grams.pair(ids[:1], ids[1:])[0, 0] == 90_000

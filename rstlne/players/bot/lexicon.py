@@ -109,7 +109,11 @@ class Ngrams:
     @classmethod
     def _made(cls, words, unigrams, pk, pc, tk, tc) -> Ngrams:
         followers = np.bincount(np.asarray(pk) >> NGRAM_BITS, minlength=len(words)) if len(pk) else np.zeros(len(words))
-        return cls({w.upper(): i for i, w in enumerate(words)}, unigrams, pk, pc, tk, tc, followers)
+        ids: dict[str, int] = {}
+        for i, w in enumerate(words):  # the dotless ı uppercases to I: of two such words, the commoner keeps the name
+            if w.upper() not in ids or unigrams[i] > unigrams[ids[w.upper()]]:
+                ids[w.upper()] = i
+        return cls(ids, unigrams, pk, pc, tk, tc, followers)
 
     def ids_of(self, words: Iterable[str]) -> np.ndarray:
         return np.array([self.ids.get(w.strip("&,.'-!?").upper(), -1) for w in words], dtype=np.int64)
