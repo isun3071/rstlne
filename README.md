@@ -4,7 +4,9 @@ Named after R, S, T, L, N, and E, the letters the bonus round hands every player
 
 Wheel of Fortune in the terminal, with language models at the table. Each of the three seats is you or a model called through [OpenRouter](https://openrouter.ai). The game follows the current show's rules, including the Mystery and Express wedges, the Wild Card, the Million wedge, and the bonus round.
 
-The same engine is built to run seeded, model-only tournaments that compare how well models pick letters, take risks, and time their solves.
+The same engine runs seeded, model-only tournaments that compare how well models pick letters, take risks, and time their solves.
+
+**Results:** [FINDINGS.md](FINDINGS.md) covers what about 4,000 scored games showed: the best model beats our bot, most don't, models have distinct temperaments, and letting a model read while the bot decides lifts weak models by about 28 points.
 
 ## Status
 
@@ -13,10 +15,12 @@ The same engine is built to run seeded, model-only tournaments that compare how 
 | Game engine, covering every rule in `documentation.md` | Done |
 | Model seats, which move by tool calls | Done |
 | Decision model seats | Done |
+| Hybrid seats: the bot decides, a model reads the board | Done |
 | Your seat in the terminal | Done |
 | Game logs | Done |
-| Bot (v1) | Built; its knobs are untuned until self-play |
-| Tournament runner | Done |
+| Bot | Version 4, tuned by self-play |
+| Tournament runner, bonus test, puzzle generator | Done |
+| The grading runs in `FINDINGS.md` | Done (2026-11-01) |
 | Local web page | Planned for phase 2 |
 
 ## Setup
@@ -38,7 +42,7 @@ Put your key in `.env` as `OPENROUTER_API_KEY=...`. Git ignores `.env`.
 uv run python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
 ```
 
-Each seat is `human`, `llm:<slug>`, `decision`, or `bot`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, and an LLM writes the answer when the decision model calls a solve. `[decision]` in `config.toml` names both models and the solve threshold, and `decision:<model>` overrides the decision model for one seat. A `bot` seat is the project's own versioned player: it reads the board with word and phrase lists and scores every move with one value function, as `documentation.md` describes. It reads with its full reader once `python -m rstlne.data fetch` has run (see below); without the data, it reads by letter frequency alone and solves only once the board gives the answer away. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
+Each seat is `human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slug>`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, including when to solve, and an LLM writes the answer. `[decision]` in `config.toml` names both models, and `decision:<model>` overrides the decision model for one seat. In a `hybrid` seat the bot makes every move and asks the model to read the board on its turns. A `bot` seat is the project's own versioned player: it reads the board with word and phrase lists and scores every move with one value function, as `documentation.md` describes. It reads with its full reader once `python -m rstlne.data fetch` has run (see below); without the data, it reads by letter frequency alone and solves only once the board gives the answer away. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
 
 | Option | Effect |
 |---|---|
@@ -50,17 +54,19 @@ Each seat is `human`, `llm:<slug>`, `decision`, or `bot`. Three seats without a 
 | `--puzzles PATH` | Reads puzzles from PATH. The default is `puzzles/dev.json`. |
 | `--log-dir PATH` | Writes game logs to PATH. The default is `logs/`. |
 
-The slugs in `config.toml` are the models picked so far: Claude Haiku 5.5, GPT-6 Luna, and DeepSeek V4.1 Flash, with Qwen 3.8 Flash and GLM 5.3 Flash as backups.
+The grading runs used GPT-6.1 Sol, GPT-6 Luna, Claude Haiku 5.5, and DeepSeek V4.1 Flash (its October 17, 2026 snapshot). Any OpenRouter model with tool calling can sit.
 
 ## Tournaments
 
 Add `--puzzles generate` to play on fresh puzzles made for the tournament: a generator model writes them, code checks them, and a judge model from another lab confirms each one. `documentation.md` has the details; a 50-set pool costs about a cent. `python -m rstlne.puzzlegen --main 40 --bonus 10 --seed 7 --out puzzles/generated/batch.json` makes a batch on its own.
 
 ```
-uv run python -m rstlne.tournament --models anthropic/claude-haiku-5.5,openai/gpt-6-luna,deepseek/deepseek-v4.1-flash-1017 --sets 50 --seed 42
+uv run python -m rstlne.tournament --seats llm:openai/gpt-6.1-sol,bot,bot --sets 60 --seed 707 --puzzles puzzles/generated/grading-505.json
 ```
 
-A tournament plays `--sets` puzzle sets with duplicate scoring. A set is 6 games, one for every ordering of the 3 entrants across the seats, all with the set's seed and puzzles. So within a set, each entrant sits in each seat twice and plays right after each other entrant 3 times, against the same spins. `--sets 50` is 300 games, and `--sets 1` is a 6 game trial for checking cost. `--models a,b,c` is short for three `llm:` seats. Setting `set_permutations = "cyclic"` in `config.toml` plays the old 3 seat rotations instead.
+`--seats` takes any three seats, as in the CLI; `--models a,b,c` is short for three `llm:` seats.
+
+A tournament plays `--sets` puzzle sets with duplicate scoring. A set is 6 games, one for every ordering of the 3 entrants across the seats, all with the set's seed and puzzles. So within a set, each entrant sits in each seat twice and plays right after each other entrant 3 times, against the same spins. `--sets 60` is 360 games, and `--sets 1` is a 6 game trial for checking cost. Setting `set_permutations = "cyclic"` in `config.toml` plays the old 3 seat rotations instead.
 
 Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, and reshuffled when the pool runs out, so no set repeats a puzzle.
 
@@ -68,12 +74,20 @@ Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, a
 |---|---|
 | `--parallel N` | Plays N games at once. The default is 6, a whole set. |
 | `--max-cost D` | Stops starting new games once spending reaches D dollars. |
-| `--puzzles PATH` | The default is `puzzles/dev.json`, which marks the run as development. Scored runs use `puzzles/private.json`. |
+| `--puzzles PATH` | The default is `puzzles/dev.json`, which marks the run as development. Scored runs use a generated deck, as the grading runs did, or `puzzles/private.json`. |
 | `--out PATH` | The tournament folder. The default covers the entrants, seed, puzzles, and every setting that changes play, so rerunning the same command resumes it, and changing a setting starts a fresh folder. |
 
 Each game writes its usual log into the tournament folder, and rerunning skips finished games and replays unfinished ones. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, how much of the board showed at a correct solve, money left on the table, invalid moves, and cost. The report also lists each set's results and how many sets used each puzzle.
 
-Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total; tied leaders split the win. With Claude Haiku thinking, a game takes about 6 to 7 minutes and 1 to 2 cents, so 50 sets (300 games) at 6 games at once take about 5 hours.
+Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total; tied leaders split the win. The table also shows each entrant's main-round money, its total minus any bonus envelope. Cost per game runs from under 1 cent (Luna, Haiku) to about 2 cents (Sol), with bot seats free; a 60-set lineup took 1 to 5 hours on 4 cores.
+
+## The bonus test
+
+```
+uv run python -m rstlne.bonustest --players llm:openai/gpt-6.1-sol,bot --puzzles puzzles/generated/grading-505.json --seed 707
+```
+
+Plays the bonus round alone: every player meets every bonus puzzle in the file, with no wheel and no opponents, for a pure bonus solve rate on the same puzzles.
 
 ## The bot's word data
 
@@ -96,7 +110,7 @@ uv run python -m rstlne.data status
 
 ## Calibrating decision models
 
-Decision models put P(solvable) on different scales: Jev 1.14 gives a fully revealed board about 0.75, while GPT-6 Luna Decisions gives about 0.99. So each decision model gets its own solve threshold, picked from data:
+By default (`solve = "choice"` under `[decision]`), a decision model chooses when to solve on its own. With `solve = "threshold"`, the seat solves once the model's P(solvable) passes a threshold instead. Decision models put P(solvable) on different scales: Jev 1.14 gives a fully revealed board about 0.75, while GPT-6 Luna Decisions gives about 0.99. So each decision model gets its own threshold, picked from data:
 
 ```
 uv run python -m rstlne.calibrate --models openai/gpt-6-luna-decisions,typesafe/jev-1.14 --count 50
@@ -107,8 +121,8 @@ The command reveals 50 seeded puzzles step by step, asks each decision model for
 ## Configuration
 
 - `wheel.toml` holds the 24 wedges, what each round adds to the wheel, the special wedge values, and the bonus envelopes.
-- `config.toml` holds the decision seat's models and solve threshold, the round count, vowel cost, solve minimum, round turn cap, model slugs, an optional temperature, the CLI pause and bonus timer, and the bot version.
-- `puzzles/dev.json` holds development puzzles. Scored tournament puzzles go in `puzzles/private.json`, which git ignores, because puzzles from the show are likely in model training data.
+- `config.toml` holds the decision seat's models and solve mode, the hybrid's trust curves, provider pins, the round count, vowel cost, solve minimum, round turn cap, model slugs, an optional temperature, the CLI pause and bonus timer, and the bot version.
+- `puzzles/dev.json` holds development puzzles. Aired puzzles go in `puzzles/private.json`, which git ignores, because puzzles from the show are likely in model training data. Generated decks go in `puzzles/generated/`, also ignored, so they never leak into training data either.
 
 A puzzle looks like `{"category": "Phrase", "answer": "BETTER LATE THAN NEVER", "bonus": false}`.
 
@@ -128,17 +142,23 @@ Token use includes how many prompt tokens each provider read from its cache. Mod
 uv run pytest
 ```
 
-The suite runs about 500 tests in under a minute. It never calls OpenRouter; a fake client stands in. It also never reads `data/`: the bot falls back to letter frequency there. `uv run pytest -m slow` runs the tests that read the real word data.
+The suite runs about 770 tests in under two minutes. It never calls OpenRouter; a fake client stands in. It also never reads `data/`: the bot falls back to letter frequency there. `uv run pytest -m slow` runs the tests that read the real word data.
 
 ## Layout
 
 ```
 rstlne/engine/        the rules engine: no I/O, no network, every chance outcome from the seeded wheel
-rstlne/players/       your seat (human_cli.py), model seats (llm.py), decision seats (decision.py), and the bot (bot/)
+rstlne/players/       your seat (human_cli.py), model seats (llm.py), decision seats (decision.py), hybrid seats (hybrid.py), and the bot (bot/)
 rstlne/llm/           the OpenRouter chat and Decisions API clients, with retries and usage tracking
 rstlne/runner.py      the game loop: retries, forfeits, and logs
 rstlne/narrate.py     move text for the screen and the model prompts
 rstlne/cli.py         the terminal game
+rstlne/tournament.py  seeded tournaments with duplicate scoring
+rstlne/bonustest.py   the bonus round alone
+rstlne/puzzlegen.py   fresh puzzles: written by one model, checked in code, judged by another
+rstlne/selfplay.py    bot self-play and tuning, no API calls
+figures/              the charts in FINDINGS.md, and the script that draws them from the logs
+FINDINGS.md        what the grading runs found
 documentation.md   the full game specification
 CLAUDE.md          build notes for Claude Code
 ```
