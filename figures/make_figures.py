@@ -204,6 +204,8 @@ groups = [("Sol vs bots", "seed707-e250a942", "openai/gpt-6.1-sol", "LLM"),
           ("Hybrid vs bots", "seed707-ca968604", "hybrid:openai/gpt-6-luna", "hybrid"),
           ("Luna vs bots", "seed707-e71dd1af", "openai/gpt-6-luna", "LLM"),
           ("Haiku vs bots", "seed707-4ef950be", "anthropic/claude-haiku-5.5", "LLM")]
+if "seed707-6fa48eea" in REPORTS:
+    groups.insert(2, ("DeepSeek vs bots", "seed707-6fa48eea", "deepseek/deepseek-v4.1-flash-1017", "LLM"))
 data = [(g, kind, per_round(f, key), per_round(f, "bot")) for g, f, key, kind in groups]
 fig, axes = plt.subplots(1, 2, figsize=(12, 4.9))
 fig.subplots_adjust(left=0.13, right=0.97, top=0.78, bottom=0.17, wspace=0.55)
