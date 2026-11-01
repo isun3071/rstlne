@@ -393,7 +393,7 @@ PART_BACKOFF = 30
 NGRAM_ENTRIES = 40_000_000  # pairs, and triples, kept in the end: about 500 MB of each
 ENWIKI_FILES = ("enwiki-words.txt", "enwiki-unigrams.npy", "enwiki-pair-keys.npy", "enwiki-pair-counts.npy",
                 "enwiki-triple-keys.npy", "enwiki-triple-counts.npy", "enwiki-meta.json")
-_PART = re.compile(r'href="(enwiki-latest-pages-articles(\d+)\.xml-p\d+p\d+\.bz2)"')
+_PART = re.compile(r'href="(enwiki-latest-pages-articles(\d+)\.xml-p(\d+)p(\d+)\.bz2)"')
 
 
 def pair_key(a, b):
@@ -484,9 +484,14 @@ def part_counts(counter: NgramCounter) -> dict[str, np.ndarray]:
 
 
 def dump_parts(index: str) -> list[str]:
-    """The dump's numbered article parts, in order, from its directory listing."""
-    found = {name: int(n) for name, n in _PART.findall(index)}
-    return sorted(found, key=found.get)
+    """The dump's article parts, in page order, from its directory listing. The listing keeps stale copies of the
+    last part from earlier dumps (some still download); of the files starting at a page, the newest reaches furthest."""
+    newest: dict[int, tuple[int, int, str]] = {}
+    for name, number, start, end in _PART.findall(index):
+        start, end = int(start), int(end)
+        if start not in newest or end > newest[start][1]:
+            newest[start] = (int(number), end, name)
+    return [name for _, (_, _, name) in sorted(newest.items())]
 
 
 def _open_part(name: str):

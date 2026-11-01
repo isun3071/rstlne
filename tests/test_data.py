@@ -172,6 +172,13 @@ def test_the_dump_index_lists_its_numbered_parts_in_order():
                                       "enwiki-latest-pages-articles10.xml-p100p200.bz2"]
 
 
+def test_stale_copies_of_a_part_left_in_the_listing_are_skipped():
+    index = "".join(f'<a href="enwiki-latest-pages-articles27.xml-p83475910p{end}.bz2">x</a>' for end in (84130778, 84442244, 84388309))
+    index += '<a href="enwiki-latest-pages-articles27.xml-p81975910p83475909.bz2">x</a>'
+    assert data.dump_parts(index) == ["enwiki-latest-pages-articles27.xml-p81975910p83475909.bz2",
+                                      "enwiki-latest-pages-articles27.xml-p83475910p84442244.bz2"]  # the newest reaches furthest
+
+
 def wiki_part(*texts):
     xml = "".join(f"<page><text xml:space=\"preserve\">{t}</text></page>\n" for t in texts)
     return io.BytesIO(__import__("bz2").compress(xml.encode()))
