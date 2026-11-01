@@ -62,6 +62,8 @@ class Knobs:
     triple_smoothing: float = 1.0
     vector_pair_weight: float = 0.0
     single_fit_weight: float | None = None
+    # From version 5. Whole answers resample by e^(weight x the average cosine between their content words); 0 is off.
+    coherence_weight: float = 0.0
 
 
 def _tuples(value):

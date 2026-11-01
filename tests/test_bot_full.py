@@ -300,3 +300,12 @@ def test_wikipedia_counts_load_from_the_fetched_files(tmp_path):
     ids = grams.ids_of(["DAMP", "SOCKS", "THE", "ZEBRA"])
     assert ids[-1] == -1 and grams.pair(ids[:1], ids[1:2])[0, 0] == 3
     assert grams.triple(ids[2], ids[0], ids[1]) == 1 and grams.followers[ids[0]] == 1
+
+
+def test_coherence_links_words_that_aren_t_neighbours(rules, wheel_spec):
+    vectors = {"baking": np.array([1.0, 0.1, 0.0]), "having": np.array([0.0, 0.2, 1.0]),
+               "cake": np.array([0.95, 0.2, 0.05]), "pound": np.array([0.6, 0.6, 0.2])}
+    lex = Lexicon.build({"having": 1e-3, "baking": 1e-4, "a": 2e-2, "pound": 1e-4, "cake": 1e-4}, vectors=vectors)
+    answer, used = "BAKING A POUND CAKE", "AINGPOUDCE"  # _A_ING: HAVING or BAKING, three words from CA_E
+    assert best(lex, V5, rules, wheel_spec, answer, used) == "HAVING A POUND CAKE"
+    assert best(lex, replace(V5, coherence_weight=8.0), rules, wheel_spec, answer, used) == "BAKING A POUND CAKE"

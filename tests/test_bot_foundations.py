@@ -98,7 +98,7 @@ def test_v1_plays_the_formula_and_v2_the_win_table():
 
 
 V5_KNOBS = {"cased_lexicon": False, "one_letter": (), "ngrams": False, "triple_weight": 0.0, "triple_smoothing": 1.0,
-            "vector_pair_weight": 0.0, "single_fit_weight": None}  # added after version 4's freeze, at these values in 1 to 4
+            "vector_pair_weight": 0.0, "single_fit_weight": None, "coherence_weight": 0.0}  # added after version 4's freeze, at these values in 1 to 4
 LATER_KNOBS = {"stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot", *V5_KNOBS}  # off in 1 and 2
 V4_KNOBS = {"stealer_gain_llm", "stealer_gain_bot", "steal_bot"}  # added after version 3's freeze, off in it
 

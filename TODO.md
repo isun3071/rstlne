@@ -24,6 +24,7 @@ Every planned lineup but 6c ran: 1, 2, 3, 3b, 3c, 3d, 3f (the Haiku hybrid, in p
   - **Single-word answers** (3 misses): no pairs to go on, so word frequency decides among fitting words (HAVING over WAVING for What Are You Doing?, WAIVER over JUICER). Category fit should weigh more here. Aired bonus puzzles are sometimes one word (5 of 100); generated ones never are, since the generator asks for a phrase.
   - **Pairs that each make sense, wholes that don't** (4 misses): COME DOWN THE PARTY, HAVING A POUND CAKE, BIAS AND PYTHONS. The reader scores a chain of word pairs, so it never sees the whole phrase, and it was 93–97% sure of three of them, which also says its confidence is off on these.
   - **A rarer near-miss** (1): CUSP for WISP, with almost equal pair counts.
+- **Long puzzles.** v4 needed 59% of the board on 16–17-letter puzzles and 68% on 27+, where LLMs stayed near 50%: more words means more pairs to miss, and the chain only links neighbours. R2 and R3 help; R7 adds whole-answer coherence from the word vectors (BAKING … CAKE), and the reading summary now breaks results down by length to show whether the gap narrows. If long puzzles still lag, try more samples for boards with many open slots (the `samples` knob, 400 now).
 - **Refit** the win table and the stealer's gain under the round 4 start rule.
 
 ## Phase 2: the local web page

@@ -224,3 +224,16 @@ def test_calibration_fits_on_tuning_reads_and_reports_honesty_on_held_out_ones(t
         assert {"before", "after"} <= set(saved[batch]) and {"error", "brier", "boards"} <= set(saved[batch]["before"])
     assert saved["knob"].startswith("calibration=")
     assert any("held out" in line for line in lines)
+
+
+def test_the_reads_summary_breaks_main_puzzles_down_by_length(tmp_path):
+    def row(answer, shown, correct):
+        return {"answer": answer, "bonus": False, "shown": shown, "best": answer if correct else "X",
+                "confidence": 0.95, "correct": correct, "p_true": 0.5, "seconds": 0.1}
+    short, long = "SIXTEEN LETTERS AB", "TWENTY SEVEN LETTERS IN THIS ONE"  # 16 and 27 letters
+    rows = [row(short, 0.2, True), row(short, 0.3, True), row(long, 0.4, False), row(long, 0.6, True)]
+    (tmp_path / "reads-shard1of1.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    bands = {b["letters"]: b for b in selfplay.summarize_reads(tmp_path)["by_length"]}
+    assert bands["up to 17"]["puzzles"] == 1 and bands["up to 17"]["settled_shown_median"] == pytest.approx(0.2)
+    assert bands["27+"]["settled_shown_median"] == pytest.approx(0.6) and bands["27+"]["confident_wrong"] == pytest.approx(0.5)
+    assert bands["20–22"]["puzzles"] == 0

@@ -101,8 +101,8 @@ class FullReader:
         samples, unknown = self._sample(slots, matches, category, rng, pool)
         if "SAME NAME" in category or "RHYME" in category:
             samples, unknown = self._reweight(samples, unknown, category, rng)
-        if self.knobs.triple_weight and self._ngrams() is not None and len(words) > 2:
-            samples, unknown = self._triples(samples, unknown, rng)
+        if (self.knobs.triple_weight and self._ngrams() is not None and len(words) > 2) or self.knobs.coherence_weight:
+            samples, unknown = self._whole(samples, unknown, rng)
         answers = [self._join(s, seps) for s in samples]
         return summarize(answers, unknown, text, pool, self.knobs, refuted, suggested)
 
@@ -306,11 +306,28 @@ class FullReader:
         picks = rng.choices(range(len(samples)), weights, k=len(samples))
         return [samples[i] for i in picks], [unknown[i] for i in picks]
 
-    def _triples(self, samples, unknown, rng):
-        """Resample whole answers by their word triples: each triple's count against the count its two pairs predict."""
-        weights = [self._triple_factor(words) ** self.knobs.triple_weight for words in samples]
+    def _whole(self, samples, unknown, rng):
+        """Resample whole answers by what the chain can't see: their word triples (each triple's count against the
+        count its two pairs predict) and how related all their content words are, not just neighbours."""
+        knobs = self.knobs
+        triples = knobs.triple_weight and self._ngrams() is not None
+        weights = []
+        for words in samples:
+            w = self._triple_factor(words) ** knobs.triple_weight if triples and len(words) > 2 else 1.0
+            if knobs.coherence_weight:
+                w *= math.exp(knobs.coherence_weight * self._coherence(words))
+            weights.append(w)
         picks = rng.choices(range(len(samples)), weights, k=len(samples))
         return [samples[i] for i in picks], [unknown[i] for i in picks]
+
+    def _coherence(self, words: list[str]) -> float:
+        """The average cosine between every two content words with vectors; 0 with fewer than two."""
+        lex = self.lexicon
+        content = [w for w in (x.strip("&,.'-!?") for x in words) if w not in _STOP and w in lex.vector_ids]
+        if len(content) < 2:
+            return 0.0
+        close = lex.closeness(content, content)
+        return float(close[np.triu_indices(len(content), 1)].mean())
 
     def _triple_factor(self, words: list[str]) -> float:
         ng, smooth = self._ngrams(), self.knobs.triple_smoothing
@@ -348,6 +365,10 @@ class FullReader:
     @staticmethod
     def _join(words: list[str], seps: tuple[str, ...]) -> str:
         return "".join(w + s for w, s in zip(words, (*seps, "")))
+
+
+_STOP = {"THE", "A", "AN", "AND", "OF", "TO", "IN", "ON", "FOR", "WITH", "AT", "BY", "IS", "IT", "AS", "OR", "BUT",
+         "BE", "I", "YOU", "WE", "THEY", "MY", "YOUR", "HIS", "HER", "OUR", "THEIR"}  # left out of coherence
 
 
 def _fits(word: str, pattern: str, used: set[str]) -> bool:

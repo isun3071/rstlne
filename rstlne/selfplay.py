@@ -227,7 +227,28 @@ def summarize_reads(out: Path) -> dict:
         "confident_wrong": sum(not r["correct"] for r in confident) / len(confident) if confident else None,
         "bonus_puzzles": len(bonus),
         "bonus_accuracy": sum(r["correct"] for r in bonus) / len(bonus) if bonus else None,
+        "by_length": [_band(label, [rs for answer, rs in by_puzzle.items() if lo <= _letters(answer) <= hi])
+                      for lo, hi, label in LENGTH_BANDS],
     }
+
+
+LENGTH_BANDS = [(0, 17, "up to 17"), (18, 19, "18–19"), (20, 22, "20–22"), (23, 26, "23–26"), (27, 999, "27+")]
+
+
+def _letters(answer: str) -> int:
+    return sum(c.isalpha() for c in answer)
+
+
+def _band(label: str, puzzles: list[list[dict]]) -> dict:
+    """The main-puzzle measures for one length band."""
+    settled = [settle_point(sorted(rs, key=lambda r: r["shown"])) for rs in puzzles]
+    reached = [x for x in settled if x is not None]
+    confident = [r for rs in puzzles for r in rs if r["confidence"] >= 0.9]
+    return {"letters": label, "puzzles": len(puzzles),
+            "settled": len(reached) / len(settled) if settled else None,
+            "settled_shown_median": float(np.median(reached)) if reached else None,
+            "confident_boards": len(confident),
+            "confident_wrong": sum(not r["correct"] for r in confident) / len(confident) if confident else None}
 
 
 def settle_point(rows: Sequence[dict]) -> float | None:
