@@ -2,7 +2,7 @@ import json
 from dataclasses import replace
 
 import pytest
-from helpers import BONUS, PUZZLES, start
+from helpers import BONUS, PUZZLES, spin_to, start
 
 from rstlne import cli, settings
 from rstlne.engine.puzzle import LETTERS
@@ -167,3 +167,24 @@ def test_a_decision_records_what_explain_reads(rules, wheel_spec):
     raw = bot.last_call.raw
     assert "answers" in raw and raw["win_mode"] is False
     assert bot.thoughts() == explain(raw)
+
+
+def test_how_the_bot_weighed_its_turn_stays_up_through_the_consonant_call(rules, wheel_spec):
+    bot = bots(rules, wheel_spec)[0]
+    state = start(rules, wheel_spec)
+    bot.decide(public_view(state, 0))
+    weighed = bot.thoughts()[-1]
+    assert weighed.startswith("Worth: ")
+    bot.decide(public_view(spin_to(state, 3), 0))  # the consonant call weighs no moves
+    assert bot.last_call.raw["values"] == {}  # the log keeps only what this decision weighed
+    assert bot.thoughts()[-1] == weighed
+
+
+def test_a_new_round_drops_the_last_rounds_weighing(rules, wheel_spec):
+    from helpers import solve
+    bot = bots(rules, wheel_spec)[0]
+    state = start(rules, wheel_spec)
+    bot.decide(public_view(state, 0))
+    after = spin_to(replace(solve(state), seat=0), 3)  # round 2, seat 1 holding a cash wedge
+    bot.decide(public_view(after, 0))
+    assert not any(line.startswith(("Worth", "Chance to win")) for line in bot.thoughts())

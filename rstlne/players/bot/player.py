@@ -73,6 +73,12 @@ def explain(record: dict) -> list[str]:
     lines = [f"{read} · {oov:.0%} chance it's outside its word lists"]
     if record.get("p_steal") is not None:
         lines.append(f"Chance an opponent solves before its next turn: {record['p_steal']:.0%}")
+    return lines + weighing(record)
+
+
+def weighing(record: dict) -> list[str]:
+    """How a turn choice weighed its moves, or what the bot does once it knows the answer."""
+    lines = []
     values = record.get("values") or {}
     if values:
         win = record.get("win_mode")
@@ -113,6 +119,7 @@ class BotPlayer(Player):
         self._before: PublicView | None = None  # the table before the latest action
         self._pending = 0  # copies found on a Mystery wedge, waiting on keep or flip
         self._record: dict = {}
+        self._weighed: tuple[int | None, dict] | None = None  # the round and record of the last turn choice, for thoughts
 
     def describe(self) -> dict:
         info = {"kind": "bot", "version": self.version, "reader": self.reader.name}
@@ -152,9 +159,20 @@ class BotPlayer(Player):
             if self._goal is not None and self._goal.last_flat:
                 self._record["flat"] = True
             self.last_call = CallRecord(raw=self._record, usage=Usage())
+            if self._record["values"] or self._record.get("planner"):
+                self._weighed = (view.round_number, self._record)
+            elif self._weighed and self._weighed[0] != view.round_number:
+                self._weighed = None
 
     def thoughts(self) -> list[str]:
-        return explain(self._record) if self._record else []
+        """The latest decision in plain words. A choice that weighs no moves, like which consonant to call,
+        still shows how the bot weighed its turn, until its next turn choice or the round ends."""
+        if not self._record:
+            return []
+        lines = explain(self._record)
+        if self._weighed and not (self._record["values"] or self._record.get("planner")):
+            lines += weighing(self._weighed[1])
+        return lines
 
     def _decide(self, view: PublicView, belief: Belief) -> Action:
         legal = view.legal_actions
