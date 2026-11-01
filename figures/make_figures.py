@@ -9,6 +9,7 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.ticker
 
 from rstlne.tournament import report
 
@@ -208,7 +209,7 @@ if "seed707-6fa48eea" in REPORTS:
     groups.insert(2, ("DeepSeek vs bots", "seed707-6fa48eea", "deepseek/deepseek-v4.1-flash-1017", "LLM"))
 data = [(g, kind, per_round(f, key), per_round(f, "bot")) for g, f, key, kind in groups]
 fig, axes = plt.subplots(1, 2, figsize=(12, 4.9))
-fig.subplots_adjust(left=0.13, right=0.97, top=0.78, bottom=0.17, wspace=0.55)
+fig.subplots_adjust(left=0.13, right=0.94, top=0.78, bottom=0.17, wspace=0.55)
 for ax, idx, xlabel, fmt in ((axes[0], 0, "rounds won per game", "{:.2f}"),
                              (axes[1], 1, "median bank when it wins a round ($)", "${:,.0f}")):
     for j, (g, kind, star, bot) in enumerate(reversed(data)):
@@ -217,6 +218,7 @@ for ax, idx, xlabel, fmt in ((axes[0], 0, "rounds won per game", "{:.2f}"),
             ax.text(val * 1.02, j + off, fmt.format(val), va="center", fontsize=9.5, color=INK)
     ax.set_yticks(range(len(data)), [d[0] for d in reversed(data)])
     ax.set_xlim(0, max(max(d[2][idx], d[3][idx]) for d in data) * 1.25)
+    ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(4))
     tidy(ax, xlabel)
 axes[0].set_title("Rounds won", loc="left", fontsize=11.5, color=INK)
 axes[1].set_title("Money per round won", loc="left", fontsize=11.5, color=INK)
