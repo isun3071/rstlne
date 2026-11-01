@@ -373,6 +373,15 @@ def cache_path(root: Path, found: str, cased: bool) -> Path:
     return Path(root) / f"compiled-{found}{'-cased' if cased else ''}.pickle"
 
 
+def save_cache(lexicon: Lexicon, cache: Path) -> None:
+    """Write the compiled lexicon whole or not at all. Worker processes can compile it at the same moment, so each
+    writes its own temporary file; the copies are identical, and whichever lands last stays."""
+    partial = cache.with_name(f"{cache.stem}.{os.getpid()}.partial")
+    with open(partial, "wb") as f:
+        pickle.dump(lexicon, f, protocol=pickle.HIGHEST_PROTOCOL)
+    partial.replace(cache)
+
+
 def load(path: str, vocabulary: int, cased: bool = False, ngrams: bool = False) -> Lexicon:
     """The full lexicon from data/, once per process, compiled to a pickle the first time."""
     root = Path(path)
@@ -386,10 +395,7 @@ def load(path: str, vocabulary: int, cased: bool = False, ngrams: bool = False) 
         for old in root.glob("compiled-*.pickle"):
             if not old.name.startswith(f"compiled-{found}"):  # stale data; another variant's cache stays
                 old.unlink()
-        partial = cache.with_suffix(".partial")
-        with open(partial, "wb") as f:
-            pickle.dump(lexicon, f, protocol=pickle.HIGHEST_PROTOCOL)
-        partial.replace(cache)  # whole or not at all, if two processes compile at once
+        save_cache(lexicon, cache)
     lexicon.vectors = np.load(root / "vectors.npy", mmap_mode="r")  # shared by every process on the machine
     lexicon.ngrams = Ngrams.load(root) if ngrams else None
     return lexicon

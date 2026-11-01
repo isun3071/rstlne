@@ -315,3 +315,12 @@ def test_wikipedia_s_word_list_keeps_i_when_the_dotless_one_uppercases_alike():
     grams = Ngrams.build({"i": 4_000_000, "ı": 0, "have": 4_000_000}, pairs={("i", "have"): 90_000})
     ids = grams.ids_of(["I", "HAVE"])
     assert grams.pair(ids[:1], ids[1:])[0, 0] == 90_000
+
+
+def test_processes_compiling_the_same_lexicon_at_once_each_finish(tmp_path, monkeypatch):
+    from rstlne.players.bot import lexicon as lexicon_module
+    cache = tmp_path / "compiled-abc123-cased.pickle"
+    for pid in (101, 102):  # two workers, each saving through its own temporary file
+        monkeypatch.setattr(lexicon_module.os, "getpid", lambda pid=pid: pid)
+        lexicon_module.save_cache(Lexicon.build({"a": 1.0}), cache)
+    assert cache.exists() and not list(tmp_path.glob("*.partial"))
