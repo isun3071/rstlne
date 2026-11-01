@@ -1,4 +1,6 @@
-# What we can claim (2026-11-01)
+# What we can claim (the v4 checkpoint, 2026-11-01)
+
+These claims are frozen on bot version 4. Results with a later bot version are added separately, marked with their version, and don't replace these.
 
 All lineups use one deck of 400 main and 100 bonus generated puzzles, one seed, 60 sets (360 games each), duplicate scoring (every seating order on the same spins and puzzles), and bot version 4. Intervals are 95%, from resampling whole sets. "Against two bots" means one seat against two identical bots. A fair share at a three-seat table is 33%.
 

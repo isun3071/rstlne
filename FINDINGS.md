@@ -9,6 +9,8 @@ rstlne is the result: a full Wheel of Fortune engine where language models, a ha
 3. **Can we do better?**
 4. **How would human contestants fare?** We had no human players, so the models stand in for them, and real contestants' numbers are used where they exist.
 
+> **The v4 checkpoint (2026-11-01).** Every result here was measured against version 4 of our bot, the version these findings are frozen on. A later bot version is a new opponent, not a correction: its results are reported separately, marked with its version, and never replace these numbers.
+
 ## The short version
 
 - **Yes, they can play.** Every model finished every game legally, moving by tool calls.

@@ -18,10 +18,11 @@ The same engine runs seeded, model-only tournaments that compare how well models
 | Hybrid seats: the bot decides, a model reads the board | Done |
 | Your seat in the terminal | Done |
 | Game logs | Done |
-| Bot | Version 4, tuned by self-play |
+| Bot | Version 4, tuned by self-play: the checkpoint version |
 | Tournament runner, bonus test, puzzle generator | Done |
-| The grading runs in `FINDINGS.md` | Done (2026-11-01) |
-| Local web page | Planned for phase 2 |
+| **The v4 checkpoint:** the grading runs in `FINDINGS.md`, all against bot v4 | Done (2026-11-01) |
+| **The v5 phase:** a stronger bot (Express play, word-pair reading), checked against v4 | Next |
+| Local web page, starting with a solver | Planned for phase 2 |
 
 ## Setup
 

@@ -1,4 +1,4 @@
-# rstlne: update since the briefing (2026-10-31 evening to 2026-11-01)
+# rstlne: update since the briefing (2026-10-31 evening to 2026-11-01, the v4 checkpoint)
 
 This update follows the briefing you already have and covers only what changed since. Where the two disagree, this one is newer.
 
@@ -237,3 +237,14 @@ Opposite faults, the same poor result. Sol is the only model that is both early 
    - the Sol-against-bots lineup rerun with version 3 bots (does v4 help against LLMs?)
 3. **When there's a grant:** the frontier models, starting with Gemini 4 Argon.
 4. **Later:** bot version 5 (probably skipped), a tighter near-repeat check in puzzle generation, and the write-up.
+
+## 7. The v4 checkpoint, and the v5 phase next
+
+- **Every result in this update and the briefing is the v4 checkpoint (2026-11-01).** All lineups ran against bot version 4, and the findings, claims, and statistics are frozen on it. A later bot version is a new opponent, not a correction: its results get reported separately, marked with the version, and never replace v4 numbers.
+- **The v5 phase is next.** What v5 fixes, all found in the v4 logs:
+  - **The Express.** The bot busted 107 of its 249 Express rides (43%). It boarded 106 times while under 50% sure and solved only 20% of those, and it never bought a vowel while riding: its rule is "call every safe consonant, then solve", so a ROAD-or-ROOM tie gets a coin-flip solve where a $250 vowel would settle it. The busts flipped at most 2 of Sol's 209 wins, so they don't explain Sol's lead.
+  - **Word pairs it never saw.** In the bonus test its vocabulary covered every word of every deck, and it solved every generated puzzle whose adjacent word pairs were all in its pair data. Every generated-deck miss had an unseen pair, where it falls back on word frequency (JUMP WOOL SOCKS for DAMP WOOL SOCKS). This is also why long puzzles slow it down: more words, more pairs to miss. Fixes: pair counts from a far bigger corpus, and judging unseen pairs by word vectors.
+  - **Aired puzzles add three more:** a bug that treats all 26 letters as one-letter words with I the rarest (so "I have no idea" became "B have no idea"); single-word answers decided by frequency rather than category; and word chains whose every pair makes sense but whose whole doesn't, read with 93–97% confidence.
+  - A small language model scoring whole answers would fix the last one, but it puts an LLM inside the bot. The hybrid already plays that role, so that's Ian's call.
+- **How v5 gets tested:** reading changes first, offline, on practice puzzles only (never the grading deck or aired puzzles). Then self-play, about 2,000 bot games each, for three variants against v4: the Express fix alone, the reading fixes alone, and both, so each fix's effect is known. Bot-only play mainly shows "no worse", since bots don't exploit slow reading; the real test is rerunning Sol against two v5 bots (about $6) and seeing whether Sol's 37-point lead shrinks. Expect a smaller gap, not a bot that beats Sol.
+

@@ -140,6 +140,7 @@ The `bot` seat is the project's own player: a fixed, strong opponent to measure 
 - Each version is pinned to the word data it was frozen with, by fingerprint: 0640bcd6a420 for all three. A bot or hybrid seat refuses to play a version on other data. Self-play experiments aren't checked.
 - A tournament never changes the bot. Its default folder name covers the bot version, and a rerun refuses to resume a tournament whose finished games used another version.
 - Self-play may try knobs away from a version's values. Those runs are experiments, not versions, and tournaments refuse them.
+- **Version 4 is the checkpoint version (2026-11-01).** The grading lineups, findings, claims, and statistics are all measured against it and stay that way. A later version is checked against v4 in self-play first, and any lineup rerun with it is reported alongside the v4 result, marked with its version.
 
 ### Version 3 (frozen 2026-10-30)
 

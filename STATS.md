@@ -1,6 +1,6 @@
-# rstlne: every statistic (as of 2026-11-01)
+# rstlne: every statistic (the v4 checkpoint, 2026-11-01)
 
-This is the complete set of numbers behind the project, for reference. The briefing and its update explain the project and the story; this document only reports figures. Where a figure here and an earlier one disagree, this one is newer.
+This is the complete set of numbers behind the project at its checkpoint: every bot here is version 4, and results with later bot versions will be reported separately. The briefing and its update explain the project and the story; this document only reports figures. Where a figure here and an earlier one disagree, this one is newer.
 
 ## How to read the numbers
 

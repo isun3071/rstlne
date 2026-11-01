@@ -1,5 +1,7 @@
 # Grading plan: six lineups
 
+> **The v4 checkpoint (2026-11-01).** Every lineup here ran with bot version 4, and these results are the checkpoint the findings are frozen on. Bot v5 work is the next phase; its runs go in their own section, marked v5, and leave these untouched.
+
 Six tournaments that pit every kind of player against every other: LLMs, the bot, and the hybrid (the bot plus Luna reading the board).
 
 ## The rules for every run
