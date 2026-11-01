@@ -7,6 +7,7 @@ Commands for every lineup are in `GRADING_PLAN.md`.
 1. **6b** (bot, two Haikus) and **3c** (DeepSeek alone, two bots): about $9.
 2. **3e** (DeepSeek hybrid, two bots) and **6c** (bot, two DeepSeeks): about $13, slow.
 3. Report the grid, then update `GRADING_PLAN.md` and `HANDOFF.md`.
+4. Redraw the charts with DeepSeek in: `uv run --with matplotlib python figures/make_figures.py figures`.
 
 ## Optional
 
