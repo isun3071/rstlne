@@ -388,6 +388,8 @@ WORD_BITS = 18  # a word's id in a pair or triple key; the counting vocabulary h
 NGRAM_CHUNK = 5_000_000  # tokens gathered before they're counted
 NGRAM_CAP = 60_000_000  # distinct keys of a kind a worker holds before it drops the ones seen once
 MERGE_CAP = 150_000_000  # the same while merging the parts
+PART_TRIES = 4  # a part whose stream drops is read again from the start, after 30 s, 60 s, then 120 s
+PART_BACKOFF = 30
 NGRAM_ENTRIES = 40_000_000  # pairs, and triples, kept in the end: about 500 MB of each
 ENWIKI_FILES = ("enwiki-words.txt", "enwiki-unigrams.npy", "enwiki-pair-keys.npy", "enwiki-pair-counts.npy",
                 "enwiki-triple-keys.npy", "enwiki-triple-counts.npy", "enwiki-meta.json")
@@ -491,16 +493,27 @@ def _open_part(name: str):
     return stream(SOURCES["enwiki"].url + name, timeout=600)
 
 
-def _count_part(job: tuple) -> str:
-    """One part of the dump, counted and saved, so a stopped fetch can resume. Runs in a worker process."""
+def _count_part(job: tuple) -> tuple[str, str | None]:
+    """One part of the dump, counted and saved, so a stopped fetch can resume. Runs in a worker process.
+    Returns the part's name and, if every try failed, the last error as plain text: an exception from urllib can
+    hold the open stream, which can't be sent back from a worker."""
     name, words, parts_dir, opener = job
-    counter = NgramCounter(words)
-    with opener(name) as raw:
-        counter.add(wikitext_sentences(io.TextIOWrapper(bz2.BZ2File(raw), encoding="utf-8", errors="replace")))
-    partial = parts_dir / f"{name}.partial.npz"
-    np.savez(partial, **part_counts(counter))
-    partial.replace(parts_dir / f"{name}.npz")
-    return name
+    error = None
+    for attempt in range(PART_TRIES):
+        if attempt:
+            time.sleep(PART_BACKOFF * 2 ** (attempt - 1))
+        try:
+            counter = NgramCounter(words)
+            with opener(name) as raw:
+                counter.add(wikitext_sentences(io.TextIOWrapper(bz2.BZ2File(raw), encoding="utf-8", errors="replace")))
+        except Exception as err:  # a dropped connection, hours into a download: read the part again
+            error = f"{type(err).__name__}: {err}"[:300]
+            continue
+        partial = parts_dir / f"{name}.partial.npz"
+        np.savez(partial, **part_counts(counter))
+        partial.replace(parts_dir / f"{name}.npz")
+        return name, None
+    return name, error
 
 
 def fetch_enwiki(data_dir: Path, say, parts: Sequence[str] | None = None, opener=_open_part, workers: int = 3) -> list[str]:
@@ -516,13 +529,25 @@ def fetch_enwiki(data_dir: Path, say, parts: Sequence[str] | None = None, opener
     todo = [p for p in parts if not (parts_dir / f"{p}.npz").exists()]
     say(f"  {len(parts)} parts, {len(parts) - len(todo)} already counted, {len(words):,} words, {workers} workers")
     jobs = [(p, words, parts_dir, opener) for p in todo]
+    failed = []
+
+    def report(k, done):
+        name, error = done
+        if error:
+            failed.append(name)
+            say(f"  failed {name} after {PART_TRIES} tries: {error}")
+        else:
+            say(f"  counted {name} ({len(parts) - len(todo) + k} of {len(parts)})")
+
     if workers > 1 and jobs:
         with multiprocessing.get_context("spawn").Pool(workers) as pool:
-            for k, name in enumerate(pool.imap_unordered(_count_part, jobs), 1):
-                say(f"  counted {name} ({len(parts) - len(todo) + k} of {len(parts)})")
+            for k, done in enumerate(pool.imap_unordered(_count_part, jobs), 1):
+                report(k, done)
     else:
         for k, job in enumerate(jobs, 1):
-            say(f"  counted {_count_part(job)} ({len(parts) - len(todo) + k} of {len(parts)})")
+            report(k, _count_part(job))
+    if failed:
+        raise RuntimeError(f"{len(failed)} parts failed: {', '.join(failed)}. The rest are saved; rerun to retry these, then merge.")
     unigrams = np.zeros(len(words), np.int64)
     pairs = triples = (np.zeros(0, np.int64), np.zeros(0, np.int64))
     tokens = 0

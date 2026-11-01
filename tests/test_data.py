@@ -207,3 +207,50 @@ def test_version_4_s_fingerprint_leaves_out_wikipedia(tmp_path):
     (tmp_path / "manifest.json").write_text(json.dumps({"tatoeba": entry, "enwiki": {"files": {"enwiki-words.txt": {"sha256": "bb", "bytes": 1}}}}))
     assert lexicon.fingerprint(tmp_path, 100) == before
     assert lexicon.fingerprint(tmp_path, 100, extra=("enwiki",)) != before
+
+
+class Dropped(Exception):
+    """A dropped connection, holding something that can't cross between processes, as urllib's errors do."""
+
+    def __init__(self):
+        super().__init__("connection dropped")
+        self.stream = io.BufferedReader(io.BytesIO(b"x"))
+
+
+def test_a_part_whose_stream_drops_is_read_again(tmp_path, monkeypatch):
+    monkeypatch.setattr(data, "vocabulary", lambda data_dir: set(WORDS))
+    monkeypatch.setattr(data, "PART_BACKOFF", 0)
+    tries = []
+    def opener(name):
+        tries.append(name)
+        if len(tries) == 1:
+            raise Dropped()
+        return wiki_part("The red door is open.")
+    data.fetch_enwiki(tmp_path, say=lambda line: None, parts=["p1.bz2"], opener=opener, workers=1)
+    assert tries == ["p1.bz2", "p1.bz2"] and (tmp_path / "enwiki-pair-keys.npy").exists()
+
+
+def test_a_part_that_keeps_failing_is_named_and_the_merge_waits(tmp_path, monkeypatch):
+    monkeypatch.setattr(data, "vocabulary", lambda data_dir: set(WORDS))
+    monkeypatch.setattr(data, "PART_BACKOFF", 0)
+    def opener(name):
+        if name == "bad.bz2":
+            raise Dropped()
+        return wiki_part("The red door is open.")
+    lines = []
+    with pytest.raises(RuntimeError, match="bad.bz2"):
+        data.fetch_enwiki(tmp_path, say=lines.append, parts=["good.bz2", "bad.bz2"], opener=opener, workers=1)
+    assert (tmp_path / ".enwiki-parts" / "good.bz2.npz").exists()  # the rest was counted and kept
+    assert not (tmp_path / "enwiki-pair-keys.npy").exists()
+    assert any("Dropped: connection dropped" in line for line in lines)
+
+
+def test_a_failed_part_comes_back_from_a_worker_process_as_plain_text(tmp_path, monkeypatch):
+    monkeypatch.setattr(data, "PART_BACKOFF", 0)
+    name, error = data._count_part(("bad.bz2", WORDS, tmp_path, _always_drops))
+    assert name == "bad.bz2" and error.startswith("Dropped")
+    __import__("pickle").dumps((name, error))  # what a worker sends back can cross between processes
+
+
+def _always_drops(name):
+    raise Dropped()
