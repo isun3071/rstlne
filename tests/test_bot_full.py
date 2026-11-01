@@ -356,3 +356,14 @@ def test_the_pruning_minimum_loads_with_the_counts(tmp_path):
         np.save(tmp_path / f"enwiki-{name}.npy", array)
     (tmp_path / "enwiki-meta.json").write_text('{"triple_minimum": 4}')
     assert Ngrams.load(tmp_path).triple_minimum == 4
+
+
+def test_big_pair_counts_stored_as_32_bits_don_t_overflow_when_multiplied():
+    words = ["of", "the", "end"]
+    pk = np.array([(0 << 18) | 1, (1 << 18) | 2], np.int64)  # OF THE, THE END
+    pc = np.array([60_000, 60_000], np.int32)  # as fetched: their product passes what 32 bits hold
+    grams = Ngrams._made(words, np.array([1, 900_000, 1], np.int64), pk, pc, np.zeros(0, np.int64), np.zeros(0, np.int32))
+    r = FullReader(Lexicon.build({w: 1e-3 for w in words}), replace(V5, ngrams=True, triple_weight=1.0))
+    r.lexicon.ngrams = grams
+    expected = 60_000 * 60_000 / 900_000
+    assert r._triple_log(["OF", "THE", "END"]) == pytest.approx(math.log(1 / (expected + 1)))

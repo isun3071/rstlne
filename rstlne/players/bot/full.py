@@ -344,7 +344,7 @@ class FullReader:
             xy, yz = ng.pair(np.array([x]), np.array([y]))[0, 0], ng.pair(np.array([y]), np.array([z]))[0, 0]
             if not xy or not ng.unigrams[y]:
                 continue  # no evidence for the first pair: the triple can't be judged
-            expected = xy * yz / ng.unigrams[y]
+            expected = float(xy) * float(yz) / float(ng.unigrams[y])
             seen = ng.triple(x, y, z) or unseen
             log += math.log((seen + smooth) / (expected + smooth))
         return log

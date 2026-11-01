@@ -124,7 +124,8 @@ class Ngrams:
     def pair(self, first: np.ndarray, second: np.ndarray) -> np.ndarray:
         """Counts for every (first[i], second[j]) pair, -1 meaning unknown. Shape (len(first), len(second))."""
         known = (first[:, None] >= 0) & (second[None, :] >= 0)
-        return np.where(known, _lookup(self.pair_keys, self.pair_counts, _key([first[:, None], second[None, :]])), 0)
+        found = _lookup(self.pair_keys, self.pair_counts, _key([first[:, None], second[None, :]]))
+        return np.where(known, found, 0).astype(np.float64)  # stored as 32 bits: products of counts would overflow
 
     def triple(self, a: int, b: int, c: int) -> int:
         return int(_lookup(self.triple_keys, self.triple_counts, np.array([_key([a, b, c])]))[0])
