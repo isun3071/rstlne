@@ -50,6 +50,10 @@ class Knobs:
     stealer_gain_llm: tuple[tuple[int, tuple[tuple[int, tuple[float, ...]], ...]], ...] = ()
     stealer_gain_bot: tuple[tuple[int, tuple[tuple[int, tuple[float, ...]], ...]], ...] = ()
     steal_bot: tuple[float, ...] = ()
+    # From version 5. A lexicon that keeps the larger frequency when two words uppercase alike (the dotless ı
+    # overwrote I in earlier versions), and the only words a one-letter slot may hold; empty allows every letter.
+    cased_lexicon: bool = False
+    one_letter: tuple[str, ...] = ()
 
 
 def _tuples(value):

@@ -97,7 +97,8 @@ def test_v1_plays_the_formula_and_v2_the_win_table():
     assert replace(v2, win_table=()) == v1  # the table is their only difference
 
 
-LATER_KNOBS = {"stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot"}  # off in 1 and 2
+V5_KNOBS = {"cased_lexicon": False, "one_letter": ()}  # added after version 4's freeze, at these values in 1 to 4
+LATER_KNOBS = {"stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot", *V5_KNOBS}  # off in 1 and 2
 V4_KNOBS = {"stealer_gain_llm", "stealer_gain_bot", "steal_bot"}  # added after version 3's freeze, off in it
 
 
@@ -113,10 +114,12 @@ def test_frozen_versions_never_change():
     from dataclasses import asdict
     import hashlib
     assert knob_hash(1) == "ee505edb9891" and knob_hash(2) == "4b391d4eb285"
-    v3 = {k: v for k, v in asdict(versions.knobs(3)).items() if k not in V4_KNOBS}
+    v3 = {k: v for k, v in asdict(versions.knobs(3)).items() if k not in V4_KNOBS | set(V5_KNOBS)}
     assert hashlib.sha256(json.dumps(v3, sort_keys=True).encode()).hexdigest()[:12] == "342c440f08d6"
     assert all(getattr(versions.knobs(v), k) == () for v in (1, 2, 3) for k in V4_KNOBS)
-    assert hashlib.sha256(json.dumps(asdict(versions.knobs(4)), sort_keys=True).encode()).hexdigest()[:12] == "4c039cc65dbf"
+    v4 = {k: v for k, v in asdict(versions.knobs(4)).items() if k not in V5_KNOBS}
+    assert hashlib.sha256(json.dumps(v4, sort_keys=True).encode()).hexdigest()[:12] == "4c039cc65dbf"
+    assert all(getattr(versions.knobs(v), k) == off for v in (1, 2, 3, 4) for k, off in V5_KNOBS.items())
 
 
 def test_v4_is_v3_with_a_gain_table_per_opponent_kind_and_a_bot_solve_curve():
@@ -148,7 +151,7 @@ class _Reader:
 def test_a_version_refuses_word_data_it_wasnt_frozen_with(monkeypatch, found, ok):
     from rstlne.players.bot import lexicon, player
     monkeypatch.setattr(lexicon, "available", lambda root: True)
-    monkeypatch.setattr(lexicon, "load", lambda path, vocabulary: None)
+    monkeypatch.setattr(lexicon, "load", lambda path, vocabulary, cased=False: None)
     monkeypatch.setattr(lexicon, "fingerprint", lambda root, vocabulary: found)
     monkeypatch.setattr(player, "FullReader", _Reader)
     assert player.make_reader(versions.knobs(1)).fingerprint == found  # self-play experiments aren't checked

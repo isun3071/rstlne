@@ -212,3 +212,31 @@ def test_unseen_pairs_cost_more_after_a_word_with_plenty_of_evidence():
 
 def _slot_for(r, pattern):
     return r._slot(pattern, set(), "EVENT")
+
+
+# Version 5, R1: one-letter words
+
+def test_a_word_that_uppercases_like_another_keeps_the_larger_frequency():
+    words = {"i": 0.0123, "ı": 2e-7, "have": 1e-3}  # the Turkish dotless ı uppercases to I
+    assert Lexicon.build(words).freq("I") == pytest.approx(2e-7)  # version 4's lexicon, kept as it was
+    assert Lexicon.build(words, cased=True).freq("I") == pytest.approx(0.0123)
+
+
+def test_a_one_letter_slot_holds_only_a_i_and_o():
+    words = {"a": 0.02, "i": 0.012, "o": 1e-4, "s": 7e-4, "b": 2e-4}
+    five = reader(words, knobs=replace(KNOBS, one_letter=("A", "I", "O")))
+    assert set(five._slot("_", set(), "Phrase").words) == {"A", "I", "O"}
+    assert "S" in reader(words)._slot("_", set(), "Phrase").words  # version 4 keeps every letter
+
+
+def test_the_bot_reads_i_once_the_lexicon_keeps_its_frequency(rules, wheel_spec):
+    words = {"i": 0.0123, "ı": 2e-7, "b": 2e-4, "have": 1e-3, "no": 1e-3, "idea": 1e-4}
+    view = view_for(rules, wheel_spec, "I HAVE NO IDEA", used="HVNDE", category="Phrase")
+    five = FullReader(Lexicon.build(words, cased=True), replace(KNOBS, one_letter=("A", "I", "O")))
+    assert five.read(view).best == "I HAVE NO IDEA"
+
+
+def test_each_lexicon_variant_has_its_own_cache(tmp_path):
+    from rstlne.players.bot.lexicon import cache_path
+    assert cache_path(tmp_path, "abc123", cased=False).name == "compiled-abc123.pickle"  # version 4's, unchanged
+    assert cache_path(tmp_path, "abc123", cased=True).name == "compiled-abc123-cased.pickle"

@@ -205,6 +205,14 @@ def summarize_reads(out: Path) -> dict:
         inside = [r for r in rows if lo <= r["confidence"] < lo + 0.1 or (lo == 0.9 and r["confidence"] == 1)]
         bins.append({"confidence": f"{lo:.1f}-{lo + 0.1:.1f}", "boards": len(inside),
                      "accuracy": sum(r["correct"] for r in inside) / len(inside) if inside else None})
+    main = [r for r in rows if not r["bonus"]]
+    bonus = [r for r in rows if r["bonus"]]
+    by_puzzle: dict[str, list[dict]] = {}
+    for r in main:
+        by_puzzle.setdefault(r["answer"], []).append(r)
+    settled = [settle_point(sorted(rs, key=lambda r: r["shown"])) for rs in by_puzzle.values()]
+    reached = [x for x in settled if x is not None]
+    confident = [r for r in main if r["confidence"] >= 0.9]
     return {
         "boards": len(rows),
         "puzzles": len({(r["answer"], r["bonus"]) for r in rows}),
@@ -212,7 +220,25 @@ def summarize_reads(out: Path) -> dict:
         "mean_p_true": sum(r["p_true"] for r in rows) / len(rows) if rows else None,
         "mean_seconds": sum(r["seconds"] for r in rows) / len(rows) if rows else None,
         "by_confidence": bins,
+        # main puzzles: where the best answer becomes right and stays right, and how often 90%+ sure was wrong
+        "main_settled": len(reached) / len(settled) if settled else None,
+        "main_settled_shown_median": float(np.median(reached)) if reached else None,
+        "confident_boards": len(confident),
+        "confident_wrong": sum(not r["correct"] for r in confident) / len(confident) if confident else None,
+        "bonus_puzzles": len(bonus),
+        "bonus_accuracy": sum(r["correct"] for r in bonus) / len(bonus) if bonus else None,
     }
+
+
+def settle_point(rows: Sequence[dict]) -> float | None:
+    """The share showing at the first board from which every later board's best answer is right, or None."""
+    point = None
+    for r in rows:
+        if r["correct"]:
+            point = r["shown"] if point is None else point
+        else:
+            point = None
+    return point
 
 
 # Tuning the reader
@@ -1179,7 +1205,9 @@ def override(knobs: versions.Knobs, pairs: Sequence[str]) -> versions.Knobs:
             continue
         if kind is type(None):  # a knob that is off by default takes a number
             kind = float
-        if name == "calibration":  # points as raw:actual pairs
+        if name == "one_letter":  # letters, not numbers
+            changes[name] = tuple(x.strip().upper() for x in value.split(",") if x.strip())
+        elif name == "calibration":  # points as raw:actual pairs
             changes[name] = tuple(tuple(float(v) for v in pair.split(":")) for pair in value.split(","))
         else:
             changes[name] = tuple(float(x) for x in value.split(",")) if kind is tuple else kind(value)

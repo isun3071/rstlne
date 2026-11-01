@@ -112,7 +112,8 @@ class FullReader:
         core = re.sub(r"^[^A-Z_']+|[^A-Z_']+$", "", pattern)  # punctuation around the word, like a comma
         lead, trail = pattern[: pattern.index(core)], pattern[pattern.index(core) + len(core):]
         fitting = []
-        for w in lex.by_length.get(len(core), ()):
+        pool = knobs.one_letter if len(core) == 1 and knobs.one_letter else lex.by_length.get(len(core), ())
+        for w in pool:
             if _fits(w, core, used):
                 fitting.append(w)
         weight = np.array([lex.freq(w) for w in fitting])

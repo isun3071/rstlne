@@ -45,7 +45,7 @@ def make_reader(knobs: versions.Knobs, version: int | None = None) -> Reader:
     if pinned and found != pinned:
         raise ValueError(f"bot v{version} was frozen with word data {pinned}, but {root} holds {found}. "
                          "Fetch the data it was frozen with, or pick another version in config.toml.")
-    reader = FullReader(lexicon.load(str(root), knobs.vocabulary), knobs)
+    reader = FullReader(lexicon.load(str(root), knobs.vocabulary, knobs.cased_lexicon), knobs)
     reader.fingerprint = found
     return reader
 

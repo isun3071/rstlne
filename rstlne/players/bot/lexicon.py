@@ -98,9 +98,10 @@ class Lexicon:
         counts: Mapping[str, int] | None = None,
         rhymes: Mapping[str, Iterable[str]] | None = None,
         vectors: Mapping[str, np.ndarray] | None = None,
+        cased: bool = False,
     ) -> Lexicon:
         """From plain parts: words with frequencies, (text, kind, weight) phrases, pair and word counts."""
-        lexicon = cls._words(words)
+        lexicon = cls._words(words, cased)
         if pairs:
             lexicon._index_pairs(((a, b, n) for (a, b), n in pairs.items()), counts or {})
         lexicon._index_phrases(phrases)
@@ -113,8 +114,15 @@ class Lexicon:
         return lexicon
 
     @classmethod
-    def _words(cls, words: Mapping[str, float]) -> Lexicon:
-        frequency = {w.upper(): f for w, f in words.items()}
+    def _words(cls, words: Mapping[str, float], cased: bool = False) -> Lexicon:
+        """Uppercased words and their frequencies. Two words can uppercase alike (the dotless ı becomes I): `cased`
+        keeps the larger frequency, where version 4 and earlier kept whichever came last."""
+        if cased:
+            frequency: dict[str, float] = {}
+            for w, f in words.items():
+                frequency[w.upper()] = max(frequency.get(w.upper(), 0.0), f)
+        else:
+            frequency = {w.upper(): f for w, f in words.items()}
         by_length: dict[int, list[str]] = defaultdict(list)
         for w in sorted(frequency, key=lambda w: -frequency[w]):
             if all(c in LETTERS or c == "'" for c in w):
@@ -269,17 +277,24 @@ def fingerprint(root: Path, vocabulary: int) -> str:
 
 
 @lru_cache(maxsize=4)
-def load(path: str, vocabulary: int) -> Lexicon:
+def cache_path(root: Path, found: str, cased: bool) -> Path:
+    """Where a compiled lexicon lives: one file per data fingerprint and lexicon variant."""
+    return Path(root) / f"compiled-{found}{'-cased' if cased else ''}.pickle"
+
+
+def load(path: str, vocabulary: int, cased: bool = False) -> Lexicon:
     """The full lexicon from data/, once per process, compiled to a pickle the first time."""
     root = Path(path)
-    cache = root / f"compiled-{fingerprint(root, vocabulary)}.pickle"
+    found = fingerprint(root, vocabulary)
+    cache = cache_path(root, found, cased)
     if cache.exists():
         with open(cache, "rb") as f:
             lexicon = pickle.load(f)
     else:
-        lexicon = _compile(root, vocabulary)
+        lexicon = _compile(root, vocabulary, cased)
         for old in root.glob("compiled-*.pickle"):
-            old.unlink()
+            if not old.name.startswith(f"compiled-{found}"):  # stale data; another variant's cache stays
+                old.unlink()
         partial = cache.with_suffix(".partial")
         with open(partial, "wb") as f:
             pickle.dump(lexicon, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -288,7 +303,7 @@ def load(path: str, vocabulary: int) -> Lexicon:
     return lexicon
 
 
-def _compile(root: Path, vocabulary: int) -> Lexicon:
+def _compile(root: Path, vocabulary: int, cased: bool = False) -> Lexicon:
     import wordfreq
 
     words = {w: wordfreq.word_frequency(w, "en") for w in wordfreq.top_n_list("en", vocabulary)}
@@ -298,7 +313,7 @@ def _compile(root: Path, vocabulary: int) -> Lexicon:
         for w in tokens(text)[0]:
             if w.lower() not in words:
                 words[w.lower()] = wordfreq.word_frequency(w.lower(), "en") or FLOOR
-    lexicon = Lexicon._words(words)
+    lexicon = Lexicon._words(words, cased)
     with sqlite3.connect(root / "pairs.sqlite") as con:
         counts = dict(con.execute("SELECT word, SUM(count) FROM words GROUP BY word"))
         lexicon._index_pairs(con.execute("SELECT first, second, SUM(count) FROM pairs GROUP BY first, second"), counts)

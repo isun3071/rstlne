@@ -80,6 +80,31 @@ def test_knob_overrides_parse_to_their_types():
         selfplay.override(versions.knobs(1), ["nonsense=1"])
 
 
+def test_version_5_knobs_parse_too():
+    knobs = selfplay.override(versions.knobs(4), ["one_letter=A,I,O", "cased_lexicon=true"])
+    assert knobs.one_letter == ("A", "I", "O") and knobs.cased_lexicon is True
+
+
+def test_the_reads_summary_gives_where_answers_settle_confident_misses_and_bonus_reads(tmp_path):
+    def row(answer, shown, best, confidence, bonus=False):
+        return {"answer": answer, "bonus": bonus, "shown": shown, "best": best, "confidence": confidence,
+                "correct": best == answer, "p_true": 0.5, "seconds": 0.1}
+    rows = [
+        row("BACK PORCH", 0.1, "BACK PERCH", 0.3), row("BACK PORCH", 0.2, "BACK PORCH", 0.5),
+        row("BACK PORCH", 0.3, "BACK PERCH", 0.92), row("BACK PORCH", 0.4, "BACK PORCH", 0.95),
+        row("BACK PORCH", 0.5, "BACK PORCH", 0.99),  # right from 0.2, wrong at 0.3, settled at 0.4
+        row("BIG CITY", 0.2, "BIG CITY", 0.6), row("BIG CITY", 0.3, "BIG CITY", 0.9),  # settled at 0.2
+        row("RED DOOR", 0.5, "RED DEER", 0.97),  # never right
+        row("HOT COCOA", 0.6, "HOT COCOA", 0.9, bonus=True), row("FUZZY SOCKS", 0.5, "FIZZY SOCKS", 0.8, bonus=True),
+    ]
+    (tmp_path / "reads-shard1of1.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    summary = selfplay.summarize_reads(tmp_path)
+    assert summary["main_settled"] == pytest.approx(2 / 3)
+    assert summary["main_settled_shown_median"] == pytest.approx(0.3)
+    assert summary["confident_boards"] == 5 and summary["confident_wrong"] == pytest.approx(2 / 5)
+    assert summary["bonus_puzzles"] == 2 and summary["bonus_accuracy"] == pytest.approx(0.5)
+
+
 # The steal curve
 
 
