@@ -90,12 +90,16 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 # DeepSeek's curve is missing 90 boards whose asks timed out; neither curve has had a held-out check.
 "deepseek/deepseek-v4.1-flash-1017" = [0.740, -0.164, 0.675, 4.678, -0.985]
 "openai/gpt-6-luna" = [-0.099, 2.978, 0.546, 4.776, -1.849]
+# Claude Haiku 5.5, measured 2026-10-31 on the same prior-101 boards (1,327 asks, $0.98):
+# logs/calibration/trust-20261031-213129.json. It says solvable rarely early and is right 85-100% from 20% shown.
+"anthropic/claude-haiku-5.5" = [-0.433, 4.582, -1.079, 6.918, -1.797]
 
 [hybrid.steal]
 # "<slug>" = [a, b, c, d]: an opponent's chance to solve, on share showing, the reader's confidence, and
 # whether the model could read the board.
 "deepseek/deepseek-v4.1-flash-1017" = [-3.505, 1.674, 1.301, 1.217]
 "openai/gpt-6-luna" = [-3.223, 1.680, 1.386, 1.003]
+"anthropic/claude-haiku-5.5" = [-2.817, 1.426, 1.300, 1.012]
 
 [tournament]
 # "all": a set is 6 games, every ordering of the 3 entrants across the seats.
