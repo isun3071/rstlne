@@ -217,7 +217,8 @@ Version 5 is version 4 with two groups of changes, each behind its own knobs so 
   - `--grid v5` (triples 0.5 to 4, vectors 0 to 8, coherence 0 to 8), from triples 1, vectors 2, coherence 4: triples stayed at 1, and stronger triples read worse. Vectors and coherence both chose 8, the top of the grid.
   - `--grid v5-wider` (vectors and coherence 8 to 32): vectors stayed at 8, then fell off fast (boards read right: 59.7% at 12, 48.3% at 32, as meaning drowned out the counts). Coherence chose 12, on a flat top from 8 to 16.
   - On the held out half, with vectors 8 and coherence 12, boards read right rose from 55.8% to 57.6% against the starting values, and the mean log probability of the true answer from −2.490 to −2.397.
-  - `--grid v5-rest` then tunes `pair_weight` (0.8 to 0.99) and `triple_smoothing` (0.25 to 16), with vectors again (4 to 12), since an unseen pair's vector factor multiplies the floor `pair_weight` leaves.
+  - `--grid v5-rest` then tunes `pair_weight` (0.8 to 0.99) and `triple_smoothing` (0.25 to 16), with vectors again (4 to 12), since an unseen pair's vector factor multiplies the floor `pair_weight` leaves. `pair_weight` stayed at 0.95 and vectors at 8. Smoothing 4 scored a hair better on the tuning half (−2.258 against −2.260) but worse on the held out half (57.4% of boards read right against 57.6%), so smoothing stays at 1.
+  - Version 5's reader: triples 1 (smoothing 1), vectors 8, coherence 12, `pair_weight` 0.95, single words 16.
 - **R6, calibration.** The confidence curve is refit for the new reader. Version 4 was 93% to 97% sure of three wrong answers on aired bonus puzzles.
 
 **The Express (the E changes).** In 249 Express rides across the grid, version 4 busted 107. It boarded 106 times while under 50% sure and solved 20% of those, and it never bought a vowel while riding.
