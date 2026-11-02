@@ -12,7 +12,7 @@ Every planned lineup but 6c ran: 1, 2, 3, 3b, 3c, 3d, 3f (the Haiku hybrid, in p
 
 1. **Build the reading fixes** and test them offline on tuning puzzles. Done: R1–R7 built, tuned, and calibrated (`documentation.md`, Version 5).
 2. **Build the Express fix.** Done: E1 (safe vowels while riding) built; E2 measured on 130 self-play rides, whose estimates ran low (76% estimated, 88% solved), so no correction (Ian, 2026-11-02).
-3. **v5 frozen 2026-11-02.** Now: self-play it against two v4 bots on grading-202, 2,004 games a run, and the two halves alone as experiments: both (v5), the reading fixes alone, the Express fix alone. Bot-only play mainly shows "no worse"; bots don't exploit slow reading. Each run also records both versions' Express rides on the same puzzles.
+3. **v5 frozen 2026-11-02.** Now: self-play it against two v4 bots on grading-505 (the grid's deck; grading-202's puzzles are too short to show the reading fixes): v5 in 2,004 games, then the reading fixes alone and the Express fix alone, 1,002 games each. Bot-only play mainly shows "no worse"; bots don't exploit slow reading. Each run also records both versions' Express rides on the same puzzles.
 4. **If v5 is no worse,** rerun lineup 2 (Sol against two v5 bots, about $6) and report it beside the v4 result: does Sol's 37-point lead shrink? Optionally the two hybrids (about $7). Adopt v5 in `config.toml` only after that.
 5. **Later, maybe v6:** the ride estimate plans only letters safe at boarding, while rides keep finding more (about 5 calls against 4 planned), so it runs low. Counting the letters that turn safe as each one shows, from the answers the bot already holds, would make it honest without a fitted correction.
 
