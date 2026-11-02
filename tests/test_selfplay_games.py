@@ -58,9 +58,8 @@ def test_entrants_are_a_name_and_knob_changes():
     assert two.known_answer == 0.9 and two.tie_margin == 0.01
 
 
-def test_entrants_share_one_reader_so_they_can_only_change_decisions():
-    with pytest.raises(ValueError, match="reader"):
-        selfplay.Entrant.parse("x:phrase_odds=2").knobs(KNOBS)
+def test_an_entrant_can_change_how_it_reads():
+    assert selfplay.Entrant.parse("x:phrase_odds=2").knobs(KNOBS).phrase_odds == 2  # it gets a reader of its own
 
 
 # Playing games
@@ -115,9 +114,9 @@ def test_the_summary_compares_entrants_with_intervals_from_sets(tmp_path, rules,
 
 def test_the_command_checks_entrants_before_playing(tmp_path, capsys):
     with pytest.raises(SystemExit) as stop:
-        selfplay.main(["games", "--entrant", "x:phrase_odds=2", "--entrant", "b", "--entrant", "c",
+        selfplay.main(["games", "--entrant", "x:nonsense=2", "--entrant", "b", "--entrant", "c",
                        "--puzzles", "puzzles/dev.json", "--sets", "1", "--seed", "1", "--out", str(tmp_path)])
-    assert "reader" in str(stop.value)
+    assert "nonsense" in str(stop.value)
 
 
 # Tuning decisions
@@ -228,3 +227,26 @@ def test_the_llm_likeness_a_v4_seat_records_never_stands_in_for_its_wins(tmp_pat
     assert e["v4"]["win_rate"] == 0 and e["v4"]["ci95"] == [0, 0]  # v4 lost; its 0.6 for eager is no win
     gap = next(p for p in s["pairwise"] if {p["a"], p["b"]} == {"v3", "v4"})
     assert gap["gap"] == (1 if gap["a"] == "v3" else -1)
+
+
+# Version 5 against version 4: each reading setup gets its own reader
+
+def test_entrants_that_read_differently_each_get_their_own_reader(tmp_path, rules, wheel_spec):
+    built = []
+
+    def make(knobs):
+        built.append((knobs.fit_weight, knobs.coherence_weight))
+        return WordListReader(WORDS, knobs)
+
+    entrants = [selfplay.Entrant("four"), selfplay.Entrant.parse("five:fit_weight=6+coherence_weight=4"),
+                selfplay.Entrant.parse("eager:eager_solve=0.65")]
+    selfplay.play_games(entrants, POOL, 1, 5, tmp_path, rules, wheel_spec, KNOBS, make, say=lambda line: None)
+    assert sorted(set(built)) == [(4.0, 0.0), (6.0, 4.0)]  # eager reads like four: one reader for both
+    assert len(built) == 2  # built once each, not once per game
+
+
+def test_version_5_s_reading_knobs_count_as_reading_knobs():
+    for knob in ("cased_lexicon", "one_letter", "ngrams", "triple_weight", "triple_smoothing", "vector_pair_weight",
+                 "single_fit_weight", "coherence_weight"):
+        assert knob in selfplay.READER_KNOBS
+    assert "express_vowels" not in selfplay.READER_KNOBS  # a decision knob

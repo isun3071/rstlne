@@ -134,7 +134,21 @@ _worker: dict = {}
 
 
 def _start_worker(make_reader, knobs, rules, spec) -> None:
-    _worker.update(reader=make_reader(knobs), rules=rules, spec=spec)
+    reader = make_reader(knobs)
+    _worker.update(reader=reader, rules=rules, spec=spec, make_reader=make_reader, readers={_reading(knobs): reader})
+
+
+def _reading(knobs: versions.Knobs) -> tuple:
+    """What a reader is built from: the knobs that change how it reads."""
+    return tuple((k, getattr(knobs, k)) for k in sorted(READER_KNOBS))
+
+
+def _reader_for(knobs: versions.Knobs) -> Reader:
+    """This worker's reader for these knobs, built the first time a bot reads that way."""
+    key = _reading(knobs)
+    if key not in _worker["readers"]:
+        _worker["readers"][key] = _worker["make_reader"](knobs)
+    return _worker["readers"][key]
 
 
 def _read_in_worker(puzzle: Puzzle) -> list[dict]:
@@ -619,7 +633,10 @@ def steal(folders, out: Path, rules: Rules, spec: WheelSpec, knobs: versions.Kno
 
 READER_KNOBS = {"samples", "top_answers", "unknown_word", "vocabulary", "slot_candidates", "pair_weight", "phrase_odds",
                 "phrase_odds_other", "name_odds", "name_odds_other", "fit_weight", "ing_boost", "same_letter_boost",
-                "rhyme_boost", "same_name_boost"}
+                "rhyme_boost", "same_name_boost",
+                # version 5's
+                "cased_lexicon", "one_letter", "ngrams", "triple_weight", "triple_smoothing", "vector_pair_weight",
+                "single_fit_weight", "coherence_weight"}
 
 
 @dataclass(frozen=True)
@@ -635,10 +652,6 @@ class Entrant:
         return cls(name, tuple(x for x in rest.split("+") if x))
 
     def knobs(self, base: versions.Knobs) -> versions.Knobs:
-        reader = {c.partition("=")[0] for c in self.changes} & READER_KNOBS
-        if reader:
-            raise ValueError(f"{self.name} changes {', '.join(sorted(reader))}: entrants share one reader, "
-                             "so they can only change decision knobs")
         return override(base, self.changes)
 
     def __str__(self) -> str:
@@ -650,7 +663,7 @@ def _shown(puzzle_answer: str, used) -> float:
     return sum(c in used for c in letters) / len(letters)
 
 
-def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus_puzzle: Puzzle, reader: Reader,
+def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus_puzzle: Puzzle, reader_for,
              rules: Rules, spec: WheelSpec, base: versions.Knobs, gains: bool = False) -> dict:
     """One bot-only game, summed up in one record. With `gains`, it also holds the stealer's gain points."""
     from rstlne.players.bot.player import BotPlayer
@@ -658,7 +671,8 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
 
     started = time.monotonic()
     seats = [entrants[e] for e in game.order]
-    players = [BotPlayer(i, rules, spec, reader, version=1, knobs=e.knobs(base)) for i, e in enumerate(seats)]
+    players = [BotPlayer(i, rules, spec, reader_for(e.knobs(base)), version=1, knobs=e.knobs(base))
+               for i, e in enumerate(seats)]
     state = new_game(game.seed, rules, spec, puzzles, bonus_puzzle)
     stats = [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0, "certain_win": False, "certain_loss": False,
               "flat": 0, "llm_like": {}} for _ in seats]
@@ -709,8 +723,7 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
 
 def _play_in_worker(job) -> dict:
     game, entrants, puzzles, bonus_puzzle, base, gains = job
-    return play_one(game, entrants, puzzles, bonus_puzzle, _worker["reader"], _worker["rules"], _worker["spec"], base,
-                    gains)
+    return play_one(game, entrants, puzzles, bonus_puzzle, _reader_for, _worker["rules"], _worker["spec"], base, gains)
 
 
 def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, seed: int, out: Path, rules: Rules,
