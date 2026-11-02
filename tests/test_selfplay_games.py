@@ -95,6 +95,14 @@ def test_games_replay_exactly_and_resume(tmp_path, rules, wheel_spec):
     assert len(first.read_text().splitlines()) == 6 and any("already played" in line for line in lines)
 
 
+def test_identical_seats_can_play_one_order_per_set(tmp_path, rules, wheel_spec):
+    # with three copies of one bot, the six orders of a set replay the same game
+    same = [selfplay.Entrant(name) for name in ("a", "b", "c")]
+    path = selfplay.play_games(same, POOL, 2, 7, tmp_path, rules, wheel_spec, KNOBS, reader, one_order=True)
+    games = [json.loads(line) for line in path.read_text().splitlines()]
+    assert [(g["set"], g["permutation"]) for g in games] == [(0, 0), (1, 0)]
+
+
 def test_shards_split_the_games(tmp_path, rules, wheel_spec):
     a = play(tmp_path, rules, wheel_spec, shard=(1, 2))
     b = play(tmp_path, rules, wheel_spec, shard=(2, 2))
@@ -250,3 +258,79 @@ def test_version_5_s_reading_knobs_count_as_reading_knobs():
                  "single_fit_weight", "coherence_weight"):
         assert knob in selfplay.READER_KNOBS
     assert "express_vowels" not in selfplay.READER_KNOBS  # a decision knob
+
+
+# Version 5, E2: Express rides, estimated and measured
+
+
+def test_games_record_each_express_ride_against_its_estimate(tmp_path, rules, wheel_spec):
+    path = play(tmp_path, rules, wheel_spec)
+    games = [json.loads(line) for line in path.read_text().splitlines()]
+    assert all("rides" in g and "express_passes" in g["seat_stats"][0] for g in games)
+
+
+RIDE_RAW = {"confidence": 0.9, "ride": {"estimate": 0.8, "chance": 0.8, "letters": 2, "plan": "consonants"}}
+
+
+def on_the_express(rules, wheel_spec):
+    from helpers import spin_to, to_round
+
+    from rstlne.engine.rules import apply
+    from rstlne.engine.state import CallConsonant
+    return apply(spin_to(to_round(start(rules, wheel_spec), 3), 12), CallConsonant("G"))  # GOLDEN GATE BRIDGE, seat 2
+
+
+def test_a_ride_is_filed_with_its_boarding_estimate_once_it_ends(rules, wheel_spec):
+    from helpers import solve
+
+    from rstlne.engine.rules import apply
+    from rstlne.engine.state import CallConsonant, Choose
+    express = on_the_express(rules, wheel_spec)
+    riding, rides, stat = {}, [], {"express_passes": 0}
+    boarded = apply(express, Choose("play"))
+    selfplay._follow_ride(riding, rides, stat, "v5", express, boarded, RIDE_RAW)
+    called = apply(boarded, CallConsonant("D"))
+    selfplay._follow_ride(riding, rides, stat, "v5", boarded, called, {})
+    assert riding[2]["calls"] == 1 and not rides
+    selfplay._follow_ride(riding, rides, stat, "v5", called, solve(called), {})
+    assert not riding and rides == [{"seat": 2, "entrant": "v5", "estimate": 0.8, "chance": 0.8, "letters": 2,
+                                     "plan": "consonants", "confidence": 0.9, "shown": rides[0]["shown"], "calls": 1,
+                                     "vowels": 0, "solved": True, "ended": "solve solved"}]
+    assert 0 < rides[0]["shown"] < 1 and stat["express_passes"] == 0
+
+
+def test_a_missed_call_ends_a_ride_unsolved_and_a_pass_is_counted(rules, wheel_spec):
+    from rstlne.engine.rules import apply
+    from rstlne.engine.state import CallConsonant, Choose
+    express = on_the_express(rules, wheel_spec)
+    riding, rides, stat = {}, [], {"express_passes": 0}
+    boarded = apply(express, Choose("play"))
+    selfplay._follow_ride(riding, rides, stat, "v5", express, boarded, RIDE_RAW)
+    selfplay._follow_ride(riding, rides, stat, "v5", boarded, apply(boarded, CallConsonant("Z")), {})
+    assert rides[0]["solved"] is False and rides[0]["ended"] == "call_consonant missing"
+    selfplay._follow_ride(riding, rides, stat, "v5", express, apply(express, Choose("pass")), RIDE_RAW)
+    assert stat["express_passes"] == 1 and len(rides) == 1
+
+
+def write_rides(folder, rides_by_set):
+    folder.mkdir()
+    with open(folder / "games-shard1of1.jsonl", "w") as f:
+        for s, rides in rides_by_set.items():
+            f.write(json.dumps({"game": f"set{s}", "set": s, "rides": rides}) + "\n")
+
+
+def test_the_ride_fit_checks_estimates_against_rides_and_fits_a_correction(tmp_path):
+    high = [{"entrant": "v5", "estimate": 0.8, "plan": "consonants", "solved": i % 2 == 0} for i in range(4)]  # 80% said, half came good
+    other = [{"entrant": "v4", "estimate": 0.8, "plan": "consonants", "solved": True}]
+    write_rides(tmp_path / "g", {0: high + other, 1: high, 2: high, 3: high})
+    result = selfplay.fit_rides([tmp_path / "g"], tmp_path / "out", entrant="v5")
+    assert result["rides"] == 16 and result["solved"] == pytest.approx(0.5) and result["mean_estimate"] == pytest.approx(0.8)
+    assert dict(map(tuple, result["points"]))[0.8] == pytest.approx(0.5)
+    assert result["held_out"]["after"]["error"] < result["held_out"]["before"]["error"]  # fit on even sets, checked on odd
+    knobs = selfplay.override(versions.knobs(4), [f"express_calibration=@{tmp_path / 'out' / 'express-fit.json'}"])
+    assert knobs.express_calibration == tuple(map(tuple, result["points"]))
+
+
+def test_ride_corrections_parse_as_points():
+    knobs = selfplay.override(versions.knobs(4), ["express_calibration=0:0,0.5:0.3,1:0.8"])
+    assert knobs.express_calibration == ((0.0, 0.0), (0.5, 0.3), (1.0, 0.8))

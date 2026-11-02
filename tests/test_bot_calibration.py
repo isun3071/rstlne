@@ -21,6 +21,13 @@ def test_the_curve_interpolates_between_points_and_holds_at_the_ends():
     assert curve(0.4) == pytest.approx(0.3) and curve(0.0) == 0.1 and curve(1.0) == 0.95
 
 
+def test_boards_at_the_same_confidence_pool_into_one_rate():
+    # the reader's confidence comes in steps of 1/400, so many boards tie, most of all at 1.0
+    pairs = [(0.5, False)] * 10 + [(0.5, True)] * 10 + [(1.0, False)] * 3 + [(1.0, True)] * 97
+    assert calibration.calibration_curve(pairs) == [(0.5, 0.5, 0.5, 20), (1.0, 1.0, 0.97, 100)]
+    assert calibration.curve(calibration.fit(pairs))(1.0) == pytest.approx(0.97)  # not 1: three of them were wrong
+
+
 def test_a_fit_learns_how_often_a_confidence_is_really_right():
     rng = random.Random(1)
     pairs = []
@@ -57,3 +64,14 @@ def test_knob_overrides_read_calibration_points():
     from rstlne import selfplay
     knobs = selfplay.override(versions.knobs(1), ["calibration=0:0.05,0.5:0.4,1:0.9"])
     assert knobs.calibration == ((0.0, 0.05), (0.5, 0.4), (1.0, 0.9))
+
+
+def test_a_curve_can_come_from_the_calibrate_job_s_file(tmp_path):
+    import json
+
+    from rstlne import selfplay
+    path = tmp_path / "calibration.json"
+    path.write_text(json.dumps({"knob": "calibration=0:0.05,0.5:0.4,1:0.9"}))
+    assert selfplay.override(versions.knobs(1), [f"calibration=@{path}"]).calibration == ((0.0, 0.05), (0.5, 0.4), (1.0, 0.9))
+    with pytest.raises(ValueError, match="calibration"):  # a confidence curve never lands in another knob
+        selfplay.override(versions.knobs(1), [f"express_calibration=@{path}"])

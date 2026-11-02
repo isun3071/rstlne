@@ -224,7 +224,9 @@ class BotPlayer(Player):
             case Phase.MYSTERY_CHOICE:
                 return Choose(s.mystery(self._pending))
             case Phase.EXPRESS_CHOICE:
-                return Choose(s.express())
+                choice = s.express()
+                self._record["ride"] = s.last_ride  # the estimate it boarded or passed on, checked against rides
+                return Choose(choice)
             case Phase.WILD_CHOICE:
                 return UseWild(s.wild(view.wedge))
         raise ValueError(f"the bot has no move for {view.phase}")

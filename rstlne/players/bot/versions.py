@@ -66,6 +66,9 @@ class Knobs:
     coherence_weight: float = 0.0
     # From version 5. Riding the Express, once the safe consonants run out, weigh buying a safe vowel against solving.
     express_vowels: bool = False
+    # From version 5. Boarding the Express: (estimated chance the ride ends in a right solve, how often rides did)
+    # points, from self-play rides; none means no change
+    express_calibration: tuple[tuple[float, float], ...] = ()
 
 
 def _tuples(value):

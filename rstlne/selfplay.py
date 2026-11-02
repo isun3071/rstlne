@@ -395,6 +395,53 @@ def calibrate(puzzles: Sequence[Puzzle], held_out: Sequence[Puzzle], out: Path, 
     return points
 
 
+# The Express boarding correction (version 5, E2)
+
+
+def fit_rides(folders: Sequence[Path], out: Path, entrant: str | None = None, say=print) -> dict:
+    """Every Express ride in these games: the estimate the bot boarded on against whether the ride ended in a right
+    solve, by band, and a correction fit on every ride. The check fits on even numbered sets and scores the odd ones."""
+    games = [g for folder in folders for path in sorted(Path(folder).glob("games-shard*.jsonl")) for g in _rows(path)]
+    rides = [(g.get("set", 0), r) for g in games for r in g.get("rides", ())
+             if r.get("estimate") is not None and (entrant is None or r["entrant"] == entrant)]
+    if not rides:
+        raise ValueError("no Express rides in these games")
+    pairs = [(r["estimate"], bool(r["solved"])) for _, r in rides]
+    fit_on = [(r["estimate"], bool(r["solved"])) for s, r in rides if s % 2 == 0]
+    check = [(r["estimate"], bool(r["solved"])) for s, r in rides if s % 2 == 1]
+    points = calibration.fit(pairs)
+    plans = sorted({r.get("plan", "consonants") for _, r in rides})
+    result = {
+        "entrant": entrant, "rides": len(pairs),
+        "passes": sum(st.get("express_passes", 0) for g in games for name, st in zip(g.get("seats", ()), g.get("seat_stats", ()))
+                      if entrant is None or name == entrant),
+        "solved": float(np.mean([y for _, y in pairs])), "mean_estimate": float(np.mean([x for x, _ in pairs])),
+        "by_plan": {plan: {"rides": len(inside), "solved": float(np.mean([r["solved"] for r in inside])),
+                           "mean_estimate": float(np.mean([r["estimate"] for r in inside]))}
+                    for plan in plans for inside in [[r for _, r in rides if r.get("plan", "consonants") == plan]]},
+        "bands": _bands(pairs, calibration.curve(points), bands=5),
+        "held_out": ({"rides": len(check), "before": _honesty(check, calibration.curve(())),
+                      "after": _honesty(check, calibration.curve(calibration.fit(fit_on)))} if fit_on and check else None),
+        "points": [list(p) for p in points],
+        "knob": [list(p) for p in points],  # for express_calibration=@express-fit.json
+    }
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "express-fit.json").write_text(json.dumps(result, indent=2) + "\n")
+    say(f"{result['rides']} rides by {entrant or 'every entrant'} ({result['passes']} passes): estimated "
+        f"{result['mean_estimate']:.0%} on average, ended in a right solve {result['solved']:.0%}")
+    for plan, p in result["by_plan"].items():
+        say(f"  {plan}: {p['rides']} rides, estimated {p['mean_estimate']:.0%}, solved {p['solved']:.0%}")
+    for band in result["bands"]:
+        say(f"  estimate {band['raw']}: {band['boards']:4d} rides, estimated {band['raw_mean']:.0%}, "
+            f"solved {band['actual']:.0%}, corrected {band['calibrated_mean']:.0%}")
+    if result["held_out"]:
+        b, a = result["held_out"]["before"], result["held_out"]["after"]
+        say(f"Fit on even sets, checked on {result['held_out']['rides']} rides from odd sets: calibration error "
+            f"{b['error']:.3f} -> {a['error']:.3f}, Brier {b['brier']:.3f} -> {a['brier']:.3f}")
+    say(f"Correction ({len(points)} points): express_calibration=@{out / 'express-fit.json'}")
+    return result
+
+
 def _knob_dict(knobs: versions.Knobs) -> dict:
     return {f.name: list(v) if isinstance(v := getattr(knobs, f.name), tuple) else v for f in fields(knobs)}
 
@@ -685,8 +732,9 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
                for i, e in enumerate(seats)]
     state = new_game(game.seed, rules, spec, puzzles, bonus_puzzle)
     stats = [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0, "certain_win": False, "certain_loss": False,
-              "flat": 0, "llm_like": {}} for _ in seats]
+              "flat": 0, "llm_like": {}, "express_passes": 0} for _ in seats]
     round_totals, moves, steps, chances = [], 0, [], []
+    riding, rides = {}, []  # Express rides under way, by seat, and finished ones
     while state.phase is not Phase.GAME_OVER:
         before = state
         state = play_turn(state, players)
@@ -711,6 +759,7 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
         seat["flat"] += bool((raw or {}).get("flat"))
         if (raw or {}).get("llm_like"):  # version 4: how LLM-like it finds each opponent, kept as of its last decision
             seat["llm_like"] = raw["llm_like"]
+        _follow_ride(riding, rides, seat, seats[r.seat].name, before, state, raw)
         if r.action.kind == "solve":
             seat["attempts"] += 1
             if r.outcome == "solved":
@@ -726,9 +775,29 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
         "seats": [e.name for e in seats], "entrants": [str(e) for e in seats],
         "totals": [s.total for s in state.seats], "round_totals": round_totals,
         "bonus": None if b is None else {"seat": b.seat, "solved": b.solved, "envelope": b.envelope},
-        "moves": moves, "seconds": round(time.monotonic() - started, 2), "seat_stats": stats,
+        "moves": moves, "seconds": round(time.monotonic() - started, 2), "seat_stats": stats, "rides": rides,
         **({"gains": gain_points(steps), "chances": chances} if gains else {}),
     }
+
+
+def _follow_ride(riding: dict, rides: list, stat: dict, name: str, before, state, raw: dict | None) -> None:
+    """Keep an Express boarding's estimate until its ride ends, then file the ride with how it ended."""
+    r = state.last
+    if before.phase is Phase.EXPRESS_CHOICE:
+        if r.outcome == "rode_express":
+            riding[r.seat] = {"seat": r.seat, "entrant": name, **((raw or {}).get("ride") or {}),
+                              "confidence": (raw or {}).get("confidence"),
+                              "shown": round(_shown(before.round.puzzle.answer, before.round.used), 4),
+                              "calls": 0, "vowels": 0}
+        else:
+            stat["express_passes"] += 1
+    elif before.phase is Phase.EXPRESS and r.seat in riding:
+        ride = riding[r.seat]
+        ride["calls"] += r.action.kind == "call_consonant"
+        ride["vowels"] += r.action.kind == "buy_vowel"
+        if state.phase is not Phase.EXPRESS:  # a right solve, or Bankrupt from a miss or a wrong solve
+            ride.update(solved=r.action.kind == "solve" and r.outcome == "solved", ended=f"{r.action.kind} {r.outcome}")
+            rides.append(riding.pop(r.seat))
 
 
 def _play_in_worker(job) -> dict:
@@ -738,9 +807,10 @@ def _play_in_worker(job) -> dict:
 
 def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, seed: int, out: Path, rules: Rules,
                spec: WheelSpec, base: versions.Knobs, make_reader, shard: tuple[int, int] = (1, 1), workers: int = 1,
-               say=print, heartbeat: float = HEARTBEAT, gains: bool = False) -> Path:
+               say=print, heartbeat: float = HEARTBEAT, gains: bool = False, one_order: bool = False) -> Path:
     """Bot-only games with duplicate scoring: each set's six games share its seed and puzzles, one game per
-    ordering of the three entrants. Writes games-shard{i}of{n}.jsonl and skips games already played."""
+    ordering of the three entrants. Writes games-shard{i}of{n}.jsonl and skips games already played. With
+    `one_order`, a set plays only its first ordering, for three identical entrants, whose orderings replay one game."""
     from rstlne import tournament
 
     if len(entrants) != 3:
@@ -751,7 +821,8 @@ def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, s
     done = {r["game"] for r in _rows(path)}
     main_hands = tournament.deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
     bonus_hands = tournament.deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
-    games = shard_of(tournament.schedule(sets, seed, "all"), i, n)
+    games = [g for g in tournament.schedule(sets, seed, "all") if not one_order or g.permutation == 0]
+    games = shard_of(games, i, n)
     todo = [g for g in games if g.name not in done]
     if done:
         say(f"{len(games) - len(todo)} games already played; playing the other {len(todo)}")
@@ -1246,7 +1317,12 @@ def override(knobs: versions.Knobs, pairs: Sequence[str]) -> versions.Knobs:
             raise ValueError(f"no knob named {name!r}")
         if value.startswith("@"):  # a big knob, like a table, from a file: its "knob" entry
             data = json.loads(Path(value[1:]).read_text())
-            changes[name] = _tuples(data["knob"] if isinstance(data, dict) else data)
+            loaded = data["knob"] if isinstance(data, dict) else data
+            if isinstance(loaded, str):  # a fit that writes its knob as name=value, like calibrate's
+                if loaded.partition("=")[0] != name:
+                    raise ValueError(f"{value[1:]} holds {loaded.partition('=')[0]}, not {name}")
+                loaded = getattr(override(knobs, [loaded]), name)
+            changes[name] = _tuples(loaded)
             continue
         kind = types[name]
         if kind is bool:
@@ -1258,7 +1334,7 @@ def override(knobs: versions.Knobs, pairs: Sequence[str]) -> versions.Knobs:
             kind = float
         if name == "one_letter":  # letters, not numbers
             changes[name] = tuple(x.strip().upper() for x in value.split(",") if x.strip())
-        elif name == "calibration":  # points as raw:actual pairs
+        elif name in ("calibration", "express_calibration"):  # points as raw:actual pairs
             changes[name] = tuple(tuple(float(v) for v in pair.split(":")) for pair in value.split(","))
         else:
             changes[name] = tuple(float(x) for x in value.split(",")) if kind is tuple else kind(value)
@@ -1302,6 +1378,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     games.add_argument("--shard", default="1/1", help="i/n: this machine's share of the games")
     games.add_argument("--workers", type=int, default=4, help="processes, one per core")
     games.add_argument("--knob", action="append", default=[], help="name=value, for every entrant's starting knobs")
+    games.add_argument("--one-order", action="store_true",
+                       help="one game per set, for three identical entrants, whose six orders would replay one game")
     td = jobs.add_parser("tune-decisions", help="test decision knob values against the current bot in bot games")
     td.add_argument("--puzzles", required=True, help="the tuning batch")
     td.add_argument("--out", required=True, help="the folder for each comparison and tune-decisions.json")
@@ -1310,6 +1388,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     td.add_argument("--workers", type=int, default=4, help="processes, one per core")
     td.add_argument("--knob", action="append", default=[], help="name=value or name=@file, for the starting knobs")
     td.add_argument("--knobs", help="only these decision knobs, comma separated; all of them by default")
+    rides = jobs.add_parser("rides", help="Express rides: the boarding estimate against the outcome, and a correction")
+    rides.add_argument("--games", nargs="+", required=True, help="games folders")
+    rides.add_argument("--out", required=True, help="the folder for express-fit.json")
+    rides.add_argument("--entrant", help="only this entrant's rides; every entrant's by default")
     wt = jobs.add_parser("win-table", help="P(finish first | lead, rounds left) from bot games")
     wt.add_argument("--games", nargs="+", required=True, help="games folders")
     wt.add_argument("--out", required=True, help="the folder for win-table.json")
@@ -1350,6 +1432,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.job == "summary":
         print(json.dumps(summarize_reads(Path(args.folder)), indent=2))
         return
+    if args.job == "rides":
+        try:
+            fit_rides([Path(f) for f in args.games], Path(args.out), entrant=args.entrant, say=print)
+        except ValueError as err:
+            sys.exit(str(err))
+        return
     if args.job == "win-table":
         win_table([Path(f) for f in args.games], Path(args.out), settings.load_rules().main_rounds, say=print)
         return
@@ -1389,7 +1477,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         except ValueError as err:
             sys.exit(str(err))
         path = play_games(entrants, settings.load_puzzles(Path(args.puzzles)), args.sets, args.seed, Path(args.out),
-                          rules, spec, knobs, _make_reader, shard_spec, args.workers, say=print)
+                          rules, spec, knobs, _make_reader, shard_spec, args.workers, say=print, one_order=args.one_order)
         for line in summary_lines(games_summary(path.parent)):
             print(line)
         return

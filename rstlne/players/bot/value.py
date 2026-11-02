@@ -20,7 +20,7 @@ from dataclasses import replace
 from rstlne.engine.puzzle import CONSONANTS, LETTERS, VOWELS
 from rstlne.engine.state import PublicView, Rules
 from rstlne.engine.wheel import Kind, Wedge, WheelSpec
-from rstlne.players.bot import info
+from rstlne.players.bot import calibration, info
 from rstlne.players.bot.belief import Belief
 from rstlne.players.bot.objective import ZERO, Objective, Value
 from rstlne.players.bot.steal import Odds
@@ -68,6 +68,7 @@ class Situation:
         a, b = odds.seats
         self.stealers = {a: odds.next, b: (1 - odds.next) * odds.after}
         self.letter_options: dict[str, Value] = {}  # the letters the latest letter choice weighed, for thoughts
+        self.last_ride: dict | None = None  # the latest ride estimate, for the record
 
     # The race and the two ways a turn ends
 
@@ -163,16 +164,35 @@ class Situation:
                                  "play": self.ride(self.bank)})
 
     def ride(self, bank: float) -> Value:
-        """Call every safe consonant at the Express value, then solve. A miss or a wrong solve is Bankrupt."""
+        """Call every safe consonant at the Express value, then solve. A miss or a wrong solve is Bankrupt. From
+        version 5, the plan may also buy every safe vowel before the solve, when that's worth more, and the chance
+        of a right solve can go through a correction fit on measured rides."""
         safe = self.safe_consonants()
-        money = self.spec.express * sum(self.belief.stats(c).count for c in safe)
+        plans = {"consonants": self._ride_plan(bank, safe, ())}
+        vowels = [v for v in self.vowels if self.belief.stats(v).p_hit >= self.knobs.safe_hit]
+        if self.knobs.express_vowels and vowels:
+            plans["vowels"] = self._ride_plan(bank, safe, vowels)
+        plan = self.goal.choose({k: v for k, (v, _) in plans.items()}) if len(plans) > 1 else "consonants"
+        value, self.last_ride = plans[plan]
+        self.last_ride["plan"] = plan
+        return value
+
+    def _ride_plan(self, bank: float, consonants: Sequence[str], vowels: Sequence[str]) -> tuple[Value, dict]:
+        letters = [*consonants, *vowels]
+        money = self.spec.express * sum(self.belief.stats(c).count for c in consonants)
+        money -= self.rules.express_vowel_cost * len(vowels)
         calls_hit = 1.0
-        for c in safe:
+        for c in letters:
             calls_hit *= self.belief.stats(c).p_hit
-        right = self.calibrate(info.solve_chance(self.belief, safe))
+        right = self.calibrate(info.solve_chance(self.belief, letters))
         bust = self.lose_wheel(0, self.calibrate(info.after_wrong_solve(self.belief)), False, False)
         solved = self.goal.win_round(bank + money, self.wild_held, self.million_held)
-        return (solved * right + bust * (1 - right)) * calls_hit + bust * (1 - calls_hit)
+        estimate = calls_hit * right
+        record = {"estimate": estimate, "chance": estimate, "letters": len(letters)}
+        if not self.knobs.express_calibration:
+            return (solved * right + bust * (1 - right)) * calls_hit + bust * (1 - calls_hit), record
+        chance = record["chance"] = calibration.curve(self.knobs.express_calibration)(estimate)
+        return solved * chance + bust * (1 - chance), record
 
     def express_move(self, legal: Sequence[str]) -> tuple[str, str | None]:
         """While riding: the safe consonant with the most copies, and once none is left, the solve. From version 5,

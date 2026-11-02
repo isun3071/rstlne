@@ -183,3 +183,34 @@ def test_a_sure_answer_doesn_t_pay_for_a_vowel(rules, wheel_spec):
 def test_safe_consonants_still_come_first(rules, wheel_spec):
     b = belief([("ROAD", 0.49), ("ROOM", 0.49)], oov=0.02, R=(1.0, 1.0), O=(1.0, 1.5), D=(0.49, 1.0), M=(0.49, 1.0))
     assert riding(rules, wheel_spec, b, V5_EXPRESS).express_move(RIDE) == ("call_consonant", "R")  # $1,000 before $250 of help
+
+
+# Version 5, E2: the boarding estimate
+
+
+def test_version_4_s_ride_estimate_leaves_vowels_out(rules, wheel_spec):
+    s = riding(rules, wheel_spec, ROAD_OR_ROOM, versions.knobs(4))
+    s.express()
+    assert s.last_ride["plan"] == "consonants" and s.last_ride["estimate"] == pytest.approx(0.49)
+
+
+def test_version_5_s_ride_estimate_counts_the_safe_vowels_it_would_buy(rules, wheel_spec):
+    s = riding(rules, wheel_spec, ROAD_OR_ROOM, V5_EXPRESS)
+    s.express()
+    assert s.last_ride["plan"] == "vowels" and s.last_ride["estimate"] == pytest.approx(0.98)  # O tells ROAD from ROOM
+    assert s.last_ride["chance"] == s.last_ride["estimate"]  # no correction fit yet
+    assert s.ride(4000).main > riding(rules, wheel_spec, ROAD_OR_ROOM, versions.knobs(4)).ride(4000).main
+
+
+def test_the_ride_correction_lowers_an_estimate_that_runs_high(rules, wheel_spec):
+    halved = __import__("dataclasses").replace(V5_EXPRESS, express_calibration=((0.0, 0.0), (1.0, 0.5)))
+    s = riding(rules, wheel_spec, ROAD_OR_ROOM, halved)
+    s.express()
+    assert s.last_ride["estimate"] == pytest.approx(0.98) and s.last_ride["chance"] == pytest.approx(0.49)
+
+
+def test_a_ride_correction_can_turn_a_boarding_into_a_pass(rules, wheel_spec):
+    sure = belief([("WHEEL OF FORTUNE", 0.98)], oov=0.02, W=(1.0, 1.0), H=(1.0, 1.0), F=(1.0, 1.0), R=(1.0, 1.0))
+    assert riding(rules, wheel_spec, sure, versions.knobs(4)).express() == "play"
+    rare = __import__("dataclasses").replace(versions.knobs(4), express_calibration=((0.0, 0.0), (1.0, 0.1)))
+    assert riding(rules, wheel_spec, sure, rare).express() == "pass"

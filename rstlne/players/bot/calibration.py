@@ -7,6 +7,7 @@ fit as a never-decreasing function and interpolated between points. No points me
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from itertools import groupby
 
 import numpy as np
 
@@ -14,10 +15,12 @@ import numpy as np
 def calibration_curve(points: Sequence[tuple[float, bool]]) -> list[tuple[float, float, float, int]]:
     """Accuracy as a never-decreasing function of a stated probability, fit by pooling adjacent violators.
     Each block is (lowest probability, highest probability, accuracy, boards). Decision model thresholds
-    and the bot's confidence curve both use it."""
+    and the bot's confidence curve both use it. Points at the same probability start as one block: sorted
+    one by one, the wrong ones would pool below and the right ones stand alone at 100%."""
     blocks: list[list] = []  # [correct, boards, lowest P, highest P]
-    for p, correct in sorted(points):
-        blocks.append([float(correct), 1, p, p])
+    for p, group in groupby(sorted(points, key=lambda x: x[0]), key=lambda x: x[0]):
+        group = [correct for _, correct in group]
+        blocks.append([float(sum(group)), len(group), p, p])
         while len(blocks) > 1 and blocks[-2][0] / blocks[-2][1] > blocks[-1][0] / blocks[-1][1]:
             right, n, _, high = blocks.pop()
             blocks[-1][0] += right
