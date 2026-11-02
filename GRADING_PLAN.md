@@ -82,6 +82,25 @@ Every gap clears zero: Sol leads DeepSeek by 41 points (34 to 49), and DeepSeek 
 
 Sol leads each bot by 37 to 38 points (27 to 47). Set by set, Sol wins 7.8 points less against two bots than against DeepSeek and Haiku in lineup 1 (−15.0 to −0.6), with the caveat that lineup 1 ran under the old round 4 rule (worth under a point in self-play). Sol takes 56% of rounds, but the bots bank half again as much when they win one, and in 125 of Sol's 151 losses a bot took round 4. The bots read Sol as LLM-like (median w 0.87 at game end), so v4's per-opponent gain was in use; only a rerun with v3 seats would show whether it helped.
 
+## Lineup 2 with bot v5 (2026-11-02): Sol still wins, by less
+
+A v5 addendum; the v4 result above stands. 360 games in 60 sets, `logs/tournaments/seed707-2858c353`, $5.86, bot v5, the same deck, seed, and sets as the v4 run, so every game replays its v4 counterpart's puzzles and spins.
+
+| | Sol vs two v5 bots | Each v5 bot | Sol vs two v4 bots |
+|---|---|---|---|
+| Win rate | **49%** (42–55%) | 26% (21–30%) | 58% |
+| Rounds won per game | 1.99 | 1.01 | 2.26 |
+| Board showing at a correct solve | 51% | 61% | 53% (bots 65%) |
+| Wrong solves, all games | 28 | 14 (both bots) | 34 (bots 69) |
+| Bonus won | 174 / 175 | 172 / 185 (both bots) | 205 / 209 (bots 129 / 151) |
+| Average total | $31,614 | $21,867 | $36,603 (bots $16,468) |
+
+- Sol leads each v5 bot by 22 to 24 points (+12 to +34), against 37 to 38 with v4 bots. Game by game, Sol wins 9.4 points less often than against v4 (−16.1 to −3.1, resampling sets).
+- The rounds Sol lost are the long ones, where the reading fixes aim. Sol took 56% of rounds with 27 or more letters (v4: 65%), 44% at 23–26 (v4: 54%), 50% at 18–22 (v4: 55%), and 48% at 17 or fewer (v4: 49%).
+- The bots' wrong solves fell from 69 to 14, and they solved earlier (61% showing against 65%). Sol's play didn't change: it solved at 51–53% showing and missed one bonus.
+- By seat, Sol won 58%, 37%, and 51% (v4: 55%, 53%, 66%). Only seat 1 held up (+3 points; seats 2 and 3 −17 and −15). With 120 games a seat this may be noise; nothing here explains it yet.
+- Sets 0–36 cost Sol 13 points against v4, sets 37–59 only 4. Puzzle lengths match across the halves (median 23 letters both), so this reads as noise around the overall −9.
+
 ## Lineup 3 result (2026-10-31): the hybrid beats two bots, but Sol alone does better
 
 360 games in 60 sets, `logs/tournaments/seed707-ca968604`, $1.93, bot v4, round 3's solver starting round 4.
