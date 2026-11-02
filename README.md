@@ -18,10 +18,10 @@ The same engine runs seeded, model-only tournaments that compare how well models
 | Hybrid seats: the bot decides, a model reads the board | Done |
 | Your seat in the terminal | Done |
 | Game logs | Done |
-| Bot | Version 4, tuned by self-play: the checkpoint version |
+| Bot | Version 5 (2026-11-02): v4 with better reading and Express play. Version 4 is the checkpoint version |
 | Tournament runner, bonus test, puzzle generator | Done |
 | **The v4 checkpoint:** the grading runs in `FINDINGS.md`, all against bot v4 | Done (2026-11-01) |
-| **The v5 phase:** a stronger bot (Express play, word-pair reading), checked against v4 | Next |
+| **The v5 phase:** a stronger bot (Express play, word-pair reading), checked against v4 | v5 adopted (+12.6 points over v4 in self-play); Sol against two v5 bots next |
 | Local web page, starting with a solver | Planned for phase 2 |
 
 ## Setup
@@ -94,8 +94,11 @@ Plays the bonus round alone: every player meets every bonus puzzle in the file, 
 
 ```
 uv run python -m rstlne.data fetch
+uv run python -m rstlne.data fetch enwiki
 uv run python -m rstlne.data status
 ```
+
+Bot version 5, the default, also reads word pair and triple counts from all of English Wikipedia (`enwiki`). That fetch streams the whole dump: about 2 CPU-hours, up to 50 GB of temporary files, and 0.85 GB kept. It's best run on a server, then copied: the `enwiki-*` files, plus the `enwiki` entry in `data/manifest.json`. Without them, a version 5 bot refuses the data it finds; set `[bot] version = 4` to play the older bot on the other sources alone.
 
 `fetch` streams each source and keeps only pruned tables in `data/`, which git ignores, under a 2.5 GB cap; it took about 8 minutes and keeps about 0.2 GB. `status` lists what's fetched, its size, and its license. `data/manifest.json` records each file's hash, so a bot version can pin its data. Sources, with thanks:
 
@@ -107,6 +110,7 @@ uv run python -m rstlne.data status
 | [CMU Pronouncing Dictionary](https://github.com/cmusphinx/cmudict) | rhymes for Rhyme Time | BSD 2-clause |
 | [Tatoeba](https://tatoeba.org) | word pair counts from everyday sentences | CC BY 2.0 FR |
 | [Simple English Wikipedia](https://simple.wikipedia.org) | word pair counts from encyclopedia text | CC BY-SA 4.0 |
+| [English Wikipedia](https://en.wikipedia.org) | word pair and triple counts, for version 5 | CC BY-SA 4.0 |
 | [fastText](https://fasttext.cc/docs/en/crawl-vectors.html) | word vectors, for how well a word fits a category | CC BY-SA 3.0 |
 
 ## Calibrating decision models

@@ -265,7 +265,7 @@ def curves(model=MODEL, reader="v1"):
 
 def test_a_hybrid_seat_reads_its_curves_and_provider_from_config(rules, wheel_spec):
     from rstlne import cli, settings
-    config = {**settings.load_config(), "hybrid": curves(), "providers": {MODEL: "deepinfra/fp8"}}
+    config = {**settings.load_config(), "bot": {"version": 4}, "hybrid": curves(), "providers": {MODEL: "deepinfra/fp8"}}
     players = cli.build_players([("hybrid", MODEL), ("bot", None), ("bot", None)], rules, wheel_spec, config,
                                 router([]), None, "game")
     seat = players[0]
@@ -299,7 +299,7 @@ def test_tournaments_hold_hybrid_seats_to_the_bot_version(tmp_path):
 
 def test_a_hybrid_tournament_folder_covers_the_bot_version_and_the_curves(tmp_path):
     from rstlne import settings, tournament
-    config = {**settings.load_config(), "hybrid": curves()}
+    config = {**settings.load_config(), "bot": {"version": 4}, "hybrid": curves()}
     entrants = [f"hybrid:{MODEL}", "llm:a/one", "llm:b/two"]
     base = tournament.folder_name(entrants, 1, tmp_path / "p.json", config)
     other = {**config, "hybrid": {"trust": {"v1": {MODEL: [0, 0, 0, 0, 0]}}, "steal": curves()["steal"]}}
@@ -308,7 +308,7 @@ def test_a_hybrid_tournament_folder_covers_the_bot_version_and_the_curves(tmp_pa
     more = {"trust": {**curves()["trust"], "v5": {MODEL: [1, 1, 1, 1, 1]}},
             "steal": {"v1": {**curves()["steal"]["v1"], "other/model": [1, 1, 1, 1]}}}
     assert tournament.folder_name(entrants, 1, tmp_path / "p.json", {**config, "hybrid": more}) == base
-    newer = {**config, "bot": {"version": 2}}
+    newer = {**config, "bot": {"version": 5}}
     assert tournament.folder_name(entrants, 1, tmp_path / "p.json", newer) != base
 
 
