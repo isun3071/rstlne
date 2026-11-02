@@ -270,6 +270,12 @@ READER_GRID = {
     "fit_weight": [0.0, 2.0, 4.0, 6.0, 8.0],
     "pair_weight": [0.5, 0.8, 0.95, 0.99],
 }
+V5_READER_GRID = {  # version 5's whole-answer and unseen-pair knobs; start from their untuned values with --knob
+    "triple_weight": [0.5, 1.0, 2.0, 4.0],
+    "vector_pair_weight": [0.0, 2.0, 4.0, 8.0],
+    "coherence_weight": [0.0, 2.0, 4.0, 8.0],
+}
+READER_GRIDS = {"v4": READER_GRID, "v5": V5_READER_GRID}
 _PAIRED = {"phrase_odds": "phrase_odds_other", "name_odds": "name_odds_other"}  # move together, keeping their ratio
 
 
@@ -1256,11 +1262,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     reads.add_argument("--knob", action="append", default=[], help="name=value, to read with other knobs")
     tune = jobs.add_parser("tune-reader", help="tune the reader's knobs on board reads, then check them on held out puzzles")
     tune.add_argument("--puzzles", required=True, help="the tuning batch")
-    tune.add_argument("--held-out", required=True, help="the grading batch, never tuned on")
+    tune.add_argument("--held-out", required=True, help="puzzles never tuned on, to check the result")
     tune.add_argument("--out", required=True, help="the folder for evaluations.jsonl and reader-tune.json")
     tune.add_argument("--workers", type=int, default=4, help="processes, one per core")
     tune.add_argument("--passes", type=int, default=2)
     tune.add_argument("--knob", action="append", default=[], help="name=value, to start from other knobs")
+    tune.add_argument("--grid", choices=sorted(READER_GRIDS), default="v4", help="which knobs to tune")
     games = jobs.add_parser("games", help="bot-only games between bot variants, with duplicate scoring")
     games.add_argument("--entrant", action="append", required=True,
                        help="three of them: name or name:knob=value+knob=value, like eager:eager_solve=0.65")
@@ -1376,7 +1383,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         return
     if args.job == "tune-reader":
         tune_reader(settings.load_puzzles(Path(args.puzzles)), settings.load_puzzles(Path(args.held_out)), Path(args.out),
-                    rules, spec, knobs, _make_reader, passes=args.passes, workers=args.workers, say=print)
+                    rules, spec, knobs, _make_reader, grid=READER_GRIDS[args.grid], passes=args.passes,
+                    workers=args.workers, say=print)
         return
     if args.job == "steal":
         steal([Path(f) for f in args.logs], Path(args.out), rules, spec, knobs, _make_reader, args.workers,

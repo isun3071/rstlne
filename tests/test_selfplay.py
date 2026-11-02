@@ -237,3 +237,15 @@ def test_the_reads_summary_breaks_main_puzzles_down_by_length(tmp_path):
     assert bands["up to 17"]["puzzles"] == 1 and bands["up to 17"]["settled_shown_median"] == pytest.approx(0.2)
     assert bands["27+"]["settled_shown_median"] == pytest.approx(0.6) and bands["27+"]["confident_wrong"] == pytest.approx(0.5)
     assert bands["20–22"]["puzzles"] == 0
+
+
+def test_the_reader_tuner_can_tune_version_5_s_knobs(monkeypatch, tmp_path):
+    from dataclasses import fields
+    names = {f.name for f in fields(versions.Knobs)}
+    assert set(selfplay.READER_GRIDS["v5"]) == {"triple_weight", "vector_pair_weight", "coherence_weight"} <= names
+    assert 8.0 in selfplay.READER_GRIDS["v5"]["vector_pair_weight"]
+    seen = {}
+    monkeypatch.setattr(selfplay, "tune_reader", lambda *a, grid=None, **k: seen.update(grid=grid))
+    monkeypatch.setattr(selfplay.settings, "load_puzzles", lambda path: PUZZLES)
+    selfplay.main(["tune-reader", "--puzzles", "a.json", "--held-out", "b.json", "--out", str(tmp_path), "--grid", "v5"])
+    assert seen["grid"] == selfplay.READER_GRIDS["v5"]
