@@ -100,6 +100,7 @@ A v5 addendum; the v4 result above stands. 360 games in 60 sets, `logs/tournamen
 - The bots' wrong solves fell from 69 to 14, and they solved earlier (61% showing against 65%). Sol's play didn't change: it solved at 51–53% showing and missed one bonus.
 - By seat, Sol won 58%, 37%, and 51% (v4: 55%, 53%, 66%). Only seat 1 held up (+3 points; seats 2 and 3 −17 and −15). With 120 games a seat this may be noise; nothing here explains it yet.
 - Sets 0–36 cost Sol 13 points against v4, sets 37–59 only 4. Puzzle lengths match across the halves (median 23 letters both), so this reads as noise around the overall −9.
+- **Why Sol still wins.** Each round Sol won was replayed through the bots' reader, on the board Sol solved and from the bots' own logs on their last turn (no API calls). Of Sol's 715 rounds (v4 run: 812): 34% the bot's best answer was wrong on Sol's board (v4: 47%), at a median 39% showing; 30% it was right but unsure (median calibrated 0.61; v4 25%); 28% it would have been sure on that board but Sol had the turn (v4 22%); and 8% it knew the answer, kept spinning for money, and hit Bankrupt (v4 6%). v5 took its rounds from the wrong-answer group (380 to 246). About 1.2 of Sol's 2 rounds a game still come from boards Sol reads and the bot can't, yet; that is recognition, which a word-count reader can approach but not match.
 
 ## Lineup 3 result (2026-10-31): the hybrid beats two bots, but Sol alone does better
 
