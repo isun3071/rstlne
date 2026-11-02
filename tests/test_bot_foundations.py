@@ -122,6 +122,21 @@ def test_frozen_versions_never_change():
     v4 = {k: v for k, v in asdict(versions.knobs(4)).items() if k not in V5_KNOBS}
     assert hashlib.sha256(json.dumps(v4, sort_keys=True).encode()).hexdigest()[:12] == "4c039cc65dbf"
     assert all(getattr(versions.knobs(v), k) == off for v in (1, 2, 3, 4) for k, off in V5_KNOBS.items())
+    v5 = asdict(versions.knobs(5))  # a knob added after version 5's freeze leaves this hash, off in 5
+    assert hashlib.sha256(json.dumps(v5, sort_keys=True).encode()).hexdigest()[:12] == "b94185438839"
+
+
+def test_v5_is_v4_with_the_reading_fixes_its_confidence_curve_and_vowels_on_the_express():
+    v4, v5 = versions.knobs(4), versions.knobs(5)
+    changed = {k for k in [*V5_KNOBS, "calibration"] if getattr(v5, k) != getattr(v4, k)}
+    assert changed == {"cased_lexicon", "one_letter", "ngrams", "triple_weight", "vector_pair_weight", "coherence_weight",
+                       "single_fit_weight", "express_vowels", "calibration"}
+    assert replace(v5, **{k: getattr(v4, k) for k in changed}) == v4  # nothing else moved
+    assert (v5.triple_weight, v5.vector_pair_weight, v5.coherence_weight, v5.single_fit_weight) == (1.0, 8.0, 12.0, 16.0)
+    assert v5.one_letter == ("A", "I", "O") and v5.triple_smoothing == 1.0
+    assert v5.express_calibration == ()  # its ride estimates ran low, not high, so none was fit in (Ian, 2026-11-02)
+    assert len(v5.calibration) == 21 and v5.calibration[0] == (0.0, 0.0) and v5.calibration[-1] == (1.0, 0.9963)
+    assert all(a[1] <= b[1] for a, b in zip(v5.calibration, v5.calibration[1:]))
 
 
 def test_v4_is_v3_with_a_gain_table_per_opponent_kind_and_a_bot_solve_curve():
@@ -140,8 +155,9 @@ def test_v3_is_v1_with_the_stealers_gain_and_flat_choices_for_dollars():
     assert all(len(gains) == 20 and bands[0][0] == 0 for _, bands in v3.stealer_gain for _, gains in bands)
 
 
-def test_both_versions_are_pinned_to_the_same_word_data():
+def test_each_version_is_pinned_to_its_word_data():
     assert versions.DATA[1] == versions.DATA[2] == versions.DATA[3] == versions.DATA[4] == "0640bcd6a420"
+    assert versions.DATA[5] == "db6f159f6479"  # the same files plus Wikipedia's pair and triple counts
 
 
 class _Reader:

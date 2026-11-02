@@ -85,6 +85,9 @@ def _knob_file(name: str) -> tuple:
 # and choices where every option wins equally played for dollars.
 # v4 frozen 2026-10-31: v3 plus a stealer's gain for each opponent, mixed from an LLM table and a bot table by how
 # LLM-like that seat has played this game, with a solve curve fit on bot play.
+# v5 frozen 2026-11-02: v4 reading with Wikipedia's pair and triple counts, a cased word list, one-letter words A, I, O,
+# word vectors for unseen pairs and for a whole answer's coherence, a single-word category fit, and a confidence curve;
+# riding the Express, it weighs safe vowels before the solve. Its ride estimates ran low, so no ride correction.
 # A change to any of them is a new version, never an edit here.
 VERSIONS = {
     1: Knobs(),
@@ -95,8 +98,16 @@ VERSIONS = {
         stealer_gain_llm=_knob_file("stealer-gain-llm-v4.json"), stealer_gain_bot=_knob_file("stealer-gain-bot-v4.json"),
         steal_bot=_knob_file("steal-bot-v4.json"),
     ),
+    5: Knobs(
+        stealer_gain=_knob_file("stealer-gain-v3.json"), flat_dollars=True,
+        stealer_gain_llm=_knob_file("stealer-gain-llm-v4.json"), stealer_gain_bot=_knob_file("stealer-gain-bot-v4.json"),
+        steal_bot=_knob_file("steal-bot-v4.json"),
+        cased_lexicon=True, one_letter=("A", "I", "O"), ngrams=True, triple_weight=1.0, vector_pair_weight=8.0,
+        coherence_weight=12.0, single_fit_weight=16.0, calibration=_knob_file("calibration-v5.json"), express_vowels=True,
+    ),
 }
-DATA = {1: "0640bcd6a420", 2: "0640bcd6a420", 3: "0640bcd6a420", 4: "0640bcd6a420"}  # the word data each was frozen with, by fingerprint
+DATA = {1: "0640bcd6a420", 2: "0640bcd6a420", 3: "0640bcd6a420", 4: "0640bcd6a420",
+        5: "db6f159f6479"}  # the word data each was frozen with, by fingerprint; 5 adds Wikipedia's counts
 
 
 def current(config: dict) -> int:

@@ -98,9 +98,26 @@ def test_games_replay_exactly_and_resume(tmp_path, rules, wheel_spec):
 def test_identical_seats_can_play_one_order_per_set(tmp_path, rules, wheel_spec):
     # with three copies of one bot, the six orders of a set replay the same game
     same = [selfplay.Entrant(name) for name in ("a", "b", "c")]
-    path = selfplay.play_games(same, POOL, 2, 7, tmp_path, rules, wheel_spec, KNOBS, reader, one_order=True)
+    path = selfplay.play_games(same, POOL, 2, 7, tmp_path, rules, wheel_spec, KNOBS, reader, orders="one")
     games = [json.loads(line) for line in path.read_text().splitlines()]
     assert [(g["set"], g["permutation"]) for g in games] == [(0, 0), (1, 0)]
+
+
+def test_one_bot_against_two_copies_can_play_the_rotations_only(tmp_path, rules, wheel_spec):
+    # against two copies of one bot, swapping the copies replays a game, so three rotations cover a set
+    entrants = [selfplay.Entrant.parse(t) for t in ("x:eager_solve=0.65", "a", "b")]
+    path = selfplay.play_games(entrants, POOL, 1, 7, tmp_path, rules, wheel_spec, KNOBS, reader, orders="cyclic")
+    games = [json.loads(line) for line in path.read_text().splitlines()]
+    assert len(games) == 3 and sorted(g["seats"].index("x") for g in games) == [0, 1, 2]
+
+
+def test_an_entrant_can_start_from_a_frozen_version():
+    base = versions.knobs(4)
+    assert selfplay.Entrant.parse("v5:version=5").knobs(base) == versions.knobs(5)
+    assert selfplay.Entrant.parse("r:version=5+express_vowels=false").knobs(base) == replace(versions.knobs(5), express_vowels=False)
+    assert selfplay.Entrant.parse("e:express_vowels=true").knobs(base) == replace(base, express_vowels=True)
+    with pytest.raises(ValueError, match="version 9"):
+        selfplay.Entrant.parse("x:version=9").knobs(base)
 
 
 def test_shards_split_the_games(tmp_path, rules, wheel_spec):

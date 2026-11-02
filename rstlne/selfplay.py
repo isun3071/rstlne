@@ -698,7 +698,8 @@ READER_KNOBS = {"samples", "top_answers", "unknown_word", "vocabulary", "slot_ca
 
 @dataclass(frozen=True)
 class Entrant:
-    """A bot variant: a name and knob changes, written name:knob=value+knob=value."""
+    """A bot variant: a name and knob changes, written name:knob=value+knob=value. A change version=N starts
+    from that frozen version's knobs instead of the run's."""
 
     name: str
     changes: tuple[str, ...] = ()
@@ -709,7 +710,14 @@ class Entrant:
         return cls(name, tuple(x for x in rest.split("+") if x))
 
     def knobs(self, base: versions.Knobs) -> versions.Knobs:
-        return override(base, self.changes)
+        changes = [c for c in self.changes if not c.startswith("version=")]
+        for c in self.changes:
+            if c.startswith("version="):
+                number = int(c.partition("=")[2])
+                if number not in versions.VERSIONS:
+                    raise ValueError(f"bot version {number} doesn't exist")
+                base = versions.knobs(number)
+        return override(base, changes)
 
     def __str__(self) -> str:
         return self.name + (":" + "+".join(self.changes) if self.changes else "")
@@ -807,10 +815,11 @@ def _play_in_worker(job) -> dict:
 
 def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, seed: int, out: Path, rules: Rules,
                spec: WheelSpec, base: versions.Knobs, make_reader, shard: tuple[int, int] = (1, 1), workers: int = 1,
-               say=print, heartbeat: float = HEARTBEAT, gains: bool = False, one_order: bool = False) -> Path:
-    """Bot-only games with duplicate scoring: each set's six games share its seed and puzzles, one game per
-    ordering of the three entrants. Writes games-shard{i}of{n}.jsonl and skips games already played. With
-    `one_order`, a set plays only its first ordering, for three identical entrants, whose orderings replay one game."""
+               say=print, heartbeat: float = HEARTBEAT, gains: bool = False, orders: str = "all") -> Path:
+    """Bot-only games with duplicate scoring: each set's games share its seed and puzzles, one game per
+    ordering of the three entrants. Writes games-shard{i}of{n}.jsonl and skips games already played. `orders`
+    "all" plays all six orderings; "cyclic" the three rotations, for one entrant against two identical ones, where
+    swapping the two replays a game; "one" the first only, for three identical entrants, whose orderings all do."""
     from rstlne import tournament
 
     if len(entrants) != 3:
@@ -821,7 +830,10 @@ def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, s
     done = {r["game"] for r in _rows(path)}
     main_hands = tournament.deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
     bonus_hands = tournament.deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
-    games = [g for g in tournament.schedule(sets, seed, "all") if not one_order or g.permutation == 0]
+    if orders == "one":
+        games = [g for g in tournament.schedule(sets, seed, "all") if g.permutation == 0]
+    else:
+        games = tournament.schedule(sets, seed, orders)
     games = shard_of(games, i, n)
     todo = [g for g in games if g.name not in done]
     if done:
@@ -1370,7 +1382,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     tune.add_argument("--grid", choices=sorted(READER_GRIDS), default="v4", help="which knobs to tune")
     games = jobs.add_parser("games", help="bot-only games between bot variants, with duplicate scoring")
     games.add_argument("--entrant", action="append", required=True,
-                       help="three of them: name or name:knob=value+knob=value, like eager:eager_solve=0.65")
+                       help="three of them: name or name:knob=value+knob=value, like eager:eager_solve=0.65 or v5:version=5")
     games.add_argument("--puzzles", required=True, help="a puzzle or batch file")
     games.add_argument("--sets", type=int, required=True, help="each set is 6 games, one per seat ordering")
     games.add_argument("--seed", type=int, required=True)
@@ -1378,8 +1390,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     games.add_argument("--shard", default="1/1", help="i/n: this machine's share of the games")
     games.add_argument("--workers", type=int, default=4, help="processes, one per core")
     games.add_argument("--knob", action="append", default=[], help="name=value, for every entrant's starting knobs")
-    games.add_argument("--one-order", action="store_true",
-                       help="one game per set, for three identical entrants, whose six orders would replay one game")
+    games.add_argument("--orders", choices=("all", "cyclic", "one"), default="all",
+                       help="seat orders per set: all six; the three rotations, for one entrant against two identical "
+                            "ones; or one, for three identical entrants")
     td = jobs.add_parser("tune-decisions", help="test decision knob values against the current bot in bot games")
     td.add_argument("--puzzles", required=True, help="the tuning batch")
     td.add_argument("--out", required=True, help="the folder for each comparison and tune-decisions.json")
@@ -1477,7 +1490,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         except ValueError as err:
             sys.exit(str(err))
         path = play_games(entrants, settings.load_puzzles(Path(args.puzzles)), args.sets, args.seed, Path(args.out),
-                          rules, spec, knobs, _make_reader, shard_spec, args.workers, say=print, one_order=args.one_order)
+                          rules, spec, knobs, _make_reader, shard_spec, args.workers, say=print, orders=args.orders)
         for line in summary_lines(games_summary(path.parent)):
             print(line)
         return
