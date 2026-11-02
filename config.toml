@@ -103,6 +103,20 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 "openai/gpt-6-luna" = [-3.223, 1.680, 1.386, 1.003]
 "anthropic/claude-haiku-5.5" = [-2.817, 1.426, 1.300, 1.012]
 
+[hybrid.trust.v5]
+# Version 5's reader on the same prior-101 boards and saved asks, no new calls (2026-11-02):
+# logs/calibration/trust-20261102-200112.json, and for DeepSeek trust-20261102-200407.json, from its asks
+# on deepinfra/fp8 (1,280 boards; 47 never answered). Rerun on version 4's reader, the same asks give Luna's
+# and Haiku's v1 curves exactly.
+"deepseek/deepseek-v4.1-flash-1017" = [1.064, -1.556, 0.652, 4.273, -1.022]
+"openai/gpt-6-luna" = [0.325, 0.926, -0.016, 5.120, -1.301]
+"anthropic/claude-haiku-5.5" = [0.046, 3.214, 0.211, 6.994, -2.420]
+
+[hybrid.steal.v5]
+"deepseek/deepseek-v4.1-flash-1017" = [-3.964, 1.880, 1.341, 1.395]
+"openai/gpt-6-luna" = [-3.598, 1.991, 1.446, 1.043]
+"anthropic/claude-haiku-5.5" = [-3.106, 1.755, 1.272, 1.037]
+
 [tournament]
 # "all": a set is 6 games, every ordering of the 3 entrants across the seats.
 # "cyclic": a set is 3 games, the seat rotations only.
