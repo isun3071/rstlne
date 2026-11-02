@@ -21,8 +21,9 @@ from rich.table import Table
 from rich.text import Text
 
 from rstlne.engine.puzzle import VOWELS
-from rstlne.engine.rules import public_view
+from rstlne.engine.rules import current_wheel, public_view
 from rstlne.engine.state import GameState, Phase, PublicView
+from rstlne.engine.wheel import Kind
 from rstlne.narrate import describe, money, wedge_text
 from rstlne.players.base import Player
 from rstlne.engine.puzzle import Puzzle
@@ -30,6 +31,22 @@ from rstlne.show import Show, solved_view
 
 TILES_PER_ROW = 14  # the widest row on the show's board
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def missed_money(state: GameState) -> str:
+    """For the board just before a solve: how much of it showed, and what its hidden consonants would have
+    paid on this round's cash wedges, at the least, on average over the wheel's cash thirds, and at the most.
+    The live screen only; the models' table text never carries it."""
+    r = state.round
+    letters = [c for c in r.puzzle.answer if c in ALPHABET]
+    shown = sum(c in r.used for c in letters) / len(letters)
+    hidden = sum(c not in r.used and c not in VOWELS for c in letters)
+    if not hidden:
+        return f"  {shown:.0%} of the board showing; no consonants hidden."
+    cash = [w.value for w in current_wheel(state) if w.kind is Kind.CASH]
+    low, mean, high = hidden * min(cash), round(hidden * sum(cash) / len(cash)), hidden * max(cash)
+    return (f"  {shown:.0%} of the board showing; {hidden} consonant{'s' if hidden != 1 else ''} hidden, missed money "
+            f"{money(low)} min · {money(mean)} avg · {money(high)} max.")
 
 
 def board_rows(board: str) -> list[list[str]]:
@@ -108,6 +125,8 @@ class LiveShow:
     def result(self, state: GameState) -> None:
         result = state.last
         self.moves.append(describe(result))
+        if result.outcome == "solved" and self.state.round:  # self.state is still the board before the solve
+            self.moves.append(missed_money(self.state))
         thoughts = [line for line in map(self.clean, self.players[result.seat].thoughts()) if line]
         if thoughts:
             self.thoughts[result.seat] = thoughts

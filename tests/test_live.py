@@ -283,3 +283,25 @@ def test_a_move_keeps_all_its_thought_lines(rules, wheel_spec, players):
 
 def test_a_seat_gets_five_rows_of_thinking():
     assert LiveShow.thinking_rows == 5
+
+
+def test_a_solve_notes_the_board_showing_and_the_money_its_hidden_consonants_left(rules, wheel_spec, players):
+    from rstlne.engine.rules import current_wheel
+    from rstlne.engine.wheel import Kind
+
+    before, after = solved_round_one(rules, wheel_spec)  # WHEEL OF FORTUNE with its two Fs showing: W H L R T N hidden
+    live = LiveShow(players, pause=0, console=console(), sleep=lambda s: None)
+    live.start(before)
+    live.result(after)
+    live.stop()
+    cash = [w.value for w in current_wheel(before) if w.kind is Kind.CASH]
+    average = round(6 * sum(cash) / len(cash))
+    assert list(live.moves)[-2:] == [
+        "Seat 1 solved it: WHEEL OF FORTUNE! Banked $1,200.",
+        f"  14% of the board showing; 6 consonants hidden, missed money $3,000 min · ${average:,} avg · $15,000 max.",
+    ]
+
+
+def test_a_live_solve_line_never_reaches_the_models():
+    from rstlne import narrate
+    assert "missed money" not in open(narrate.__file__).read()  # the models' table text stays as it was
