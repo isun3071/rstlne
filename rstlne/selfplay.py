@@ -293,8 +293,14 @@ V5_WIDER_GRID = {  # the v5 grid chose its top value for both; start from 8 and 
     "vector_pair_weight": [8.0, 12.0, 16.0, 24.0, 32.0],
     "coherence_weight": [8.0, 12.0, 16.0, 24.0, 32.0],
 }
+V5_REST_GRID = {  # the pair pull again with Wikipedia's counts, the triples' smoothing, and vectors, which multiply the pull's floor
+    "pair_weight": [0.8, 0.9, 0.95, 0.99],
+    "triple_smoothing": [0.25, 1.0, 4.0, 16.0],
+    "vector_pair_weight": [4.0, 8.0, 12.0],
+}
 V5_SINGLE_GRID = {"single_fit_weight": [4.0, 8.0, 12.0, 16.0, 24.0]}  # one-word answers; 4 is fit_weight, so off
-READER_GRIDS = {"v4": READER_GRID, "v5": V5_READER_GRID, "v5-wider": V5_WIDER_GRID, "v5-single": V5_SINGLE_GRID}
+READER_GRIDS = {"v4": READER_GRID, "v5": V5_READER_GRID, "v5-wider": V5_WIDER_GRID, "v5-rest": V5_REST_GRID,
+                "v5-single": V5_SINGLE_GRID}
 _PAIRED = {"phrase_odds": "phrase_odds_other", "name_odds": "name_odds_other"}  # move together, keeping their ratio
 
 

@@ -247,6 +247,7 @@ def test_the_reader_tuner_can_tune_version_5_s_knobs(monkeypatch, tmp_path):
     assert set(selfplay.READER_GRIDS["v5-single"]) == {"single_fit_weight"}
     wider = selfplay.READER_GRIDS["v5-wider"]  # the first v5 tuning stopped at the top of both ranges
     assert set(wider) == {"vector_pair_weight", "coherence_weight"} and all(min(v) == 8.0 < max(v) for v in wider.values())
+    assert set(selfplay.READER_GRIDS["v5-rest"]) == {"pair_weight", "triple_smoothing", "vector_pair_weight"} <= names
     seen = {}
     monkeypatch.setattr(selfplay, "tune_reader", lambda *a, grid=None, **k: seen.update(grid=grid))
     monkeypatch.setattr(selfplay.settings, "load_puzzles", lambda path: PUZZLES)
