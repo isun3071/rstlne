@@ -397,6 +397,7 @@ def measure(
     client: OpenRouter | None = None,
     reader: Reader | None = None,
     knobs: versions.Knobs | None = None,
+    version: int | None = None,
     count: int = 2000,
     seed: int = 7,
     held_out: Sequence[Path] | None = None,
@@ -409,7 +410,9 @@ def measure(
 ) -> dict:
     config = settings.load_config()
     rules, spec = rules_and_spec()
-    knobs = knobs or versions.knobs(versions.current(config))
+    version = version or versions.current(config)
+    knobs = knobs or versions.knobs(version)
+    table = f"v{versions.reads_like(version)}"  # the curves fit this reader, and every version that reads like it
     if client is None:
         from rstlne.cli import clients
         client = clients({"hybrid"}, None, None)[0]
@@ -427,7 +430,8 @@ def measure(
     turns, reads, asks = run(folders, "Fitting")
     checked = run(held_out, "Held out") if held_out else None
     result: dict = {"logs": [str(f) for f in folders], "held_out_logs": [str(f) for f in held_out or []],
-                    "count": count, "seed": seed, "models": {}, "config_lines": {"trust": [], "steal": []}}
+                    "count": count, "seed": seed, "bot_version": version, "reader": table, "models": {},
+                    "config_lines": {"trust": [], "steal": []}}
     for model in models:
         points = points_for(turns, reads, asks[model])
         trust_fit = fit(*trust_rows(points), TRUST_TERMS, resamples, seed)
@@ -444,10 +448,10 @@ def measure(
             result["config_lines"]["trust"].append(f'"{model}" = {trust_fit["config"]}')
             result["config_lines"]["steal"].append(f'"{model}" = {steal_fit["config"]}')
         _print(model, entry, write)
-    write("\nAdd to config.toml:")
-    for table in ("trust", "steal"):
-        write(f"  [hybrid.{table}]")
-        for line in result["config_lines"][table] or ["  (no model had enough data for both curves)"]:
+    write(f"\nAdd to config.toml, for bot version {version} and every version that reads like it:")
+    for kind in ("trust", "steal"):
+        write(f"  [hybrid.{kind}.{table}]")
+        for line in result["config_lines"][kind] or ["  (no model had enough data for both curves)"]:
             write(f"  {line}")
 
     out_dir = Path(out_dir)
@@ -499,8 +503,9 @@ def main(argv: Sequence[str] | None = None) -> dict:
     parser.add_argument("--parallel", type=int, default=8, help="asks in flight at once")
     parser.add_argument("--workers", type=int, default=4, help="processes reading boards")
     parser.add_argument("--resamples", type=int, default=1000, help="for the 95%% intervals")
+    parser.add_argument("--version", type=int, help="the bot version whose reader reads the boards; default config.toml's")
     args = parser.parse_args(argv)
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     return measure(models, [Path(f) for f in args.logs], count=args.count, seed=args.seed,
                    held_out=[Path(f) for f in args.held_out] if args.held_out else None,
-                   parallel=args.parallel, workers=args.workers, resamples=args.resamples)
+                   parallel=args.parallel, workers=args.workers, resamples=args.resamples, version=args.version)

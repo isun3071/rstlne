@@ -31,6 +31,7 @@ from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
 from rstlne.narrate import duration, line_output, money
 from rstlne.players.bot import versions
+from rstlne.players.hybrid import curves_for
 from rstlne.runner import GameLog, play_game
 
 SEATS = 3
@@ -133,8 +134,9 @@ def folder_name(entrants: Sequence[str], seed: int, puzzles_path: Path, config: 
         play["decision"] = config.get("decision")
     if any(_plays_bot(e) for e in entrants):  # only then, so model-only folders keep their names
         play["bot_version"] = config.get("bot", {}).get("version")
-    if any(e.startswith("hybrid:") for e in entrants):
-        play["hybrid"] = config.get("hybrid")
+    hybrids = sorted({e.split(":", 1)[1] for e in entrants if e.startswith("hybrid:")})
+    if hybrids:  # only the curves in use, so measuring another reader's or model's never renames this folder
+        play["hybrid"] = {m: curves_for(config, m) for m in hybrids}
     models = _seated_models(entrants, config)
     if str(puzzles_path) == GENERATE:
         play["puzzlegen"] = config.get("puzzlegen")

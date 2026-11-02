@@ -108,6 +108,9 @@ VERSIONS = {
 }
 DATA = {1: "0640bcd6a420", 2: "0640bcd6a420", 3: "0640bcd6a420", 4: "0640bcd6a420",
         5: "db6f159f6479"}  # the word data each was frozen with, by fingerprint; 5 adds Wikipedia's counts
+# The reader each version reads with, named by the first version to read that way. 2 to 4 changed only how the bot
+# weighs money and timing. A hybrid's trust and steal curves are measured on a reader, so only these versions share them.
+READS_LIKE = {1: 1, 2: 1, 3: 1, 4: 1, 5: 5}
 
 
 def current(config: dict) -> int:
@@ -122,3 +125,10 @@ def current(config: dict) -> int:
 
 def knobs(version: int) -> Knobs:
     return VERSIONS[version]
+
+
+def reads_like(version: int) -> int:
+    """The first version that reads the board as this one does."""
+    if version not in READS_LIKE:
+        raise ValueError(f"bot version {version} doesn't exist. Known versions: {', '.join(map(str, VERSIONS))}")
+    return READS_LIKE[version]

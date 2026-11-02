@@ -122,6 +122,8 @@ def test_the_fits_and_config_lines(logs, tmp_path):
     assert len(model["trust"]["coefficients"]) == 5 and len(model["steal"]["coefficients"]) == 4
     assert result["config_lines"]["trust"] == [f'"model/a" = {model["trust"]["config"]}']
     assert result["config_lines"]["steal"] == [f'"model/a" = {model["steal"]["config"]}']
+    assert (result["bot_version"], result["reader"]) == (4, "v1")  # config.toml's version, and the reader it reads with
+    assert measure(logs, tmp_path, version=5)[0]["reader"] == "v5"
     assert "ci95" in model["trust"] and "readable_effect" in model["steal"]
 
 

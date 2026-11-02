@@ -48,6 +48,13 @@ READ_BOARD = {
 ATTEMPTS = 3  # the first try and 2 reprompts; after that the ask counts as "not solvable"
 
 
+def curves_for(config: dict, model: str) -> tuple[list | None, list | None]:
+    """The model's trust and steal curves in config.toml, measured on the reader of `[bot] version`."""
+    table = f"v{versions.reads_like(versions.current(config))}"
+    hybrid = config.get("hybrid", {})
+    return hybrid.get("trust", {}).get(table, {}).get(model), hybrid.get("steal", {}).get(table, {}).get(model)
+
+
 def logistic(x: float) -> float:
     return 1 / (1 + math.exp(-x))
 

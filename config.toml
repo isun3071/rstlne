@@ -82,8 +82,10 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 [hybrid]
 # Hybrid seats: the bot plays and the model reads the board. Each model needs both curves, measured on
 # real game boards by `uv run python -m rstlne.calibrate trust`; a model without them can't sit in one.
+# Curves are measured on a bot reader, so each table is named by the first version to read that way:
+# v1 serves versions 1 to 4, and v5 version 5. A hybrid uses the table of `[bot] version`'s reader.
 
-[hybrid.trust]
+[hybrid.trust.v1]
 # "<slug>" = [a, b, c, d, g]: trust in the model's fitting answer, on share showing, agreement with the
 # reader, the reader's probability for that answer, and the reader's confidence in its own best answer.
 # Measured 2026-10-30 on 1,480 turns of prior-101 (tuning-101): logs/calibration/trust-20261030-034331.json.
@@ -94,7 +96,7 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 # logs/calibration/trust-20261031-213129.json. It says solvable rarely early and is right 85-100% from 20% shown.
 "anthropic/claude-haiku-5.5" = [-0.433, 4.582, -1.079, 6.918, -1.797]
 
-[hybrid.steal]
+[hybrid.steal.v1]
 # "<slug>" = [a, b, c, d]: an opponent's chance to solve, on share showing, the reader's confidence, and
 # whether the model could read the board.
 "deepseek/deepseek-v4.1-flash-1017" = [-3.505, 1.674, 1.301, 1.217]

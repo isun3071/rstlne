@@ -155,6 +155,23 @@ def test_v3_is_v1_with_the_stealers_gain_and_flat_choices_for_dollars():
     assert all(len(gains) == 20 and bands[0][0] == 0 for _, bands in v3.stealer_gain for _, gains in bands)
 
 
+MONEY_KNOBS = {"win_table", "stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot"}
+
+
+def test_versions_that_read_alike_share_a_reader():
+    """A hybrid's trust curves are measured on a reader, so versions share them only when they read the same way."""
+    from dataclasses import asdict
+    assert {v: versions.reads_like(v) for v in versions.VERSIONS} == {1: 1, 2: 1, 3: 1, 4: 1, 5: 5}
+    for v in versions.VERSIONS:
+        first = versions.reads_like(v)
+        a, b = asdict(versions.knobs(v)), asdict(versions.knobs(first))
+        assert {k for k in a if a[k] != b[k]} <= MONEY_KNOBS and versions.DATA[v] == versions.DATA[first]
+    v4, v5 = asdict(versions.knobs(4)), asdict(versions.knobs(5))
+    assert {k for k in v4 if v4[k] != v5[k]} - MONEY_KNOBS  # version 5 reads differently
+    with pytest.raises(ValueError, match="bot version 99"):
+        versions.reads_like(99)
+
+
 def test_each_version_is_pinned_to_its_word_data():
     assert versions.DATA[1] == versions.DATA[2] == versions.DATA[3] == versions.DATA[4] == "0640bcd6a420"
     assert versions.DATA[5] == "db6f159f6479"  # the same files plus Wikipedia's pair and triple counts

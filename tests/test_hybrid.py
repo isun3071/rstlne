@@ -258,8 +258,9 @@ def test_hybrid_seats_parse_with_their_model():
         cli.parse_seats("hybrid:,bot,bot")
 
 
-def curves(model=MODEL):
-    return {"trust": {model: list(TRUST)}, "steal": {model: list(STEAL)}}
+def curves(model=MODEL, reader="v1"):
+    """Curves in config.toml's form: by the reader they were measured on, then by model."""
+    return {"trust": {reader: {model: list(TRUST)}}, "steal": {reader: {model: list(STEAL)}}}
 
 
 def test_a_hybrid_seat_reads_its_curves_and_provider_from_config(rules, wheel_spec):
@@ -280,6 +281,14 @@ def test_a_model_with_no_trust_curve_cant_sit_in_a_hybrid_seat(rules, wheel_spec
                           router([]), None, "game")
 
 
+def test_a_hybrid_seat_refuses_curves_measured_on_another_versions_reader(rules, wheel_spec):
+    from rstlne import cli, settings
+    config = {**settings.load_config(), "bot": {"version": 5}, "hybrid": curves()}  # curves measured on v1's reader
+    with pytest.raises(ValueError, match=r"bot version 5's reader.*\[hybrid.trust.v5\].*--version 5"):
+        cli.build_players([("hybrid", MODEL), ("bot", None), ("bot", None)], rules, wheel_spec, config,
+                          router([]), None, "game")
+
+
 def test_tournaments_hold_hybrid_seats_to_the_bot_version(tmp_path):
     from rstlne import tournament
     header = {"type": "header", "seats": [{"kind": "hybrid", "version": 0, "model": MODEL}]}
@@ -293,8 +302,12 @@ def test_a_hybrid_tournament_folder_covers_the_bot_version_and_the_curves(tmp_pa
     config = {**settings.load_config(), "hybrid": curves()}
     entrants = [f"hybrid:{MODEL}", "llm:a/one", "llm:b/two"]
     base = tournament.folder_name(entrants, 1, tmp_path / "p.json", config)
-    other = {**config, "hybrid": {"trust": {MODEL: [0, 0, 0, 0, 0]}, "steal": curves()["steal"]}}
+    other = {**config, "hybrid": {"trust": {"v1": {MODEL: [0, 0, 0, 0, 0]}}, "steal": curves()["steal"]}}
     assert tournament.folder_name(entrants, 1, tmp_path / "p.json", other) != base
+    # curves for another reader, or for a model that doesn't sit, leave the folder's name alone
+    more = {"trust": {**curves()["trust"], "v5": {MODEL: [1, 1, 1, 1, 1]}},
+            "steal": {"v1": {**curves()["steal"]["v1"], "other/model": [1, 1, 1, 1]}}}
+    assert tournament.folder_name(entrants, 1, tmp_path / "p.json", {**config, "hybrid": more}) == base
     newer = {**config, "bot": {"version": 2}}
     assert tournament.folder_name(entrants, 1, tmp_path / "p.json", newer) != base
 
