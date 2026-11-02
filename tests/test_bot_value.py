@@ -145,3 +145,41 @@ def test_with_no_answer_the_bot_never_wastes_its_turn_on_a_guess(rules, wheel_sp
     s = situation(rules, wheel_spec, LOST, odds=RISKY, bank=2000)
     assert "solve" not in s.turn_options(("spin", "buy_vowel", "solve"))
     assert s.turn_options(("solve",)).keys() == {"solve"}  # unless solving is the only move
+
+
+# Version 5, E1: vowels while riding the Express
+
+RIDE = ("call_consonant", "buy_vowel", "solve")
+V5_EXPRESS = __import__("dataclasses").replace(versions.knobs(4), express_vowels=True)
+
+
+def riding(rules, spec, b, knobs, bank=4000):
+    v, _ = view_at(rules, spec, round_number=3, bank=bank)
+    return Situation(v, b, Objective(v, rules, spec, knobs), RISKY, rules, spec, knobs)  # v4's gain mix needs some steal
+
+
+ROAD_OR_ROOM = belief([("ROAD", 0.49), ("ROOM", 0.49)], oov=0.02, O=(1.0, 1.5), A=(0.49, 1.0), D=(0.49, 1.0), M=(0.49, 1.0))
+
+
+def test_version_4_solves_a_coin_flip_once_its_safe_consonants_run_out(rules, wheel_spec):
+    assert riding(rules, wheel_spec, ROAD_OR_ROOM, versions.knobs(4)).express_move(RIDE) == ("solve", None)
+
+
+def test_a_safe_vowel_that_tells_two_answers_apart_is_bought_first(rules, wheel_spec):
+    # O is in both, once in ROAD and twice in ROOM: where it lands settles the tie
+    assert riding(rules, wheel_spec, ROAD_OR_ROOM, V5_EXPRESS).express_move(RIDE) == ("buy_vowel", "O")
+
+
+def test_a_vowel_that_might_miss_is_never_bought_on_the_express(rules, wheel_spec):
+    no_safe = belief([("ROAD", 0.49), ("ROOM", 0.49)], oov=0.02, A=(0.49, 1.0), D=(0.49, 1.0), M=(0.49, 1.0))
+    assert riding(rules, wheel_spec, no_safe, V5_EXPRESS).express_move(RIDE) == ("solve", None)  # A would be Bankrupt half the time
+
+
+def test_a_sure_answer_doesn_t_pay_for_a_vowel(rules, wheel_spec):
+    sure = belief([("WHEEL OF FORTUNE", 0.99)], oov=0.01, E=(1.0, 3.0), O=(1.0, 2.0))
+    assert riding(rules, wheel_spec, sure, V5_EXPRESS).express_move(RIDE) == ("solve", None)
+
+
+def test_safe_consonants_still_come_first(rules, wheel_spec):
+    b = belief([("ROAD", 0.49), ("ROOM", 0.49)], oov=0.02, R=(1.0, 1.0), O=(1.0, 1.5), D=(0.49, 1.0), M=(0.49, 1.0))
+    assert riding(rules, wheel_spec, b, V5_EXPRESS).express_move(RIDE) == ("call_consonant", "R")  # $1,000 before $250 of help

@@ -212,6 +212,8 @@ class BotPlayer(Player):
                 kind, letter = s.express_move(legal)
                 if kind == "call_consonant":
                     return CallConsonant(self._pick(s, "Calls", letter))
+                if kind == "buy_vowel":
+                    return BuyVowel(self._pick(s, "Buys", letter))
                 return Solve(guess(belief, view, self._refuted_in(view)))
             case Phase.CALL_CONSONANT:
                 return CallConsonant(self._pick(s, "Calls", s.consonant(view.wedge)[0]))

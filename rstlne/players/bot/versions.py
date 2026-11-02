@@ -64,6 +64,8 @@ class Knobs:
     single_fit_weight: float | None = None
     # From version 5. Whole answers resample by e^(weight x the average cosine between their content words); 0 is off.
     coherence_weight: float = 0.0
+    # From version 5. Riding the Express, once the safe consonants run out, weigh buying a safe vowel against solving.
+    express_vowels: bool = False
 
 
 def _tuples(value):

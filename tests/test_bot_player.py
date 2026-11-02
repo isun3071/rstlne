@@ -203,3 +203,17 @@ def test_a_consonant_call_records_its_top_letters(rules, wheel_spec):
     pick = bot.last_call.raw["letter_pick"]
     assert pick["verb"] == "Calls" and 1 <= len(pick["ranked"]) <= 3
     assert all(letter not in "AEIOU" and 0 <= p <= 1 for letter, p, _ in pick["ranked"])
+
+
+def test_a_vowel_bought_on_the_express_is_one_the_engine_takes(rules, wheel_spec, monkeypatch):
+    from helpers import to_round
+    from rstlne.engine.rules import apply
+    from rstlne.engine.state import BuyVowel, CallConsonant, Choose, Phase
+    from rstlne.players.bot.value import Situation
+    state = apply(apply(spin_to(to_round(start(rules, wheel_spec), 3), 12), CallConsonant("G")), Choose("play"))
+    assert state.phase is Phase.EXPRESS
+    monkeypatch.setattr(Situation, "express_move", lambda self, legal: ("buy_vowel", "E"))
+    bot = BotPlayer(state.seat, rules, wheel_spec, FrequencyReader(), knobs=replace(KNOBS, express_vowels=True))
+    action = bot.decide(public_view(state, state.seat))
+    assert action == BuyVowel("E") and bot.thoughts()[-1].startswith("Buys E")
+    assert apply(state, action).phase is Phase.EXPRESS  # still riding

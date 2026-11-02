@@ -175,11 +175,34 @@ class Situation:
         return (solved * right + bust * (1 - right)) * calls_hit + bust * (1 - calls_hit)
 
     def express_move(self, legal: Sequence[str]) -> tuple[str, str | None]:
-        """While riding: the safe consonant with the most copies, and once none is left, the solve."""
+        """While riding: the safe consonant with the most copies, and once none is left, the solve. From version 5,
+        a safe vowel first when its reveal is worth more than solving now."""
         safe = self.safe_consonants()
         if safe and "call_consonant" in legal:
             return "call_consonant", safe[0]
+        if self.knobs.express_vowels and "buy_vowel" in legal:
+            vowel = self.express_vowel()
+            if vowel is not None:
+                return "buy_vowel", vowel
         return "solve", None
+
+    def express_vowel(self) -> str | None:
+        """The safe vowel worth buying before the Express solve, if any. A miss on the Express is Bankrupt, and so is
+        a wrong solve; a hit leaves the bank $250 lighter and the bot surer of its answer."""
+        cost = self.rules.express_vowel_cost
+        bust = self.lose_wheel(0, self.calibrate(info.after_wrong_solve(self.belief)), False, False)
+        def solve_at(bank: float, c: float) -> Value:
+            return self.goal.win_round(bank, self.wild_held, self.million_held) * c + bust * (1 - c)
+        options = {"solve": solve_at(self.bank, self.c)}
+        for v in self.vowels:
+            stats = self.belief.stats(v)
+            if stats.p_hit < self.knobs.safe_hit or self.bank < cost:
+                continue
+            after = info.after(self.belief, v)
+            miss = self.lose_wheel(0, self.calibrate(after.miss), False, False)
+            options[v] = solve_at(self.bank - cost, self.calibrate(after.hit)) * stats.p_hit + miss * (1 - stats.p_hit)
+        best = self.goal.choose(options)
+        return None if best == "solve" else best
 
     def safe_consonants(self) -> list[str]:
         safe = [c for c in self.consonants if self.belief.stats(c).p_hit >= self.knobs.safe_hit]
