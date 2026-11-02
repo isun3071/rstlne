@@ -8,6 +8,7 @@ puzzles/private.json
 puzzles/generated/
 # real show puzzles: the show's content, never committed
 puzzles/*.csv
+puzzles/aired-*.json
 logs/
  
 # python

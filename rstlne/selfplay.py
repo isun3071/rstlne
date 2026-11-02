@@ -275,7 +275,8 @@ V5_READER_GRID = {  # version 5's whole-answer and unseen-pair knobs; start from
     "vector_pair_weight": [0.0, 2.0, 4.0, 8.0],
     "coherence_weight": [0.0, 2.0, 4.0, 8.0],
 }
-READER_GRIDS = {"v4": READER_GRID, "v5": V5_READER_GRID}
+V5_SINGLE_GRID = {"single_fit_weight": [4.0, 8.0, 12.0, 16.0, 24.0]}  # one-word answers; 4 is fit_weight, so off
+READER_GRIDS = {"v4": READER_GRID, "v5": V5_READER_GRID, "v5-single": V5_SINGLE_GRID}
 _PAIRED = {"phrase_odds": "phrase_odds_other", "name_odds": "name_odds_other"}  # move together, keeping their ratio
 
 
