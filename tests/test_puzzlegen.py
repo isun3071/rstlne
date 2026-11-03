@@ -574,6 +574,19 @@ def test_an_answer_already_with_the_judge_isnt_sent_twice(tmp_path):
     ("THE GOLDEN GATE BRIDGE", "GOLDEN GATE", True),
     ("SEA LIONS SUNBATHING ON THE ROCKS", "ON THE ROCKS", False),  # under half the longer one's words
     ("APPLE PIE CHART", "CHART TOPPER", False),
+    # misses found by hand in grading-505
+    ("WHERE THERE IS A WILL THERE IS A WAY", "WHERE THERE'S A WILL THERE'S A WAY", True),  # contractions spelled out
+    ("THAT IS THE LAST STRAW FOR ME TODAY", "THAT'S THE LAST STRAW", True),
+    ("WATERING THE BACKYARD VEGETABLE GARDEN", "WATERING THE BACKYARD GARDEN", True),  # a word slipped in
+    ("BAKING BREAD FROM SCRATCH TODAY", "BAKING SOURDOUGH BREAD FROM SCRATCH", True),  # most main words shared
+    ("YOU BREAK IT YOU BOUGHT IT", "YOU BREAK IT YOU BUY IT", True),
+    ("FAMILY BOARD GAME NIGHT ON FRIDAYS", "COZY BOARD GAME NIGHT", True),
+    ("NEW YORK CITY SKYLINE", "NEW YORK MINUTE", False),  # two shared words aren't enough
+    ("HOT CHOCOLATE WITH WHIPPED CREAM", "WHIPPED CREAM PIE", False),
+    ("MOTHER'S DAY BRUNCH", "MOTHER IS HOME", False),  # a possessive isn't a contraction
+    ("DON'T BE WISHY-WASHY", "DON'T WORRY BE HAPPY", False),  # only small words shared
+    ("COUNTLESS THINGS TO DO", "PLACES TO GO THINGS TO DO", False),
+    ("I COULDN'T BE HAPPIER", "WE COULDN'T BE HAPPIER", True),  # four of five shared
 ])
 def test_near_repeats(a, b, near):
     assert puzzlegen.near(puzzlegen.NearKey.of(a), puzzlegen.NearKey.of(b)) is near

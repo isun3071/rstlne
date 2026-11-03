@@ -247,31 +247,72 @@ def _stem(word: str) -> str:
     return word[:-1] if len(word) > 3 and word.endswith("S") and not word.endswith("SS") else word
 
 
+_SPELLED = {"CAN'T": "CAN NOT", "WON'T": "WILL NOT", "LET'S": "LET US", "I'M": "I AM"}
+_IS = {"IT", "THAT", "THERE", "WHERE", "WHAT", "HERE", "HE", "SHE", "WHO", "HOW", "WHEN"}  # 'S here is IS, not a possessive
+_ENDINGS = (("N'T", " NOT"), ("'RE", " ARE"), ("'VE", " HAVE"), ("'LL", " WILL"), ("'D", " WOULD"))
+
+
+def _spell_out(word: str) -> str:
+    """A contraction as its two words: THERE'S as THERE IS, DOESN'T as DOES NOT. A possessive stays."""
+    if word in _SPELLED:
+        return _SPELLED[word]
+    if word.endswith("'S") and word[:-2] in _IS:
+        return word[:-2] + " IS"
+    for ending, words in _ENDINGS:
+        if word.endswith(ending) and len(word) > len(ending):
+            return word[:-len(ending)] + words
+    return word
+
+
 @dataclass(frozen=True)
 class NearKey:
-    """An answer's main words, without punctuation, articles, or plurals, in order."""
+    """An answer's main words, contractions spelled out, without punctuation, articles, or plurals, in order."""
 
     words: tuple[str, ...]
 
     @classmethod
     def of(cls, answer: str) -> NearKey:
-        words = (_stem(re.sub(r"[^A-Z]", "", w)) for w in answer.upper().split())
+        spelled = " ".join(_spell_out(w) for w in answer.upper().replace("\u2019", "'").split())
+        words = (_stem(re.sub(r"[^A-Z]", "", w)) for w in spelled.split())
         return cls(tuple(w for w in words if w and w not in _MINOR))
 
 
+# Small words, as NearKey writes them (plurals stripped: THIS is THI), which don't make two answers alike on their own
+_FUNCTION = {"I", "ME", "MY", "WE", "US", "OUR", "YOU", "YOUR", "HE", "HIM", "HI", "SHE", "HER", "IT", "THEY", "THEM",
+             "THEIR", "IS", "ARE", "AM", "WA", "BE", "BEEN", "DO", "DOE", "DID", "NOT", "HAVE", "HA", "HAD", "WILL",
+             "WOULD", "COULD", "SHOULD", "CAN", "TO", "IN", "ON", "AT", "FOR", "WITH", "FROM", "BY", "UP", "OUT", "ALL",
+             "THI", "THAT", "THERE", "WHERE", "WHAT", "IF", "SO", "JUST", "GET", "GO", "GOT"}
+
+
+def _in_order(short: tuple[str, ...], long: tuple[str, ...]) -> bool:
+    rest = iter(long)
+    return all(w in rest for w in short)
+
+
 def near(a: NearKey, b: NearKey) -> bool:
-    """The same main words in any order, or the shorter's words running inside the longer and covering
-    at least half of them: LET SLEEPING DOGS in LET SLEEPING DOGS LIE, but not ON THE ROCKS in
-    SEA LIONS SUNBATHING ON THE ROCKS."""
+    """Near repeats:
+    - the same main words in any order
+    - the shorter's words in the same order inside the longer, covering at least half of it: LET SLEEPING DOGS in
+      LET SLEEPING DOGS LIE, WATERING BACKYARD GARDEN in WATERING BACKYARD VEGETABLE GARDEN, but not ON THE ROCKS in
+      SEA LIONS SUNBATHING ON THE ROCKS
+    - main words shared: at least 3, making three quarters of the shorter's, 2 of them more than small words (BAKING
+      BREAD FROM SCRATCH TODAY and BAKING SOURDOUGH BREAD FROM SCRATCH, but not DON'T BE WISHY-WASHY and DON'T WORRY
+      BE HAPPY); or at least 4, making four fifths of the shorter's (YOU BREAK IT YOU BUY IT and YOU BREAK IT YOU
+      BOUGHT IT)."""
     if not a.words or not b.words:
         return a.words == b.words
     if set(a.words) == set(b.words):
         return True
     short, long = (a, b) if len(a.words) <= len(b.words) else (b, a)
     n = len(short.words)
+    common = Counter(a.words) & Counter(b.words)
+    shared = sum(common.values())
+    content = sum(k for w, k in common.items() if w not in _FUNCTION)
+    if (shared >= 3 and shared >= 0.75 * n and content >= 2) or (shared >= 4 and shared >= 0.8 * n):
+        return True
     if n < 2 or n * 2 < len(long.words):
         return False
-    return any(long.words[i:i + n] == short.words for i in range(len(long.words) - n + 1))
+    return _in_order(short.words, long.words)
 
 
 class NearIndex:
