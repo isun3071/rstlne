@@ -272,7 +272,7 @@ class NearKey:
 
     @classmethod
     def of(cls, answer: str) -> NearKey:
-        spelled = " ".join(_spell_out(w) for w in answer.upper().replace("\u2019", "'").split())
+        spelled = " ".join(_spell_out(w) for w in answer.upper().replace("\u2019", "'").replace("-", " ").split())
         words = (_stem(re.sub(r"[^A-Z]", "", w)) for w in spelled.split())
         return cls(tuple(w for w in words if w and w not in _MINOR))
 

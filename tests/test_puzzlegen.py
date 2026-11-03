@@ -620,6 +620,8 @@ def test_an_answer_already_with_the_judge_isnt_sent_twice(tmp_path):
     ("DON'T BE WISHY-WASHY", "DON'T WORRY BE HAPPY", False),  # only small words shared
     ("COUNTLESS THINGS TO DO", "PLACES TO GO THINGS TO DO", False),
     ("I COULDN'T BE HAPPIER", "WE COULDN'T BE HAPPIER", True),  # four of five shared
+    ("NEIGHBORHOOD CHILI COOK OFF", "ANNUAL CHILI COOK-OFF", True),  # a hyphen joins words that are still words
+    ("SNOW-COVERED MOUNTAIN PASS", "SNOW COVERED MOUNTAIN PASS", True),
 ])
 def test_near_repeats(a, b, near):
     assert puzzlegen.near(puzzlegen.NearKey.of(a), puzzlegen.NearKey.of(b)) is near
