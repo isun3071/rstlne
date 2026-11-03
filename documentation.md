@@ -270,7 +270,10 @@ Version 6 is version 5 with steal odds measured per turn, then a retune of the d
 - **Change 6: retune.** After changes 1 to 5, `tune-decisions` reruns on tuning puzzles (the known-answer threshold, the safe-letter bar, the tie margin, the Wild Card's bonus lift, the assumed bonus solve rate), and `steal_pseudo` with them. A value is adopted only if it beats the current one with its 95% interval clear of zero.
 - **Calibration first.** Before any games count, both curves are checked on turns they weren't fit on: predicted against actual by band, the LLM curve on odd sets of prior-101, the bot curve on the second half of the self-play games.
 - **Hybrids.** A hybrid's steal curve has the same per-decision error. A version 6 hybrid needs per-turn model curves; until they're measured, hybrid seats refuse version 6.
-- **Judging.** grading-505 shaped this version's ideas, so version 6 is judged on a fresh deck, grading-606: prompt version 7, the near-repeat check fixed first, then frozen and never read, played, or studied until the verdict. The success bar is set by Ian and written here before the first verdict run.
+- **Judging.** grading-505 shaped this version's ideas, so version 6 is judged on a fresh deck, grading-606: prompt version 7, the near-repeat check fixed first, then frozen and never read, played, or studied until the verdict. The success bar (Ian, 2026-11-03, set before any verdict run):
+  1. **Self-play, no worse.** Version 6 against two version 5 bots on grading-606, seed 808, `--orders cyclic`, 668 sets (2,004 games): version 6's win rate minus a version 5 seat's, with its 95% interval from resampling sets, must have a low end above −1 point.
+  2. **Better against Sol.** Sol against two version 5 bots and Sol against two version 6 bots on grading-606, the same seed and 60 sets, so every game pairs: Sol's win rate must be lower against version 6. The gap's 95% interval is reported but needn't clear zero, since a steal fix is likely worth a few points, which 360 games can't confirm.
+  Version 6 is adopted only if both hold. Either way, the result is reported beside version 5's.
 
 ### Objective
 
