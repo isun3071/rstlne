@@ -102,6 +102,22 @@ A v5 addendum; the v4 result above stands. 360 games in 60 sets, `logs/tournamen
 - Sets 0–36 cost Sol 13 points against v4, sets 37–59 only 4. Puzzle lengths match across the halves (median 23 letters both), so this reads as noise around the overall −9.
 - **Why Sol still wins.** Each round Sol won was replayed through the bots' reader, on the board Sol solved and from the bots' own logs on their last turn (no API calls). Of Sol's 715 rounds (v4 run: 812): 34% the bot's best answer was wrong on Sol's board (v4: 47%), at a median 39% showing; 30% it was right but unsure (median calibrated 0.61; v4 25%); 28% it would have been sure on that board but Sol had the turn (v4 22%); and 8% it knew the answer, kept spinning for money, and hit Bankrupt (v4 6%). v5 took its rounds from the wrong-answer group (380 to 246). About 1.2 of Sol's 2 rounds a game still come from boards Sol reads and the bot can't, yet; that is recognition, which a word-count reader can approach but not match.
 
+## Sol against two Luna hybrids on v5 (2026-11-02): the hybrids help a little, if at all
+
+A v5 addendum. 360 games in 60 sets, `logs/tournaments/seed707-8e6d80ec`, $8.54 (Sol $5.82, the hybrids $2.72), the same deck, seed, and sets as both lineup 2 runs.
+
+| | Sol vs two Luna hybrids | Each hybrid | Sol vs two v5 bots | Sol vs two v4 bots |
+|---|---|---|---|---|
+| Win rate | **45%** (40–50%) | 27.5% | 48.6% | 58.1% |
+| Rounds won per game | 1.87 | 1.07 | 1.99 | 2.26 |
+| Board showing at the opponents' correct solves | | 59% | 61.5% | 65% |
+| Opponents' bonus won | | 192 / 198 (both) | 172 / 185 | 129 / 151 |
+
+- Game by game, Sol wins 3.6 points less than against plain v5 bots (−9.4 to +2.5) and 13.1 less than against v4 bots (−19.4 to −6.7). Sol leads each hybrid by 16 to 19 points.
+- Of Sol's 673 winning rounds: in 37% Sol solved before either hybrid had a turn, and in 39% Luna couldn't yet read the board on the hybrids' turns. Luna answered wrong in 5%, and was right but trusted too little (around 0.6) in 8%.
+- In the other 11% (73 rounds), the hybrid had Luna's right answer at 90% or more and kept spinning for money; every one of those turns ended in Bankrupt (51), Lose a Turn (14), or a Mystery flipped to Bankrupt (8), and Sol solved. The plain v5 bots did the same in 59 rounds. Milking pays against bots, which rarely steal, but not against Sol. A v6 could milk less against fast LLM opponents; the bot work stopped at v5 (Ian, 2026-11-02).
+- The hybrids are right on 99% of solves but not too cautious: when Luna had the answer, the median trust was 0.97. Sol's lead is mostly reading speed, which Luna doesn't match either.
+
 ## Lineup 3 result (2026-10-31): the hybrid beats two bots, but Sol alone does better
 
 360 games in 60 sets, `logs/tournaments/seed707-ca968604`, $1.93, bot v4, round 3's solver starting round 4.
