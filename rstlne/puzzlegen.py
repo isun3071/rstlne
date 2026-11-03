@@ -851,20 +851,23 @@ def main(argv: Sequence[str] | None = None) -> None:
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     have = load_pool(out) if out.exists() else []  # a rerun tops the file up
-    short_main = max(0, args.main - sum(not p.bonus for p in have))
-    short_bonus = max(0, args.bonus - sum(p.bonus for p in have))
-    if not short_main and not short_bonus:
-        print(f"{out} already holds {args.main} main and {args.bonus} bonus puzzles")
-        return
-    rng = random.Random(f"mix:{args.seed}:{len(have)}")
+    # The first run's plan, category by category; a rerun asks only for what each category still lacks
+    plan_rng = random.Random(f"mix:{args.seed}:0")
     main_mix, bonus_mix = mix(config)
+    plan_main, plan_bonus = split(args.main, main_mix, plan_rng), split(args.bonus, bonus_mix, plan_rng)
+    held = Counter((p.category, p.bonus) for p in have)
+    want_main = [(c, n - held[(c, False)]) for c, n in plan_main if n > held[(c, False)]]
+    want_bonus = [(c, n - held[(c, True)]) for c, n in plan_bonus if n > held[(c, True)]]
+    short_main, short_bonus = sum(n for _, n in want_main), sum(n for _, n in want_bonus)
+    if not short_main and not short_bonus:
+        print(f"{out} already holds its plan: {args.main} main and {args.bonus} bonus puzzles")
+        return
     client = _client()
     print(f"Generating {short_main} main and {short_bonus} bonus puzzles with {s.generator}, judged by {s.judge}; "
           f"a status line every 2 minutes{f', topping up {out}' if have else ''}", flush=True)
     began = time.monotonic()
     result = generate(
-        client, s, split(short_main, main_mix, rng) if short_main else [],
-        split(short_bonus, bonus_mix, rng) if short_bonus else [], args.seed * 1000 + len(have),
+        client, s, want_main, want_bonus, args.seed * 1000 + len(have),
         known_puzzles() + have, say=lambda line: print(line, flush=True),
         on_accept=lambda puzzles, sources: save_pool(out, have + puzzles, s, args.seed, {}, 0.0, final=False,
                                                      sources=sources),
@@ -880,8 +883,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         print(f"  rejected {n}: {reason}")
     for category, answer, reason in result.judged_out:
         print(f"  judged out: {category}: {answer} ({reason})")
-    if total_main < args.main or total_bonus < args.bonus:
-        sys.exit(f"Short of the {args.main} main and {args.bonus} bonus asked for: rerun the same command to top up.")
+    got = Counter((p.category, p.bonus) for p in result.puzzles)
+    if any(got[(c, False)] < n for c, n in want_main) or any(got[(c, True)] < n for c, n in want_bonus):
+        sys.exit(f"Short of the {args.main} main and {args.bonus} bonus planned, category by category: "
+                 "rerun the same command to top up.")
 
 
 if __name__ == "__main__":

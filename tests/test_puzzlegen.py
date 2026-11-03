@@ -486,19 +486,52 @@ def test_every_accepted_puzzle_reaches_the_file_at_once(tmp_path):
 def test_rerunning_the_command_tops_the_file_up(tmp_path, monkeypatch):
     out = tmp_path / "batch.json"
     monkeypatch.setattr(puzzlegen, "SEEN", tmp_path / "seen.txt")
-    first = [Puzzle("Thing", "SPARE TIRE"), Puzzle("Food & Drink", "HOT COCOA", bonus=True)]
+    import random
+    rng = random.Random("mix:7:0")
+    main_mix, bonus_mix = puzzlegen.mix(puzzlegen.project.load_config())
+    (planned, _), (other, _) = puzzlegen.split(2, main_mix, rng)
+    (bonus_category, _), = puzzlegen.split(1, bonus_mix, rng)
+    first = [Puzzle(planned, "SPARE TIRE"), Puzzle(bonus_category, "HOT COCOA", bonus=True)]
     puzzlegen.save_pool(out, first, settings(), seed=7, rejected={}, cost=0.0)
     calls = []
 
     def fake_generate(client, s, main, bonus, seed, known, **options):
         calls.append((main, bonus, [p.answer for p in known]))
-        return puzzlegen.Result(puzzles=[Puzzle("Thing", "KITCHEN SINK")])
+        return puzzlegen.Result(puzzles=[Puzzle(other, "KITCHEN SINK")])
     monkeypatch.setattr(puzzlegen, "generate", fake_generate)
     monkeypatch.setattr(puzzlegen, "_client", lambda: None)
     puzzlegen.main(["--main", "2", "--bonus", "1", "--seed", "7", "--out", str(out)])
     (main, bonus, known), = calls
-    assert sum(n for _, n in main) == 1 and bonus == [] and "SPARE TIRE" in known
+    assert main == [(other, 1)] and bonus == [] and "SPARE TIRE" in known
     assert [p.answer for p in puzzlegen.load_pool(out)] == ["SPARE TIRE", "HOT COCOA", "KITCHEN SINK"]
+
+
+def test_a_top_up_asks_only_for_what_each_category_still_lacks_from_the_first_runs_plan(tmp_path, monkeypatch):
+    import random
+    out = tmp_path / "batch.json"
+    monkeypatch.setattr(puzzlegen, "SEEN", tmp_path / "seen.txt")
+    main_mix, bonus_mix = puzzlegen.mix(puzzlegen.project.load_config())
+    rng = random.Random("mix:7:0")
+    plan = dict(puzzlegen.split(40, main_mix, rng))
+    plan_bonus = dict(puzzlegen.split(10, bonus_mix, rng))
+    over, short = sorted(plan, key=lambda c: -plan[c])[:2]
+    word = lambda i: "".join("ABCDEFGHIJ"[int(d)] for d in str(i))  # noqa: E731
+    have = [Puzzle(over, f"OVER ANSWER {word(i)}") for i in range(plan[over] + 5)]  # a category past its plan
+    have += [Puzzle(short, f"SHORT ANSWER {word(i)}") for i in range(plan[short] - 1)]  # one short of it
+    puzzlegen.save_pool(out, have, settings(), seed=7, rejected={}, cost=0.0)
+    calls = []
+
+    def fake_generate(client, s, main, bonus, seed, known, **options):
+        calls.append((dict(main), dict(bonus)))
+        return puzzlegen.Result()
+    monkeypatch.setattr(puzzlegen, "generate", fake_generate)
+    monkeypatch.setattr(puzzlegen, "_client", lambda: None)
+    with pytest.raises(SystemExit, match="Short"):  # the fake generator adds nothing
+        puzzlegen.main(["--main", "40", "--bonus", "10", "--seed", "7", "--out", str(out)])
+    (main, bonus), = calls
+    assert over not in main and main[short] == 1  # nothing more for a full category, and only the gap for a short one
+    assert all(main[c] == plan[c] for c in main if c != short)  # untouched categories get their whole plan
+    assert bonus == plan_bonus
 
 
 # Request size, hosts, and parallel judging
