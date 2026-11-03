@@ -755,9 +755,11 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
                               _hidden(before.round.puzzle.answer, before.round.used), r.action.kind, r.outcome))
             raw = players[r.seat].last_call.raw if players[r.seat].last_call else {}
             if before.phase.value in _TURN_PHASES and r.action.kind in _TURN_KINDS and "confidence" in (raw or {}):
-                # a chance to solve: the share showing, the deciding bot's confidence, and whether it solved correctly
+                # a chance to solve: the share showing, the deciding bot's confidence, whether it solved correctly,
+                # and the seat and round, so consecutive chances group into turns
                 chances.append([round(_shown(before.round.puzzle.answer, before.round.used), 4),
-                                round(raw["confidence"], 4), int(r.action.kind == "solve" and r.outcome == "solved")])
+                                round(raw["confidence"], 4), int(r.action.kind == "solve" and r.outcome == "solved"),
+                                r.seat, before.round.number])
         seat = stats[r.seat]
         raw = players[r.seat].last_call.raw if players[r.seat].last_call else {}
         values = {round(v, 9) for v in (raw or {}).get("values", {}).values()}
@@ -1269,6 +1271,18 @@ def stealer_gain(logs: Sequence[Path], games: Sequence[Path], out: Path, say=pri
     return table
 
 
+def turns_of(chances: Sequence[Sequence]) -> list[tuple[float, float, int]]:
+    """A game's chances to solve grouped into turns, a seat's run of consecutive chances in one round: each turn's
+    first share showing and confidence, and whether it solved correctly before the run ended."""
+    turns, key = [], None
+    for shown, confidence, solved, seat, round_number in chances:
+        if (seat, round_number) != key:
+            turns.append([shown, confidence, 0])
+            key = (seat, round_number)
+        turns[-1][2] |= int(solved)
+    return [tuple(t) for t in turns]
+
+
 def fit_steal_bot(games: Sequence[Path], resamples: int = 1000) -> dict:
     """Version 4's bot solve curve: steal_prior's logistic form, fit on round-banks games' chances to solve."""
     points = []
@@ -1280,7 +1294,7 @@ def fit_steal_bot(games: Sequence[Path], resamples: int = 1000) -> dict:
         for path in sorted(Path(folder).glob("games-shard*.jsonl")):
             for g in _rows(path):
                 points += [{"shown": s, "confidence": c, "solved": k, "set": f"{folder}:{g.get('set', 0)}"}
-                           for s, c, k in g.get("chances", [])]
+                           for s, c, k, *_ in g.get("chances", [])]
     if not points:
         raise ValueError("no chances to solve in these folders; rerun round-banks with this version's code")
     return {**fit_steal(points, resamples), "points": len(points)}
@@ -1302,14 +1316,15 @@ def v4_fit(logs: Sequence[Path], games: Sequence[Path], out: Path, resamples: in
 
 def round_banks(puzzles_path: Path, sets: int, seed: int, out: Path, rules: Rules, spec: WheelSpec,
                 base: versions.Knobs, make_reader, shard: tuple[int, int] = (1, 1), workers: int = 1,
-                say=print) -> Path:
-    """Bot games on tuning puzzles that record the stealer's gain points, for `stealer-gain`."""
+                say=print, orders: str = "all") -> Path:
+    """Bot games on tuning puzzles that record the stealer's gain points, for `stealer-gain`, and every chance to
+    solve. Three identical bots replay one game in every order, so `orders="one"` plays one game a set."""
     check_fit_puzzles(puzzles_path.name)
     out.mkdir(parents=True, exist_ok=True)
     (out / "round-banks.json").write_text(json.dumps({"puzzles": str(puzzles_path)}))
     entrants = [Entrant(name) for name in ("a", "b", "c")]
     return play_games(entrants, settings.load_puzzles(puzzles_path), sets, seed, out, rules, spec, base, make_reader,
-                      shard, workers, say=say, gains=True)
+                      shard, workers, say=say, gains=True, orders=orders)
 
 
 # Knobs
@@ -1429,6 +1444,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     rb.add_argument("--out", required=True, help="the folder for games-shard*.jsonl and round-banks.json")
     rb.add_argument("--shard", default="1/1", help="i/n: this machine's share of the games")
     rb.add_argument("--workers", type=int, default=4, help="processes, one per core")
+    rb.add_argument("--orders", choices=("all", "one"), default="all",
+                    help="one: a game a set, since three identical bots replay one game in every order")
     v4 = jobs.add_parser("v4-fit", help="version 4's knobs: the stealer's gain by opponent kind, and the bot solve curve")
     v4.add_argument("--logs", nargs="+", required=True, help="tournament folders: LLM opponents")
     v4.add_argument("--games", nargs="+", required=True, help="round-banks folders: bot opponents, with chances to solve")
@@ -1497,7 +1514,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.job == "round-banks":
         try:
             path = round_banks(Path(args.puzzles), args.sets, args.seed, Path(args.out), rules, spec, knobs,
-                               _make_reader, parse_shard(args.shard), args.workers, say=print)
+                               _make_reader, parse_shard(args.shard), args.workers, say=print, orders=args.orders)
         except ValueError as err:
             sys.exit(str(err))
         print(f"{sum(len(g.get('gains', [])) for g in _rows(path))} gain points in {path}")

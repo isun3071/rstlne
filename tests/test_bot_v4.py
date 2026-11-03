@@ -90,8 +90,24 @@ def test_round_banks_games_record_every_chance_to_solve(tmp_path, rules, wheel_s
     puzzles.write_text(json.dumps([{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in POOL]))
     path = selfplay.round_banks(puzzles, 1, 7, tmp_path / "rb", rules, wheel_spec, KNOBS, reader)
     g = json.loads(path.read_text().splitlines()[0])
-    assert g["chances"] and all(len(c) == 3 and 0 <= c[0] <= 1 and 0 <= c[1] <= 1 and c[2] in (0, 1) for c in g["chances"])
+    assert g["chances"] and all(len(c) == 5 and 0 <= c[0] <= 1 and 0 <= c[1] <= 1 and c[2] in (0, 1) for c in g["chances"])
     assert sum(c[2] for c in g["chances"]) == sum(s["right"] for s in g["seat_stats"])  # every correct solve is one
+    assert {c[3] for c in g["chances"]} <= {0, 1, 2} and {c[4] for c in g["chances"]} <= {1, 2, 3, 4}  # seat, round
+
+
+def test_round_banks_can_play_one_order_a_set(tmp_path, rules, wheel_spec):
+    from test_selfplay_games import KNOBS, POOL, reader
+    puzzles = tmp_path / "tuning-test.json"
+    puzzles.write_text(json.dumps([{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in POOL]))
+    path = selfplay.round_banks(puzzles, 2, 7, tmp_path / "rb", rules, wheel_spec, KNOBS, reader, orders="one")
+    assert len(path.read_text().splitlines()) == 2  # three identical bots replay one game in every order
+
+
+def test_chances_group_into_turns():
+    # shown, confidence, solved, seat, round: seat 0's two decisions are one turn, then seat 1's, then seat 0 again
+    chances = [[0.1, 0.2, 0, 0, 1], [0.2, 0.3, 0, 0, 1], [0.3, 0.4, 0, 1, 1], [0.35, 0.5, 0, 0, 1], [0.4, 0.9, 1, 0, 1],
+               [0.0, 0.1, 0, 0, 2]]  # a new round starts a new turn, even for the same seat
+    assert selfplay.turns_of(chances) == [(0.1, 0.2, 0), (0.3, 0.4, 0), (0.35, 0.5, 1), (0.0, 0.1, 0)]
 
 
 def test_the_bot_solve_curve_fits_from_round_banks_chances(tmp_path):
@@ -107,3 +123,12 @@ def test_the_bot_solve_curve_fits_from_round_banks_chances(tmp_path):
     (folder / "games-shard1of1.jsonl").write_text(json.dumps({"set": 0, "chances": rows, "gains": []}) + "\n")
     fit = selfplay.fit_steal_bot([folder], resamples=0)
     assert fit["a"] == pytest.approx(-5, abs=0.5) and fit["c"] == pytest.approx(3, abs=0.5)
+
+
+def test_the_bot_solve_curve_still_reads_chances_with_their_seat_and_round(tmp_path):
+    folder = tmp_path / "rb"
+    folder.mkdir()
+    (folder / "round-banks.json").write_text(json.dumps({"puzzles": "puzzles/generated/tuning-101.json"}))
+    rows = [[0.1 * (k % 10), 0.5, k % 3 == 0, k % 3, 1] for k in range(300)]
+    (folder / "games-shard1of1.jsonl").write_text(json.dumps({"set": 0, "chances": rows, "gains": []}) + "\n")
+    assert selfplay.fit_steal_bot([folder], resamples=0)["points"] == 300
