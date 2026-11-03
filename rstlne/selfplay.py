@@ -42,7 +42,7 @@ from pathlib import Path
 import numpy as np
 
 from rstlne import settings
-from rstlne.engine.puzzle import LETTERS, Puzzle
+from rstlne.engine.puzzle import LETTERS, Puzzle, normalize
 from rstlne.engine.rules import new_game, public_view
 from rstlne.engine.state import Phase, PublicView, Rules
 from rstlne.engine.wheel import WheelSpec
@@ -540,10 +540,11 @@ def collect_turns(folders: Sequence[Path]) -> list[dict]:
     return turns
 
 
-def _confidence(board: tuple[str, str, str]) -> float:
-    answer, category, used = board
+def _confidence(board: tuple) -> float:
+    """The reader's confidence on (answer, category, used letters), or with a fourth item, the answers refuted so far."""
+    answer, category, used, *refuted = board
     view = view_of(Puzzle(category, answer), frozenset(used), _worker["rules"], _worker["spec"])
-    return _worker["reader"].read(view).confidence
+    return _worker["reader"].read(view, frozenset(refuted[0]) if refuted else frozenset()).confidence
 
 
 def confidences(boards: Sequence[tuple[str, str, str]], make_reader, knobs, rules, spec, workers: int = 1,
@@ -1283,6 +1284,128 @@ def turns_of(chances: Sequence[Sequence]) -> list[tuple[float, float, int]]:
     return [tuple(t) for t in turns]
 
 
+def collect_turn_starts(folders: Sequence[Path]) -> list[dict]:
+    """Every main round turn in finished tournament games, a seat's run of consecutive actions: the board at its
+    first decision, with the answers refuted before it, and whether the seat solved correctly before the run ended."""
+    turns = []
+    for folder in folders:
+        for path in sorted(Path(folder).glob("set*.jsonl")):
+            rows = _rows(path)
+            if not rows or rows[-1].get("type") != "summary":
+                continue
+            models = [seat.get("model") or seat.get("kind") for seat in rows[0]["seats"]]
+            set_index = rows[0].get("tournament", {}).get("set", 0)
+            turn, number, refuted = None, None, []
+            for r in rows[1:]:
+                state = r.get("state") or {}
+                if r.get("type") != "action" or not state.get("round") or str(state.get("phase", "")).startswith("bonus"):
+                    continue
+                if state["round"]["number"] != number or (turn and turn["seat"] != r["seat"]):
+                    if turn:
+                        turns.append(turn)
+                    turn = None
+                    if state["round"]["number"] != number:
+                        number, refuted = state["round"]["number"], []
+                action, outcome = r["action"], r["result"]["outcome"]
+                if state.get("phase") in _TURN_PHASES and action["kind"] in _TURN_KINDS:
+                    if turn is None:
+                        puzzle = state["round"]["puzzle"]
+                        used = frozenset(state["round"]["used"])
+                        letters = [c for c in puzzle["answer"] if c in LETTERS]
+                        turn = {"set": f"{folder}:{set_index}", "game": path.stem, "seat": r["seat"],
+                                "model": models[r["seat"]], "answer": puzzle["answer"], "category": puzzle["category"],
+                                "used": "".join(sorted(used)), "refuted": tuple(refuted),
+                                "shown": sum(c in used for c in letters) / len(letters), "solved": 0, "decisions": 0}
+                    turn["decisions"] += 1
+                    turn["solved"] |= int(action["kind"] == "solve" and outcome == "solved")
+                if action["kind"] == "solve" and outcome != "solved" and action.get("answer"):
+                    try:
+                        refuted.append(normalize(action["answer"]))
+                    except ValueError:  # a guess no puzzle can hold refutes nothing the reader samples
+                        pass
+            if turn:
+                turns.append(turn)
+    return turns
+
+
+TURN_BANDS = ((0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5), (0.5, 0.7), (0.7, 1.01))
+
+
+def _turn_q(coefficients: Sequence[float], p: dict) -> float:
+    a, b, c = coefficients
+    return float(1 / (1 + np.exp(-(a + b * p["shown"] + c * p["confidence"]))))
+
+
+def turn_check(coefficients: Sequence[float], points: Sequence[dict]) -> dict:
+    """A curve's predicted chance of a correct solve in each turn against how often it happened, by band."""
+    bands = []
+    for lo, hi in TURN_BANDS:
+        inside = [p for p in points if lo <= _turn_q(coefficients, p) < hi]
+        if inside:
+            bands.append({"predicted": f"{lo:.0%}-{min(hi, 1):.0%}", "turns": len(inside),
+                          "mean_predicted": float(np.mean([_turn_q(coefficients, p) for p in inside])),
+                          "observed": sum(p["solved"] for p in inside) / len(inside)})
+    return {"turns": len(points), "mean_predicted": float(np.mean([_turn_q(coefficients, p) for p in points])),
+            "observed": sum(p["solved"] for p in points) / len(points), "bands": bands}
+
+
+def _fit_turns(points: Sequence[dict], frozen: Sequence[float], resamples: int) -> dict:
+    """The per-turn curve on every turn, a check of one fit on half the sets against the other half, and how the
+    frozen per-decision curve fares when it's read per turn, as versions 1 to 5 read it."""
+    sets = sorted({str(p["set"]) for p in points})
+    fit_on = set(sets[::2])
+    half = fit_steal([p for p in points if str(p["set"]) in fit_on], resamples=0)
+    fit = fit_steal(points, resamples)
+    return {"knob": [round(fit["a"], 3), round(fit["b"], 3), round(fit["c"], 3)], "turns": len(points), "fit": fit,
+            "held_out": turn_check((half["a"], half["b"], half["c"]), [p for p in points if str(p["set"]) not in fit_on]),
+            "frozen_per_decision": turn_check(frozen, points)}
+
+
+def v6_fit(logs: Sequence[Path], games: Sequence[Path], out: Path, rules: Rules, spec: WheelSpec,
+           knobs: versions.Knobs, make_reader, workers: int = 1, resamples: int = 1000, say=print) -> dict:
+    """Version 6's steal curves per turn: an LLM curve from tournament turns on tuning puzzles, read with `knobs`'
+    reader, and a bot curve from round-banks turns, each checked on held-out sets."""
+    for folder in logs:
+        report = Path(folder) / "report.json"
+        if not report.exists():
+            raise ValueError(f"{folder} has no report.json, so it can't say which puzzles it played")
+        check_fit_puzzles(json.loads(report.read_text())["puzzles"])
+    for folder in games:
+        meta = Path(folder) / "round-banks.json"
+        if not meta.exists():
+            raise ValueError(f"{folder} has no round-banks.json; make it with selfplay round-banks")
+        check_fit_puzzles(json.loads(meta.read_text())["puzzles"])
+    turns = collect_turn_starts(logs)
+    boards = sorted({(t["answer"], t["category"], t["used"], t["refuted"]) for t in turns})
+    say(f"{len(turns)} LLM turns; reading {len(boards)} distinct boards with {workers} worker{'s' if workers != 1 else ''}")
+    seen = confidences(boards, make_reader, knobs, rules, spec, workers, say)
+    llm = [{**t, "confidence": seen[(t["answer"], t["category"], t["used"], t["refuted"])]} for t in turns]
+    bot = []
+    for folder in games:
+        for path in sorted(Path(folder).glob("games-shard*.jsonl")):
+            for g in _rows(path):
+                chances = g.get("chances", [])
+                if chances and len(chances[0]) < 5:
+                    raise ValueError(f"{path}'s chances carry no seat or round; rerun round-banks with this version's code")
+                bot += [{"shown": s, "confidence": c, "solved": k, "set": f"{folder}:{g.get('set', 0)}"}
+                        for s, c, k in turns_of(chances)]
+    if not llm or not bot:
+        raise ValueError("the fit needs both LLM turns (--logs) and bot turns (--games)")
+    result = {"llm": _fit_turns(llm, knobs.steal_prior, resamples),
+              "bot": _fit_turns(bot, knobs.steal_bot or knobs.steal_prior, resamples)}
+    out.mkdir(parents=True, exist_ok=True)
+    for kind, name, knob in (("llm", "steal-turn.json", "steal_turn"), ("bot", "steal-turn-bot.json", "steal_turn_bot")):
+        r = result[kind]
+        sources = {"logs": [str(f) for f in logs]} if kind == "llm" else {"games": [str(f) for f in games]}
+        (out / name).write_text(json.dumps({**sources, **r}, indent=2))
+        held, frozen = r["held_out"], r["frozen_per_decision"]
+        say(f"{knob}: a {r['knob'][0]:.2f}, b {r['knob'][1]:.2f}, c {r['knob'][2]:.2f} from {r['turns']} turns. "
+            f"Held out: predicted {held['mean_predicted']:.1%}, solved {held['observed']:.1%}. "
+            f"The per-decision curve read per turn predicted {frozen['mean_predicted']:.1%}")
+    say(f"Saved {out / 'steal-turn.json'} and {out / 'steal-turn-bot.json'}")
+    return result
+
+
 def fit_steal_bot(games: Sequence[Path], resamples: int = 1000) -> dict:
     """Version 4's bot solve curve: steal_prior's logistic form, fit on round-banks games' chances to solve."""
     points = []
@@ -1451,6 +1574,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     v4.add_argument("--games", nargs="+", required=True, help="round-banks folders: bot opponents, with chances to solve")
     v4.add_argument("--out", required=True, help="the folder for the three knob files")
     v4.add_argument("--resamples", type=int, default=1000, help="for the steal curve's 95%% intervals")
+    v6 = jobs.add_parser("v6-fit", help="version 6's steal curves per turn, for LLM and for bot opponents")
+    v6.add_argument("--logs", nargs="+", required=True, help="tournament folders on tuning puzzles: LLM opponents")
+    v6.add_argument("--games", nargs="+", required=True, help="round-banks folders: bot opponents, with chances to solve")
+    v6.add_argument("--out", required=True, help="the folder for steal-turn.json and steal-turn-bot.json")
+    v6.add_argument("--workers", type=int, default=4, help="processes reading boards")
+    v6.add_argument("--resamples", type=int, default=1000, help="for the curves' 95%% intervals")
     sg = jobs.add_parser("stealer-gain", help="fit what an opponent adds to its bank before it solves")
     sg.add_argument("--logs", nargs="*", default=[], help="tournament folders: LLM opponents")
     sg.add_argument("--games", nargs="*", default=[], help="round-banks folders: bot opponents")
@@ -1490,6 +1619,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     rules, spec = settings.load_rules(), settings.load_wheel()
     config = settings.load_config()
     knobs = override(versions.knobs(versions.current(config)), getattr(args, "knob", []))
+    if args.job == "v6-fit":
+        try:
+            v6_fit([Path(f) for f in args.logs], [Path(f) for f in args.games], Path(args.out), rules, spec, knobs,
+                   _make_reader, args.workers, args.resamples, say=print)
+        except ValueError as err:
+            sys.exit(str(err))
+        return
     if args.job == "tune-decisions":
         try:
             grid = grid_for(args.knobs)

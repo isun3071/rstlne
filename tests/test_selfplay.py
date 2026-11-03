@@ -253,3 +253,77 @@ def test_the_reader_tuner_can_tune_version_5_s_knobs(monkeypatch, tmp_path):
     monkeypatch.setattr(selfplay.settings, "load_puzzles", lambda path: PUZZLES)
     selfplay.main(["tune-reader", "--puzzles", "a.json", "--held-out", "b.json", "--out", str(tmp_path), "--grid", "v5"])
     assert seen["grid"] == selfplay.READER_GRIDS["v5"]
+
+
+# Steal odds per turn (version 6)
+
+
+def turn_rows(path, actions, set_index=0, models=("a/one", "b/two", "c/three")):
+    """A finished tournament log from (seat, phase, kind, outcome, used letters, guess) actions on BACK PORCH."""
+    rows = [{"type": "game", "seats": [{"kind": "llm", "model": m} for m in models], "tournament": {"set": set_index}}]
+    for seat, phase, kind, outcome, used, guess in actions:
+        rows.append({"type": "action", "seat": seat, "action": {"kind": kind, **({"answer": guess} if guess else {})},
+                     "result": {"outcome": outcome},
+                     "state": {"phase": phase, "round": {"number": 1, "used": sorted(used),
+                                                        "puzzle": {"category": "Thing", "answer": "BACK PORCH"}}}})
+    rows.append({"type": "summary"})
+    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+
+
+def test_a_turn_starts_at_a_seats_first_decision_and_ends_when_another_seat_acts(tmp_path):
+    turn_rows(tmp_path / "set000-perm0.jsonl", [
+        (0, "turn", "spin", "landed", "", None),
+        (0, "call_consonant", "call_consonant", "correct", "", None),
+        (0, "turn", "spin", "landed", "C", None),  # the same turn goes on
+        (0, "call_consonant", "call_consonant", "missing", "C", None),
+        (1, "turn", "solve", "wrong_solve", "CZ", "BACK PERCH"),
+        (2, "turn", "buy_vowel", "correct", "CZ", None),
+        (2, "turn", "solve", "solved", "ACZ", "BACK PORCH"),
+    ])
+    turns = selfplay.collect_turn_starts([tmp_path])
+    assert [(t["model"], t["used"], t["solved"], t["decisions"]) for t in turns] == [
+        ("a/one", "", 0, 2), ("b/two", "CZ", 0, 1), ("c/three", "CZ", 1, 2)]
+    assert turns[1]["refuted"] == () and turns[2]["refuted"] == ("BACK PERCH",)  # refuted before the turn began
+    assert turns[2]["shown"] == pytest.approx(2 / 9) and turns[0]["set"].endswith(":0")
+
+
+def test_the_per_turn_fit_refuses_grading_logs(tmp_path, rules, wheel_spec):
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    (logs / "report.json").write_text(json.dumps({"puzzles": "puzzles/generated/grading-505.json"}))
+    with pytest.raises(ValueError, match="grading"):
+        selfplay.v6_fit([logs], [], tmp_path / "out", rules, wheel_spec, KNOBS, reader, resamples=0, say=lambda line: None)
+
+
+def test_the_per_turn_fit_writes_an_llm_and_a_bot_curve_each_checked_on_held_out_sets(tmp_path, rules, wheel_spec):
+    rng = random.Random(3)
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    (logs / "report.json").write_text(json.dumps({"puzzles": "puzzles/generated/tuning-101.json"}))
+    for s in range(8):
+        actions = []
+        for used in ("", "C", "CK", "CKR", "CKRP"):
+            actions.append((rng.randrange(3), "turn", "spin", "landed", used, None))
+        actions.append((0, "turn", "solve", "solved", "CKRPH", "BACK PORCH"))
+        turn_rows(logs / f"set00{s}-perm0.jsonl", actions, set_index=s)
+    games = tmp_path / "rb"
+    games.mkdir()
+    (games / "round-banks.json").write_text(json.dumps({"puzzles": "puzzles/generated/tuning-818.json"}))
+    rows = []
+    for s in range(20):
+        chances = []
+        for k in range(30):
+            shown, conf = rng.random(), rng.random()
+            chances.append([shown, conf, int(rng.random() < 1 / (1 + math.exp(-(-2 + 2 * shown + 2 * conf)))), k % 3, 1])
+        rows.append(json.dumps({"set": s, "chances": chances, "gains": []}))
+    (games / "games-shard1of1.jsonl").write_text("\n".join(rows) + "\n")
+    lines = []
+    result = selfplay.v6_fit([logs], [games], tmp_path / "out", rules, wheel_spec, KNOBS, reader, resamples=0,
+                             say=lines.append)
+    for name, kind in (("steal-turn.json", "llm"), ("steal-turn-bot.json", "bot")):
+        saved = json.loads((tmp_path / "out" / name).read_text())
+        assert len(saved["knob"]) == 3 and saved["knob"] == result[kind]["knob"]
+        assert saved["held_out"]["turns"] > 0 and saved["held_out"]["bands"]
+        assert "frozen_per_decision" in saved  # how the current curve, used per turn, fares on the same turns
+    assert result["bot"]["turns"] == 20 * 30  # each chance its own turn here: the seat changes every chance
+    assert any("steal_turn" in line for line in lines)
