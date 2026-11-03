@@ -1,4 +1,5 @@
 import math
+from dataclasses import replace
 
 import pytest
 from bot_fixtures import LOST, SURE, belief, view_at
@@ -115,3 +116,66 @@ def test_opponents_steal_in_sequence_around_the_table():
     assert odds.next == pytest.approx(q_next) and odds.after == pytest.approx(q_after)
     assert odds.total == pytest.approx(q_next + (1 - q_next) * q_after)
     assert odds.seats == (2, 0)
+
+
+# steal odds per turn (version 6)
+
+V6_STEAL = dict(steal_turn=(-1.4, 2.7, 0.9), steal_turn_bot=(-1.4, 3.4, 0.7))
+
+
+def per_turn(me=0):
+    return Steal(me=me, knobs=replace(versions.knobs(5), **V6_STEAL))
+
+
+def test_per_turn_odds_start_halfway_between_the_llm_and_the_bot_curve():
+    steal = per_turn()
+    from rstlne.players.bot.steal import logistic
+    llm, bot = logistic(V6_STEAL["steal_turn"], 0.4, 0.5), logistic(V6_STEAL["steal_turn_bot"], 0.4, 0.5)
+    assert steal.q(1, 0.4, 0.5) == pytest.approx((llm + bot) / 2)  # w starts at 1/2 and no turn has been seen
+
+
+def test_per_turn_odds_count_a_whole_turn_once_however_many_decisions_it_held():
+    steal = per_turn()
+    for share in (0.2, 0.25, 0.3):  # one turn of three decisions by seat 1
+        steal.note(1, share=share, confidence=0.3, solved=False)
+    assert steal.expected[1] == 0  # still under way
+    steal.turn_over()
+    assert steal.expected[1] == pytest.approx(steal.turn_prior(1, 0.2, 0.3))  # counted once, at its first board
+    steal.note(2, share=0.3, confidence=0.4, solved=False)
+    steal.note(2, share=0.35, confidence=0.6, solved=True)
+    steal.turn_over()
+    assert steal.solves == [0.0, 0.0, 1.0]
+
+
+def test_a_new_seat_ends_the_turn_before_it():
+    steal = per_turn()
+    steal.note(1, share=0.2, confidence=0.3, solved=False)
+    steal.note(2, share=0.25, confidence=0.3, solved=False)  # seat 1's turn is over
+    assert steal.expected[1] > 0 and steal.expected[2] == 0
+
+
+def test_seats_that_solve_more_turns_than_expected_get_higher_per_turn_odds():
+    steal = per_turn()
+    start = steal.q(1, 0.5, 0.5)
+    for _ in range(6):
+        steal.note(1, share=0.3, confidence=0.4, solved=True)
+        steal.turn_over()
+        steal.note(2, share=0.3, confidence=0.4, solved=False)
+        steal.turn_over()
+    assert steal.q(1, 0.5, 0.5) > start > steal.q(2, 0.5, 0.5)
+
+
+def test_the_bots_own_turn_chance_reads_the_bot_curve_per_turn_from_version_6():
+    from rstlne.players.bot.steal import logistic
+    assert per_turn().own_turn(0.4, 0.5) == pytest.approx(logistic(V6_STEAL["steal_turn_bot"], 0.4, 0.5))
+    v5 = Steal(me=0, knobs=versions.knobs(5))
+    assert v5.own_turn(0.4, 0.5) == v5.prior(0.4, 0.5)  # versions 1 to 5 read the shared prior
+
+
+def test_without_per_turn_curves_steal_odds_count_every_decision_as_before():
+    steal = Steal(me=0, knobs=versions.knobs(5))
+    steal.note(1, share=0.2, confidence=0.3, solved=False)
+    steal.note(1, share=0.25, confidence=0.3, solved=False)
+    assert steal.expected[1] == pytest.approx(steal.prior(0.2, 0.3) + steal.prior(0.25, 0.3))
+    steal.turn_over()  # nothing under way: no change
+    assert steal.expected[1] == pytest.approx(steal.prior(0.2, 0.3) + steal.prior(0.25, 0.3))

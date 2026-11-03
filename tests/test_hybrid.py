@@ -343,3 +343,9 @@ def test_a_board_asked_before_says_so(rules, wheel_spec):
     player.decide(public_view(start(rules, wheel_spec), 0))
     player.decide(public_view(state, 0))
     assert player.thoughts()[-1] == "deepseek-v4.1-flash-1017 said: not solvable (asked about this board already)"
+
+
+def test_a_hybrid_refuses_per_turn_steal_odds_until_its_model_has_per_turn_curves(rules, wheel_spec):
+    knobs = replace(KNOBS, steal_turn=(-1.4, 2.7, 0.9), steal_turn_bot=(-1.4, 3.4, 0.7))
+    with pytest.raises(ValueError, match="per turn"):
+        HybridPlayer(0, MODEL, router([]), TRUST, STEAL, rules, wheel_spec, WordListReader(WORDS, knobs), knobs=knobs)

@@ -148,6 +148,8 @@ class BotPlayer(Player):
                 and before.phase in (Phase.TURN, Phase.EXPRESS) and result.action.kind in _OPPORTUNITIES):
             belief = self._read(before)
             self.steal.note(result.seat, share_revealed(before.board), belief.confidence, result.outcome == "solved")
+        if before is None or view.round_number != before.round_number or view.turn != result.seat:
+            self.steal.turn_over()  # the wheel moved on, or the round ended: the turn that held it is over
         if result.outcome == "wrong_solve":
             round_number = before.round_number if before is not None else view.round_number
             try:
@@ -259,10 +261,10 @@ class BotPlayer(Player):
             self._record["llm_like"] = {str(seat + 1): round(w, 3) for seat, w in shares.items()}
         goal = Objective(view, self.rules, self.spec, self.knobs, llm_share=shares)
         self._goal = goal
-        prior = self.steal.prior
+        own_turn = self.steal.own_turn
         return Situation(view, belief, goal, odds, self.rules, self.spec, self.knobs,
                          calibrate=calibration.curve(self.knobs.calibration),
-                         turn_chance=lambda c: max(c, prior(share, c)))
+                         turn_chance=lambda c: max(c, own_turn(share, c)))
 
     def _pick(self, s: Situation, verb: str, letter: str) -> str:
         """Record the letter picked and the next best the bot weighed, each with its chance to hit and copies."""

@@ -178,6 +178,9 @@ class HybridPlayer(BotPlayer):
         provider: str | None = None,
     ):
         super().__init__(seat, rules, spec, reader, version, knobs)
+        if self.knobs.steal_turn:
+            raise ValueError("a hybrid's steal curve is per decision; it can't play steal odds per turn until its "
+                             "model's curve is measured per turn")
         self.model = model
         self.client = client
         self.trust = tuple(trust)

@@ -217,3 +217,15 @@ def test_a_vowel_bought_on_the_express_is_one_the_engine_takes(rules, wheel_spec
     action = bot.decide(public_view(state, state.seat))
     assert action == BuyVowel("E") and bot.thoughts()[-1].startswith("Buys E")
     assert apply(state, action).phase is Phase.EXPRESS  # still riding
+
+
+def test_a_per_turn_bot_counts_each_opponent_turn_once(rules, wheel_spec):
+    from rstlne.players.bot import versions
+    knobs = replace(versions.knobs(5), steal_turn=(-1.4, 2.7, 0.9), steal_turn_bot=(-1.4, 3.4, 0.7))
+    players = bots(rules, wheel_spec, knobs=knobs)
+    final = play_game(start(rules, wheel_spec), players)
+    assert final.phase is Phase.GAME_OVER
+    watcher = players[0]
+    assert watcher.steal._turn is None  # every turn it watched was closed
+    assert sum(watcher.steal.solves) >= 1 and watcher.steal.solves[0] == 0
+    assert 0 < watcher.steal.expected[1] < 30 and 0 < watcher.steal.expected[2] < 30

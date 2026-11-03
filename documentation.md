@@ -316,6 +316,7 @@ Version 6 is version 5 with steal odds measured per turn, then a retune of the d
 
 - For each opponent, q is the chance that seat solves correctly on its next turn, as a function of share revealed and the bot's own confidence in the board. A shared prior is fit on LLM tournament play on fresh puzzles, since self-play bots would only predict each other; version 1 uses a = −3.27, b = 2.61, c = 1.92, from 4,303 turns of three chat models. During the game, each seat's estimate updates from what it does: its solve attempts and their results, and the turns where it could have solved and didn't. The bot never uses identities.
 - Opponents act in sequence around the table: p_steal = q_next + (1 − q_next) × q_after, where q_after is the following seat's chance at the board expected after the next seat's turn.
+- From version 6, q is per turn (Version 6): `steal_turn` and `steal_turn_bot` mixed by how LLM-like each seat plays, updated once per opponent turn, and the bot's own turn chance reads `steal_turn_bot`. Versions 1 to 5 keep the per-decision prior.
 
 ### Letters
 

@@ -69,6 +69,11 @@ class Knobs:
     # From version 5. Boarding the Express: (estimated chance the ride ends in a right solve, how often rides did)
     # points, from self-play rides; none means no change
     express_calibration: tuple[tuple[float, float], ...] = ()
+    # From version 6. Steal odds per turn: the chance a seat solves correctly during its whole turn, from the board at its
+    # first decision, in steal_prior's form, fit on LLM turns and on bot turns; an opponent's mixes the two by how
+    # LLM-like it plays, and the bot's own turn chance reads the bot curve. Empty keeps the per-decision prior.
+    steal_turn: tuple[float, ...] = ()
+    steal_turn_bot: tuple[float, ...] = ()
 
 
 def _tuples(value):
