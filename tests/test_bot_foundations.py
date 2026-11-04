@@ -127,6 +127,15 @@ def test_frozen_versions_never_change():
     v5 = {k: v for k, v in asdict(versions.knobs(5)).items() if k not in V6_KNOBS}  # knobs added later, off in 5
     assert hashlib.sha256(json.dumps(v5, sort_keys=True).encode()).hexdigest()[:12] == "b94185438839"
     assert all(getattr(versions.knobs(v), k) == off for v in (1, 2, 3, 4, 5) for k, off in V6_KNOBS.items())
+    assert hashlib.sha256(json.dumps(asdict(versions.knobs(6)), sort_keys=True).encode()).hexdigest()[:12] == "be7b36b1cdb4"
+
+
+def test_v6_is_v5_with_steal_odds_per_turn():
+    v5, v6 = versions.knobs(5), versions.knobs(6)
+    assert v6.steal_turn == (-1.418, 2.736, 0.85)  # LLM turns of prior-101 and prior-trial
+    assert v6.steal_turn_bot == (-1.156, 1.549, 0.652)  # version 5 self-play turns on tuning-818
+    assert replace(v6, steal_turn=(), steal_turn_bot=()) == v5  # the retune kept every decision knob (2026-11-04)
+    assert versions.DATA[6] == versions.DATA[5] and versions.reads_like(6) == 5
 
 
 def test_v5_is_v4_with_the_reading_fixes_its_confidence_curve_and_vowels_on_the_express():
@@ -158,13 +167,14 @@ def test_v3_is_v1_with_the_stealers_gain_and_flat_choices_for_dollars():
     assert all(len(gains) == 20 and bands[0][0] == 0 for _, bands in v3.stealer_gain for _, gains in bands)
 
 
-MONEY_KNOBS = {"win_table", "stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot"}
+MONEY_KNOBS = {"win_table", "stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot",
+               "steal_turn", "steal_turn_bot"}
 
 
 def test_versions_that_read_alike_share_a_reader():
     """A hybrid's trust curves are measured on a reader, so versions share them only when they read the same way."""
     from dataclasses import asdict
-    assert {v: versions.reads_like(v) for v in versions.VERSIONS} == {1: 1, 2: 1, 3: 1, 4: 1, 5: 5}
+    assert {v: versions.reads_like(v) for v in versions.VERSIONS} == {1: 1, 2: 1, 3: 1, 4: 1, 5: 5, 6: 5}
     for v in versions.VERSIONS:
         first = versions.reads_like(v)
         a, b = asdict(versions.knobs(v)), asdict(versions.knobs(first))
@@ -178,6 +188,7 @@ def test_versions_that_read_alike_share_a_reader():
 def test_each_version_is_pinned_to_its_word_data():
     assert versions.DATA[1] == versions.DATA[2] == versions.DATA[3] == versions.DATA[4] == "0640bcd6a420"
     assert versions.DATA[5] == "db6f159f6479"  # the same files plus Wikipedia's pair and triple counts
+    assert versions.DATA[6] == versions.DATA[5]  # version 6 changes no data
 
 
 class _Reader:

@@ -349,3 +349,5 @@ def test_a_hybrid_refuses_per_turn_steal_odds_until_its_model_has_per_turn_curve
     knobs = replace(KNOBS, steal_turn=(-1.4, 2.7, 0.9), steal_turn_bot=(-1.4, 3.4, 0.7))
     with pytest.raises(ValueError, match="per turn"):
         HybridPlayer(0, MODEL, router([]), TRUST, STEAL, rules, wheel_spec, WordListReader(WORDS, knobs), knobs=knobs)
+    with pytest.raises(ValueError, match="per turn"):  # so a hybrid seat can't play version 6
+        HybridPlayer(0, MODEL, router([]), TRUST, STEAL, rules, wheel_spec, WordListReader(WORDS, KNOBS), version=6)

@@ -110,12 +110,22 @@ VERSIONS = {
         cased_lexicon=True, one_letter=("A", "I", "O"), ngrams=True, triple_weight=1.0, vector_pair_weight=8.0,
         coherence_weight=12.0, single_fit_weight=16.0, calibration=_knob_file("calibration-v5.json"), express_vowels=True,
     ),
+    6: Knobs(  # version 5 with steal odds per turn; the retune kept every decision knob
+        stealer_gain=_knob_file("stealer-gain-v3.json"), flat_dollars=True,
+        stealer_gain_llm=_knob_file("stealer-gain-llm-v4.json"), stealer_gain_bot=_knob_file("stealer-gain-bot-v4.json"),
+        steal_bot=_knob_file("steal-bot-v4.json"),
+        cased_lexicon=True, one_letter=("A", "I", "O"), ngrams=True, triple_weight=1.0, vector_pair_weight=8.0,
+        coherence_weight=12.0, single_fit_weight=16.0, calibration=_knob_file("calibration-v5.json"), express_vowels=True,
+        steal_turn=_knob_file("steal-turn-v6.json"), steal_turn_bot=_knob_file("steal-turn-bot-v6.json"),
+    ),
 }
+# The word data each version was frozen with, by fingerprint; 5 adds Wikipedia's counts.
 DATA = {1: "0640bcd6a420", 2: "0640bcd6a420", 3: "0640bcd6a420", 4: "0640bcd6a420",
-        5: "db6f159f6479"}  # the word data each was frozen with, by fingerprint; 5 adds Wikipedia's counts
+        5: "db6f159f6479", 6: "db6f159f6479"}
 # The reader each version reads with, named by the first version to read that way. 2 to 4 changed only how the bot
-# weighs money and timing. A hybrid's trust and steal curves are measured on a reader, so only these versions share them.
-READS_LIKE = {1: 1, 2: 1, 3: 1, 4: 1, 5: 5}
+# weighs money and timing, and 6 only its steal odds. A hybrid's trust and steal curves are measured on a reader,
+# so only these versions share them.
+READS_LIKE = {1: 1, 2: 1, 3: 1, 4: 1, 5: 5, 6: 5}
 
 
 def current(config: dict) -> int:
