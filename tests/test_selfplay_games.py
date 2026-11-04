@@ -179,6 +179,13 @@ def test_decision_tuning_can_be_limited_to_some_knobs():
         selfplay.grid_for("nonsense")
 
 
+def test_decision_tuning_tunes_the_steal_pseudo_count_first():
+    # version 6's retune: the steal odds' pseudo-count goes first, so the other knobs tune on the final steal odds
+    assert list(selfplay.DECISION_GRID)[0] == "steal_pseudo"
+    assert selfplay.DECISION_GRID["steal_pseudo"] == [1.0, 4.0]
+    assert selfplay.grid_for("steal_pseudo") == {"steal_pseudo": [1.0, 4.0]}
+
+
 def test_v1_plays_with_the_steal_curve_measured_from_llm_play():
     # From 4,303 turns of three LLMs on fresh puzzles (logs/selfplay/steal-preview), with the reader's knobs kept
     assert versions.knobs(1).steal_prior == (-3.27, 2.61, 1.92)

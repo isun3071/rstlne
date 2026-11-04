@@ -975,6 +975,7 @@ def summary_lines(summary: dict) -> list[str]:
 # Tuning decisions
 
 DECISION_GRID = {
+    "steal_pseudo": [1.0, 4.0],  # first, so the rest tune on the final steal odds
     "known_answer": [0.9, 0.98],
     "safe_hit": [0.97, 0.995],
     "tie_margin": [0.002, 0.01],
