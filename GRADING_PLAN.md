@@ -48,6 +48,27 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 - **The record:** its partial run (23 games, all won by Sol) was scrubbed at Ian's request.
 - **The replacement:** Claude Haiku 5.5, for Anthropic.
 
+## Reruns on bot v6 and grading-606b (from 2026-11-05)
+
+The paper uses one bot version and one deck, so the grid reruns with bot v6 on grading-606b: four rounds of 100 main puzzles matching aired rounds 1 to 4 in category and length, dealt by round. Seed 707 and 60 sets as before, so the reruns pair set by set with each other (not with the v4 grid, whose deck differs). Hybrid seats use the per-turn steal curves (`[hybrid.steal_turn.v5]`). Lineup 1 isn't rerun: it only picked W (Sol), and has no bot seat. No DeepSeek or Sol hybrid (Ian). The v4 results below stay as the earlier record. Commands are under Commands, with `--puzzles puzzles/generated/grading-606b.json --seed 707`; stats so far for any folder: `uv run python logs/analysis/progress.py logs/tournaments/<folder>` on the server.
+
+| # | Seats | Folder | Status | Result (95%) | Cost |
+|---|---|---|---|---|---|
+| 2 | Sol, bot, bot | `seed707-b511deec` | done | Sol **46.1%** (40–52%), bots 26.9% each; +19.2 points over each (+10 to +28) | $5.83 |
+| 3 | Luna hybrid, bot, bot | `seed707-c18bccd7` | done | hybrid **40.6%** (35–46%), bots 30.6% and 28.9%; +10.0 and +11.7 (+2 to +20) | $1.67 |
+| 3b | Luna, bot, bot | `seed707-4bac0081` | running | | |
+| 3d | Haiku, bot, bot | `seed707-21904e0d` | running | | |
+| 3c | DeepSeek, bot, bot | | to decide | | |
+| 3f | Haiku hybrid, bot, bot | | | | |
+| 6a | bot, Luna, Luna | | | | |
+| 6b | bot, Haiku, Haiku | | | | |
+| d1 | d1-ultra decision seat, bot, bot | | | | |
+| d2 | Luna Decisions seat, bot, bot | | | | |
+
+**Lineup 2 on v6:** Sol won 1.94 rounds a game to the bots' 1.03, solving right 97% of the time at a median 50% of the board showing against their 62%; the bots banked more when they won a round (median $5,175 to $5,275 at the solve, against Sol's $3,350). By seat Sol won 39%, 52%, 47%. Bonus: Sol 166 of 166, the bots 89 of 97 and 90 of 97. For reference only (other bots and decks): Sol won 58% against v4 on grading-505, 49% against v5 on grading-505, and 42% against v5 on unedited grading-606.
+
+**Lineup 3 on v6:** the Luna hybrid won 1.57 rounds a game to the bots' 1.21, 98% of its solves right at a median 60% showing, median bank $4,500 at its solves (bots about $5,000). Bonus 140 of 146. Against v4 bots it won 45%; v6's bots win more rounds, which leaves the hybrid less.
+
 ## Lineup 1 result (2026-10-31): W is Sol
 
 **Rule change after lineup 1:** from 2026-10-31 the solver of round 3 starts round 4 (before, seat 1 always did). Lineup 1 played under the old rule and is not rerun: W is Sol either way, and in 100 self-play sets the change moved no player's win rate by more than a point (`logs/selfplay/v4-check-newstart`). Lineups 2 to 6 play under the new rule. Don't extend lineup 1's folder with more sets, since it would mix the two rules.
