@@ -278,6 +278,7 @@ Version 6 is version 5 with steal odds measured per turn, then a retune of the d
   1. **Self-play, no worse.** Version 6 against two version 5 bots on grading-606, seed 808, `--orders cyclic`, 668 sets (2,004 games): version 6's win rate minus a version 5 seat's, with its 95% interval from resampling sets, must have a low end above −1 point.
   2. **Better against Sol.** Sol against two version 5 bots and Sol against two version 6 bots on grading-606, the same seed and 60 sets, so every game pairs: Sol's win rate must be lower against version 6. The gap's 95% interval is reported but needn't clear zero, since a steal fix is likely worth a few points, which 360 games can't confirm.
   Version 6 is adopted only if both hold. Either way, the result is reported beside version 5's.
+- **Verdict, part 1: passed (2026-11-05).** Version 6 against two version 5 bots on grading-606, seed 808, `--orders cyclic`, 668 sets (2,004 games, 9 hours 48 minutes; `logs/selfplay/v6-verdict` on the server): version 6 won 35.6% against 32.2% for a version 5 seat, a gap of +3.4 points (+0.7 to +5.9, 10,000 resamples of sets), clear of the −1 bar and of zero. The two version 5 seats tied (+0, −2 to +3). As on tuning-818, version 6 won more rounds (1.40 a game against 1.30) at about the same bank per round won ($6,117 against $6,211), with the same Bankrupts (1.17 and 1.15 a game) and its solves 97% right at 63% showing. Part 2, against Sol, is next.
 
 ### Objective
 
