@@ -130,8 +130,9 @@ def test_a_puzzle_may_name_the_round_it_belongs_to():
     for bad in (0, "4", 1.5, True):
         with pytest.raises(ValueError, match="round"):
             Puzzle.from_dict({"category": "Phrase", "answer": "fresh start", "round": bad})
-    for aired in ("R2", "R3*", "R2^", "BR"):  # the archive's notation for the round it aired in: a note, not a tag
-        assert Puzzle.from_dict({"category": "Phrase", "answer": "fresh start", "round": aired}).round is None
+    # the aired archive's mark for the round a puzzle aired in tags it with that round; BR marks a bonus puzzle
+    for aired, tag in (("R2", 2), ("R3*", 3), ("R2^", 2), ("R3*^", 3), ("R5", 5), ("BR", None)):
+        assert Puzzle.from_dict({"category": "Phrase", "answer": "fresh start", "round": aired}).round == tag
 
 
 def test_main_puzzles_group_by_round_only_when_the_deck_is_tagged():

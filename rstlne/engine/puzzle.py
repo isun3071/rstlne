@@ -10,7 +10,7 @@ VOWELS = frozenset("AEIOU")
 CONSONANTS = frozenset("BCDFGHJKLMNPQRSTVWXYZ")
 LETTERS = VOWELS | CONSONANTS
 PUNCTUATION = frozenset("-'&.,!?:;\"")
-_AIRED_ROUND = re.compile(r"R\d+[*^]*|BR")  # the aired archive's round notation
+_AIRED_ROUND = re.compile(r"R(\d+)[*^]*|BR")  # the aired archive's round marks
 _QUOTES = str.maketrans({"’": "'", "‘": "'", "“": '"', "”": '"'})
 
 
@@ -39,8 +39,9 @@ class Puzzle:
     @classmethod
     def from_dict(cls, data: dict) -> Puzzle:
         tag = data.get("round")
-        if isinstance(tag, str) and _AIRED_ROUND.fullmatch(tag):
-            tag = None  # where an aired puzzle aired (R2, R3*, BR), a note kept from the archive, not a deal tag
+        aired = _AIRED_ROUND.fullmatch(tag) if isinstance(tag, str) else None
+        if aired:  # the archive's mark for the round an aired puzzle aired in: R2^ is round 2, BR the bonus round
+            tag = int(aired.group(1)) if aired.group(1) else None
         if tag is not None and (isinstance(tag, bool) or not isinstance(tag, int) or tag < 1):
             raise ValueError(f"a puzzle's round must be a whole number from 1, not {tag!r}")
         return cls(data["category"], normalize(data["answer"]), bool(data.get("bonus", False)), tag)
