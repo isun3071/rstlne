@@ -216,3 +216,35 @@ def test_a_board_that_gets_no_reply_is_skipped_and_asked_again_next_run(logs, tm
     assert unanswered > 0 and any("rerun" in line.lower() for line in lines)
     _, calls = measure(logs, tmp_path)
     assert calls and all("Category: Place" in c["messages"][1]["content"] for c in calls)  # only those boards again
+
+
+# Per turn (version 6 hybrids)
+
+
+def test_turns_for_a_per_turn_fit_are_each_seats_run_of_actions(logs):
+    turns = trust.collect_turns([logs])
+    assert {t.answer for t in turns} == set(PUZZLES)
+    wheel = [t for t in turns if t.answer == "WHEEL OF FORTUNE"]
+    assert wheel[0].shown == 0.0 and wheel[0].refuted == ()
+    assert any(t.refuted == ("WHOOL OF FORTUNE",) for t in wheel)  # refuted answers carry into later turns
+    assert all(t.set for t in turns) and sum(t.solved for t in turns) == len(PUZZLES)  # one correct solve a round
+
+
+@pytest.mark.filterwarnings("ignore:overflow encountered in exp")  # the tiny logs separate perfectly
+def test_a_per_turn_run_fits_the_steal_curve_on_every_turn_and_prints_its_table(logs, tmp_path):
+    result, calls = measure(logs, tmp_path, per_turn=True)
+    model = result["models"]["model/a"]
+    turns = trust.collect_turns([logs])
+    assert model["steal_turn"]["rows"] == len(turns)  # every turn, no sampling
+    assert len(calls) == len({t.board for t in turns})  # one ask per distinct turn-start board
+    assert result["config_lines"]["steal_turn"] == [f'"model/a" = {model["steal_turn"]["config"]}']
+    assert "trust" not in model  # the trust curve is per board and doesn't change
+    assert {"even_fit", "odd_check"} <= set(model["held_out"])
+
+
+@pytest.mark.filterwarnings("ignore:overflow encountered in exp")  # the tiny logs separate perfectly
+def test_a_per_turn_run_reuses_saved_asks(logs, tmp_path):
+    measure(logs, tmp_path)  # a per-decision run first, saving its asks
+    _, calls = measure(logs, tmp_path, per_turn=True)
+    sampled = {t.board for t in trust.sample(trust.collect([logs]), 400, 1)}
+    assert len(calls) == len({t.board for t in trust.collect_turns([logs])} - sampled)

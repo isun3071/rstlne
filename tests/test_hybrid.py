@@ -12,7 +12,7 @@ from rstlne.engine.state import BonusPicks, BonusSolve, Phase, Solve
 from rstlne.players.bot import versions
 from rstlne.players.bot.player import BotPlayer
 from rstlne.players.bot.reader import WordListReader
-from rstlne.players.hybrid import HybridPlayer, HybridSteal
+from rstlne.players.hybrid import HybridPlayer, HybridSteal, curves_for
 from rstlne.runner import GameLog, play_game
 
 KNOBS = replace(versions.knobs(1), samples=120)
@@ -345,9 +345,34 @@ def test_a_board_asked_before_says_so(rules, wheel_spec):
     assert player.thoughts()[-1] == "deepseek-v4.1-flash-1017 said: not solvable (asked about this board already)"
 
 
-def test_a_hybrid_refuses_per_turn_steal_odds_until_its_model_has_per_turn_curves(rules, wheel_spec):
-    knobs = replace(KNOBS, steal_turn=(-1.4, 2.7, 0.9), steal_turn_bot=(-1.4, 3.4, 0.7))
-    with pytest.raises(ValueError, match="per turn"):
-        HybridPlayer(0, MODEL, router([]), TRUST, STEAL, rules, wheel_spec, WordListReader(WORDS, knobs), knobs=knobs)
-    with pytest.raises(ValueError, match="per turn"):  # so a hybrid seat can't play version 6
-        HybridPlayer(0, MODEL, router([]), TRUST, STEAL, rules, wheel_spec, WordListReader(WORDS, KNOBS), version=6)
+def test_a_hybrid_playing_steal_odds_per_turn_uses_its_models_curve_per_turn(rules, wheel_spec):
+    knobs = replace(KNOBS, steal_turn=(-1.4, 2.7, 0.9), steal_turn_bot=(-1.2, 1.5, 0.7))
+    per_turn = (-1.0, 2.0, 0.5, 1.2)  # the model's curve per turn: shown, reader confidence, readable
+    s = HybridPlayer(0, MODEL, router([]), TRUST, per_turn, rules, wheel_spec, WordListReader(WORDS, knobs), knobs=knobs).steal
+    q = lambda readable: 1 / (1 + math.exp(-(-1.0 + 2.0 * 0.4 + 0.5 * 0.3 + 1.2 * readable)))  # noqa: E731
+    bot = 1 / (1 + math.exp(-(-1.2 + 1.5 * 0.4 + 0.7 * 0.3)))
+    assert s.turn_prior(1, 0.4, 0.3) == pytest.approx(q(0))  # no way to tell LLMs from bots without v4's curve: the model's
+    s.readable = 1
+    assert s.turn_prior(1, 0.4, 0.3) == pytest.approx(q(1))
+    assert s.own_turn(0.4, 0.3) == pytest.approx(bot)  # its own turn chance stays the bot curve per turn
+    mixed = replace(knobs, steal_bot=(-12.9, 5.8, 9.3))
+    s = HybridPlayer(0, MODEL, router([]), TRUST, per_turn, rules, wheel_spec, WordListReader(WORDS, mixed), knobs=mixed).steal
+    w = s.llm_share(1)
+    assert s.turn_prior(1, 0.4, 0.3) == pytest.approx(w * q(0) + (1 - w) * bot)  # in place of the LLM curve, nothing else
+
+
+def test_a_version_playing_steal_odds_per_turn_reads_its_models_curve_per_turn():
+    config = {"bot": {"version": 6}, "hybrid": {"trust": {"v5": {MODEL: [1, 2, 3, 4, 5]}}, "steal": {"v5": {MODEL: [1, 1, 1, 1]}},
+                                                "steal_turn": {"v5": {MODEL: [2, 2, 2, 2]}}}}
+    assert curves_for(config, MODEL) == ([1, 2, 3, 4, 5], [2, 2, 2, 2])
+    assert curves_for({**config, "bot": {"version": 5}}, MODEL) == ([1, 2, 3, 4, 5], [1, 1, 1, 1])
+    del config["hybrid"]["steal_turn"]
+    assert curves_for(config, MODEL) == ([1, 2, 3, 4, 5], None)
+
+
+def test_a_hybrid_seat_on_version_6_needs_its_models_curve_per_turn(rules, wheel_spec):
+    from rstlne import cli, settings
+    config = {**settings.load_config(), "bot": {"version": 6}, "hybrid": curves(reader="v5")}  # per decision only
+    with pytest.raises(ValueError, match=r"\[hybrid.steal_turn.v5\].*calibrate trust --per-turn"):
+        cli.build_players([("hybrid", MODEL), ("bot", None), ("bot", None)], rules, wheel_spec, config,
+                          router([]), None, "game")

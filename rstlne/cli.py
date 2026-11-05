@@ -26,7 +26,7 @@ from rstlne.players.base import Player
 from rstlne.players.bot import versions
 from rstlne.players.bot.player import BotPlayer, make_reader
 from rstlne.players.decision import DecisionPlayer
-from rstlne.players.hybrid import HybridPlayer, curves_for
+from rstlne.players.hybrid import HybridPlayer, curves_for, steal_table
 from rstlne.players.human_cli import HumanPlayer
 from rstlne.players.llm import LLMPlayer
 from rstlne.runner import GameLog, play_game
@@ -105,11 +105,12 @@ def build_players(
             version = versions.current(config)
             trust, steal = curves_for(config, model)
             if trust is None or steal is None:
-                table = f"v{versions.reads_like(version)}"
+                table, kind = f"v{versions.reads_like(version)}", steal_table(version)
+                per_turn = " --per-turn" if kind == "steal_turn" else ""
                 raise ValueError(f"{model} has no trust and steal curves for bot version {version}'s reader in "
-                                 f"[hybrid.trust.{table}] and [hybrid.steal.{table}] in config.toml, so it can't sit in a "
-                                 f"hybrid seat. Measure them with: python -m rstlne.calibrate trust --models {model} "
-                                 f"--version {version}")
+                                 f"[hybrid.trust.{table}] and [hybrid.{kind}.{table}] in config.toml, so it can't sit in a "
+                                 f"hybrid seat. Measure them with: python -m rstlne.calibrate trust{per_turn} --models "
+                                 f"{model} --version {version}")
             return HybridPlayer(
                 i, model, client, tuple(trust), tuple(steal), rules, spec, make_reader(versions.knobs(version), version),
                 version=version, temperature=temperature, session_id=session, reasoning_effort=effort_for(model),

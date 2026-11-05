@@ -22,6 +22,7 @@ from rstlne.players.bot.belief import Belief
 from rstlne.players.bot.player import BotPlayer, share_revealed
 from rstlne.players.bot.reader import Reader, board_text
 from rstlne.players.bot.steal import Steal
+from rstlne.players.bot.steal import logistic as steal_logistic
 
 SYSTEM = (
     "You read Wheel of Fortune puzzle boards. Each request shows a board with _ for every hidden letter. "
@@ -48,28 +49,50 @@ READ_BOARD = {
 ATTEMPTS = 3  # the first try and 2 reprompts; after that the ask counts as "not solvable"
 
 
+def steal_table(version: int) -> str:
+    """Where a version's hybrid steal curves live: per decision, or from version 6 per turn."""
+    return "steal_turn" if versions.knobs(version).steal_turn else "steal"
+
+
 def curves_for(config: dict, model: str) -> tuple[list | None, list | None]:
-    """The model's trust and steal curves in config.toml, measured on the reader of `[bot] version`."""
-    table = f"v{versions.reads_like(versions.current(config))}"
+    """The model's trust and steal curves in config.toml, measured on the reader of `[bot] version`; the steal
+    curve per turn when that version plays steal odds per turn."""
+    version = versions.current(config)
+    table = f"v{versions.reads_like(version)}"
     hybrid = config.get("hybrid", {})
-    return hybrid.get("trust", {}).get(table, {}).get(model), hybrid.get("steal", {}).get(table, {}).get(model)
+    return (hybrid.get("trust", {}).get(table, {}).get(model),
+            hybrid.get(steal_table(version), {}).get(table, {}).get(model))
 
 
 def logistic(x: float) -> float:
-    return 1 / (1 + math.exp(-x))
+    if x >= 0:
+        return 1 / (1 + math.exp(-x))
+    z = math.exp(x)  # the same value, without overflowing for a large negative x
+    return z / (1 + z)
 
 
 class HybridSteal(Steal):
-    """The bot's steal odds on the model's own curve, which also knows whether the model can read the board."""
+    """The bot's steal odds on the model's own curve, which also knows whether the model can read the board.
+    The curve is per decision, or from version 6 per turn, where it stands in for the LLM curve per turn."""
 
     def __init__(self, me: int, knobs: versions.Knobs, coefficients: tuple[float, float, float, float]):
         super().__init__(me, knobs)
         self.coefficients = coefficients
         self.readable = 0  # 1 when the latest ask this round got a fitting answer
 
-    def prior(self, share: float, confidence: float) -> float:
+    def _model(self, share: float, confidence: float) -> float:
         a, b, c, d = self.coefficients
         return logistic(a + b * share + c * confidence + d * self.readable)
+
+    def prior(self, share: float, confidence: float) -> float:
+        return super().prior(share, confidence) if self.knobs.steal_turn else self._model(share, confidence)
+
+    def turn_prior(self, seat: int, share: float, confidence: float) -> float:
+        q_model = self._model(share, confidence)
+        w = self.llm_share(seat)
+        if not self.knobs.steal_turn_bot or w is None:
+            return q_model
+        return w * q_model + (1 - w) * steal_logistic(self.knobs.steal_turn_bot, share, confidence)
 
 
 def read_reply(message) -> tuple[bool, str | None]:
@@ -166,7 +189,7 @@ class HybridPlayer(BotPlayer):
         model: str,
         client: OpenRouter,
         trust: tuple[float, float, float, float, float],  # a, b, c, d, g of the model's trust curve
-        steal: tuple[float, float, float, float],  # a, b, c, d of the model's steal curve
+        steal: tuple[float, float, float, float],  # a, b, c, d of the model's steal curve, per turn from version 6
         rules: Rules,
         spec: WheelSpec,
         reader: Reader,
@@ -178,9 +201,6 @@ class HybridPlayer(BotPlayer):
         provider: str | None = None,
     ):
         super().__init__(seat, rules, spec, reader, version, knobs)
-        if self.knobs.steal_turn:
-            raise ValueError("a hybrid's steal curve is per decision; it can't play steal odds per turn until its "
-                             "model's curve is measured per turn")
         self.model = model
         self.client = client
         self.trust = tuple(trust)

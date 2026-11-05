@@ -67,9 +67,10 @@ class Turn:
     used: str  # letters called, sorted
     refuted: tuple[str, ...]  # answers wrong solves had refuted this round by then
     shown: float  # share of letter squares showing
-    solved: int  # 1 if the logged player solved correctly on this turn
+    solved: int  # 1 if the logged player solved correctly on this turn (for a per-turn fit, before the turn ended)
     game: str
     model: str  # who the logged player was
+    set: str = ""  # folder:set index, for a per-turn fit's held-out halves
 
     @property
     def board(self) -> tuple[str, str, str, tuple[str, ...]]:
@@ -112,6 +113,14 @@ def collect(folders: Sequence[Path]) -> list[Turn]:
                     except (KeyError, TypeError, ValueError):
                         pass  # an answer no puzzle could hold refutes nothing the hybrid would say
     return turns
+
+
+def collect_turns(folders: Sequence[Path]) -> list[Turn]:
+    """For a per-turn fit (version 6): every main round turn, a seat's run of consecutive actions, at the board of
+    its first decision, solved if the seat solved correctly before the run ended."""
+    return [Turn(t["answer"], t["category"], t["used"], tuple(sorted(t["refuted"])), t["shown"], int(t["solved"]),
+                 f"{t['set'].rsplit(':', 1)[0]}:{t['game']}", t["model"] or "?", t["set"])
+            for t in selfplay.collect_turn_starts(folders)]
 
 
 def tenth(shown: float) -> int:
@@ -386,6 +395,34 @@ def held_out_check(trust_fit: dict | None, steal_fit: dict | None, points: Seque
     return out
 
 
+def turn_bands(coefficients: Sequence[float], points: Sequence[dict]) -> list[dict]:
+    """A per-turn curve's predicted chance of a correct solve in the turn against how often it happened, by band."""
+    x, y, _ = steal_rows(points)
+    predicted = [predict(coefficients, row) for row in x]
+    out = []
+    for lo, hi in selfplay.TURN_BANDS:
+        inside = [(p, s) for p, s in zip(predicted, y) if lo <= p < hi]
+        if inside:
+            out.append({"band": f"{lo:.0%}-{min(hi, 1):.0%}", "turns": len(inside),
+                        "predicted": mean(p for p, _ in inside), "solved": mean(s for _, s in inside)})
+    return out
+
+
+def per_turn_check(points: Sequence[dict], per_decision: Sequence[float] | None, seed: int) -> dict:
+    """Fit on even sets, check on odd ones: overall and by band, and the per-decision curve read per turn."""
+    parity = lambda p: int(p["set"].rsplit(":", 1)[1]) % 2  # noqa: E731
+    even, odd = [p for p in points if parity(p) == 0], [p for p in points if parity(p) == 1]
+    half = fit(*steal_rows(even), STEAL_TERMS, 0, seed) if even else None
+    out: dict = {"even_fit": half, "odd_check": None, "per_decision": None}
+    if half and odd:
+        x, y, _ = steal_rows(odd)
+        out["odd_check"] = {"turns": len(odd), "predicted": mean(predict(half["coefficients"], row) for row in x),
+                            "solved": float(y.mean()), "bands": turn_bands(half["coefficients"], odd)}
+        if per_decision:
+            out["per_decision"] = {"predicted": mean(predict(per_decision, row) for row in x), "solved": float(y.mean())}
+    return out
+
+
 def _pct(value) -> str:
     return "-" if value is None else f"{value:.0%}"
 
@@ -407,8 +444,13 @@ def measure(
     resamples: int = 1000,
     write: Callable[[str], None] = print,
     heartbeat: float = HEARTBEAT,
+    per_turn: bool = False,
 ) -> dict:
+    """With `per_turn`, the steal curve per turn for version 6 hybrids, on every turn of `folders`, in place of the
+    trust and per-decision steal curves on sampled turns."""
     config = settings.load_config()
+    if per_turn and held_out:
+        raise ValueError("a per-turn run checks itself on held-out sets; --held-out doesn't apply")
     rules, spec = rules_and_spec()
     version = version or versions.current(config)
     knobs = knobs or versions.knobs(version)
@@ -418,7 +460,7 @@ def measure(
         client = clients({"hybrid"}, None, None)[0]
 
     def run(folders: Sequence[Path], label: str) -> tuple[list[Turn], dict, dict]:
-        turns = sample(collect(folders), count, seed)
+        turns = collect_turns(folders) if per_turn else sample(collect(folders), count, seed)
         boards = sorted({t.board for t in turns})
         write(f"{label}: {len(turns)} turns on {len(boards)} distinct boards from {', '.join(str(f) for f in folders)}")
         write(f"Reading {len(boards)} boards with the bot's reader")
@@ -428,6 +470,9 @@ def measure(
         return turns, reads, asks
 
     turns, reads, asks = run(folders, "Fitting")
+    if per_turn:
+        return _measure_per_turn(models, folders, turns, reads, asks, config, version, table, seed, resamples,
+                                 Path(out_dir), write)
     checked = run(held_out, "Held out") if held_out else None
     result: dict = {"logs": [str(f) for f in folders], "held_out_logs": [str(f) for f in held_out or []],
                     "count": count, "seed": seed, "bot_version": version, "reader": table, "models": {},
@@ -460,6 +505,53 @@ def measure(
     path.write_text(json.dumps(result, indent=2))
     write(f"Saved {path}")
     return result
+
+
+def _measure_per_turn(models, folders, turns, reads, asks, config, version, table, seed, resamples, out_dir: Path,
+                      write) -> dict:
+    result: dict = {"logs": [str(f) for f in folders], "per_turn": True, "turns": len(turns), "seed": seed,
+                    "bot_version": version, "reader": table, "models": {}, "config_lines": {"steal_turn": []}}
+    for model in models:
+        points = points_for(turns, reads, asks[model])
+        curve = fit(*steal_rows(points), STEAL_TERMS, resamples, seed)
+        per_decision = config.get("hybrid", {}).get("steal", {}).get(table, {}).get(model)
+        entry = {"steal_turn": curve and {**curve, "readable_effect": steal_effect(curve, points)},
+                 "held_out": per_turn_check(points, per_decision, seed),
+                 "report": report(points, asks[model], len({t.board for t in turns}) - len(asks[model])),
+                 "points": points}
+        result["models"][model] = entry
+        if curve:
+            result["config_lines"]["steal_turn"].append(f'"{model}" = {curve["config"]}')
+        _print_per_turn(model, entry, write)
+    write(f"\nAdd to config.toml, for bot version {version} and every version that reads like it:")
+    write(f"  [hybrid.steal_turn.{table}]")
+    for line in result["config_lines"]["steal_turn"] or ["  (no model had enough data)"]:
+        write(f"  {line}")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"trust-turn-{datetime.now():%Y%m%d-%H%M%S}.json"
+    path.write_text(json.dumps(result, indent=2))
+    write(f"Saved {path}")
+    return result
+
+
+def _print_per_turn(model: str, entry: dict, write: Callable[[str], None]) -> None:
+    write(f"\n{model}")
+    curve, check = entry["steal_turn"], entry["held_out"]
+    if not curve:
+        write("  steal curve per turn: not enough data to fit")
+        return
+    write(f"  steal curve per turn: {curve['config']} from {curve['rows']} turns, {curve['positives']} solved")
+    effect = curve["readable_effect"]
+    write(f"  on a typical turn-start board: {effect['unreadable']:.1%} when the model can't read it, "
+          f"{effect['readable']:.1%} when it can")
+    odd = check["odd_check"]
+    if odd:
+        write(f"  fit on even sets, checked on {odd['turns']} odd-set turns: predicted {odd['predicted']:.1%}, "
+              f"solved {odd['solved']:.1%}")
+        for band in odd["bands"]:
+            write(f"    predicted {band['band']}: {band['turns']} turns, mean {band['predicted']:.0%}, solved {band['solved']:.0%}")
+    if check["per_decision"]:
+        write(f"  the per-decision curve read per turn on those turns predicts {check['per_decision']['predicted']:.1%}")
 
 
 def _print(model: str, entry: dict, write: Callable[[str], None]) -> None:
@@ -504,8 +596,13 @@ def main(argv: Sequence[str] | None = None) -> dict:
     parser.add_argument("--workers", type=int, default=4, help="processes reading boards")
     parser.add_argument("--resamples", type=int, default=1000, help="for the 95%% intervals")
     parser.add_argument("--version", type=int, help="the bot version whose reader reads the boards; default config.toml's")
+    parser.add_argument("--per-turn", action="store_true",
+                        help="the steal curve per turn, for version 6 hybrids, on every turn of the logs")
     args = parser.parse_args(argv)
+    if args.per_turn and args.held_out:
+        parser.error("--per-turn checks itself on held-out sets; drop --held-out")
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     return measure(models, [Path(f) for f in args.logs], count=args.count, seed=args.seed,
                    held_out=[Path(f) for f in args.held_out] if args.held_out else None,
-                   parallel=args.parallel, workers=args.workers, resamples=args.resamples, version=args.version)
+                   parallel=args.parallel, workers=args.workers, resamples=args.resamples, version=args.version,
+                   per_turn=args.per_turn)
