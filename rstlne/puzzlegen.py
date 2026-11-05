@@ -752,6 +752,7 @@ def _sources(data: dict) -> dict[str, str]:
 
 def _row(p: Puzzle, sources: dict[str, str]) -> dict:
     return {"category": p.category, "answer": p.answer, "bonus": p.bonus,
+            **({"round": p.round} if p.round is not None else {}),
             **({"source": sources[p.answer]} if p.answer in sources else {})}
 
 

@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 VOWELS = frozenset("AEIOU")
 CONSONANTS = frozenset("BCDFGHJKLMNPQRSTVWXYZ")
 LETTERS = VOWELS | CONSONANTS
 PUNCTUATION = frozenset("-'&.,!?:;\"")
+_AIRED_ROUND = re.compile(r"R\d+[*^]*|BR")  # the aired archive's round notation
 _QUOTES = str.maketrans({"’": "'", "‘": "'", "“": '"', "”": '"'})
 
 
@@ -31,10 +34,32 @@ class Puzzle:
     category: str
     answer: str  # normalized
     bonus: bool = False
+    round: int | None = None  # the main round a deck reserves it for; None deals it to any round
 
     @classmethod
     def from_dict(cls, data: dict) -> Puzzle:
-        return cls(data["category"], normalize(data["answer"]), bool(data.get("bonus", False)))
+        tag = data.get("round")
+        if isinstance(tag, str) and _AIRED_ROUND.fullmatch(tag):
+            tag = None  # where an aired puzzle aired (R2, R3*, BR), a note kept from the archive, not a deal tag
+        if tag is not None and (isinstance(tag, bool) or not isinstance(tag, int) or tag < 1):
+            raise ValueError(f"a puzzle's round must be a whole number from 1, not {tag!r}")
+        return cls(data["category"], normalize(data["answer"]), bool(data.get("bonus", False)), tag)
+
+
+def round_pools(main: Sequence[Puzzle], rounds: int) -> list[list[Puzzle]] | None:
+    """A deck's main puzzles grouped by round tag, for rounds 1 to `rounds`; None when none is tagged.
+    A deck tags all its main puzzles or none, and every round played needs at least one."""
+    tagged = [p for p in main if p.round is not None]
+    if not tagged:
+        return None
+    if len(tagged) < len(main):
+        raise ValueError(f"{len(tagged)} main puzzles have a round tag and {len(main) - len(tagged)} don't: "
+                         "a deck tags all or none")
+    pools = [[p for p in main if p.round == r] for r in range(1, rounds + 1)]
+    empty = [r for r, pool in enumerate(pools, 1) if not pool]
+    if empty:
+        raise ValueError(f"the deck tags no puzzle for round {', '.join(map(str, empty))}, and a game plays {rounds}")
+    return pools
 
 
 def board(answer: str, revealed: frozenset[str]) -> str:

@@ -807,3 +807,10 @@ def test_the_request_option_runs_the_file_records_it_and_tops_up_by_range(tmp_pa
     assert len(calls) == 1
     with pytest.raises(SystemExit):
         puzzlegen.main(["--request", str(request), "--main", "40", "--seed", "7", "--out", str(out)])
+
+
+def test_a_batch_keeps_its_round_tags_when_saved_again(tmp_path):
+    out, deck = tmp_path / "deck.json", [Puzzle("Thing", "SPARE TIRE", round=4), Puzzle("Thing", "HOT COCOA", bonus=True)]
+    puzzlegen.save_pool(out, deck, settings(), seed=1, rejected={}, cost=0.0)
+    assert puzzlegen.load_pool(out) == deck
+    assert "round" not in json.loads(out.read_text())["puzzles"][1]  # untagged puzzles stay as they were

@@ -23,7 +23,7 @@ from pathlib import Path
 from rstlne import puzzlegen, settings
 from rstlne.cli import build_players, clients, parse_seats
 from rstlne.engine.bonus import before_bonus
-from rstlne.engine.puzzle import Puzzle
+from rstlne.engine.puzzle import Puzzle, round_pools
 from rstlne.engine.rules import new_game
 from rstlne.engine.state import Rules
 from rstlne.engine.wheel import WheelSpec
@@ -98,6 +98,16 @@ def deal(pool: Sequence[Puzzle], per_set: int, sets: int, seed: int, label: str)
             hand.append(pile.pop(i))
         hands.append(hand)
     return hands
+
+
+def deal_main(main: Sequence[Puzzle], rounds: int, sets: int, seed: int) -> list[list[Puzzle]]:
+    """Each set's main puzzles, round 1 first. A deck tagged by round deals round k from its round k puzzles,
+    each round its own pile; an untagged deck deals from one pile, as before tags existed."""
+    pools = round_pools(main, rounds)
+    if pools is None:
+        return deal(main, rounds, sets, seed, "main")
+    piles = [deal(pool, 1, sets, seed, f"main round {r}") for r, pool in enumerate(pools, 1)]
+    return [[pile[s][0] for pile in piles] for s in range(sets)]
 
 
 def split_wins(totals: Sequence[int]) -> list[float]:
@@ -199,7 +209,7 @@ def run_tournament(
     else:
         pool = settings.load_puzzles(puzzles_path)
         generated_by = settings.puzzle_makers(puzzles_path)
-    main_hands = deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
+    main_hands = deal_main([p for p in pool if not p.bonus], rules.main_rounds, sets, seed)
     bonus_hands = deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
     processes = bool(kinds & {"bot", "hybrid"}) and client is None and decisions is None  # the bot computes, so it needs its own cores
     client, decisions = clients(kinds, client, decisions)

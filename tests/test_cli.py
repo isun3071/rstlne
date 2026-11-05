@@ -120,3 +120,13 @@ def test_one_model_can_get_its_own_reasoning_effort(rules, wheel_spec):
     with pytest.raises(ValueError, match="effort"):
         cli.build_players(seats, rules, wheel_spec, {**config, "llm": {**config["llm"], "effort": {"a/one": "lots"}}},
                           router([]), None, "g")
+
+
+def test_a_deck_tagged_by_round_gives_each_round_one_of_its_own():
+    from rstlne.engine.puzzle import Puzzle
+    words = ("ONE", "TWO", "THREE", "FOUR")
+    tagged = [Puzzle("Thing", f"ROUND {words[r - 1]} THING {c}", round=r) for r in (1, 2, 3, 4) for c in "ABC"]
+    bonus = Puzzle("Thing", "FUZZY SOCKS", bonus=True)
+    picks = [cli.pick_puzzles(tagged + [bonus], 4, seed=s)[0] for s in range(10)]
+    assert all([p.round for p in main] == [1, 2, 3, 4] for main in picks)
+    assert len({main[0] for main in picks}) > 1  # still a seeded draw within each round

@@ -831,7 +831,7 @@ def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, s
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"games-shard{i}of{n}.jsonl"
     done = {r["game"] for r in _rows(path)}
-    main_hands = tournament.deal([p for p in pool if not p.bonus], rules.main_rounds, sets, seed, "main")
+    main_hands = tournament.deal_main([p for p in pool if not p.bonus], rules.main_rounds, sets, seed)
     bonus_hands = tournament.deal([p for p in pool if p.bonus], 1, sets, seed, "bonus")
     if orders == "one":
         games = [g for g in tournament.schedule(sets, seed, "all") if g.permutation == 0]

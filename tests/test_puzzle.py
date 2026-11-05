@@ -119,3 +119,32 @@ def test_fits_shown_checks_punctuation():
 def test_pattern_is_compact_with_word_lengths():
     assert pattern("A FULL TANK OF GAS", frozenset("TAN")) == "A ____ TAN_ __ _A_ (word lengths 1, 4, 4, 2, 3)"
     assert pattern("DON'T STOP", frozenset("T")) == "___'T _T__ (word lengths 5, 4)"
+
+
+# Round tags (grading-606b)
+
+
+def test_a_puzzle_may_name_the_round_it_belongs_to():
+    tagged = Puzzle.from_dict({"category": "Phrase", "answer": "fresh start", "round": 4})
+    assert tagged.round == 4 and Puzzle.from_dict({"category": "Phrase", "answer": "fresh start"}).round is None
+    for bad in (0, "4", 1.5, True):
+        with pytest.raises(ValueError, match="round"):
+            Puzzle.from_dict({"category": "Phrase", "answer": "fresh start", "round": bad})
+    for aired in ("R2", "R3*", "R2^", "BR"):  # the archive's notation for the round it aired in: a note, not a tag
+        assert Puzzle.from_dict({"category": "Phrase", "answer": "fresh start", "round": aired}).round is None
+
+
+def test_main_puzzles_group_by_round_only_when_the_deck_is_tagged():
+    from rstlne.engine.puzzle import round_pools
+    words = ("ONE", "TWO", "THREE", "FOUR", "FIVE")
+    untagged = [Puzzle("Thing", f"THING {w}") for w in words[:4]]
+    assert round_pools(untagged, 4) is None
+    tagged = [Puzzle("Thing", f"THING {w}", round=r) for w, r in zip(words, (1, 2, 3, 4, 4))]
+    pools = round_pools(tagged, 4)
+    assert [[p.answer for p in pool] for pool in pools] == [["THING ONE"], ["THING TWO"], ["THING THREE"],
+                                                             ["THING FOUR", "THING FIVE"]]
+    with pytest.raises(ValueError, match="all or none"):
+        round_pools(tagged + untagged[:1], 4)
+    with pytest.raises(ValueError, match="round 4"):
+        round_pools(tagged[:3], 4)
+    assert len(round_pools(tagged, 3)) == 3  # a shorter game leaves later rounds' puzzles unused

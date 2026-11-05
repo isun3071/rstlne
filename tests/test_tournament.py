@@ -363,3 +363,15 @@ def test_the_finish_estimate_scales_elapsed_time_by_games_left():
     from rstlne.tournament import finish_estimate
     assert finish_estimate(elapsed=600, done=3, total=6) == 600
     assert finish_estimate(elapsed=600, done=0, total=6) is None
+
+
+def test_a_deck_tagged_by_round_deals_each_round_from_its_own_puzzles():
+    from rstlne.tournament import deal_main
+    words = ("ONE", "TWO", "THREE", "FOUR")
+    pool = [Puzzle("Thing", f"ROUND {words[r - 1]} THING {c}", round=r) for r in (1, 2, 3, 4) for c in "ABC"]
+    hands = deal_main(pool, 4, sets=5, seed=1)
+    assert all([p.round for p in hand] == [1, 2, 3, 4] for hand in hands)  # round k's puzzle is a round k puzzle
+    assert len({hand[3] for hand in hands[:3]}) == 3  # each round deals without replacement until its pile runs out
+    assert deal_main(pool, 4, sets=3, seed=1) == hands[:3]
+    untagged = puzzles(10)
+    assert deal_main(untagged, 4, sets=5, seed=1) == deal(untagged, per_set=4, sets=5, seed=1, label="main")  # as before

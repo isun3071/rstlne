@@ -358,3 +358,11 @@ def test_the_ride_fit_checks_estimates_against_rides_and_fits_a_correction(tmp_p
 def test_ride_corrections_parse_as_points():
     knobs = selfplay.override(versions.knobs(4), ["express_calibration=0:0,0.5:0.3,1:0.8"])
     assert knobs.express_calibration == ((0.0, 0.0), (0.5, 0.3), (1.0, 0.8))
+
+
+def test_self_play_deals_by_round_tag_like_tournaments(tmp_path, rules, wheel_spec, monkeypatch):
+    from rstlne import tournament
+    calls, real = [], tournament.deal_main
+    monkeypatch.setattr(tournament, "deal_main", lambda *a, **k: calls.append(a) or real(*a, **k))
+    play(tmp_path, rules, wheel_spec)
+    assert len(calls) == 1 and calls[0][1] == rules.main_rounds

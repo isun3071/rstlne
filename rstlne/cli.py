@@ -16,7 +16,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from rstlne import settings
-from rstlne.engine.puzzle import Puzzle
+from rstlne.engine.puzzle import Puzzle, round_pools
 from rstlne.engine.rules import new_game
 from rstlne.engine.state import GameState
 from rstlne.live import LiveShow
@@ -135,13 +135,16 @@ def build_players(
 
 
 def pick_puzzles(puzzles: Sequence[Puzzle], rounds: int, seed: int) -> tuple[list[Puzzle], Puzzle]:
-    """A seeded draw of main round puzzles, with no repeats, and one bonus puzzle."""
+    """A seeded draw of main round puzzles, with no repeats, and one bonus puzzle. A deck tagged by round
+    gives each round one of its own puzzles."""
     rng = random.Random(f"puzzles:{seed}")
     main = [p for p in puzzles if not p.bonus]
     bonus = [p for p in puzzles if p.bonus]
     if len(main) < rounds or not bonus:
         raise ValueError(f"need {rounds} main puzzles and a bonus puzzle, got {len(main)} and {len(bonus)}")
-    return rng.sample(main, rounds), rng.choice(bonus)
+    pools = round_pools(main, rounds)
+    picks = rng.sample(main, rounds) if pools is None else [rng.choice(pool) for pool in pools]
+    return picks, rng.choice(bonus)
 
 
 def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
