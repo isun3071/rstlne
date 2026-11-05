@@ -92,7 +92,8 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 # Hybrid seats: the bot plays and the model reads the board. Each model needs both curves, measured on
 # real game boards by `uv run python -m rstlne.calibrate trust`; a model without them can't sit in one.
 # Curves are measured on a bot reader, so each table is named by the first version to read that way:
-# v1 serves versions 1 to 4, and v5 version 5. A hybrid uses the table of `[bot] version`'s reader.
+# v1 serves versions 1 to 4, and v5 versions 5 and 6. A hybrid uses the table of `[bot] version`'s reader.
+# Version 6 plays steal odds per turn, so its hybrids use [hybrid.steal_turn.v5] in place of [hybrid.steal.v5].
 
 [hybrid.trust.v1]
 # "<slug>" = [a, b, c, d, g]: trust in the model's fitting answer, on share showing, agreement with the
@@ -125,6 +126,15 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 "deepseek/deepseek-v4.1-flash-1017" = [-3.964, 1.880, 1.341, 1.395]
 "openai/gpt-6-luna" = [-3.598, 1.991, 1.446, 1.043]
 "anthropic/claude-haiku-5.5" = [-3.106, 1.755, 1.272, 1.037]
+
+[hybrid.steal_turn.v5]
+# "<slug>" = [a, b, c, d]: an LLM opponent's chance to solve during the turn that starts at this board, on share
+# showing, the reader's confidence, and whether the model could read it. Every turn of prior-101 and prior-trial
+# (2,134 on 1,062 boards), 2026-11-05: logs/calibration/trust-turn-20261105-184114.json on the server.
+# Fit on even sets, odd sets predicted 32.3% (Luna) and 32.2% (Haiku) against 35.6% solved; read per turn,
+# the per-decision curves predicted 10.6% and 11.9%. No DeepSeek hybrid (Ian).
+"openai/gpt-6-luna" = [-1.462, 1.962, 0.719, 0.832]
+"anthropic/claude-haiku-5.5" = [-1.395, 2.326, 0.728, 0.802]
 
 [tournament]
 # "all": a set is 6 games, every ordering of the 3 entrants across the seats.
