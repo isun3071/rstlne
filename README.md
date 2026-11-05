@@ -69,7 +69,7 @@ uv run python -m rstlne.tournament --seats llm:openai/gpt-6.1-sol,bot,bot --sets
 
 A tournament plays `--sets` puzzle sets with duplicate scoring. A set is 6 games, one for every ordering of the 3 entrants across the seats, all with the set's seed and puzzles. So within a set, each entrant sits in each seat twice and plays right after each other entrant 3 times, against the same spins. `--sets 60` is 360 games, and `--sets 1` is a 6 game trial for checking cost. Setting `set_permutations = "cyclic"` in `config.toml` plays the old 3 seat rotations instead.
 
-Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, and reshuffled when the pool runs out, so no set repeats a puzzle.
+Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, and reshuffled when the pool runs out, so no set repeats a puzzle. A deck that tags its main puzzles by round (grading-606b, or `private.json` by the round each puzzle aired in) deals each round from its own puzzles.
 
 | Option | Effect |
 |---|---|
@@ -81,6 +81,21 @@ Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, a
 Each game writes its usual log into the tournament folder, and rerunning skips finished games and replays unfinished ones. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, how much of the board showed at a correct solve, money left on the table, invalid moves, and cost. The report also lists each set's results and how many sets used each puzzle.
 
 Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total; tied leaders split the win. The table also shows each entrant's main-round money, its total minus any bonus envelope. Cost per game runs from under 1 cent (Luna, Haiku) to about 2 cents (Sol), with bot seats free; a 60-set lineup took 1 to 5 hours on 4 cores.
+
+## Analyses
+
+`lineups.toml` maps each lineup to its tournament folder, by phase: `v6` for the reruns on bot v6 and grading-606b, `v4` for the earlier grid. The analyses and the charts read it, so they take lineup ids, and they count finished games only, so they can run while a lineup plays. Add `--phase v4` for the earlier grid.
+
+```
+uv run python -m rstlne.analysis.progress 2 3            # win rates so far, with intervals
+uv run python -m rstlne.analysis.detail 2 3              # rounds won, bank and board showing at a winning solve, wrong solves
+uv run python -m rstlne.analysis.milking 2 3             # rounds a bot milked, and what came of them
+uv run python -m rstlne.analysis.odds 2 3                # the bot's logged steal odds and win chances against what happened
+uv run python -m rstlne.analysis.reading_gap 2 3         # what the bots lacked on the rounds an LLM won (reads boards: needs the word data)
+uv run python -m rstlne.analysis.letters read 2 3 --out logs/analysis/letters.json   # judge every letter choice (word data)
+uv run python -m rstlne.analysis.letters report logs/analysis/letters.json
+uv run --with matplotlib python figures/make_figures.py figures            # the charts, for lineups.toml's default phase
+```
 
 ## The bonus test
 
@@ -162,7 +177,9 @@ rstlne/tournament.py  seeded tournaments with duplicate scoring
 rstlne/bonustest.py   the bonus round alone
 rstlne/puzzlegen.py   fresh puzzles: written by one model, checked in code, judged by another
 rstlne/selfplay.py    bot self-play and tuning, no API calls
+rstlne/analysis/      analyses of finished tournament games, for the findings
 figures/              the charts in FINDINGS.md, and the script that draws them from the logs
+lineups.toml       each lineup's tournament folder, by phase
 FINDINGS.md        what the grading runs found
 documentation.md   the full game specification
 CLAUDE.md          build notes for Claude Code

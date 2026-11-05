@@ -50,7 +50,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 
 ## Reruns on bot v6 and grading-606b (from 2026-11-05)
 
-The paper uses one bot version and one deck, so the grid reruns with bot v6 on grading-606b: four rounds of 100 main puzzles matching aired rounds 1 to 4 in category and length, dealt by round. Seed 707 and 60 sets as before, so the reruns pair set by set with each other (not with the v4 grid, whose deck differs). Hybrid seats use the per-turn steal curves (`[hybrid.steal_turn.v5]`). Lineup 1 isn't rerun: it only picked W (Sol), and has no bot seat. No DeepSeek or Sol hybrid (Ian). The v4 results below stay as the earlier record. Commands are under Commands, with `--puzzles puzzles/generated/grading-606b.json --seed 707`; stats so far for any folder: `uv run python logs/analysis/progress.py logs/tournaments/<folder>` on the server.
+The paper uses one bot version and one deck, so the grid reruns with bot v6 on grading-606b: four rounds of 100 main puzzles matching aired rounds 1 to 4 in category and length, dealt by round. Seed 707 and 60 sets as before, so the reruns pair set by set with each other (not with the v4 grid, whose deck differs). Hybrid seats use the per-turn steal curves (`[hybrid.steal_turn.v5]`). Lineup 1 isn't rerun: it only picked W (Sol), and has no bot seat. No DeepSeek or Sol hybrid (Ian). The v4 results below stay as the earlier record. Commands are under Commands, with `--puzzles puzzles/generated/grading-606b.json --seed 707`; stats so far: `uv run python -m rstlne.analysis.progress 2 3 …` (lineup ids from `lineups.toml`, which maps each to its folder; add each new lineup's folder there when it starts).
 
 | # | Seats | Folder | Status | Result (95%) | Cost |
 |---|---|---|---|---|---|

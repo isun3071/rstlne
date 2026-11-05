@@ -1,4 +1,7 @@
-"""Charts of the grid, from the tournament logs: uv run --with matplotlib python figures/make_figures.py figures"""
+"""Charts of the grid, from the tournament logs: uv run --with matplotlib python figures/make_figures.py figures [phase]
+
+The lineups come from lineups.toml: its default phase, or the one named (v6, v4). A lineup a phase doesn't list,
+or that has no finished games yet, is left out of every chart."""
 import json
 import glob
 import statistics as st
@@ -10,12 +13,22 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker
+import tomllib
 
+from rstlne.analysis.common import LINEUPS as LINEUPS_TOML, lineups
 from rstlne.tournament import report
 
 OUT = Path(sys.argv[1])
 OUT.mkdir(parents=True, exist_ok=True)
 T = Path("logs/tournaments")
+PHASE = sys.argv[2] if len(sys.argv) > 2 else tomllib.loads(LINEUPS_TOML.read_text())["default"]
+MAP = lineups(PHASE)
+F = {k: v["folder"].name for k, v in MAP.items()}  # lineup id -> folder
+
+
+def have(k):
+    """Whether the phase lists lineup `k` and it has finished games."""
+    return k in F and bool(report(T / F[k])["entrants"])
 
 # Reference palette (light): surface, ink, and one hue per kind of player, validated as a set
 SURFACE, INK, INK2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e3df"
@@ -51,19 +64,7 @@ def entrants(folder):
     return report(T / folder)["entrants"]
 
 
-LINEUPS = [  # (label, folder)
-    ("1  Sol · DeepSeek · Haiku", "seed707-d7589355"),
-    ("2  Sol · bot · bot", "seed707-e250a942"),
-    ("3  Hybrid · bot · bot", "seed707-ca968604"),
-    ("3b  Luna · bot · bot", "seed707-e71dd1af"),
-    ("3c  DeepSeek · bot · bot", "seed707-6fa48eea"),
-    ("3d  Haiku · bot · bot", "seed707-4ef950be"),
-    ("3f  Haiku hybrid · bot · bot", "seed707-1a2b906a"),
-    ("6a  bot · Luna · Luna", "seed707-6496578d"),
-    ("6b  bot · Haiku · Haiku", "seed707-261dfa12"),
-    ("d1  d1-ultra · bot · bot", "seed707-d1-server"),
-    ("d2  Luna Decisions · bot · bot", "seed707-lunadec-server"),
-]
+LINEUPS = [(f"{k}  {v['label']}", F[k]) for k, v in MAP.items() if have(k)]  # (label, folder)
 REPORTS = {folder: entrants(folder) for _, folder in LINEUPS}
 
 
@@ -102,10 +103,11 @@ def check(fig, name):
 
 
 # 1. The yardstick: each player alone against two bots
-solo = [("seed707-e250a942", "openai/gpt-6.1-sol"), ("seed707-ca968604", "hybrid:openai/gpt-6-luna"),
-        ("seed707-1a2b906a", "hybrid:anthropic/claude-haiku-5.5"), ("seed707-6fa48eea", "deepseek/deepseek-v4.1-flash-1017"),
-        ("seed707-e71dd1af", "llm:openai/gpt-6-luna"), ("seed707-4ef950be", "anthropic/claude-haiku-5.5"),
-        ("seed707-lunadec-server", "decision:openai/gpt-6-luna-decisions"), ("seed707-d1-server", "decision:liquid/d1-ultra")]
+solo = [(F[k], key) for k, key in (("2", "openai/gpt-6.1-sol"), ("3", "hybrid:openai/gpt-6-luna"),
+                                     ("3f", "hybrid:anthropic/claude-haiku-5.5"), ("3c", "deepseek/deepseek-v4.1-flash-1017"),
+                                     ("3b", "llm:openai/gpt-6-luna"), ("3d", "anthropic/claude-haiku-5.5"),
+                                     ("d2", "decision:openai/gpt-6-luna-decisions"), ("d1", "decision:liquid/d1-ultra"))
+        if have(k)]
 rows = []
 for folder, key in solo:
     e = next(x for x in REPORTS[folder] if key in x["entrant"])
@@ -127,11 +129,11 @@ handles = [plt.Rectangle((0, 0), 1, 1, color=KIND[k]) for k in ("LLM", "hybrid",
 ax.legend(handles, ["LLM playing alone", "hybrid: the bot decides, the LLM reads",
                     "decision seat: a decision model decides, Luna reads"], loc="lower right", frameon=False, fontsize=9.5)
 save(fig, "1-alone-against-two-bots.png", "Alone against two bots",
-     "One seat against two identical v4 bots, 60 sets (360 games) each, same puzzles and spins")
+     f"One seat against two identical {PHASE} bots, 60 sets (360 games) each, same puzzles and spins")
 
 # 2. Temperament: how early each player solves, and how often it's right
 pts = []
-for folder, key in solo + [("seed707-e250a942", "bot #1")]:
+for folder, key in solo + ([(F["2"], "bot #1")] if have("2") else []):
     e = next(x for x in REPORTS[folder] if key in x["entrant"])
     name, kind = short(e["entrant"])
     name = "Bot" if kind == "bot" else name
@@ -190,7 +192,8 @@ tidy(ax, "share of games won (%); dashed lines mark equal thirds")
 handles = [plt.Rectangle((0, 0), 1, 1, color=KIND[k]) for k in KIND]
 fig.legend(handles, ["LLM", "bot", "hybrid", "decision seat"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
 save(fig, "3-every-lineup.png", "Who won each lineup",
-     "Share of games won per seat, 60 sets (360 games) per lineup; lineup 1 used the old round 4 rule")
+     "Share of games won per seat, 60 sets (360 games) per lineup; lineup 1 used the old round 4 rule"
+     + (", on grading-505" if PHASE != "v4" else ""))
 
 
 # 4. How they win: rounds won per game and money banked per round won
@@ -210,13 +213,14 @@ def per_round(folder, key):
     return st.mean(rounds), st.median(banks)
 
 
-groups = [("Sol vs bots", "seed707-e250a942", "openai/gpt-6.1-sol", "LLM"),
-          ("Hybrid (Luna) vs bots", "seed707-ca968604", "hybrid:openai/gpt-6-luna", "hybrid"),
-          ("Hybrid (Haiku) vs bots", "seed707-1a2b906a", "hybrid:anthropic/claude-haiku-5.5", "hybrid"),
-          ("DeepSeek vs bots", "seed707-6fa48eea", "deepseek/deepseek-v4.1-flash-1017", "LLM"),
-          ("Luna vs bots", "seed707-e71dd1af", "openai/gpt-6-luna", "LLM"),
-          ("Haiku vs bots", "seed707-4ef950be", "anthropic/claude-haiku-5.5", "LLM"),
-          ("Luna Decisions seat vs bots", "seed707-lunadec-server", "openai/gpt-6-luna-decisions", "decision")]
+groups = [(g, F[k], key, kind) for g, k, key, kind in (
+    ("Sol vs bots", "2", "openai/gpt-6.1-sol", "LLM"),
+    ("Hybrid (Luna) vs bots", "3", "hybrid:openai/gpt-6-luna", "hybrid"),
+    ("Hybrid (Haiku) vs bots", "3f", "hybrid:anthropic/claude-haiku-5.5", "hybrid"),
+    ("DeepSeek vs bots", "3c", "deepseek/deepseek-v4.1-flash-1017", "LLM"),
+    ("Luna vs bots", "3b", "openai/gpt-6-luna", "LLM"),
+    ("Haiku vs bots", "3d", "anthropic/claude-haiku-5.5", "LLM"),
+    ("Luna Decisions seat vs bots", "d2", "openai/gpt-6-luna-decisions", "decision")) if have(k)]
 data = [(g, kind, per_round(f, key), per_round(f, "bot")) for g, f, key, kind in groups]
 fig, axes = plt.subplots(1, 2, figsize=(12, 4.9))
 fig.subplots_adjust(left=0.19, right=0.95, top=0.78, bottom=0.17, wspace=0.62)
@@ -289,17 +293,18 @@ def places_of(folder, pick):
     return out
 
 
-rows7 = [("Sol", "seed707-e250a942", lambda s: s.get("model") == "openai/gpt-6.1-sol", "LLM"),
-         ("Hybrid (bot + Luna)", "seed707-ca968604", lambda s: s["kind"] == "hybrid", "hybrid"),
-         ("Hybrid (bot + Haiku)", "seed707-1a2b906a", lambda s: s["kind"] == "hybrid", "hybrid"),
-         ("DeepSeek", "seed707-6fa48eea", lambda s: s.get("model") == "deepseek/deepseek-v4.1-flash-1017", "LLM"),
-         ("Luna", "seed707-e71dd1af", lambda s: s.get("model") == "openai/gpt-6-luna" and s["kind"] == "llm", "LLM"),
-         ("Haiku", "seed707-4ef950be", lambda s: s.get("model") == "anthropic/claude-haiku-5.5", "LLM"),
-         ("Luna Decisions seat", "seed707-lunadec-server", lambda s: s["kind"] == "decision", "decision"),
-         ("d1-ultra seat", "seed707-d1-server", lambda s: s["kind"] == "decision", "decision"),
-         ("Bot, against two Lunas", "seed707-6496578d", lambda s: s["kind"] == "bot", "bot"),
-         ("Bot, against two Haikus", "seed707-261dfa12", lambda s: s["kind"] == "bot", "bot")]
-rows7 = [r for r in rows7 if (T / r[1]).exists()]
+rows7 = [(name, k, pick, kind) for name, k, pick, kind in (
+         ("Sol", "2", lambda s: s.get("model") == "openai/gpt-6.1-sol", "LLM"),
+         ("Hybrid (bot + Luna)", "3", lambda s: s["kind"] == "hybrid", "hybrid"),
+         ("Hybrid (bot + Haiku)", "3f", lambda s: s["kind"] == "hybrid", "hybrid"),
+         ("DeepSeek", "3c", lambda s: s.get("model") == "deepseek/deepseek-v4.1-flash-1017", "LLM"),
+         ("Luna", "3b", lambda s: s.get("model") == "openai/gpt-6-luna" and s["kind"] == "llm", "LLM"),
+         ("Haiku", "3d", lambda s: s.get("model") == "anthropic/claude-haiku-5.5", "LLM"),
+         ("Luna Decisions seat", "d2", lambda s: s["kind"] == "decision", "decision"),
+         ("d1-ultra seat", "d1", lambda s: s["kind"] == "decision", "decision"),
+         ("Bot, against two Lunas", "6a", lambda s: s["kind"] == "bot", "bot"),
+         ("Bot, against two Haikus", "6b", lambda s: s["kind"] == "bot", "bot")) if have(k)]
+rows7 = [(name, F[k], pick, kind) for name, k, pick, kind in rows7]  # (name, folder, pick, kind) from here on
 RAMP = ["#104281", "#2a78d6", "#86b6ef"]  # 1st, 2nd, 3rd: one hue, darkest first
 fig, ax = plt.subplots(figsize=(11, 0.6 * len(rows7) + 2.6))
 fig.subplots_adjust(left=0.24, right=0.86, top=0.82, bottom=0.17)

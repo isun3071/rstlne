@@ -1,0 +1,27 @@
+# Which folder under logs/tournaments holds each lineup's games, by phase. The analyses
+# (python -m rstlne.analysis.<name>) and figures/make_figures.py read this instead of folder names.
+#
+# v6: the reruns on bot v6 and grading-606b, dealt by round (from 2026-11-05). Lineup 1 isn't rerun:
+#     it only picked the LLM for the other lineups and has no bot seat, so it keeps its grading-505 run.
+# v4: the grid on bot v4 and grading-505 (2026-10-31 to 2026-11-01), kept for the record.
+default = "v6"
+
+[v6]
+"1" = { folder = "seed707-d7589355", label = "Sol · DeepSeek · Haiku", note = "the selection run, on grading-505" }
+"2" = { folder = "seed707-b511deec", label = "Sol · bot · bot" }
+"3" = { folder = "seed707-c18bccd7", label = "Luna hybrid · bot · bot" }
+"3b" = { folder = "seed707-4bac0081", label = "Luna · bot · bot" }
+"3d" = { folder = "seed707-21904e0d", label = "Haiku · bot · bot" }
+
+[v4]
+"1" = { folder = "seed707-d7589355", label = "Sol · DeepSeek · Haiku" }
+"2" = { folder = "seed707-e250a942", label = "Sol · bot · bot" }
+"3" = { folder = "seed707-ca968604", label = "Hybrid · bot · bot" }
+"3b" = { folder = "seed707-e71dd1af", label = "Luna · bot · bot" }
+"3c" = { folder = "seed707-6fa48eea", label = "DeepSeek · bot · bot" }
+"3d" = { folder = "seed707-4ef950be", label = "Haiku · bot · bot" }
+"3f" = { folder = "seed707-1a2b906a", label = "Haiku hybrid · bot · bot" }
+"6a" = { folder = "seed707-6496578d", label = "bot · Luna · Luna" }
+"6b" = { folder = "seed707-261dfa12", label = "bot · Haiku · Haiku" }
+"d1" = { folder = "seed707-d1-server", label = "d1-ultra · bot · bot" }
+"d2" = { folder = "seed707-lunadec-server", label = "Luna Decisions · bot · bot" }
