@@ -745,3 +745,65 @@ def test_a_sourced_answer_needs_two_judge_passes(tmp_path):
     assert [p.answer for p in result.puzzles] == ["MEET ME IN SAINT LOUIS LOUIS"]
     assert sum(c["model"] == JUDGE for c in client.client.calls) == 4
     assert result.usage.calls == 5  # one generator call and both judge calls for each answer
+
+
+# Requests for categories at set lengths (grading-606b's replacements)
+
+
+def test_a_request_can_set_a_letter_range_which_the_prompt_states_and_code_enforces(tmp_path):
+    # 10, 11, 14, 15, and 16 letters: only the two inside 12 to 15 pass, even with the usual floor at 16
+    client = fake([["Garden hose", "Wooden spoon", "Paper towel roll", "Coffee table book", "Toothbrush holder"]])
+    result = puzzlegen.generate(client, settings(max_requests=1, batch=5, main_min_letters=16), [("Thing", 2, 12, 15)],
+                                [], seed=1, known=[], seen_path=tmp_path / "seen.txt")
+    assert sorted(p.answer for p in result.puzzles) == ["COFFEE TABLE BOOK", "PAPER TOWEL ROLL"]
+    assert result.rejected["shorter than the request"] == 2 and result.rejected["longer than the request"] == 1
+    request = next(c["messages"][-1]["content"] for c in client.client.calls if c["model"] == GEN)
+    assert "two to six words, 12 to 15 letters in all" in request and "at least 16 letters" not in request
+
+
+def test_two_ranges_in_one_category_fill_separately(tmp_path):
+    # 14, 15, 10 letters for the first range; then 13 and 16 for the second
+    client = fake([["Paper towel roll", "Coffee table book", "Garden hose"], ["Bathroom scale", "Toothbrush holder"]])
+    result = puzzlegen.generate(client, settings(max_requests=2, batch=3), [("Thing", 2, 12, 15), ("Thing", 1, 16, 19)],
+                                [], seed=1, known=[], seen_path=tmp_path / "seen.txt")
+    assert sorted(p.answer for p in result.puzzles) == ["COFFEE TABLE BOOK", "PAPER TOWEL ROLL", "TOOTHBRUSH HOLDER"]
+
+
+def test_a_request_file_names_categories_counts_and_letter_ranges(tmp_path):
+    main_mix, bonus_mix = {"Thing": 1, "Phrase": 1}, {"Thing": 1}
+    path = tmp_path / "request.json"
+    path.write_text(json.dumps({"main": [{"category": "Thing", "count": 8, "letters": [12, 15]},
+                                         {"category": "Phrase", "count": 2}]}))
+    assert puzzlegen.load_request(path, main_mix, bonus_mix) == ([("Thing", 8, 12, 15), ("Phrase", 2)], [])
+    for bad, why in [({"main": [{"category": "Thingz", "count": 1}]}, "Thingz"),
+                     ({"main": [{"category": "Thing", "count": 0}]}, "count"),
+                     ({"main": [{"category": "Thing", "count": 1, "letters": [15, 12]}]}, "letters"),
+                     ({"bonus": [{"category": "Phrase", "count": 1}]}, "Phrase")]:  # Phrase isn't a bonus category here
+        path.write_text(json.dumps(bad))
+        with pytest.raises(ValueError, match=why):
+            puzzlegen.load_request(path, main_mix, bonus_mix)
+
+
+def test_the_request_option_runs_the_file_records_it_and_tops_up_by_range(tmp_path, monkeypatch):
+    out, request = tmp_path / "batch.json", tmp_path / "request.json"
+    monkeypatch.setattr(puzzlegen, "SEEN", tmp_path / "seen.txt")
+    spec = {"main": [{"category": "Thing", "count": 2, "letters": [12, 15]},
+                     {"category": "Thing", "count": 1, "letters": [16, 19]}]}
+    request.write_text(json.dumps(spec))
+    puzzlegen.save_pool(out, [Puzzle("Thing", "PAPER TOWEL ROLL")], settings(), seed=7, rejected={}, cost=0.0)  # 14 letters
+    calls = []
+
+    def fake_generate(client, s, main, bonus, seed, known, **options):
+        calls.append((list(main), list(bonus)))
+        return puzzlegen.Result(puzzles=[Puzzle("Thing", "COFFEE TABLE BOOK"), Puzzle("Thing", "TOOTHBRUSH HOLDER")])
+    monkeypatch.setattr(puzzlegen, "generate", fake_generate)
+    monkeypatch.setattr(puzzlegen, "_client", lambda: None)
+    puzzlegen.main(["--request", str(request), "--seed", "7", "--out", str(out)])
+    assert calls == [([("Thing", 1, 12, 15), ("Thing", 1, 16, 19)], [])]  # only what each range still lacks
+    saved = json.loads(out.read_text())
+    assert saved["runs"][-1]["request"] == spec
+    assert [p.answer for p in puzzlegen.load_pool(out)] == ["PAPER TOWEL ROLL", "COFFEE TABLE BOOK", "TOOTHBRUSH HOLDER"]
+    puzzlegen.main(["--request", str(request), "--seed", "7", "--out", str(out)])  # full: nothing more is asked
+    assert len(calls) == 1
+    with pytest.raises(SystemExit):
+        puzzlegen.main(["--request", str(request), "--main", "40", "--seed", "7", "--out", str(out)])

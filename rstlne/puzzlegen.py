@@ -439,12 +439,15 @@ def examples_for(category: str, bonus: bool, rng: random.Random, n: int = 3) -> 
 
 
 def _ask_generator(client: OpenRouter, s: Settings, category: str, bonus: bool, ideas: list[str], n: int,
-                   examples: Sequence[str] = ()):
-    size = (f"two to four words, at least {s.bonus_min_letters} letters in all, short enough to fit "
+                   examples: Sequence[str] = (), letters: tuple[int, int] | None = None):
+    """With `letters`, the request asks for that many letters, (low, high), in place of the usual minimum."""
+    span = f"{letters[0]} to {letters[1]} letters in all (count letters only)" if letters else None
+    size = (f"two to four words, {span or f'at least {s.bonus_min_letters} letters in all'}, short enough to fit "
             f"{len(s.bonus_rows)} lines of {max(s.bonus_rows)} squares, in words any adult knows but not always the "
             f"commonest ones" if bonus
-            else f"three to six words, at least {s.main_min_letters} letters in all, and short enough to fit "
-                 f"{len(s.rows)} lines of {min(s.rows)} to {max(s.rows)} squares without splitting a word")
+            else f"{'two' if letters else 'three'} to six words, {span or f'at least {s.main_min_letters} letters in all'}, "
+                 f"and short enough to fit {len(s.rows)} lines of {min(s.rows)} to {max(s.rows)} squares without "
+                 f"splitting a word")
     sourced = ([f"These must be real. In sources, at the same position as each answer, name where it comes from: "
                 f"the song and artist, the film, the book and author, the speaker, or the event and year."]
                if category in SOURCED else ["Leave sources empty."])
@@ -522,8 +525,8 @@ def _idea_pool() -> list[str]:
 def generate(
     client: OpenRouter,
     s: Settings,
-    main: Sequence[tuple[str, int]],
-    bonus: Sequence[tuple[str, int]],
+    main: Sequence[tuple],
+    bonus: Sequence[tuple],
     seed: int,
     known: Sequence[Puzzle],
     seen_path: Path | None = None,
@@ -535,7 +538,8 @@ def generate(
     clock=time.monotonic,
     on_accept=lambda puzzles, sources: None,
 ) -> Result:
-    """Puzzles for each (category, count), checked and judged. Accepted answers join the seen registry.
+    """Puzzles for each (category, count), or (category, count, low, high) for answers of low to high letters,
+    checked and judged. Accepted answers join the seen registry.
     Every `heartbeat` seconds, `say` gets a status line, and `on_accept` hears every accepted puzzle at once,
     with the sources named so far.
     A failed request is skipped; after MAX_FAILURES in a row, the run stops and returns what it has."""
@@ -549,7 +553,7 @@ def generate(
     prior = NearIndex([*seen, *(p.answer for p in known), *example_answers()])  # anything used before this run
     this_run = NearIndex()  # this run's accepted answers
     result = Result()
-    wanted_total = sum(n for _, n in main) + sum(n for _, n in bonus)
+    wanted_total = sum(e[1] for e in main) + sum(e[1] for e in bonus)
     last = [clock()]
     began = last[0]
 
@@ -587,7 +591,9 @@ def generate(
     with ThreadPoolExecutor(max_workers=max(1, s.judges)) as judges:
         for is_bonus, wanted in ((False, main), (True, bonus)):
             rows = s.bonus_rows if is_bonus else s.rows
-            for category, count in wanted:
+            for category, count, *letters in wanted:
+                span = tuple(letters) if letters else None  # (low, high) letters, or the usual minimum
+                label = f"{category}{f' ({span[0]} to {span[1]} letters)' if span else ''}"
                 got = 0
                 pending = NearIndex()  # this category's answers queued or sent to the judge, so overlapping replies can't repeat one
                 queue: list[tuple[str, str]] = []  # (answer, source) checked and waiting for a judge
@@ -606,17 +612,18 @@ def generate(
                         ideas = _ideas(rng, pool)
                         shown = examples_for(category, is_bonus, rng)
                         reply = record("generator", attempt(lambda: _ask_generator(client, s, category, is_bonus, ideas,
-                                                                                   s.batch, shown)))
+                                                                                   s.batch, shown, span)))
                         if reply is None:
                             continue
                         answers = list(zip(*parse_reply(reply.message.content)))
                         rng.shuffle(answers)  # the first answer is the most typical; a shuffle keeps the pick varied
-                        status(category, is_bonus, got, count)
+                        status(label, is_bonus, got, count)
                         if not answers:
                             result.rejected["reply didn't parse"] += 1
                         for raw, source in answers:
                             verdict = _check(raw, category, rows, rhymes, prior, this_run, pending, result,
-                                             0 if is_bonus else s.main_min_letters, s if is_bonus else None, dictionary)
+                                             0 if is_bonus else s.main_min_letters, s if is_bonus else None, dictionary,
+                                             span)
                             if verdict is not None:
                                 pending.add(verdict)
                                 queue.append((verdict, source))
@@ -643,20 +650,21 @@ def generate(
                     result.puzzles.append(Puzzle(category, answer, bonus=is_bonus))
                     on_accept(result.puzzles, result.sources)
                     got += 1
-                    status(category, is_bonus, got, count)
+                    status(label, is_bonus, got, count)
                 for _, _, future in flight:  # verdicts no longer needed still cost money
                     outcome = future.result()
                     if not isinstance(outcome, BaseException):
                         result.usage += outcome.usage
-                say(f"  {category}{' (bonus)' if is_bonus else ''}: {got} of {count}")
+                say(f"  {label}{' (bonus)' if is_bonus else ''}: {got} of {count}")
     return result
 
 
 def _check(raw: str, category: str, rows, rhymes, prior: NearIndex, this_run: NearIndex, pending: NearIndex,
            result: Result, min_letters: int = 0, bonus: Settings | None = None,
-           dictionary: frozenset[str] | None = None) -> str | None:
+           dictionary: frozenset[str] | None = None, span: tuple[int, int] | None = None) -> str | None:
     """The answer if it passes every check in code, else None with the reason counted.
-    With `bonus`, the answer is also held to the bonus round's length and difficulty."""
+    With `bonus`, the answer is also held to the bonus round's length and difficulty. With `span`, (low, high),
+    its letters must fall in that range, in place of `min_letters` and the bonus minimum."""
     try:
         answer = normalize(raw)
     except ValueError:
@@ -680,10 +688,17 @@ def _check(raw: str, category: str, rows, rhymes, prior: NearIndex, this_run: Ne
     if not fits_rows(answer, rows):
         result.rejected["doesn't fit the board"] += 1
         return None
-    if sum(c in LETTERS for c in answer) < min_letters:
+    letters = sum(c in LETTERS for c in answer)
+    if span and letters < span[0]:
+        result.rejected["shorter than the request"] += 1
+        return None
+    if span and letters > span[1]:
+        result.rejected["longer than the request"] += 1
+        return None
+    if not span and letters < min_letters:
         result.rejected["too short for a main puzzle"] += 1
         return None
-    if bonus and sum(c in LETTERS for c in answer) < bonus.bonus_min_letters:
+    if bonus and not span and letters < bonus.bonus_min_letters:
         result.rejected["too short for a bonus puzzle"] += 1
         return None
     if bonus and hidden_after_picks(answer, bonus) < bonus.bonus_min_hidden:
@@ -713,7 +728,7 @@ def _verdict(text: str | None) -> tuple[bool, str, int, list[str]]:
 
 def save_pool(path: Path, puzzles: Sequence[Puzzle], s: Settings, seed: int, rejected: dict, cost: float,
               judged_out: Sequence[tuple[str, str, str]] = (), final: bool = True,
-              sources: dict[str, str] | None = None) -> None:
+              sources: dict[str, str] | None = None, request: dict | None = None) -> None:
     """Write the batch file. Its history stays: every recheck, and one entry per finished run.
     `final=False` saves puzzles mid-run without logging a run. Sources the generator named stay with their puzzles."""
     old = json.loads(path.read_text()) if path.exists() else {}
@@ -722,7 +737,8 @@ def save_pool(path: Path, puzzles: Sequence[Puzzle], s: Settings, seed: int, rej
     if final:
         runs.append({"created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "prompt_version": PROMPT_VERSION,
                      "rejected": dict(rejected), "cost": cost,
-                     "judged_out": [{"category": c, "answer": a, "reason": r} for c, a, r in judged_out]})
+                     "judged_out": [{"category": c, "answer": a, "reason": r} for c, a, r in judged_out],
+                     **({"request": request} if request else {})})
     path.write_text(json.dumps({
         "generator": s.generator, "judge": s.judge, "prompt_version": PROMPT_VERSION, "seed": seed,
         "cost": sum(run["cost"] for run in runs), "runs": runs, "rechecked": old.get("rechecked", []),
@@ -811,6 +827,51 @@ def known_puzzles() -> list[Puzzle]:
     return out
 
 
+def load_request(path: Path, main_mix: dict, bonus_mix: dict) -> tuple[list[tuple], list[tuple]]:
+    """A request file: {"main": [...], "bonus": [...]}, each entry {"category", "count", "letters": [low, high]},
+    letters optional. Categories must be in the configured mix. Returns (category, count[, low, high]) entries."""
+    data = json.loads(Path(path).read_text())
+    out = []
+    for key, known in (("main", main_mix), ("bonus", bonus_mix)):
+        entries = []
+        for e in data.get(key, []):
+            category, count, letters = e.get("category"), e.get("count"), e.get("letters")
+            if category not in known:
+                raise ValueError(f"{category!r} isn't a {key} category in [puzzlegen] {key}_mix")
+            if not isinstance(count, int) or count < 1:
+                raise ValueError(f"{category}: count must be a whole number of at least 1, not {count!r}")
+            if letters is not None:
+                if (not isinstance(letters, list) or len(letters) != 2 or not all(isinstance(x, int) for x in letters)
+                        or not 2 <= letters[0] <= letters[1]):
+                    raise ValueError(f"{category}: letters must be [low, high] with 2 <= low <= high, not {letters!r}")
+                entries.append((category, count, *letters))
+            else:
+                entries.append((category, count))
+        out.append(entries)
+    return out[0], out[1]
+
+
+def still_wanted(entries: Sequence[tuple], have: Sequence[Puzzle], bonus: bool) -> list[tuple]:
+    """What each request entry still lacks, given puzzles already held. Each held puzzle counts for one entry,
+    the first whose category and letter range it fits."""
+    used: set[int] = set()
+    out = []
+    for category, count, *letters in entries:
+        held = 0
+        for i, p in enumerate(have):
+            if held == count:
+                break
+            if i in used or p.bonus != bonus or p.category != category:
+                continue
+            if letters and not letters[0] <= sum(c in LETTERS for c in p.answer) <= letters[1]:
+                continue
+            used.add(i)
+            held += 1
+        if held < count:
+            out.append((category, count - held, *letters))
+    return out
+
+
 def mix(config: dict) -> tuple[dict[str, float], dict[str, float]]:
     c = config["puzzlegen"]
     return dict(c["main_mix"]), dict(c["bonus_mix"])
@@ -830,8 +891,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--recheck", help="hold an existing batch file to the current checks, then exit")
     parser.add_argument("--against", nargs="*", default=[], help="with --recheck: batch files it must not repeat")
     parser.add_argument("--rejudge", action="store_true", help="with --recheck: send every puzzle back to the current judge")
-    parser.add_argument("--main", type=int, default=40, help="main round puzzles")
-    parser.add_argument("--bonus", type=int, default=10, help="bonus round puzzles")
+    parser.add_argument("--main", type=int, help="main round puzzles (40 by default)")
+    parser.add_argument("--bonus", type=int, help="bonus round puzzles (10 by default)")
+    parser.add_argument("--request", help="a JSON file of categories, counts, and letter ranges, in place of the mix")
     parser.add_argument("--seed", type=int)
     parser.add_argument("--out", help="the pool file to write")
     args = parser.parse_args(argv)
@@ -848,19 +910,31 @@ def main(argv: Sequence[str] | None = None) -> None:
         return
     if args.seed is None or args.out is None:
         parser.error("--seed and --out are needed to generate")
+    if args.request and (args.main is not None or args.bonus is not None):
+        parser.error("--request sets its own counts; drop --main and --bonus")
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     have = load_pool(out) if out.exists() else []  # a rerun tops the file up
-    # The first run's plan, category by category; a rerun asks only for what each category still lacks
-    plan_rng = random.Random(f"mix:{args.seed}:0")
     main_mix, bonus_mix = mix(config)
-    plan_main, plan_bonus = split(args.main, main_mix, plan_rng), split(args.bonus, bonus_mix, plan_rng)
-    held = Counter((p.category, p.bonus) for p in have)
-    want_main = [(c, n - held[(c, False)]) for c, n in plan_main if n > held[(c, False)]]
-    want_bonus = [(c, n - held[(c, True)]) for c, n in plan_bonus if n > held[(c, True)]]
-    short_main, short_bonus = sum(n for _, n in want_main), sum(n for _, n in want_bonus)
+    request = None
+    if args.request:
+        # The request's entries; a rerun asks only for what each entry still lacks
+        request = json.loads(Path(args.request).read_text())
+        try:
+            plan_main, plan_bonus = load_request(Path(args.request), main_mix, bonus_mix)
+        except ValueError as err:
+            sys.exit(f"{args.request}: {err}")
+        args.main, args.bonus = sum(e[1] for e in plan_main), sum(e[1] for e in plan_bonus)
+    else:
+        # The first run's plan, category by category; a rerun asks only for what each category still lacks
+        args.main = 40 if args.main is None else args.main
+        args.bonus = 10 if args.bonus is None else args.bonus
+        plan_rng = random.Random(f"mix:{args.seed}:0")
+        plan_main, plan_bonus = split(args.main, main_mix, plan_rng), split(args.bonus, bonus_mix, plan_rng)
+    want_main, want_bonus = still_wanted(plan_main, have, False), still_wanted(plan_bonus, have, True)
+    short_main, short_bonus = sum(e[1] for e in want_main), sum(e[1] for e in want_bonus)
     if not short_main and not short_bonus:
-        print(f"{out} already holds its plan: {args.main} main and {args.bonus} bonus puzzles")
+        print(f"{out} already holds its {'request' if request else 'plan'}: {args.main} main and {args.bonus} bonus puzzles")
         return
     client = _client()
     print(f"Generating {short_main} main and {short_bonus} bonus puzzles with {s.generator}, judged by {s.judge}; "
@@ -873,7 +947,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                                                      sources=sources),
     )
     save_pool(out, have + result.puzzles, s, args.seed, result.rejected, result.usage.cost, result.judged_out,
-              sources=result.sources)
+              sources=result.sources, request=request)
     total_main = sum(not p.bonus for p in have + result.puzzles)
     total_bonus = sum(p.bonus for p in have + result.puzzles)
     print(f"{len(result.puzzles)} new puzzles in {result.requests} generator requests and "
@@ -883,10 +957,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         print(f"  rejected {n}: {reason}")
     for category, answer, reason in result.judged_out:
         print(f"  judged out: {category}: {answer} ({reason})")
-    got = Counter((p.category, p.bonus) for p in result.puzzles)
-    if any(got[(c, False)] < n for c, n in want_main) or any(got[(c, True)] < n for c, n in want_bonus):
-        sys.exit(f"Short of the {args.main} main and {args.bonus} bonus planned, category by category: "
-                 "rerun the same command to top up.")
+    if still_wanted(want_main, result.puzzles, False) or still_wanted(want_bonus, result.puzzles, True):
+        sys.exit(f"Short of the {args.main} main and {args.bonus} bonus {'requested' if request else 'planned'}, "
+                 "category by category: rerun the same command to top up.")
 
 
 if __name__ == "__main__":
