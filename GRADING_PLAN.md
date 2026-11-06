@@ -36,6 +36,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 | 3d | Haiku, bot, bot | Haiku's solo yardstick | 60 |
 | 3e | hybrid:DeepSeek, bot, bot | does wrapping DeepSeek lift it too? Stopped after 9 games (runaway thinking made it slow and costly) | 60 |
 | 3f | hybrid:Haiku, bot, bot | the hybrid's lift on a second lab, in place of 3e | 60 |
+| 2t | Terra, bot, bot | the mid-range model's yardstick, between Sol and Luna (added 2026-11-06, on v6 only) | 60 |
 | d1 | decision:d1-ultra, bot, bot | a decision model deciding everything, Luna solving | 60 |
 | d2 | decision:Luna Decisions, bot, bot | the same, with the solver's own family deciding | 60 |
 
@@ -58,7 +59,8 @@ The paper uses one bot version and one deck, so the grid reruns with bot v6 on g
 | 3 | Luna hybrid, bot, bot | `seed707-c18bccd7` | done | hybrid **40.6%** (35–46%), bots 30.6% and 28.9%; +10.0 and +11.7 (+2 to +20) | $1.67 |
 | 3b | Luna, bot, bot | `seed707-4bac0081` | done | Luna **14.4%** (10–19%), bots 40.6% and 45.0%; −26.1 and −30.6 | $1.13 |
 | 3d | Haiku, bot, bot | `seed707-21904e0d` | done | Haiku **7.5%** (5–10%), bots 43.3% and 49.2%; −35.8 and −41.7 | $2.14 |
-| 3c | DeepSeek, bot, bot | | to decide | | |
+| 2t | Terra, bot, bot | `seed707-aba71d75` | done | Terra **45.3%** (39–52%), bots 27.5% and 27.2%; +17.8 and +18.1 (+8 to +28) | $3.27 |
+| 3c | DeepSeek, bot, bot | `seed707-47cfbb61` | running (34 of 60 sets) | DeepSeek 24.5% (19–31%) so far, bots 37.2% and 38.3% | $2.66 so far |
 | 3f | Haiku hybrid, bot, bot | | | | |
 | 6a | bot, Luna, Luna | | | | |
 | 6b | bot, Haiku, Haiku | | | | |
@@ -70,6 +72,10 @@ The paper uses one bot version and one deck, so the grid reruns with bot v6 on g
 **Lineups 3b and 3d on v6:** Luna alone won 1.54 rounds a game, more than either bot (1.21, 1.24), but at a median bank of $1,350 at its solves against the bots' $5,050–5,150, solving at 48% showing with 71% right and 0.64 wrong solves a game. Haiku alone won 0.87 rounds a game, solving late (70% showing) at a median $2,300, 93% right. Both did worse than against v4 bots (17.5% and 14%). **The hybrid's lift holds:** Luna hybrid minus Luna alone, set by set, **+26.1 points (+19.4 to +33.1)**, against +27.8 on v4.
 
 **Lineups d1 and d2 on v6:** the decision seats did worse than on v4 (4% and 8%), and worse than Luna alone (14.4%). d1-ultra won 0.43 rounds a game, solving late (76% showing, 85% right) for a median $1,400, and missed 1.94 consonants a game. Luna Decisions won 0.84 rounds a game at a median bank of $700, solving early (47% showing) and often wrongly (58% right, 0.62 wrong solves a game); it bought 0.08 vowels a game, as on v4.
+
+**Lineup 2t on v6:** Terra ties Sol. Set by set, Terra minus Sol is **−0.8 points (−6.9 to +5.0)**, at 56% of Sol's cost ($3.27 against $5.83). Terra won 2.05 rounds a game to the bots' 0.97 and 0.98, solving at a median 48% showing with 94% right (Sol: 50%, 97%) and 0.13 wrong solves a game (Sol 0.07), at a median bank of $3,100 at its solves (Sol $3,350). By seat Terra won 42%, 44%, 49%. Bonus: Terra 160 of 163, the bots 91 of 99 and 88 of 98. Against the Luna hybrid, set by set: +4.7 points (−2.5 to +12.5).
+
+**Lineup 3c on v6, so far (34 sets):** DeepSeek won 1.80 rounds a game at a median bank of $1,550, solving at 45% showing with 89% right and 0.23 wrong solves a game. Set by set it leads Luna alone by +10.7 points (+3.2 to +18.3). On v4 and grading-505 it won 36.7%.
 
 **Lineup 3 on v6:** the Luna hybrid won 1.57 rounds a game to the bots' 1.21, 98% of its solves right at a median 60% showing, median bank $4,500 at its solves (bots about $5,000). Bonus 140 of 146. Against v4 bots it won 45%; v6's bots win more rounds, which leaves the hybrid less.
 
