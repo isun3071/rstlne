@@ -23,7 +23,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 | 5 | W, hybrid, hybrid | Can an LLM beat the strongest seats? | 60 |
 | 6 | bot, W, W | Can the bot beat two good LLMs? Optional now (see below) | 60 |
 | 6a | bot, Luna, Luna | Can the bot beat a pair of reckless guessers? | 60 |
-| 6b | bot, Haiku, Haiku | ...a pair of passive readers? | 60 |
+| 6b | bot, Haiku, Haiku | `seed707-345192e8` | done | bot **65.8%** (61–71%), Haikus 19.2% and 15.0%; +47 and +51 points (+38 to +58) | $4.92 |
 | 6c | bot, DeepSeek, DeepSeek | ...a pair of eager readers? | 60 |
 
 **Lineup 6 against weaker pairs (Ian, 2026-10-31).** One Sol beat two bots 58% to 21% each, so against two Sols the bot would be a massive underdog: in betting terms, a long shot, likely winning 10% or less. That makes lineup 6 a predictable answer for about $12. Lineup 6 keeps its format, the bot against two copies of one model, but against weaker models from three labs (6a to 6c). Each mirrors that model's solo run against two bots, so the matchup is seen from both sides. Lineup 6 with Sol stays optional; if run, 20 sets (about $4) would do, since its first 20 sets pair with every lineup's first 20.
@@ -60,8 +60,8 @@ The paper uses one bot version and one deck, so the grid reruns with bot v6 on g
 | 3b | Luna, bot, bot | `seed707-4bac0081` | done | Luna **14.4%** (10–19%), bots 40.6% and 45.0%; −26.1 and −30.6 | $1.13 |
 | 3d | Haiku, bot, bot | `seed707-21904e0d` | done | Haiku **7.5%** (5–10%), bots 43.3% and 49.2%; −35.8 and −41.7 | $2.14 |
 | 2t | Terra, bot, bot | `seed707-aba71d75` | done | Terra **45.3%** (39–52%), bots 27.5% and 27.2%; +17.8 and +18.1 (+8 to +28) | $3.27 |
-| 3c | DeepSeek, bot, bot | `seed707-47cfbb61` | done, 355 of 360 (5 failed on API errors; a rerun replays them) | DeepSeek **23.4%** (19–28%), bots 38.0% and 38.6%; −14.6 and −15.2 (−23 to −7) | $4.81 |
-| 3f | Haiku hybrid, bot, bot | `seed707-d0d90cd5` | running (23 of 60 sets on 2026-11-06) | | |
+| 3c | DeepSeek, bot, bot | `seed707-47cfbb61` | done (5 games failed on API errors and were replayed) | DeepSeek **23.6%** (19–29%), bots 37.8% and 38.6%; −14.2 and −15.0 (−23 to −6) | $4.98 |
+| 3f | Haiku hybrid, bot, bot | `seed707-d0d90cd5` | running (35 of 60 sets on 2026-11-06) | hybrid 37.1% (32–42%) so far, bots 30.0% and 32.9% | $2.31 so far |
 | 6a | bot, Luna, Luna | `seed707-0724ada8` | done | bot **58.6%** (52–65%), Lunas 20.6% and 20.8%; +38 points over each (+28 to +48) | $2.39 |
 | 6b | bot, Haiku, Haiku | `seed707-345192e8` | running (46 of 60 sets on 2026-11-06) | | |
 | d1 | d1-ultra decision seat, bot, bot | `seed707-f06fd2a1` | done | d1-ultra **1.9%** (0–4%), bots 49.2% and 48.9%; −47 points | $0.31 |
@@ -75,9 +75,13 @@ The paper uses one bot version and one deck, so the grid reruns with bot v6 on g
 
 **Lineup 2t on v6:** Terra ties Sol. Set by set, Terra minus Sol is **−0.8 points (−6.9 to +5.0)**, at 56% of Sol's cost ($3.27 against $5.83). Terra won 2.05 rounds a game to the bots' 0.97 and 0.98, solving at a median 48% showing with 94% right (Sol: 50%, 97%) and 0.13 wrong solves a game (Sol 0.07), at a median bank of $3,100 at its solves (Sol $3,350). By seat Terra won 42%, 44%, 49%. Bonus: Terra 160 of 163, the bots 91 of 99 and 88 of 98. Against the Luna hybrid, set by set: +4.7 points (−2.5 to +12.5).
 
-**Lineup 3c on v6:** DeepSeek won 1.78 rounds a game, more than either bot (1.14, 1.08), at a median bank of $1,500 at its solves against the bots' $5,200–5,400, solving at 45% showing with 87% right and 0.27 wrong solves a game. Set by set it leads Luna alone by +8.8 points (+1.8 to +15.5). On v4 and grading-505 it won 36.7% and tied the bots. Sets 8, 27, 36, 37 and 42 hold 5 of their 6 orderings; rerunning the command (about $0.07) replays the 5 failed games.
+**Lineup 3c on v6:** DeepSeek won 1.78 rounds a game, more than either bot (1.13, 1.09), at a median bank of $1,500 at its solves against the bots' $5,200–5,400, solving at 45% showing with 87% right and 0.26 wrong solves a game. Set by set it leads Luna alone by +9.2 points (+1.9 to +15.8). On v4 and grading-505 it won 36.7% and tied the bots.
 
 **Lineup 6a on v6:** the bot won 58.6% against two Lunas (v4: 50%). The Lunas won more rounds a game (1.38 and 1.36 to the bot's 1.25), at a median bank of $1,750 and $1,550 against the bot's $5,300, solving at 44–45% showing with 69% right and 0.62–0.63 wrong solves a game each. By seat the bot won 59%, 61%, 56%; bonus 197 of 211.
+
+**Lineup 6b on v6:** the bot won 65.8% against two Haikus (v4: 56%), winning 1.91 rounds a game to their 1.13 and 0.95 at a median bank of $4,500 against $2,550 and $2,850. The Haikus solved late (71% and 73% showing, 92–94% right). By seat the bot won 62%, 68%, 68%; bonus 216 of 237, the Haikus 46 of 69 and 38 of 54.
+
+**Lineup 3f on v6, so far (35 sets):** the Haiku hybrid won 1.47 rounds a game to the bots' 1.27 and 1.26, solving at 62% showing with 97% right, median bank $4,600. Set by set, the hybrid minus Haiku alone is +30.0 points (+24.3 to +35.7); the Haiku hybrid minus the Luna hybrid is −5.2 (−11.0 to +0.5).
 
 **Lineup 3 on v6:** the Luna hybrid won 1.57 rounds a game to the bots' 1.21, 98% of its solves right at a median 60% showing, median bank $4,500 at its solves (bots about $5,000). Bonus 140 of 146. Against v4 bots it won 45%; v6's bots win more rounds, which leaves the hybrid less.
 
