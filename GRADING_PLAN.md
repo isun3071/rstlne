@@ -62,12 +62,14 @@ The paper uses one bot version and one deck, so the grid reruns with bot v6 on g
 | 3f | Haiku hybrid, bot, bot | | | | |
 | 6a | bot, Luna, Luna | | | | |
 | 6b | bot, Haiku, Haiku | | | | |
-| d1 | d1-ultra decision seat, bot, bot | `seed707-f06fd2a1` | running | | |
-| d2 | Luna Decisions seat, bot, bot | `seed707-5a806f9e` | running | | |
+| d1 | d1-ultra decision seat, bot, bot | `seed707-f06fd2a1` | done | d1-ultra **1.9%** (0–4%), bots 49.2% and 48.9%; −47 points | $0.31 |
+| d2 | Luna Decisions seat, bot, bot | `seed707-5a806f9e` | done | Luna Decisions **3.9%** (2–6%), bots 47.5% and 48.6%; −44 to −45 points | $0.86 |
 
 **Lineup 2 on v6:** Sol won 1.94 rounds a game to the bots' 1.03, solving right 97% of the time at a median 50% of the board showing against their 62%; the bots banked more when they won a round (median $5,175 to $5,275 at the solve, against Sol's $3,350). By seat Sol won 39%, 52%, 47%. Bonus: Sol 166 of 166, the bots 89 of 97 and 90 of 97. For reference only (other bots and decks): Sol won 58% against v4 on grading-505, 49% against v5 on grading-505, and 42% against v5 on unedited grading-606.
 
 **Lineups 3b and 3d on v6:** Luna alone won 1.54 rounds a game, more than either bot (1.21, 1.24), but at a median bank of $1,350 at its solves against the bots' $5,050–5,150, solving at 48% showing with 71% right and 0.64 wrong solves a game. Haiku alone won 0.87 rounds a game, solving late (70% showing) at a median $2,300, 93% right. Both did worse than against v4 bots (17.5% and 14%). **The hybrid's lift holds:** Luna hybrid minus Luna alone, set by set, **+26.1 points (+19.4 to +33.1)**, against +27.8 on v4.
+
+**Lineups d1 and d2 on v6:** the decision seats did worse than on v4 (4% and 8%), and worse than Luna alone (14.4%). d1-ultra won 0.43 rounds a game, solving late (76% showing, 85% right) for a median $1,400, and missed 1.94 consonants a game. Luna Decisions won 0.84 rounds a game at a median bank of $700, solving early (47% showing) and often wrongly (58% right, 0.62 wrong solves a game); it bought 0.08 vowels a game, as on v4.
 
 **Lineup 3 on v6:** the Luna hybrid won 1.57 rounds a game to the bots' 1.21, 98% of its solves right at a median 60% showing, median bank $4,500 at its solves (bots about $5,000). Bonus 140 of 146. Against v4 bots it won 45%; v6's bots win more rounds, which leaves the hybrid less.
 
