@@ -43,7 +43,7 @@ plt.rcParams.update({
 
 NAMES = {"openai/gpt-6.1-sol": "Sol", "openai/gpt-6-luna": "Luna", "anthropic/claude-haiku-5.5": "Haiku",
          "deepseek/deepseek-v4.1-flash-1017": "DeepSeek", "openai/gpt-6-luna-decisions": "Luna Decisions",
-         "liquid/d1-ultra": "d1-ultra"}
+         "liquid/d1-ultra": "d1-ultra", "openai/gpt-6.1-terra": "Terra", "qwen/qwen3.8-flash": "Qwen 3.8 Flash"}
 
 
 def short(entrant):
@@ -91,7 +91,13 @@ def check(fig, name):
     fig.canvas.draw()
     r = fig.canvas.get_renderer()
     box = fig.bbox
-    texts = [t for t in fig.findobj(matplotlib.text.Text) if t.get_visible() and t.get_text().strip()]
+    hidden = set()  # labels of ticks past an axis's limits: matplotlib keeps them "visible" but never draws them
+    for ax in fig.axes:
+        for axis, (lo, hi) in ((ax.xaxis, sorted(ax.get_xlim())), (ax.yaxis, sorted(ax.get_ylim()))):
+            for tick in axis.get_major_ticks() + axis.get_minor_ticks():
+                if not lo - 1e-9 <= tick.get_loc() <= hi + 1e-9:
+                    hidden.update((id(tick.label1), id(tick.label2)))
+    texts = [t for t in fig.findobj(matplotlib.text.Text) if t.get_visible() and t.get_text().strip() and id(t) not in hidden]
     ext = [(t.get_text().replace(chr(10), " ")[:40], t.get_window_extent(r)) for t in texts]
     issues = [f"outside: {s!r}" for s, b in ext if b.x0 < box.x0 - 1 or b.y0 < box.y0 - 1 or b.x1 > box.x1 + 1 or b.y1 > box.y1 + 1]
     for i in range(len(ext)):
@@ -103,9 +109,9 @@ def check(fig, name):
 
 
 # 1. The yardstick: each player alone against two bots
-solo = [(F[k], key) for k, key in (("2", "openai/gpt-6.1-sol"), ("3", "hybrid:openai/gpt-6-luna"),
+solo = [(F[k], key) for k, key in (("2", "openai/gpt-6.1-sol"), ("2t", "openai/gpt-6.1-terra"), ("3", "hybrid:openai/gpt-6-luna"),
                                      ("3f", "hybrid:anthropic/claude-haiku-5.5"), ("3c", "deepseek/deepseek-v4.1-flash-1017"),
-                                     ("3b", "llm:openai/gpt-6-luna"), ("3d", "anthropic/claude-haiku-5.5"),
+                                     ("3r", "qwen/qwen3.8-flash"), ("3b", "llm:openai/gpt-6-luna"), ("3d", "anthropic/claude-haiku-5.5"),
                                      ("d2", "decision:openai/gpt-6-luna-decisions"), ("d1", "decision:liquid/d1-ultra"))
         if have(k)]
 rows = []
@@ -139,26 +145,37 @@ for folder, key in solo + ([(F["2"], "bot #1")] if have("2") else []):
     name = "Bot" if kind == "bot" else name
     pts.append((name, kind, e["avg_board_shown"] * 100, e["solve_accuracy"] * 100, e["win_rate"]))
 fig, ax = plt.subplots(figsize=(9, 6.2))
-fig.subplots_adjust(left=0.1, right=0.96, top=0.84, bottom=0.12)
+fig.subplots_adjust(left=0.1, right=0.96, top=0.84, bottom=0.12 if PHASE == "v4" else 0.17)
+if PHASE == "v4":
+    OFFSETS = {"Hybrid (bot + Luna)": (9, 12), "Hybrid (bot + Haiku)": (-9, -22)}  # the two hybrids sit together
+else:  # v6: Sol and Terra sit together, and the hybrids beside the bot
+    OFFSETS = {"Sol": (-9, 4), "Terra": (-9, -18), "Hybrid (bot + Luna)": (-9, 14), "Hybrid (bot + Haiku)": (9, 14),
+               "Bot": (9, -16), "Haiku": (9, -18), "Qwen 3.8 Flash": (-9, -4), "d1-ultra seat": (0, -24)}
 for name, kind, x, y, w in pts:
     ax.scatter(x, y, s=110, color=KIND[kind], edgecolor=SURFACE, linewidth=2, zorder=3)
     label = f"{name}\n{w:.0%} of games" if kind != "bot" else f"{name}\n(against Sol: {w:.0%})"
-    dx, dy = {"Hybrid (bot + Luna)": (9, 12), "Hybrid (bot + Haiku)": (-9, -22)}.get(name, (9, -4))  # the two hybrids sit together
+    dx, dy = OFFSETS.get(name, (9, -4))
     ax.annotate(label, (x, y), textcoords="offset points", xytext=(dx, dy), fontsize=10, color=INK, va="center",
-                ha="left" if dx > 0 else "right")
+                ha="left" if dx > 0 else "right" if dx < 0 else "center")
 ax.set_xlabel("board showing at a correct solve (%): left solves earlier")
 ax.set_ylabel("solves that were right (%)")
 ax.set_xlim(40, 80)
-ax.set_ylim(60, 100)
+low = 60 if PHASE == "v4" else 50  # v6: the Luna Decisions seat is right 57% of the time
+ax.set_ylim(low, 100 if PHASE == "v4" else 103)
+if PHASE != "v4":
+    ax.set_yticks(range(low, 101, 10))
 ax.set_xticks(range(45, 81, 5))
 ax.grid(color=GRID, linewidth=0.8)
 ax.set_axisbelow(True)
 ax.tick_params(length=0)
-ax.text(41, 62, "reckless: early, often wrong", color=INK2, fontsize=9.5)
-ax.text(79, 62, "passive: right, but late", color=INK2, fontsize=9.5, ha="right")
-ax.text(41, 98.6, "early and right", color=INK2, fontsize=9.5)
+ax.text(41, low + 2, "reckless: early, often wrong", color=INK2, fontsize=9.5)
+ax.text(79, low + 2, "passive: right, but late", color=INK2, fontsize=9.5, ha="right")
+ax.text(41, 98.6 if PHASE == "v4" else 101.6, "early and right", color=INK2, fontsize=9.5)
 handles = [plt.Line2D([], [], marker="o", linestyle="", markersize=9, color=KIND[k]) for k in KIND]
-ax.legend(handles, ["LLM alone", "bot", "hybrid", "decision seat"], loc="center right", frameon=False, fontsize=9.5)
+if PHASE == "v4":
+    ax.legend(handles, ["LLM alone", "bot", "hybrid", "decision seat"], loc="center right", frameon=False, fontsize=9.5)
+else:
+    fig.legend(handles, ["LLM alone", "bot", "hybrid", "decision seat"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
 save(fig, "2-temperament.png", "Early and right wins",
      "Each player alone against two bots (the bot's point is from its games against Sol); labels give games won")
 
@@ -215,9 +232,11 @@ def per_round(folder, key):
 
 groups = [(g, F[k], key, kind) for g, k, key, kind in (
     ("Sol vs bots", "2", "openai/gpt-6.1-sol", "LLM"),
+    ("Terra vs bots", "2t", "openai/gpt-6.1-terra", "LLM"),
     ("Hybrid (Luna) vs bots", "3", "hybrid:openai/gpt-6-luna", "hybrid"),
     ("Hybrid (Haiku) vs bots", "3f", "hybrid:anthropic/claude-haiku-5.5", "hybrid"),
     ("DeepSeek vs bots", "3c", "deepseek/deepseek-v4.1-flash-1017", "LLM"),
+    ("Qwen 3.8 Flash vs bots", "3r", "qwen/qwen3.8-flash", "LLM"),
     ("Luna vs bots", "3b", "openai/gpt-6-luna", "LLM"),
     ("Haiku vs bots", "3d", "anthropic/claude-haiku-5.5", "LLM"),
     ("Luna Decisions seat vs bots", "d2", "openai/gpt-6-luna-decisions", "decision")) if have(k)]
@@ -242,16 +261,40 @@ save(fig, "4-rounds-and-banks.png", "The bots win fewer rounds, but bigger ones"
      "Same lineups as chart 1: each player alone against two bots")
 
 # 5. Cost per game
-cost = [("Luna", 0.37), ("Haiku", 0.52), ("DeepSeek", 1.43), ("Sol (half-price tier)", 1.76),
-        ("Gemini 3.8 Flash (half-price, 1-set trial)", 6.9), ("Gemini 4 Argon (half-price, 1-set trial)", 9.6)]
-fig, ax = plt.subplots(figsize=(9, 4.6))
-fig.subplots_adjust(left=0.38, right=0.95, top=0.8, bottom=0.15)
-for i, (name, c) in enumerate(reversed(cost)):
+def game_costs(folder):
+    """Each finished game's spend, every call included (moves, and replies redone after an invalid one)."""
+    out = []
+    for p in glob.glob(str(T / folder / "*.jsonl")):
+        with open(p) as fh:
+            last = fh.readlines()[-1]
+        s = json.loads(last)
+        if s.get("type") == "summary":
+            out.append(s["usage"]["cost"])
+    return out
+
+
+if PHASE == "v4":  # the v4 chart, from the costs measured then (and two 1-set Gemini trials)
+    cost = [("Luna", 0.37, None), ("Haiku", 0.52, None), ("DeepSeek", 1.43, None), ("Sol (half-price tier)", 1.76, None),
+            ("Gemini 3.8 Flash (half-price, 1-set trial)", 6.9, None), ("Gemini 4 Argon (half-price, 1-set trial)", 9.6, None)]
+else:  # one LLM seat against two bots; output price per million tokens as billed (Sol and Terra on OpenAI's half-price flex tier)
+    priced = (("Sol, $5 out (flex)", "2"), ("Terra, $2.50 out (flex)", "2t"), ("DeepSeek, $0.60 out", "3c"),
+              ("Qwen 3.8 Flash, $0.47 out", "3r"), ("Luna, $0.50 out", "3b"), ("Haiku, $0.50 out", "3d"))
+    cost = []
+    for name, k in priced:
+        if have(k):
+            g = sorted(game_costs(F[k]))
+            cost.append((name, st.mean(g) * 100, (g[len(g) // 10] * 100, g[len(g) * 9 // 10] * 100)))
+    cost.sort(key=lambda c: c[1])
+fig, ax = plt.subplots(figsize=(9, 4.6) if PHASE == "v4" else (9, 0.62 * len(cost) + 2.2))
+fig.subplots_adjust(left=0.38, right=0.95, top=0.8, bottom=0.15 if PHASE == "v4" else 0.17)
+for i, (name, c, spread) in enumerate(reversed(cost)):
     ax.barh(i, c, height=0.56, color=KIND["LLM"], zorder=2)
-    ax.text(c + 0.15, i, f"{c:.1f}¢", va="center", fontsize=10.5, color=INK)
+    if spread:
+        ax.plot(spread, [i, i], color=INK, linewidth=1.4, zorder=3)
+    ax.text((spread[1] if spread else c) + 0.15, i, f"{c:.1f}¢", va="center", fontsize=10.5, color=INK)
 ax.set_yticks(range(len(cost)), [c[0] for c in reversed(cost)])
-ax.set_xlim(0, 11.5)
-tidy(ax, "cost per game, US cents (one LLM seat)")
+ax.set_xlim(0, 11.5 if PHASE == "v4" else max(s[1] if s else c for _, c, s in cost) * 1.25)
+tidy(ax, "cost per game, US cents (one LLM seat)" + ("" if PHASE == "v4" else "; line: 10th to 90th percentile game"))
 save(fig, "5-cost-per-game.png", "Cheap tokens don't make a cheap game",
      "Cost depends on how much a model writes and how much of its prompt is cached, not just its token price")
 
@@ -295,15 +338,19 @@ def places_of(folder, pick):
 
 rows7 = [(name, k, pick, kind) for name, k, pick, kind in (
          ("Sol", "2", lambda s: s.get("model") == "openai/gpt-6.1-sol", "LLM"),
+         ("Terra", "2t", lambda s: s.get("model") == "openai/gpt-6.1-terra", "LLM"),
          ("Hybrid (bot + Luna)", "3", lambda s: s["kind"] == "hybrid", "hybrid"),
          ("Hybrid (bot + Haiku)", "3f", lambda s: s["kind"] == "hybrid", "hybrid"),
          ("DeepSeek", "3c", lambda s: s.get("model") == "deepseek/deepseek-v4.1-flash-1017", "LLM"),
+         ("Qwen 3.8 Flash", "3r", lambda s: s.get("model") == "qwen/qwen3.8-flash", "LLM"),
          ("Luna", "3b", lambda s: s.get("model") == "openai/gpt-6-luna" and s["kind"] == "llm", "LLM"),
          ("Haiku", "3d", lambda s: s.get("model") == "anthropic/claude-haiku-5.5", "LLM"),
          ("Luna Decisions seat", "d2", lambda s: s["kind"] == "decision", "decision"),
          ("d1-ultra seat", "d1", lambda s: s["kind"] == "decision", "decision"),
          ("Bot, against two Lunas", "6a", lambda s: s["kind"] == "bot", "bot"),
-         ("Bot, against two Haikus", "6b", lambda s: s["kind"] == "bot", "bot")) if have(k)]
+         ("Bot, against two Haikus", "6b", lambda s: s["kind"] == "bot", "bot"),
+         ("Bot, against two d1-ultras", "6d1", lambda s: s["kind"] == "bot", "bot"),
+         ("Bot, against two Luna Dec.", "6d2", lambda s: s["kind"] == "bot", "bot")) if have(k)]
 rows7 = [(name, F[k], pick, kind) for name, k, pick, kind in rows7]  # (name, folder, pick, kind) from here on
 RAMP = ["#104281", "#2a78d6", "#86b6ef"]  # 1st, 2nd, 3rd: one hue, darkest first
 fig, ax = plt.subplots(figsize=(11, 0.6 * len(rows7) + 2.6))
