@@ -15,6 +15,9 @@ class InvalidResponse(Exception):
         super().__init__(message)
         self.code = code
 
+    def __reduce__(self):  # rebuilt from both fields, so it survives the trip back from a tournament's game process
+        return type(self), (self.code, self.args[0])
+
 
 @dataclass(frozen=True)
 class CallRecord:

@@ -20,6 +20,10 @@ class DecisionsError(Exception):
     def __init__(self, status: int, message: str):
         super().__init__(f"Decisions API {status}: {message}")
         self.status = status
+        self.message = message
+
+    def __reduce__(self):  # rebuilt from both fields, so it survives the trip back from a tournament's game process
+        return type(self), (self.status, self.message)
 
 
 @dataclass(frozen=True)
