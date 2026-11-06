@@ -24,7 +24,6 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 | 6 | bot, W, W | Can the bot beat two good LLMs? Optional now (see below) | 60 |
 | 6a | bot, Luna, Luna | Can the bot beat a pair of reckless guessers? | 60 |
 | 6b | bot, Haiku, Haiku | `seed707-345192e8` | done | bot **65.8%** (61–71%), Haikus 19.2% and 15.0%; +47 and +51 points (+38 to +58) | $4.92 |
-| 3q | Qwen 3.7 Flash, bot, bot | `seed707-70d9d212` | stopped at 8 games in 2 sets | Qwen 3.7 Flash won none of 8 | $0.01 |
 | 3r | Qwen 3.8 Flash, bot, bot | `seed707-a8527439` | running (from 2026-11-06, `--max-cost 15`) | | |
 | 6c | bot, DeepSeek, DeepSeek | ...a pair of eager readers? | 60 |
 
@@ -39,8 +38,7 @@ Six tournaments that pit every kind of player against every other: LLMs, the bot
 | 3e | hybrid:DeepSeek, bot, bot | does wrapping DeepSeek lift it too? Stopped after 9 games (runaway thinking made it slow and costly) | 60 |
 | 3f | hybrid:Haiku, bot, bot | the hybrid's lift on a second lab, in place of 3e | 60 |
 | 2t | Terra, bot, bot | the mid-range model's yardstick, between Sol and Luna (added 2026-11-06, on v6 only) | 60 |
-| 3q | Qwen 3.7 Flash, bot, bot | Alibaba's solo yardstick, a fourth lab (added 2026-11-06, on v6 only) | 60 |
-| 3r | Qwen 3.8 Flash, bot, bot | Alibaba's stronger reader (added 2026-11-06, on v6 only) | 60 |
+| 3r | Qwen 3.8 Flash, bot, bot | Alibaba's solo yardstick, a fourth lab (added 2026-11-06, on v6 only) | 60 |
 | d1 | decision:d1-ultra, bot, bot | a decision model deciding everything, Luna solving | 60 |
 | d2 | decision:Luna Decisions, bot, bot | the same, with the solver's own family deciding | 60 |
 
@@ -87,7 +85,7 @@ The paper uses one bot version and one deck, so the grid reruns with bot v6 on g
 
 **Lineup 3f on v6:** the Haiku hybrid ties the bots (+5.0 and +3.3 points, both intervals crossing zero; v4: 44%). It won 1.42 rounds a game to the bots' 1.30 and 1.29, solving at a median 62% showing (bots 63–64%) with 97% right, median bank $4,575 at its solves. Bonus 124 of 130. **The hybrid's lift holds on a second lab:** Haiku hybrid minus Haiku alone, set by set, **+28.6 points (+23.3 to +33.9)**, against Luna's +26.1 (+19.2 to +32.8). The Haiku hybrid trails the Luna hybrid by 4.4 points (−8.9 to −0.0). Haiku hands the bot an answer later: asked each turn, Luna said solvable with a fitting answer on 49% of asks and Haiku on 29%, and the first such answer in a round came at a median 36% showing for Luna (781 rounds) against 50% for Haiku (553). Only 2% of Luna's hybrid asks and 1% of Haiku's were dropped for not fitting the board.
 
-**Qwen (3q), why 3.7 Flash:** Qwen 3.8 Flash cost $0.03–0.06 a game in two test games on 2026-11-06: its provider caches only up to a marked message, and only the system prompt was marked (19% of input cached), and its thinking ran long (one move took 18,564 output tokens). Marking the newest message too (commit 4b31b8a) lifted caching to 74% but not the cost per move. Qwen 3.7 Flash ($0.03 / $0.13 per million against $0.15 / $0.47) cost about $0.003 a game in three test games on dev puzzles, 82–91% cached, longest move 2,026 tokens. In those games it attempted one solve in 12 rounds (right, at 93% showing) and made 8 invalid moves in 73. **Then 3.8 Flash after all (3r):** in two more test games on 2026-11-06 it cost $0.008 and $0.041 and solved at 32%, 40% and 64% showing in one of them (3 right, 1 wrong), winning that game; 3.7 Flash's reasoning showed it unable to read boards the bots solve at 60–65% (stuck at 65% on COMFORTABLE WALKING SHOES). Ian chose 60 sets of 3.8 Flash at an estimated $10–12.
+**Qwen 3.8 Flash (3r), cost:** in two test games on 2026-11-06 it cost $0.03–0.06 a game: its provider caches only up to a marked message, and only the system prompt was marked (19% of input cached), and its thinking ran long (one move took 18,564 output tokens). Marking the newest message too (commit 4b31b8a) lifted caching to 74–91%. In two more test games it cost $0.008 and $0.041 and, in one, solved at 32%, 40% and 64% showing (3 right, 1 wrong) and won. Ian chose 60 sets at an estimated $10–12.
 
 **Lineup 3 on v6:** the Luna hybrid won 1.57 rounds a game to the bots' 1.21, 98% of its solves right at a median 60% showing, median bank $4,500 at its solves (bots about $5,000). Bonus 140 of 146. Against v4 bots it won 45%; v6's bots win more rounds, which leaves the hybrid less.
 
