@@ -61,12 +61,27 @@ def test_anthropic_requests_ask_for_caching():
     assert request_for("anthropic/claude-haiku-5.5")["extra_body"]["cache_control"] == {"type": "ephemeral"}
 
 
-def test_qwen_requests_mark_the_system_prompt_for_caching():
-    system = request_for("qwen/qwen3.8-flash")["messages"][0]
-    assert system == {
-        "role": "system",
-        "content": [{"type": "text", "text": "the rules", "cache_control": {"type": "ephemeral"}}],
-    }
+def marked(text):
+    return [{"type": "text", "text": text, "cache_control": {"type": "ephemeral"}}]
+
+
+def test_qwen_requests_mark_the_system_prompt_and_the_newest_message_for_caching():
+    assert request_for("qwen/qwen3.8-flash")["messages"] == [
+        {"role": "system", "content": marked("the rules")}, {"role": "user", "content": marked("your move")}]
+
+
+def test_qwen_marks_only_the_newest_message_of_a_round_in_progress():
+    history = [{"role": "system", "content": "the rules"}, {"role": "user", "content": "your move"},
+               {"role": "assistant", "content": None, "reasoning": "spin first",
+                "tool_calls": [{"id": "c1", "type": "function", "function": {"name": "spin", "arguments": "{}"}}]},
+               {"role": "tool", "tool_call_id": "c1", "content": "$500. Call a consonant."}]
+    client = FakeClient([completion(("call_consonant", {"letter": "T"}))])
+    OpenRouter(client).chat(model="qwen/qwen3.8-flash", messages=history, tools=TOOLS)
+    sent = client.calls[0]["messages"]
+    assert sent[0] == {"role": "system", "content": marked("the rules")}
+    assert sent[1] == history[1] and sent[2] == history[2]  # the middle goes as is, reasoning included
+    assert sent[3] == {"role": "tool", "tool_call_id": "c1", "content": marked("$500. Call a consonant.")}
+    assert history[3]["content"] == "$500. Call a consonant."  # the caller's history is untouched
 
 
 @pytest.mark.parametrize("model", ["openai/gpt-6-luna", "deepseek/deepseek-v4.1-flash-1017", "z-ai/glm-5.3-flash"])

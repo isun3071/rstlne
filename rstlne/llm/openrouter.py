@@ -216,11 +216,21 @@ def _tool_choice(model: str, reasoning: dict | None) -> str:
 def _caching(model: str, messages: list[dict]) -> tuple[list[dict], dict]:
     """Ask for prompt caching where a provider needs asking. OpenAI, DeepSeek, and Z.AI cache
     on their own. Anthropic takes one top level flag that follows the conversation as it grows.
-    Qwen needs a marked message, so the system prompt gets one."""
+    Qwen's provider caches only up to a marked message, so two get marks: the system prompt, which a
+    round's first move reads from the cache, and the newest message, so the next move reads everything
+    before it from the cache. With the system prompt marked alone, 19% of input was cached in a Qwen 3.8
+    Flash game on 2026-11-06, against 78-94% for the models that cache on their own."""
     if model.startswith("anthropic/"):
         return messages, {"cache_control": CACHE}
-    first = messages[0] if messages else {}
-    if model.startswith("qwen/") and first.get("role") == "system" and isinstance(first.get("content"), str):
-        system = {"role": "system", "content": [{"type": "text", "text": first["content"], "cache_control": CACHE}]}
-        return [system, *messages[1:]], {}
+    if model.startswith("qwen/"):
+        last = len(messages) - 1
+        return [_marked(m) if (i == 0 and m.get("role") == "system") or i == last else m
+                for i, m in enumerate(messages)], {}
     return messages, {}
+
+
+def _marked(message: dict) -> dict:
+    """A copy of a message with its text as one block marked for caching; the caller's history is untouched."""
+    if not isinstance(message.get("content"), str):
+        return message
+    return {**message, "content": [{"type": "text", "text": message["content"], "cache_control": CACHE}]}

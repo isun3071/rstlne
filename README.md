@@ -154,7 +154,7 @@ Each game writes `logs/<date>-<time>-seed<N>.jsonl` with:
 - one line per move or invalid try, with the state before it, the model's raw output, the parsed action, the result, the wedge, and token usage
 - a summary with final totals, token use and cost per seat, and invalid moves by category
 
-Token use includes how many prompt tokens each provider read from its cache. Models from OpenAI, DeepSeek, and Z.AI cache on their own. Anthropic and Qwen models get asked for caching on every request, and each seat sends a session ID so OpenRouter keeps it on one provider.
+Token use includes how many prompt tokens each provider read from its cache. Models from OpenAI, DeepSeek, and Z.AI cache on their own. Anthropic models get asked for caching on every request. Qwen's provider caches only up to a marked message, so each Qwen request marks its system prompt and its newest message. Each seat sends a session ID so OpenRouter keeps it on one provider.
 
 ## Tests
 
