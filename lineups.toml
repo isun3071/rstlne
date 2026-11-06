@@ -12,6 +12,8 @@ default = "v6"
 "3" = { folder = "seed707-c18bccd7", label = "Luna hybrid · bot · bot" }
 "3b" = { folder = "seed707-4bac0081", label = "Luna · bot · bot" }
 "3d" = { folder = "seed707-21904e0d", label = "Haiku · bot · bot" }
+"d1" = { folder = "seed707-f06fd2a1", label = "d1-ultra seat · bot · bot" }
+"d2" = { folder = "seed707-5a806f9e", label = "Luna Decisions seat · bot · bot" }
 
 [v4]
 "1" = { folder = "seed707-d7589355", label = "Sol · DeepSeek · Haiku" }
