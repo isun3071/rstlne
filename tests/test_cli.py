@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import pytest
 from fakes import FakeDecisions, board_reader, decide_by, router, solvable_when_full
@@ -130,3 +131,12 @@ def test_a_deck_tagged_by_round_gives_each_round_one_of_its_own():
     picks = [cli.pick_puzzles(tagged + [bonus], 4, seed=s)[0] for s in range(10)]
     assert all([p.round for p in main] == [1, 2, 3, 4] for main in picks)
     assert len({main[0] for main in picks}) > 1  # still a seeded draw within each round
+
+
+def test_games_started_together_on_one_seed_get_their_own_logs(tmp_path):
+    # Two games launched in the same second on the same seed once wrote into one file and garbled both
+    now = datetime(2026, 11, 6, 15, 18, 0)
+    first, second = cli.log_path(tmp_path, 707, now), cli.log_path(tmp_path, 707, now)
+    assert first.name == "20261106-151800-seed707.jsonl"
+    assert second.name == "20261106-151800-seed707-2.jsonl"
+    assert first.exists() and second.exists()  # each name is claimed as it's handed out

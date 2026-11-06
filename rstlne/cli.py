@@ -161,6 +161,21 @@ def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def log_path(log_dir: Path, seed: int, now: datetime | None = None) -> Path:
+    """A new game's log file, named by its start time and seed, claimed on disk so no other game takes it.
+    Games started in the same second on the same seed get -2, -3, ...: once two shared a file and garbled both."""
+    log_dir.mkdir(parents=True, exist_ok=True)
+    stem = f"{now or datetime.now():%Y%m%d-%H%M%S}-seed{seed}"
+    n = 1
+    while True:
+        path = log_dir / f"{stem}{'' if n == 1 else f'-{n}'}.jsonl"
+        try:
+            path.open("x").close()
+            return path
+        except FileExistsError:
+            n += 1
+
+
 def main(
     argv: Sequence[str] | None = None,
     client: OpenRouter | None = None,
@@ -176,7 +191,7 @@ def main(
     seed = args.seed if args.seed is not None else random.randrange(1_000_000)
     puzzles, bonus = pick_puzzles(settings.load_puzzles(Path(args.puzzles)), rules.main_rounds, seed)
 
-    path = Path(args.log_dir) / f"{datetime.now():%Y%m%d-%H%M%S}-seed{seed}.jsonl"
+    path = log_path(Path(args.log_dir), seed)
     kinds = {kind for kind, _ in seats}
     client, decisions = clients(kinds, client, decisions)
     players = build_players(seats, rules, spec, config, client, decisions, path.stem)
