@@ -68,7 +68,8 @@ def _mixed(samples: list[str], unknown: list[bool], text: str, pool: list[str], 
                 copies += w * len(where)
         if hit > 0:
             letters[c] = LetterStats(p_hit=min(1.0, hit), count=max(1.0, copies / hit), entropy=max(0.0, _entropy(patterns, 1.0)))
-    return Belief(letters=letters, answers=tuple((a, min(1.0, p)) for a, p in top), oov=sum(w for _, oov, w in rows if oov))
+    return Belief(letters=letters, answers=tuple((a, min(1.0, p)) for a, p in top), oov=sum(w for _, oov, w in rows if oov),
+                  distinct=len(answers))
 
 
 class FrequencyReader:
@@ -158,7 +159,7 @@ def summarize(samples: list[str], unknown: list[bool], text: str, pool: list[str
     keep = [i for i, (s, oov) in enumerate(zip(samples, unknown)) if oov or s not in refuted]
     if not keep:
         if suggested is None:
-            return replace(summarize(samples, unknown, text, pool, knobs), answers=(), oov=1.0)
+            return replace(summarize(samples, unknown, text, pool, knobs), answers=(), oov=1.0, distinct=0)
         unknown = [True] * len(samples)  # refuted answers still speak to letters, but not as answers
     else:
         samples, unknown = [samples[i] for i in keep], [unknown[i] for i in keep]
@@ -176,4 +177,4 @@ def summarize(samples: list[str], unknown: list[bool], text: str, pool: list[str
             continue
         count = sum(sum(s[i] == c for i in hidden) for s in hits) / len(hits)
         letters[c] = LetterStats(p_hit=len(hits) / n, count=count, entropy=_entropy(patterns, n))
-    return Belief(letters=letters, answers=tuple((a, k / n) for a, k in top), oov=sum(unknown) / n)
+    return Belief(letters=letters, answers=tuple((a, k / n) for a, k in top), oov=sum(unknown) / n, distinct=len(answers))

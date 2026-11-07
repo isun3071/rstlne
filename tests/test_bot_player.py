@@ -140,10 +140,30 @@ def test_the_bot_says_what_it_reads_and_how_it_weighed_its_moves():
     record = {"answers": [["WHEEL OF FORTUNE", 0.6], ["WHOOL OF FORTUNE", 0.25]], "oov": 0.05, "p_steal": 0.3,
               "values": {"spin": 1234.4, "buy_vowel": 980.0, "solve": 1000.0}, "win_mode": False}
     assert explain(record) == [
-        "Reads WHEEL OF FORTUNE, 60% sure (then WHOOL OF FORTUNE 25%) · 5% chance it's outside its word lists",
+        "Reads WHEEL OF FORTUNE 60%, then WHOOL OF FORTUNE 25% · 5% chance it's outside its word lists",
         "Chance an opponent solves before its next turn: 30%",
         "Worth: spin $1,234, buy a vowel $980, solve $1,000 → spin",
     ]
+
+
+def test_the_bot_names_its_top_two_answers_and_how_many_others_it_sampled():
+    record = {"answers": [["WHEEL OF FORTUNE", 0.6], ["WHOOL OF FORTUNE", 0.25], ["WHEEL OF FURTUNE", 0.05]],
+              "distinct": 9, "oov": 0.05, "p_steal": None, "values": {}}
+    assert explain(record)[0] == ("Reads WHEEL OF FORTUNE 60%, then WHOOL OF FORTUNE 25%, and 7 other answers (10%)"
+                                  " · 5% chance it's outside its word lists")
+    one = {"answers": [["WHEEL OF FORTUNE", 0.6], ["WHOOL OF FORTUNE", 0.4]], "distinct": 2, "oov": 0.0, "values": {}}
+    assert explain(one)[0] == "Reads WHEEL OF FORTUNE 60%, then WHOOL OF FORTUNE 40% · 0% chance it's outside its word lists"
+    single = {"answers": [["WHEEL OF FORTUNE", 0.9]], "distinct": 2, "oov": 0.0, "values": {}}
+    assert explain(single)[0].startswith("Reads WHEEL OF FORTUNE 90%, and 1 other answer (10%)")
+
+
+def test_the_reader_counts_the_distinct_answers_it_sampled():
+    from rstlne.players.bot.reader import summarize
+    from rstlne.players.bot.versions import knobs
+    samples = ["AB", "AB", "AC", "AD", "AE"]
+    belief = summarize(samples, [False] * 4 + [True], "A_", list("BCDE"), knobs(6))
+    assert belief.distinct == 3  # AB, AC, AD; AE has an unknown word and counts toward oov only
+    assert summarize(samples, [False] * 5, "A_", list("BCDE"), knobs(6), refuted=frozenset({"AB"})).distinct == 3
 
 
 def test_from_round_3_the_bot_weighs_its_chance_to_win():

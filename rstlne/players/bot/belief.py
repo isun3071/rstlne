@@ -25,6 +25,7 @@ class Belief:
     letters: Mapping[str, LetterStats]  # letters left out never hit, like used ones
     answers: tuple[tuple[str, float], ...]  # top whole answers, most likely first, with raw probabilities
     oov: float  # chance the answer holds a word or name outside the vocabulary
+    distinct: int = 0  # distinct answers the reader sampled (answers keeps only the top few); for display only
 
     def __post_init__(self) -> None:
         for letter, s in self.letters.items():

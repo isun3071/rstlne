@@ -321,7 +321,7 @@ def test_the_hybrid_shows_the_bots_read_and_what_the_model_said(rules, wheel_spe
     before = player.reader.read(view).confidence
     player.decide(view)
     lines = player.thoughts()
-    assert lines[0].startswith("Reads WHEEL OF FORTUNE, ")
+    assert lines[0].startswith("Reads WHEEL OF FORTUNE ")
     after = player.last_call.raw["confidence"]
     assert lines[-1] == (f"deepseek-v4.1-flash-1017 said: solvable, WHEEL OF FORTUNE · fits, trusted 80%"
                          f" · the bot's read went from {before:.0%} to {after:.0%}")

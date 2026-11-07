@@ -65,9 +65,12 @@ def explain(record: dict) -> list[str]:
     """A decision record in plain words: what the bot reads, the steal odds, and how it weighed its moves."""
     answers, oov = record.get("answers") or [], record.get("oov", 0.0)
     if answers:
-        (best, p), rest = answers[0], answers[1:2]  # one runner-up, so the line fits one row on a wide screen
-        then = f" (then {rest[0][0]} {rest[0][1]:.0%})" if rest else ""
-        read = f"Reads {best}, {p:.0%} sure{then}"
+        shown = answers[:2]  # the top two, then how many others it sampled and their share
+        read = "Reads " + ", then ".join(f"{a} {p:.0%}" for a, p in shown)
+        others = (record.get("distinct") or 0) - len(shown)
+        if others > 0:
+            rest = max(0.0, 1 - sum(p for _, p in shown) - oov)
+            read += f", and {others} other answer{'s' if others > 1 else ''} ({rest:.0%})"
     else:
         read = "No answer in sight yet"
     lines = [f"{read} · {oov:.0%} chance it's outside its word lists"]
@@ -163,7 +166,8 @@ class BotPlayer(Player):
     def decide(self, view: PublicView, error: str | None = None) -> Action:
         belief = self._belief(view)
         self._record = {"version": self.version, "confidence": belief.confidence, "best": belief.best,
-                        "answers": [list(a) for a in belief.answers[:3]], "oov": belief.oov, "p_steal": None, "values": {}}
+                        "answers": [list(a) for a in belief.answers[:3]], "distinct": belief.distinct, "oov": belief.oov,
+                        "p_steal": None, "values": {}}
         self._goal = None
         try:
             return self._decide(view, belief)
