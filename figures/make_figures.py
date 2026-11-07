@@ -299,27 +299,53 @@ save(fig, "5-cost-per-game.png", "Cheap tokens don't make a cheap game",
      "Cost depends on how much a model writes and how much of its prompt is cached, not just its token price")
 
 # 6. The bonus test: each player alone on every bonus puzzle in a deck
-bonus = {"Sol": (99, 99, 98), "DeepSeek": (90, 95, 89), "Haiku": (53, 67, 57), "Bot": (67, 88, 86)}
-decks = ["aired (show puzzles)", "grid deck", "harder generated (v7)"]
-shades = ["#86b6ef", "#2a78d6", "#104281"]
-fig, ax = plt.subplots(figsize=(11, 5.2))
-fig.subplots_adjust(left=0.11, right=0.97, top=0.8, bottom=0.22)
-players = list(bonus)
-for d in range(3):
-    for i, p in enumerate(players):
-        v = bonus[p][d]
-        ax.barh(i * 1.0 + (1 - d) * 0.26, v, height=0.24, color=shades[d], zorder=2)
-        ax.text(v + 0.8, i + (1 - d) * 0.26, f"{v}%", va="center", fontsize=9, color=INK)
-ax.axvline(38, color=INK2, linewidth=1, linestyle=(0, (4, 3)))
-ax.set_yticks(range(len(players)), players)
-ax.invert_yaxis()
-ax.set_xlim(0, 108)
-ax.set_xticks(range(0, 101, 20))
-tidy(ax, "bonus puzzles solved (%)")
-handles = [plt.Rectangle((0, 0), 1, 1, color=s) for s in shades] + [plt.Line2D([], [], color=INK2, linestyle=(0, (4, 3)))]
-fig.legend(handles, decks + ["contestants, 10 s clock (~38%)"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
-save(fig, "6-bonus-test.png", "The bonus round, alone",
-     "Each player on 100 bonus puzzles per deck, one solve each, no clock for the models")
+if PHASE == "v4":  # the v4 chart, from the bonus tests run then on three decks
+    bonus = {"Sol": (99, 99, 98), "DeepSeek": (90, 95, 89), "Haiku": (53, 67, 57), "Bot": (67, 88, 86)}
+    decks = ["aired (show puzzles)", "grid deck", "harder generated (v7)"]
+    shades = ["#86b6ef", "#2a78d6", "#104281"]
+    fig, ax = plt.subplots(figsize=(11, 5.2))
+    fig.subplots_adjust(left=0.11, right=0.97, top=0.8, bottom=0.22)
+    players = list(bonus)
+    for d in range(3):
+        for i, p in enumerate(players):
+            v = bonus[p][d]
+            ax.barh(i * 1.0 + (1 - d) * 0.26, v, height=0.24, color=shades[d], zorder=2)
+            ax.text(v + 0.8, i + (1 - d) * 0.26, f"{v}%", va="center", fontsize=9, color=INK)
+    ax.axvline(38, color=INK2, linewidth=1, linestyle=(0, (4, 3)))
+    ax.set_yticks(range(len(players)), players)
+    ax.invert_yaxis()
+    ax.set_xlim(0, 108)
+    ax.set_xticks(range(0, 101, 20))
+    tidy(ax, "bonus puzzles solved (%)")
+    handles = [plt.Rectangle((0, 0), 1, 1, color=s) for s in shades] + [plt.Line2D([], [], color=INK2, linestyle=(0, (4, 3)))]
+    fig.legend(handles, decks + ["contestants, 10 s clock (~38%)"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
+    save(fig, "6-bonus-test.png", "The bonus round, alone",
+         "Each player on 100 bonus puzzles per deck, one solve each, no clock for the models")
+else:  # v6: the bonus test on grading-606b's 100 bonus puzzles, seed 707
+    test = json.loads(sorted(Path("logs/bonustest").glob("grading-606b-seed707-*/report.json"))[-1].read_text())
+    rows = []
+    for e in test["entrants"]:
+        name, kind = short(e["entrant"])
+        rows.append((name, kind, e["rate"], e["ci95"], e["solved"], e["puzzles"]))
+    rows.sort(key=lambda r: r[2])
+    fig, ax = plt.subplots(figsize=(9, 0.62 * len(rows) + 2.2))
+    fig.subplots_adjust(left=0.27, right=0.95, top=0.8, bottom=0.17)
+    for i, (name, kind, rate, ci, k, n) in enumerate(rows):
+        ax.barh(i, rate * 100, height=0.56, color=KIND[kind], zorder=2)
+        ax.plot([ci[0] * 100, ci[1] * 100], [i, i], color=INK, linewidth=1.4, zorder=3)
+        ax.text(ci[1] * 100 + 1.2, i, f"{rate:.0%}" + ("" if n == 100 else f" ({k} of {n})"),
+                va="center", fontsize=11, color=INK, fontweight="bold")
+    ax.axvline(38, color=INK2, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
+    ax.text(38.6, len(rows) - 0.45, "contestants on the show, 10 s clock (~38%)", fontsize=9.5, color=INK2, va="bottom")
+    ax.set_yticks(range(len(rows)), [r[0] for r in rows])
+    ax.set_xlim(0, 118)
+    ax.set_xticks(range(0, 101, 20))
+    tidy(ax, "bonus puzzles solved, with 95% interval (%)")
+    handles = [plt.Rectangle((0, 0), 1, 1, color=KIND[k]) for k in ("LLM", "hybrid", "decision", "bot")]
+    fig.legend(handles, ["LLM", "hybrid: the bot picks, the LLM reads", "decision seat", "bot"],
+               loc="lower center", ncol=4, frameon=False, fontsize=9.5)
+    save(fig, "6-bonus-test.png", "The bonus round, alone",
+         "Each player on grading-606b's 100 bonus puzzles: RSTLNE, its own picks, one solve, no clock for the models")
 # 7. Finishing places: 1st, 2nd, 3rd, and the average place (2.00 is par)
 def places_of(folder, pick):
     """Each matching seat's places in a lineup; ties share the average place."""
