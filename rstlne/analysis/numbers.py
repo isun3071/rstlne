@@ -239,6 +239,11 @@ def build(phase: str | None = None, toml: Path = common.LINEUPS, *, pairs=PAIRS,
     deck = decks.pop() if len(decks) == 1 else None
     made_by = {json.dumps(v.get("generated_by"), sort_keys=True) for v in out_lineups.values()}
     letter_data = json.loads(Path(letters).read_text()) if letters and Path(letters).exists() else None
+    if letter_data:  # only this phase's lineups
+        letter_data = {**letter_data, "rows": [r for r in letter_data["rows"] if r["lineup"] in out_lineups]}
+    gap_data = json.loads(Path(gap).read_text()) if gap and Path(gap).exists() else None
+    if gap_data:
+        gap_data = {**gap_data, "lineups": {k: v for k, v in gap_data["lineups"].items() if k in out_lineups}}
     return {
         "meta": {"phase": phase, "made": datetime.now(timezone.utc).isoformat(timespec="seconds"), "commit": _commit(),
                  "lineups": list(out_lineups), "deck": deck, "seed": seed,
@@ -248,7 +253,7 @@ def build(phase: str | None = None, toml: Path = common.LINEUPS, *, pairs=PAIRS,
         "pairs": out_pairs,
         "bonus": bonus_report(bonus),
         "letters": letters_summary(letter_data) if letter_data else None,
-        "reading_gap": json.loads(Path(gap).read_text()) if gap and Path(gap).exists() else None,
+        "reading_gap": gap_data,
     }
 
 
