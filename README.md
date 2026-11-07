@@ -6,7 +6,7 @@ Wheel of Fortune in the terminal, with language models at the table. Each of the
 
 The same engine runs seeded, model-only tournaments that compare how well models pick letters, take risks, and time their solves.
 
-**Results:** [FINDINGS.md](FINDINGS.md) covers what about 4,000 scored games showed: the best model beats our bot, most don't, models have distinct temperaments, and letting a model read while the bot decides lifts weak models by about 28 points.
+[FINDINGS.md](FINDINGS.md) covers what about 4,000 scored games showed: the best model beats our bot, most don't, models have distinct temperaments, and letting a model read while the bot decides lifts weak models by about 28 points.
 
 ## Status
 
@@ -20,8 +20,8 @@ The same engine runs seeded, model-only tournaments that compare how well models
 | Game logs | Done |
 | Bot | Version 5 (2026-11-02): v4 with better reading and Express play. Version 4 is the checkpoint version |
 | Tournament runner, bonus test, puzzle generator | Done |
-| **The v4 checkpoint:** the grading runs in `FINDINGS.md`, all against bot v4 | Done (2026-11-01) |
-| **The v5 phase:** a stronger bot (Express play, word-pair reading), checked against v4 | v5 adopted (+12.6 points over v4 in self-play); Sol against two v5 bots next |
+| The v4 checkpoint: the grading runs in `FINDINGS.md`, all against bot v4 | Done (2026-11-01) |
+| The v5 phase: a stronger bot (Express play, word-pair reading), checked against v4 | v5 adopted (+12.6 points over v4 in self-play); Sol against two v5 bots next |
 | Local web page, starting with a solver | Planned for phase 2 |
 
 ## Setup
@@ -43,7 +43,7 @@ Put your key in `.env` as `OPENROUTER_API_KEY=...`. Git ignores `.env`.
 uv run python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
 ```
 
-Each seat is `human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slug>`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, including when to solve, and an LLM writes the answer. `[decision]` in `config.toml` names both models, and `decision:<model>` overrides the decision model for one seat. In a `hybrid` seat the bot makes every move and asks the model to read the board on its turns. A `bot` seat is the project's own versioned player: it reads the board with word and phrase lists and scores every move with one value function, as `documentation.md` describes. It reads with its full reader once `python -m rstlne.data fetch` has run (see below); without the data, it reads by letter frequency alone and solves only once the board gives the answer away. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
+Each seat is `human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slug>`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, including when to solve, and an LLM writes the answer. `[decision]` in `config.toml` names both models, and `decision:<model>` overrides the decision model for one seat. In a `hybrid` seat the bot makes every move and asks the model to read the board on its turns. A `bot` seat is the project's own versioned player: it reads the board with word and phrase lists and scores every move with one value function, as `documentation.md` describes. It reads with its full reader once `python -m rstlne.data fetch` has run (see below). Without the data, it reads by letter frequency alone and solves only once the board gives the answer away. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
 
 | Option | Effect |
 |---|---|
@@ -59,13 +59,13 @@ The grading runs used GPT-6.1 Sol, GPT-6 Luna, Claude Haiku 5.5, and DeepSeek V4
 
 ## Tournaments
 
-Add `--puzzles generate` to play on fresh puzzles made for the tournament: a generator model writes them, code checks them, and a judge model from another lab confirms each one. `documentation.md` has the details; a 50-set pool costs about a cent. `python -m rstlne.puzzlegen --main 40 --bonus 10 --seed 7 --out puzzles/generated/batch.json` makes a batch on its own.
+Add `--puzzles generate` to play on fresh puzzles made for the tournament: a generator model writes them, code checks them, and a judge model from another lab confirms each one. `documentation.md` has the details. A 50-set pool costs about a cent. `python -m rstlne.puzzlegen --main 40 --bonus 10 --seed 7 --out puzzles/generated/batch.json` makes a batch on its own.
 
 ```
 uv run python -m rstlne.tournament --seats llm:openai/gpt-6.1-sol,bot,bot --sets 60 --seed 707 --puzzles puzzles/generated/grading-505.json
 ```
 
-`--seats` takes any three seats, as in the CLI; `--models a,b,c` is short for three `llm:` seats.
+`--seats` takes any three seats, as in the CLI, and `--models a,b,c` is short for three `llm:` seats.
 
 A tournament plays `--sets` puzzle sets with duplicate scoring. A set is 6 games, one for every ordering of the 3 entrants across the seats, all with the set's seed and puzzles. So within a set, each entrant sits in each seat twice and plays right after each other entrant 3 times, against the same spins. `--sets 60` is 360 games, and `--sets 1` is a 6 game trial for checking cost. Setting `set_permutations = "cyclic"` in `config.toml` plays the old 3 seat rotations instead.
 
@@ -80,7 +80,7 @@ Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, a
 
 Each game writes its usual log into the tournament folder, and rerunning skips finished games and replays unfinished ones. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, how much of the board showed at a correct solve, money left on the table, invalid moves, and cost. The report also lists each set's results and how many sets used each puzzle.
 
-Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total; tied leaders split the win. The table also shows each entrant's main-round money, its total minus any bonus envelope. Cost per game runs from under 1 cent (Luna, Haiku) to about 2 cents (Sol), with bot seats free; a 60-set lineup took 1 to 5 hours on 4 cores.
+Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total, and tied leaders split the win. The table also shows each entrant's main-round money, its total minus any bonus envelope. Cost per game runs from under 1 cent (Luna, Haiku) to about 2 cents (Sol), with bot seats free. A 60-set lineup took 1 to 5 hours on 4 cores.
 
 ## Analyses
 
@@ -113,9 +113,9 @@ uv run python -m rstlne.data fetch enwiki
 uv run python -m rstlne.data status
 ```
 
-Bot version 5, the default, also reads word pair and triple counts from all of English Wikipedia (`enwiki`). That fetch streams the whole dump: about 2 CPU-hours, up to 50 GB of temporary files, and 0.85 GB kept. It's best run on a server, then copied: the `enwiki-*` files, plus the `enwiki` entry in `data/manifest.json`. Without them, a version 5 bot refuses the data it finds; set `[bot] version = 4` to play the older bot on the other sources alone.
+Bot version 5, the default, also reads word pair and triple counts from all of English Wikipedia (`enwiki`). That fetch streams the whole dump: about 2 CPU-hours, up to 50 GB of temporary files, and 0.85 GB kept. It's best run on a server, then copied: the `enwiki-*` files, plus the `enwiki` entry in `data/manifest.json`. Without them, a version 5 bot refuses the data it finds. Set `[bot] version = 4` to play the older bot on the other sources alone.
 
-`fetch` streams each source and keeps only pruned tables in `data/`, which git ignores, under a 2.5 GB cap; it took about 8 minutes and keeps about 0.2 GB. `status` lists what's fetched, its size, and its license. `data/manifest.json` records each file's hash, so a bot version can pin its data. Sources, with thanks:
+`fetch` streams each source and keeps only pruned tables in `data/`, which git ignores, under a 2.5 GB cap. It took about 8 minutes and keeps about 0.2 GB. `status` lists what's fetched, its size, and its license. `data/manifest.json` records each file's hash, so a bot version can pin its data. Sources, with thanks:
 
 | source | used for | license |
 |---|---|---|
@@ -162,7 +162,7 @@ Token use includes how many prompt tokens each provider read from its cache. Mod
 uv run pytest
 ```
 
-The suite runs about 770 tests in under two minutes. It never calls OpenRouter; a fake client stands in. It also never reads `data/`: the bot falls back to letter frequency there. `uv run pytest -m slow` runs the tests that read the real word data.
+The suite runs about 770 tests in under two minutes. A fake client stands in for OpenRouter, so it never makes a network call. It also never reads `data/`, and the bot falls back to letter frequency there. `uv run pytest -m slow` runs the tests that read the real word data.
 
 ## Layout
 

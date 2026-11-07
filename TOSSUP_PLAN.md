@@ -1,18 +1,18 @@
 # Toss-up plan
 
-**Status:** an idea, not in the spec yet. Do this after the v3 faceoff and the `grading-505` puzzles are done.
+This is an idea and isn't in the spec yet. Do this after the v3 faceoff and the `grading-505` puzzles are done.
 
 ## On the show
 
-- **Introduced:** in 2000.
-- **How it works:** letters appear one at a time in random order, and the first contestant to ring in with the right answer wins the cash.
-- **One try each:** each contestant rings in once per puzzle at most. A wrong answer locks them out while the others keep watching.
-- **No winner:** if the last letter appears and nobody has solved it, there's no cash.
-- **Values, 2019 to 2026:**
+- Toss-ups were introduced in 2000.
+- Letters appear one at a time in random order, and the first contestant to ring in with the right answer wins the cash.
+- Each contestant rings in once per puzzle at most. A wrong answer locks them out while the others keep watching.
+- If the last letter appears and nobody has solved it, there's no cash.
+- From 2019 to 2026 the values were:
   - $1,000, then $2,000.
   - Then a Triple Toss-Up before round 4: three puzzles at $2,000 each, plus $4,000 for solving all three.
   - The Triple Toss-Up winner spins first in the next round.
-- **Season 44 (2026):** "Fortune Frenzy" replaces the first two toss-ups with a 30-second race, $1,000 per puzzle.
+- In season 44 (2026), "Fortune Frenzy" replaces the first two toss-ups with a 30-second race, $1,000 per puzzle.
 
 ## Why we want it
 
@@ -20,13 +20,13 @@ A toss-up is solve timing with nothing else in the way. There's no wheel and no 
 
 ## Proposed design
 
-1. **Reveal step by step.** Each step shows one more letter, in a seeded random order.
-2. **Ask everyone at every step.** Each player still in the puzzle says "ring in with this answer" or "wait".
-3. **Earliest step wins.** The earliest correct ring-in takes the puzzle.
-4. **Ties go to the fastest thinker.** If several players ring in on the same step, the one who wrote the fewest tokens, reasoning included, goes first.
-   - Tokens measure the model, not the host. Wall-clock time depends on the host: the same model ran 3× faster on one host than another.
+1. Reveal step by step. Each step shows one more letter, in a seeded random order.
+2. Ask everyone at every step. Each player still in the puzzle says "ring in with this answer" or "wait".
+3. Earliest step wins. The earliest correct ring-in takes the puzzle.
+4. Ties go to the fastest thinker. If several players ring in on the same step, the one who wrote the fewest tokens, reasoning included, goes first.
+   - Token counts depend only on the model. Wall-clock time depends on the host: the same model ran 3× faster on one host than another.
    - Tokens are logged, so a replay gives the same result. Wall-clock time doesn't.
-5. **A wrong ring-in locks that player out** for the rest of the puzzle.
+5. A wrong ring-in locks that player out for the rest of the puzzle.
 
 There's no real clock, so a slow host never costs anyone a puzzle.
 
@@ -50,5 +50,5 @@ There's no real clock, so a slow host never costs anyone a puzzle.
 
 ## Cost and data
 
-- **Cost:** asking every player at every step adds up to roughly 15 steps × 3 players per puzzle. That's fine for cheap models but could double what a game costs. To save money, ask every second step, or stop asking a player once it has rung in.
-- **Data:** the archive of aired puzzles holds about 10,000 toss-ups (rounds T1 to T5). They're good for a private real-puzzle test. Never publish or commit them.
+- Asking every player at every step adds up to roughly 15 steps × 3 players per puzzle. That's fine for cheap models but could double what a game costs. To save money, ask every second step, or stop asking a player once it has rung in.
+- The archive of aired puzzles holds about 10,000 toss-ups (rounds T1 to T5). They're good for a private real-puzzle test. Never publish or commit them.

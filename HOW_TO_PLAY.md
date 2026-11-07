@@ -86,23 +86,23 @@ Case doesn't matter. After a typo or an illegal move, the game just asks again.
 
 ## Rules
 
-- **Consonants:** spin, then call a consonant. Each copy earns the wedge's value, and you keep your turn. A letter that's missing or already called passes your turn.
-- **Vowels:** each costs $250 from your round bank, even when it misses. A missing or repeated vowel passes your turn. You can't buy one once every vowel is showing.
-- **Solving:** type the answer with its punctuation. `WELL-KNOWN FACT` needs the hyphen, but case and extra spaces don't matter. A wrong solve passes your turn.
-- **Banking:** only the solver keeps round money, and banks at least $1,000. The other seats lose their round money. Game totals from earlier rounds are safe.
-- **No more consonants:** once every consonant is showing, you can't spin. Buy vowels or solve.
-- **Bankrupt** wipes your round bank and any Wild Card or Million card you hold. **Lose a Turn** passes your turn.
-- **Who starts:** seat 1 starts round 1, seat 2 round 2, and seat 3 round 3. From round 4, whoever solved the round before starts; if nobody did, a seeded draw picks. There are no toss-ups.
+- Consonants: spin, then call a consonant. Each copy earns the wedge's value, and you keep your turn. A letter that's missing or already called passes your turn.
+- Vowels: each costs $250 from your round bank, even when it misses. A missing or repeated vowel passes your turn. You can't buy one once every vowel is showing.
+- Solving: type the answer with its punctuation. `WELL-KNOWN FACT` needs the hyphen, but case and extra spaces don't matter. A wrong solve passes your turn.
+- Banking: only the solver keeps round money, and banks at least $1,000. The other seats lose their round money. Game totals from earlier rounds are safe.
+- No more consonants: once every consonant is showing, you can't spin. Buy vowels or solve.
+- Bankrupt wipes your round bank and any Wild Card or Million card you hold. Lose a Turn passes your turn.
+- Who starts: seat 1 starts round 1, seat 2 round 2, and seat 3 round 3. From round 4, whoever solved the round before starts. If nobody did, a seeded draw picks. There are no toss-ups.
 - A round with no solver ends after 200 turns, and nobody banks.
 
 ## Special wedges
 
-- **TOP:** $2,500 in round 1, $3,500 in rounds 2 and 3, and $5,000 in round 4.
-- **Free Play:** call any letter. A consonant earns $500 per copy, a vowel is free, and a miss keeps your turn.
-- **Wild Card** (rounds 1 to 3): a correct consonant on its wedge claims it, and you keep it across rounds. After a correct consonant on a plain dollar wedge, you can spend it to call one more consonant at the same value. If that consonant misses, your turn passes. Unspent, it becomes a 4th consonant in the bonus round.
-- **Million wedge** (rounds 1 to 3): Bankrupt on both outer thirds, $500 in the middle. A correct consonant on the middle claims the Million card, which you keep only by solving that round. In the bonus round, it swaps the $100,000 envelope for $1,000,000.
-- **Mystery** (round 2): $1,000 per copy. After a correct consonant, keep the money or flip the wedge. One Mystery wedge hides $10,000, the other Bankrupt. Once one is flipped, the other plays as a plain $1,000 wedge.
-- **Express** (round 3): $1,000 per copy. After a correct consonant, pass or play. If you play, you call consonants for $1,000 each and buy vowels for $250, with no spinning, until you solve. Any miss, repeat, or wrong solve is Bankrupt.
+- TOP: $2,500 in round 1, $3,500 in rounds 2 and 3, and $5,000 in round 4.
+- Free Play: call any letter. A consonant earns $500 per copy, a vowel is free, and a miss keeps your turn.
+- Wild Card (rounds 1 to 3): a correct consonant on its wedge claims it, and you keep it across rounds. After a correct consonant on a plain dollar wedge, you can spend it to call one more consonant at the same value. If that consonant misses, your turn passes. Unspent, it becomes a 4th consonant in the bonus round.
+- Million wedge (rounds 1 to 3): Bankrupt on both outer thirds, $500 in the middle. A correct consonant on the middle claims the Million card, which you keep only by solving that round. In the bonus round, it swaps the $100,000 envelope for $1,000,000.
+- Mystery (round 2): $1,000 per copy. After a correct consonant, keep the money or flip the wedge. One Mystery wedge hides $10,000, the other Bankrupt. Once one is flipped, the other plays as a plain $1,000 wedge.
+- Express (round 3): $1,000 per copy. After a correct consonant, pass or play. If you play, you call consonants for $1,000 each and buy vowels for $250, with no spinning, until you solve. Any miss, repeat, or wrong solve is Bankrupt.
 
 ## Bonus round
 
@@ -141,10 +141,10 @@ Options worth knowing:
 - `--live` turns the terminal into one fixed screen that redraws after every move: the board as tiles, the letters still available, each seat's bank, total, and cards, a Thinking panel with up to 5 lines per seat, and the last 10 moves. It needs a real terminal. With you seated, the screen redraws after every move with your prompt under it, and the Thinking panel stays hidden, since it would show you the other seats' best guesses. Combine it with `--pause 3` to follow along.
 - After a correct solve, the solved board stays up for 10 seconds before the next round starts (`solve_pause` in `config.toml`). `--pause 0` skips that wait too.
 - `--show-puzzle` prints the table after every move: the board, category, used letters, round banks, game totals, held cards, and the current wedge.
-- `--show-thinking` prints what each seat weighed before its move. For a chat model, that's its reasoning. For a decision seat, it's each choice's top options with their probabilities. For the bot, it's its best answer, its confidence, how it valued each move, and why it picked its letter; a hybrid adds the model's reading and how much the bot trusted it. When you play, it shows you the other seats' guesses too, so leave it off unless you want hints.
+- `--show-thinking` prints what each seat weighed before its move. For a chat model, that's its reasoning. For a decision seat, it's each choice's top options with their probabilities. For the bot, it's its best answer, its confidence, how it valued each move, and why it picked its letter. A hybrid adds the model's reading and how much the bot trusted it. When you play, it shows you the other seats' guesses too, so leave it off unless you want hints.
 - `--pause 0` removes the pause after each move, so the game runs as fast as the models answer. `--pause 3` slows it down to read along.
 - `--seed N` replays a game's spins. Every game prints its seed at the start, so you can rerun a game you liked, or give different models the same spins.
 
-At the end you see the bonus answer, each seat's money before the bonus round, each seat's final total, and each model's calls, tokens, and cost. A game costs about 0.5 to 2 cents per model seat, and nothing for `human` and `bot` seats. Every move also goes to a log in `logs/`. Press Ctrl+C to stop a game early; the log keeps every move up to that point.
+At the end you see the bonus answer, each seat's money before the bonus round, each seat's final total, and each model's calls, tokens, and cost. A game costs about 0.5 to 2 cents per model seat, and nothing for `human` and `bot` seats. Every move also goes to a log in `logs/`. Press Ctrl+C to stop a game early, and the log keeps every move up to that point.
 
-A single game is one sample, not a fair comparison. Seat order matters, and each seat sees different spins.
+A single game is one sample, too few for a fair comparison. Seat order matters, and each seat sees different spins.

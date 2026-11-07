@@ -8,9 +8,9 @@ The wheel every game and tournament in this project plays, as set in `wheel.toml
 
 ## How it's built
 
-- **24 equal wedges**, numbered clockwise from wedge 1, the round's top value.
-- **Each wedge has three thirds**, so a spin lands on one of 72. Only the Million wedge plays its thirds differently: the two outer thirds are Bankrupt.
-- **One base template** stays put. Special wedges sit on top of it, round by round, and cover the wedge beneath.
+- 24 equal wedges, numbered clockwise from wedge 1, the round's top value.
+- Each wedge has three thirds, so a spin lands on one of 72. Only the Million wedge plays its thirds differently: the two outer thirds are Bankrupt.
+- One base template stays put. Special wedges sit on top of it, round by round, and cover the wedge beneath.
 
 ## Base template
 
@@ -42,12 +42,12 @@ The Wild Card and the Million wedge are on the wheel at the start of rounds 1 to
 
 ## The special wedges
 
-- **Wild Card (wedge 2, $800):** a correct consonant earns $800 and the card. Later, after a correct consonant on a plain dollar wedge, the holder can spend it on one extra consonant at the same value. Unspent, it gives a fourth consonant in the bonus round.
-- **Million wedge (wedge 9):** the outer thirds are Bankrupt and the centre third plays as $500. A correct consonant on the centre takes the Million card, which is kept only by solving that round. In the bonus round it swaps the $100,000 envelope for $1,000,000. Once claimed, wedge 9 plays as a plain $800.
-- **Mystery (round 2, wedges 5 and 17):** $1,000 per copy. After a correct consonant, keep the money, or flip for what's behind: $10,000 on one wedge, Bankrupt on the other. A seeded draw decides which.
-- **Express (round 3, wedge 12):** $1,000 per copy. After a correct consonant, pass and play on normally, or ride: call consonants at $1,000 a copy and buy vowels at $250 with no spinning, until you solve. Any miss or wrong solve is Bankrupt.
-- **Free Play (wedge 16):** call any letter. Consonants earn $500 a copy, vowels are free, and a miss keeps the turn.
-- **Bankrupt (wedges 14 and 24)** zeroes the round bank and takes any held cards. **Lose a Turn (wedge 18)** passes the turn.
+- Wild Card (wedge 2, $800): a correct consonant earns $800 and the card. Later, after a correct consonant on a plain dollar wedge, the holder can spend it on one extra consonant at the same value. Unspent, it gives a fourth consonant in the bonus round.
+- Million wedge (wedge 9): the outer thirds are Bankrupt and the centre third plays as $500. A correct consonant on the centre takes the Million card, which is kept only by solving that round. In the bonus round it swaps the $100,000 envelope for $1,000,000. Once claimed, wedge 9 plays as a plain $800.
+- Mystery (round 2, wedges 5 and 17): $1,000 per copy. After a correct consonant, keep the money, or flip for what's behind: $10,000 on one wedge, Bankrupt on the other. A seeded draw decides which.
+- Express (round 3, wedge 12): $1,000 per copy. After a correct consonant, pass and play on normally, or ride: call consonants at $1,000 a copy and buy vowels at $250 with no spinning, until you solve. Any miss or wrong solve is Bankrupt.
+- Free Play (wedge 16): call any letter. Consonants earn $500 a copy, vowels are free, and a miss keeps the turn.
+- Bankrupt (wedges 14 and 24) zeroes the round bank and takes any held cards. Lose a Turn (wedge 18) passes the turn.
 
 ## What a spin is worth
 
@@ -78,9 +78,9 @@ The drawing spreads the values evenly around the bonus wheel, since the order do
 
 ## Where it differs from the show
 
-These are deliberate choices, not mistakes:
+These differences are deliberate:
 
-- **The special wedges' positions** (Wild on 2, Million on 9, Mystery on 5 and 17, Express on 12).
-- **The Million wedge** sits on an $800 wedge, and its centre third plays as $500.
-- **Free Play stays on the wheel.** The show retired it in 2021.
-- **The bonus envelope counts** (6, 6, 6, 5, 1).
+- The special wedges' positions (Wild on 2, Million on 9, Mystery on 5 and 17, Express on 12).
+- The Million wedge sits on an $800 wedge, and its centre third plays as $500.
+- Free Play stays on the wheel. The show retired it in 2021.
+- The bonus envelope counts (6, 6, 6, 5, 1).
