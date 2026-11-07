@@ -197,6 +197,31 @@ def letters_summary(data: dict) -> dict:
     return {"judge_version": data.get("judge_version"), "rows": json.loads(json.dumps(out))}
 
 
+def lineup_id(name: str) -> str:
+    """A lineup's id from the name analyses give it ("lineup 3b" for an id, a folder's name otherwise)."""
+    return name.removeprefix("lineup ")
+
+
+def merge_letters(paths: Sequence[Path], keep: Sequence[str]) -> dict | None:
+    """Saved letter judgments from several files, for the lineups in `keep`; a lineup found in more than one file
+    comes from the last. Every file must be judged by the same bot version."""
+    rows: dict[str, list] = {}
+    versions_seen = set()
+    for path in paths:
+        data = json.loads(Path(path).read_text())
+        versions_seen.add(data.get("judge_version"))
+        by: dict[str, list] = defaultdict(list)
+        for r in data["rows"]:
+            if (lid := lineup_id(r["lineup"])) in keep:
+                by[lid].append({**r, "lineup": lid})
+        rows.update(by)
+    if not rows:
+        return None
+    if len(versions_seen) > 1:
+        raise ValueError(f"letter judgments by different bot versions: {sorted(versions_seen)}")
+    return {"judge_version": versions_seen.pop(), "rows": [r for lid in keep if lid in rows for r in rows[lid]]}
+
+
 def bonus_report(path: Path | None) -> dict | None:
     if path is None or not Path(path).exists():
         return None
@@ -219,7 +244,7 @@ def _commit() -> str | None:
 
 
 def build(phase: str | None = None, toml: Path = common.LINEUPS, *, pairs=PAIRS, bonus: Path | None = None,
-          letters: Path | None = None, gap: Path | None = None) -> dict:
+          letters: Sequence[Path] | None = None, gap: Path | None = None) -> dict:
     """The whole file: meta, lineups, pairs, and the bonus test, letters and reading gap where they've been run."""
     phase = phase or tomllib.loads(Path(toml).read_text())["default"]
     meta_lineups = common.lineups(phase, toml)
@@ -238,12 +263,11 @@ def build(phase: str | None = None, toml: Path = common.LINEUPS, *, pairs=PAIRS,
     decks = {v["puzzles"] for v in out_lineups.values()}
     deck = decks.pop() if len(decks) == 1 else None
     made_by = {json.dumps(v.get("generated_by"), sort_keys=True) for v in out_lineups.values()}
-    letter_data = json.loads(Path(letters).read_text()) if letters and Path(letters).exists() else None
-    if letter_data:  # only this phase's lineups
-        letter_data = {**letter_data, "rows": [r for r in letter_data["rows"] if r["lineup"] in out_lineups]}
+    letter_data = merge_letters([Path(f) for f in (letters or []) if Path(f).exists()], out_lineups)
     gap_data = json.loads(Path(gap).read_text()) if gap and Path(gap).exists() else None
-    if gap_data:
-        gap_data = {**gap_data, "lineups": {k: v for k, v in gap_data["lineups"].items() if k in out_lineups}}
+    if gap_data:  # only this phase's lineups, by id
+        gap_data = {**gap_data, "lineups": {lid: v for k, v in gap_data["lineups"].items()
+                                            if (lid := lineup_id(k)) in out_lineups}}
     return {
         "meta": {"phase": phase, "made": datetime.now(timezone.utc).isoformat(timespec="seconds"), "commit": _commit(),
                  "lineups": list(out_lineups), "deck": deck, "seed": seed,
@@ -252,7 +276,8 @@ def build(phase: str | None = None, toml: Path = common.LINEUPS, *, pairs=PAIRS,
         "lineups": out_lineups,
         "pairs": out_pairs,
         "bonus": bonus_report(bonus),
-        "letters": letters_summary(letter_data) if letter_data else None,
+        "letters": {**letters_summary(letter_data), "lineups_missing": [k for k in out_lineups if k not in {
+            r["lineup"] for r in letter_data["rows"]}]} if letter_data else None,
         "reading_gap": gap_data,
     }
 
@@ -262,16 +287,19 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--out", required=True, help="where to write the JSON")
     parser.add_argument("--phase", help="the lineups.toml phase (its default when omitted)")
     parser.add_argument("--bonus", help="a bonus test report.json; by default the latest on the phase's deck and seed")
-    parser.add_argument("--letters", help="saved letter judgments (default logs/analysis/letters-<phase>.json)")
+    parser.add_argument("--letters", nargs="+", help="saved letter judgments (default every logs/analysis/letters-<phase>*.json)")
     parser.add_argument("--gap", help="saved reading gap (default logs/analysis/reading-gap-<phase>.json)")
     args = parser.parse_args(argv)
     phase = args.phase or tomllib.loads(common.LINEUPS.read_text())["default"]
-    out = build(phase, letters=Path(args.letters) if args.letters else ANALYSIS / f"letters-{phase}.json",
+    letter_files = [Path(f) for f in args.letters] if args.letters else sorted(ANALYSIS.glob(f"letters-{phase}*.json"))
+    out = build(phase, letters=letter_files,
                 gap=Path(args.gap) if args.gap else ANALYSIS / f"reading-gap-{phase}.json", bonus=None)
     out["bonus"] = bonus_report(Path(args.bonus) if args.bonus else _latest_bonus(out["meta"]["deck"], out["meta"]["seed"]))
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(out, indent=1))
     missing = [k for k in ("bonus", "letters", "reading_gap") if out[k] is None]
+    if out["letters"] and out["letters"]["lineups_missing"]:
+        missing.append("letters for " + " ".join(out["letters"]["lineups_missing"]))
     print(f"wrote {args.out}: {len(out['lineups'])} lineups, {len(out['pairs'])} pairs"
           + (f"; not yet run: {', '.join(missing)}" if missing else ""))
 

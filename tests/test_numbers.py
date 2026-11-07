@@ -77,7 +77,7 @@ def test_build_reads_the_phase_and_skips_analyses_not_yet_run(played, tmp_path):
     toml = tmp_path / "lineups.toml"
     toml.write_text(f'default = "x"\n[x.L]\nfolder = "{played}"\nlabel = "one · two · decision"\n')
     pairs = [("L one minus two", ("L", "llm:a/one"), ("L", "llm:b/two"))]
-    out = numbers.build("x", toml, pairs=pairs, bonus=None, letters=tmp_path / "none.json", gap=tmp_path / "none.json")
+    out = numbers.build("x", toml, pairs=pairs, bonus=None, letters=[tmp_path / "none.json"], gap=tmp_path / "none.json")
     assert out["meta"]["phase"] == "x" and out["meta"]["lineups"] == ["L"]
     assert out["lineups"]["L"]["label"] == "one · two · decision"
     assert out["pairs"][0]["label"] == "L one minus two" and out["pairs"][0]["sets"] == 2
@@ -99,3 +99,20 @@ def test_the_reading_gap_summary_gives_each_category_its_share_and_board():
     assert sol["categories"][rg.KNEW]["how"] == {"bankrupt": 1}
     assert out["by_round"] == {"1": [3, 5]} and out["by_length"] == {"17 letters or fewer": [1, 2]}
     json.dumps(out)
+
+
+def test_letter_files_merge_by_lineup_id_and_keep_only_the_phase(tmp_path):
+    def rows(lineup, n):
+        return [{"lineup": lineup, "player": "bot", "kind": "consonant", "letter": "T", "count": 1,
+                 "board": ["SPARE TIRE", "Thing", ["R"], []], "judge": {"T": [0.9, 1.0]}}] * n
+    old = tmp_path / "a.json"
+    old.write_text(json.dumps({"judge_version": 6, "rows": rows("lineup 2", 2) + rows("lineup 1", 1) + rows("lineup 6a", 1)}))
+    new = tmp_path / "b.json"
+    new.write_text(json.dumps({"judge_version": 6, "rows": rows("lineup 6a", 3)}))
+    merged = numbers.merge_letters([old, new], ["2", "6a", "6d1"])
+    assert [r["lineup"] for r in merged["rows"]] == ["2", "2", "6a", "6a", "6a"]  # 6a from the later file, 1 dropped
+    other = tmp_path / "c.json"
+    other.write_text(json.dumps({"judge_version": 5, "rows": rows("lineup 2", 1)}))
+    with pytest.raises(ValueError):
+        numbers.merge_letters([old, other], ["2"])
+    assert numbers.lineup_id("lineup 3b") == "3b" and numbers.lineup_id("seed707-abc") == "seed707-abc"
