@@ -15,8 +15,10 @@ A board's read needs the bot's word data, so run it where the data is (the serve
 from __future__ import annotations
 
 import argparse
+import json
 from collections import Counter, defaultdict
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from statistics import median
 
 from rstlne.analysis import common
@@ -90,12 +92,37 @@ def category(answer: str, read: dict, calibrate: Callable[[float], float], known
     return SURE if calibrate(read["confidence"]) >= known else UNSURE
 
 
+def summarize(found: Sequence[dict], split: dict[str, dict]) -> dict:
+    """Per focal player: rounds won, and per category its share, median board showing, and its detail."""
+    players = {}
+    for who in sorted({c["name"] for c in found}):
+        mine = [c for c in found if c["name"] == who]
+        counts = Counter(c["category"] for c in mine)
+        cats = {}
+        for cat in CATEGORIES:
+            inside = [c for c in mine if c["category"] == cat]
+            if not inside:
+                continue
+            row = {"share": round(counts[cat] / len(mine), 4), "rounds": len(inside),
+                   "median_shown": round(median(c["shown"] for c in inside), 4)}
+            if cat == UNSURE:
+                row["median_calibrated"] = round(median(c["calibrated"] for c in inside), 4)
+            if cat == KNEW:
+                row["how"] = dict(Counter(c["how"] or "-" for c in inside))
+            cats[cat] = row
+        players[who] = {"rounds": len(mine), "categories": cats}
+    return {"players": players,
+            "by_round": {str(r): v for r, v in sorted(split["round"].items())},
+            "by_length": {label: split["length"][label] for _, _, label in LENGTHS if split["length"].get(label, [0, 0])[1]}}
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m rstlne.analysis.reading_gap", description=__doc__.splitlines()[0])
     parser.add_argument("targets", nargs="+", help="lineup ids from lineups.toml, or tournament folders")
     parser.add_argument("--phase", help="the lineups.toml phase (its default when omitted)")
     parser.add_argument("--version", type=int, help="the bot version whose reader reads the boards; config.toml's by default")
     parser.add_argument("--workers", type=int, default=4, help="processes reading boards")
+    parser.add_argument("--out", help="also save the results as JSON here, for analysis.numbers")
     args = parser.parse_args(argv)
 
     from rstlne import settings, trust
@@ -104,6 +131,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     calibrate = calibration.curve(knobs.calibration)
     rules, spec = trust.rules_and_spec()
     focal = lambda n, kind: kind in FOCAL_KINDS  # noqa: E731
+    saved = {}
     for name, folder in common.resolve(args.targets, args.phase):
         played = list(common.games(folder))
         found = [c for g in played for c in cases(g, focal)]
@@ -113,25 +141,24 @@ def main(argv: Sequence[str] | None = None) -> None:
             if c["category"] is None:
                 c["category"] = category(c["answer"], reads[c["board"]], calibrate, knobs.known_answer)
                 c["calibrated"] = calibrate(reads[c["board"]]["confidence"])
+        result = summarize(found, shares(played, focal))
+        saved[name] = result
         print(f"{name}: read with bot v{version}'s reader")
-        for who in sorted({c["name"] for c in found}):
-            mine = [c for c in found if c["name"] == who]
-            counts = Counter(c["category"] for c in mine)
-            print(f"  {who}: {len(mine)} rounds won")
-            for cat in CATEGORIES:
-                inside = [c for c in mine if c["category"] == cat]
-                if not inside:
-                    continue
-                extra = (f", median calibrated confidence {median(c['calibrated'] for c in inside):.2f}" if cat == UNSURE
-                         else f", lost the wheel by {dict(Counter(c['how'] or '-' for c in inside))}" if cat == KNEW else "")
-                print(f"    {counts[cat] / len(mine):4.0%}  {cat} (median {median(c['shown'] for c in inside):.0%} showing{extra})")
-        split = shares(played, focal)
+        for who, r in result["players"].items():
+            print(f"  {who}: {r['rounds']} rounds won")
+            for cat, c in r["categories"].items():
+                extra = (f", median calibrated confidence {c['median_calibrated']:.2f}" if "median_calibrated" in c
+                         else f", lost the wheel by {c['how']}" if "how" in c else "")
+                print(f"    {c['share']:4.0%}  {cat} (median {c['median_shown']:.0%} showing{extra})")
         print("  share of solved rounds by round: " + ", ".join(
-            f"round {r} {won / n:.0%} of {n}" for r, (won, n) in sorted(split["round"].items())))
+            f"round {r} {won / n:.0%} of {n}" for r, (won, n) in result["by_round"].items()))
         print("  by puzzle length: " + ", ".join(
-            f"{label} {split['length'][label][0] / split['length'][label][1]:.0%} of {split['length'][label][1]}"
-            for _, _, label in LENGTHS if split["length"][label][1]))
+            f"{label} {won / n:.0%} of {n}" for label, (won, n) in result["by_length"].items()))
         print()
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(json.dumps({"version": version, "lineups": saved}, indent=1))
+        print(f"saved {args.out}")
 
 
 if __name__ == "__main__":

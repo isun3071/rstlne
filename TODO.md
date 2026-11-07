@@ -6,7 +6,7 @@ Commands for every lineup are in `GRADING_PLAN.md`.
 
 The findings, claims, statistics, and charts are frozen on bot v4. Nothing below changes them. Later results are reported beside them, marked with their bot version.
 
-Every planned lineup but 6c ran: 1, 2, 3, 3b, 3c, 3d, 3f (the Haiku hybrid, in place of the stopped DeepSeek hybrid 3e), 6a, 6b, and the decision seats d1 (d1-ultra) and d2 (Luna Decisions). Recorded in `FINDINGS.md`, `GRADING_PLAN.md`, `CLAIMS.md`, `STATS.md` and `HANDOFF-UPDATE.md`, with charts 1–12. The memory probe found no sign that models remember aired bonus puzzles.
+Every planned lineup but 6c ran: 1, 2, 3, 3b, 3c, 3d, 3f (the Haiku hybrid, in place of the stopped DeepSeek hybrid 3e), 6a, 6b, and the decision seats d1 (d1-ultra) and d2 (Luna Decisions). Recorded in `FINDINGS.md`, `GRADING_PLAN.md` and `HANDOFF-UPDATE.md`, with charts 1–12; every number the paper cites comes from `python -m rstlne.analysis.numbers`. The memory probe found no sign that models remember aired bonus puzzles.
 
 ## Next: the v5 phase
 

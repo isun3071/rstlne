@@ -97,6 +97,14 @@ uv run python -m rstlne.analysis.letters report logs/analysis/letters.json
 uv run --with matplotlib python figures/make_figures.py figures            # the charts, for lineups.toml's default phase
 ```
 
+The paper's numbers all come from one file. Run the two word-data analyses with `--out` first, so it can fold them in:
+
+```
+uv run python -m rstlne.analysis.letters read 2 2t 3 3b 3c 3d 3r 3f 6a 6b 6d1 6d2 d1 d2 --out logs/analysis/letters-v6.json
+uv run python -m rstlne.analysis.reading_gap 2 2t 3 3b 3c 3d 3r 3f 6a 6b 6d1 6d2 d1 d2 --out logs/analysis/reading-gap-v6.json
+uv run python -m rstlne.analysis.numbers --out paper/numbers.json   # every lineup, the set-by-set pairs, the bonus test
+```
+
 ## The bonus test
 
 ```

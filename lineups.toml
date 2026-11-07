@@ -7,7 +7,6 @@
 default = "v6"
 
 [v6]
-"1" = { folder = "seed707-d7589355", label = "Sol · DeepSeek · Haiku", note = "the selection run, on grading-505" }
 "2" = { folder = "seed707-b511deec", label = "Sol · bot · bot" }
 "2t" = { folder = "seed707-aba71d75", label = "Terra · bot · bot" }
 "3" = { folder = "seed707-c18bccd7", label = "Luna hybrid · bot · bot" }
