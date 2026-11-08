@@ -15,7 +15,14 @@ const CALL_MS = 1100;  // a bot's or model's letter shows big over the board thi
 const LETTER_KINDS = new Set(["call_consonant", "call_letter", "buy_vowel"]);
 const SOLVE_LEAD_MS = 1000;  // the board as it stands, before a bot's or model's answer covers it
 const SOLVE_MS = 1500;  // a bot's or model's answer shows on the board this long before it's judged
-const SOLVE_KINDS = new Set(["solve", "bonus_solve"]);  // after a bot's or model's spin lands, a beat to read the wedge before its next move
+const SOLVE_KINDS = new Set(["solve", "bonus_solve"]);
+const GAP_MS = 900;      // at least this long between two moves by bots or models, so each can be read
+const MISS_MS = 900;     // a letter that isn't there, a wrong answer, or a choice's outcome holds this long
+const CHOICE_MS = 1200;  // a special wedge choice or bonus picks show this long before they play out
+const ROUND_MS = 1700;   // a new round's card
+const OVER_MS = 2200;    // the last result holds this long before the final scores
+let lastMoveAt = 0;
+const staged = (seat) => mode === "replay" || !humans.includes(seat);  // a bot's or model's move, or any move in a replay  // after a bot's or model's spin lands, a beat to read the wedge before its next move
 
 let setupInfo = null;
 let mode = "play";       // "play" a live game, or "replay" a log
@@ -123,7 +130,7 @@ async function startGame() {
     const data = await r.json();
     if (!r.ok) { $("#setup-error").textContent = data.detail || "The game couldn't start."; return; }
     setHash("g=" + data.id);
-    connect(data.id);
+    connect(data.id, true);
   } finally {
     $("#start").disabled = false;
   }
@@ -141,13 +148,13 @@ function resetBoard() {
   show("game");
 }
 
-function connect(id) {
+function connect(id, fresh = false) {
   leave();
   mode = "play";
   gameId = id;
   resetBoard();
   $("#controls").hidden = false; $("#transport").hidden = true;
-  replaying = true;
+  replaying = !fresh;  // a game just started here plays from its first event; a reconnect catches up at once
   const proto = location.protocol === "https:" ? "wss" : "ws";
   ws = new WebSocket(`${proto}://${location.host}/api/games/${id}`);
   ws.onmessage = (e) => {
@@ -214,6 +221,11 @@ function handle(ev) {
       startRound(title, ev.category);
       lastShown = new Set();
       addInfo(ev.round ? `${seatName(ev.starts)} ${isYou(ev.starts) ? "start" : "starts"}.` : `${seatName(ev.starts)} ${isYou(ev.starts) ? "play" : "plays"} for an envelope.`);
+      if (!replaying) {
+        overlay({ who: ev.category || "", text: title.toUpperCase(), tone: "round" });
+        pending.unshift({ type: "hide" });
+        return ROUND_MS;
+      }
       break;
     }
     case "table":
@@ -230,18 +242,29 @@ function handle(ev) {
       thinkingSeat = ev.seat;
       renderControls();
       break;
-    case "move":
+    case "move": {
+      if (!replaying && staged(ev.seat)) {  // a breather after the last move before this one plays
+        const gap = GAP_MS - (performance.now() - lastMoveAt);
+        if (gap > 40) { pending.unshift(ev); return gap; }
+      }
       prompt = null;
       thinkingSeat = null;
       renderControls();
-      if (!replaying && SOLVE_KINDS.has(ev.kind) && (mode === "replay" || !humans.includes(ev.seat))) {
-        pending.unshift({ type: "solving", move: ev });  // a beat on the board, then the answer, then the judgement
-        return SOLVE_LEAD_MS;
-      }
-      if (!replaying && LETTER_KINDS.has(ev.kind) && (mode === "replay" || !humans.includes(ev.seat))) {
-        showCall(ev);  // the letter first, big; the tiles and the result follow
-        pending.unshift({ type: "called", move: ev });
-        return CALL_MS;
+      if (!replaying && staged(ev.seat)) {
+        if (SOLVE_KINDS.has(ev.kind)) {  // a beat on the board, then the answer, then the verdict
+          pending.unshift({ type: "solving", move: ev });
+          return SOLVE_LEAD_MS;
+        }
+        if (LETTER_KINDS.has(ev.kind) && showCall(ev)) {  // the letter first, big; then a miss, or the tiles
+          pending.unshift({ type: "called", move: ev });
+          return CALL_MS;
+        }
+        const choice = choiceOverlay(ev);
+        if (choice) {  // a special wedge choice or the bonus picks, then what came of it
+          overlay(choice);
+          pending.unshift({ type: "chosen", move: ev });
+          return CHOICE_MS;
+        }
       }
       if (ev.wedge && !replaying) {  // the wheel turns first; its result shows once it stops
         spinTo(ev.wedge);
@@ -251,16 +274,47 @@ function handle(ev) {
       if (ev.wedge) spinTo(ev.wedge);
       addMove(ev);
       break;
+    }
     case "solving":
       if (showSolve(ev.move)) {
-        pending.unshift({ type: "called", move: ev.move });
+        pending.unshift({ type: "verdict", move: ev.move });
         return SOLVE_MS;
       }
       addMove(ev.move);
       break;
-    case "called":
-      $("#call").hidden = true;
+    case "verdict":
+      if (["wrong_solve", "bonus_missed", "forfeit"].includes(ev.move.outcome) && !ev.shown) {
+        $("#call").classList.add("miss");
+        $("#call-who").textContent = "Not it";
+        pending.unshift({ ...ev, shown: true });
+        return MISS_MS;
+      }
+      hideOverlay();
       addMove(ev.move);
+      break;
+    case "called":
+      if (["missing", "repeated"].includes(ev.move.outcome) && !ev.shown) {  // the letter isn't there: say so
+        showMiss(ev.move);
+        pending.unshift({ ...ev, shown: true });
+        return MISS_MS;
+      }
+      hideOverlay();
+      addMove(ev.move);
+      break;
+    case "chosen": {
+      const result = !ev.shown && choiceResult(ev.move);
+      if (result) {
+        overlay(result);
+        pending.unshift({ ...ev, shown: true });
+        return MISS_MS;
+      }
+      hideOverlay();
+      addMove(ev.move);
+      break;
+    }
+    case "hide":
+      hideOverlay();
+      lastMoveAt = performance.now();
       break;
     case "landed":
       addMove(ev.move);
@@ -284,7 +338,12 @@ function handle(ev) {
       renderControls();
       break;
     case "over":
+      if (!replaying && !ev.held) {  // let the bonus result land on the stage before the final scores
+        pending.unshift({ ...ev, held: true });
+        return OVER_MS;
+      }
       over = true;
+      hideOverlay();
       renderOver(ev);
       break;
     case "failed":
@@ -405,6 +464,7 @@ function addMove(ev) {
   li.innerHTML = `<span class="dot"></span><span>${escapeHtml(ev.text)}${ev.note ? `<span class="note">${escapeHtml(ev.note)}</span>` : ""}</span>`;
   if (mode === "replay") { li.dataset.index = ev.index; li.onclick = () => seek(ev.index); }
   roundList.prepend(li);
+  lastMoveAt = performance.now();
 }
 
 function addInfo(text) {
@@ -420,32 +480,67 @@ function lastMoveText() {
   return first ? first.querySelector("span:last-child").firstChild.textContent : "";
 }
 
+// The overlay over the board: who is doing what, a big letter or a line of text, and a tone (a miss, a good
+// result, or a round's card).
+function overlay({ who = "", big = null, text = null, tone = "" }) {
+  const box = $("#call"), letter = $("#call-letter"), answer = $("#call-answer");
+  $("#call-who").textContent = who;
+  letter.hidden = big === null;
+  if (big !== null) { letter.textContent = big; letter.classList.toggle("vowel", VOWELS.has(big)); }
+  answer.hidden = text === null;
+  if (text !== null) answer.textContent = text;
+  box.className = `call ${tone}`.trim();
+  box.hidden = false;
+  void box.offsetWidth;
+  box.classList.add("pop");  // restart the pop each time
+}
+
+function hideOverlay() {
+  $("#call").hidden = true;
+}
+
+const doing = (seat, verb) => `${seatName(seat)} ${isYou(seat) ? verb.replace(/s$/, "") : verb}`;
+
 function showCall(ev) {
   const letter = (ev.text.match(/(?:called|bought) ([A-Z])/) || [])[1];
-  if (!letter) return;
-  const verb = ev.kind === "buy_vowel" ? "buys" : "calls";
-  $("#call-who").textContent = `${seatName(ev.seat)} ${isYou(ev.seat) ? verb.replace(/s$/, "") : verb}`;
-  $("#call-letter").textContent = letter;
-  $("#call-letter").hidden = false;
-  $("#call-answer").hidden = true;
-  $("#call-letter").classList.toggle("vowel", VOWELS.has(letter));
-  const box = $("#call");
-  box.hidden = false;
-  box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");  // restart the animation
+  if (!letter) return false;
+  overlay({ who: doing(ev.seat, ev.kind === "buy_vowel" ? "buys" : "calls"), big: letter });
+  return true;
+}
+
+function showMiss(ev) {
+  const letter = (ev.text.match(/(?:called|bought) ([A-Z])/) || [])[1] || "";
+  overlay({ who: ev.outcome === "repeated" ? `${letter} was already called` : `No ${letter}`, big: letter, tone: "miss" });
 }
 
 function showSolve(ev) {
   const m = ev.text.match(/solved it: (.+?)! Banked|tried "(.+?)"\.|solved the bonus puzzle: (.+?)! The envelope|guessed "(.+?)"\./);
   const answer = m && (m[1] || m[2] || m[3] || m[4]);
   if (!answer) return false;
-  $("#call-who").textContent = `${seatName(ev.seat)} ${isYou(ev.seat) ? "solve" : "solves"}`;
-  $("#call-letter").hidden = true;
-  $("#call-answer").textContent = answer;
-  $("#call-answer").hidden = false;
-  const box = $("#call");
-  box.hidden = false;
-  box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");
+  overlay({ who: doing(ev.seat, "solves"), text: answer });
   return true;
+}
+
+function choiceOverlay(ev) {
+  const who = (verb) => doing(ev.seat, verb);
+  switch (ev.kind) {
+    case "keep": return { who: who("keeps"), text: "The money" };
+    case "flip": return { who: who("flips"), text: "The Mystery wedge…" };
+    case "play": return { who: who("rides"), text: "The Express!" };
+    case "pass": return { who: who("passes on"), text: "The Express" };
+    case "use_wild": return { who: who(ev.outcome === "used_wild" ? "spends" : "keeps"), text: "The Wild Card" };
+    case "bonus_picks": {
+      const m = ev.text.match(/picked (.+?) and ([A-Z])\./);
+      return m ? { who: who("picks"), text: `${m[1]}  ${m[2]}` } : null;
+    }
+  }
+  return null;
+}
+
+function choiceResult(ev) {
+  if (ev.outcome === "flipped_prize") return { who: "Behind the wedge", text: "$10,000!", tone: "good" };
+  if (ev.outcome === "flipped_bankrupt") return { who: "Behind the wedge", text: "BANKRUPT", tone: "miss" };
+  return null;
 }
 
 function showBanner(text) {

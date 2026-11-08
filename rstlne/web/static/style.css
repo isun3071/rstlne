@@ -163,6 +163,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   box-shadow: 0 0 0 3px rgba(255, 201, 74, .35), 0 0 40px rgba(255, 201, 74, .55);
 }
 .call.pop .call-answer { animation: call-pop .45s cubic-bezier(.2, 1.4, .4, 1); }
+.call.miss .call-letter { background: radial-gradient(circle at 35% 30%, #5a4870, #2d2140); color: #ff8a95; text-decoration: line-through; box-shadow: 0 0 34px rgba(255, 77, 94, .45); }
+.call.miss .call-answer { background: linear-gradient(180deg, #ff8f9a, var(--red)); color: #2a0008; box-shadow: 0 0 34px rgba(255, 77, 94, .5); }
+.call.miss .call-who { color: #ffb3bb; }
+.call.good .call-answer { background: linear-gradient(180deg, #9ff0be, var(--green)); color: #062a14; box-shadow: 0 0 40px rgba(87, 217, 139, .55); }
+.call.round .call-answer { font-size: clamp(22px, 4vw, 40px); letter-spacing: .3em; padding: 14px 30px; }
+.call.round .call-who { order: 2; color: var(--ink); letter-spacing: .12em; }
 .call.pop .call-letter { animation: call-pop .45s cubic-bezier(.2, 1.4, .4, 1); }
 @keyframes call-pop { from { transform: scale(.3) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .wheel-wrap { display: grid; gap: 8px; justify-items: center; }
