@@ -19,8 +19,10 @@ const SOLVE_KINDS = new Set(["solve", "bonus_solve"]);
 const GAP_MS = 900;      // at least this long between two moves by bots or models, so each can be read
 const MISS_MS = 900;     // a letter that isn't there, a wrong answer, or a choice's outcome holds this long
 const CHOICE_MS = 1200;  // a special wedge choice or bonus picks show this long before they play out
-const ROUND_MS = 1700;   // a new round's card
-const OVER_MS = 2200;    // the last result holds this long before the final scores
+const ROUND_MS = 2600;   // a new round's card
+const SOLVED_MS = 5000;  // a solved board holds this long, its banner up, before the next round's card
+const ROUND_START_MS = 700;  // and the new round's board shows this much longer than the usual gap before its first move
+const OVER_MS = 3000;    // the last result holds this long before the final scores
 let lastMoveAt = 0;
 const staged = (seat) => mode === "replay" || !humans.includes(seat);  // a bot's or model's move, or any move in a replay  // after a bot's or model's spin lands, a beat to read the wedge before its next move
 
@@ -314,7 +316,7 @@ function handle(ev) {
     }
     case "hide":
       hideOverlay();
-      lastMoveAt = performance.now();
+      lastMoveAt = performance.now() + ROUND_START_MS;  // the new board stands a little longer before its first move
       break;
     case "landed":
       addMove(ev.move);
@@ -329,7 +331,7 @@ function handle(ev) {
       $("#board").classList.add("solved");
       $("#category").textContent = ev.category;
       showBanner(lastMoveText());
-      break;
+      return replaying ? 0 : SOLVED_MS;  // the page holds the solved board itself: it may run behind the server
     case "round_over":
       addInfo(ev.text);
       break;
@@ -491,6 +493,7 @@ function overlay({ who = "", big = null, text = null, tone = "" }) {
   if (text !== null) answer.textContent = text;
   box.className = `call ${tone}`.trim();
   box.hidden = false;
+  $("#banner").hidden = true;  // the banner sits on the board's edge, under the overlay's reach
   void box.offsetWidth;
   box.classList.add("pop");  // restart the pop each time
 }
