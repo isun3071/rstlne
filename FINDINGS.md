@@ -42,7 +42,7 @@ Handing every choice to a decision model makes play worse. With Luna writing eve
 
 ## How would human contestants fare?
 
-There were no human players, so the bonus round is the comparison: contestants solve about 38% of aired bonus puzzles with a 10-second clock. Alone on grading-606b's 100 bonus puzzles, with no clock, Sol solved 100, Terra 98, DeepSeek 92, Luna 79, Qwen 3.8 Flash 74, and Haiku 57. The bot solved 95 and the hybrids, which make the bot's letter picks, 99 (Luna) and 97 (Haiku).
+There were no human players, so the bonus round is the comparison: contestants solve 37.76% of aired bonus puzzles, with a 10-second clock (William Spaniel's count of every bonus puzzle from 2007 to January 2014, [The New Republic, 2014](https://newrepublic.com/article/116732/wheel-fortune-strategy-how-win-gameshow)). Alone on grading-606b's 100 bonus puzzles, with no clock, Sol solved 100, Terra 98, DeepSeek 92, Luna 79, Qwen 3.8 Flash 74, and Haiku 57. The bot solved 95 and the hybrids, which make the bot's letter picks, 99 (Luna) and 97 (Haiku).
 
 ![The bonus round, alone](figures/6-bonus-test.png)
 

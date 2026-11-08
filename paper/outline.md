@@ -221,4 +221,4 @@ Charts 3 and 7 to 12 go in the appendices.
    - Mystery flips and vowel buys
    - cached share of input and cost spread
 2. Decide how to treat the v4-era probes (memory and decision timing): cite them as earlier experiments, or rerun them on v6.
-3. Find citations: contestants' 38% bonus rate, contestants' letter picks, the Decision Index, and the LLM game benchmarks.
+3. Citations: found for the contestants' bonus rate and letter picks (Spaniel 2014 and 2013), the Decision Index, and the LLM game benchmarks; refs.bib marks fields still to verify.
