@@ -1,47 +1,57 @@
 "use strict";
 // rstlne in the browser. The server runs the game; this page draws what it sends and sends the human's
 // commands, in the same words the terminal takes ("s", "v E", "solve ...", "T", "keep", "B G H I").
+// Replays draw a logged game's events the same way, one move at a time.
 
 const $ = (sel) => document.querySelector(sel);
 const VOWELS = new Set("AEIOU");
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const CONSONANTS = [...ALPHABET].filter((c) => !VOWELS.has(c)).join("");
 const KIND_NAMES = { human: "You", bot: "Bot", llm: "Model", hybrid: "Hybrid (bot + model)", decision: "Decision seat" };
-const SAVED = "rstlne.setup";
+const SAVED = "rstlne.setup", STOPS_SAVED = "rstlne.stops";
+const SPIN_MS = 1700;
 
 let setupInfo = null;
-let ws = null;
-let gameId = null;
-let seats = [];          // from the start event: label, kind, you
-let me = null;           // the human's seat, or null when watching
-let table = null;        // the latest public view
-let prompt = null;       // the human's open prompt
-let thoughts = {};       // seat -> lines, when watching
-let lastShown = new Set();
-let replaying = false, replayTimer = null;
-let wheelSignature = "", wheelAngle = 0;
-let clockTimer = null;
-let over = false;
-let seed = null;
+let mode = "play";       // "play" a live game, or "replay" a log
+let ws = null, gameId = null;
+let seats = [], me = null, table = null, prompt = null, thoughts = {};
+let lastShown = new Set(), replaying = false, replayTimer = null;
+let wheelSignature = "", wheelAngle = 0, clockTimer = null, over = false, seed = null;
+let roundList = null;    // the <ol> the next move goes into
+let rp = null;           // the replay: meta, groups of events, position, playing, speed, stops
 
-const short = (label) => (label.includes("/") ? label.split("/").pop() : label);
+const short = (label) => String(label).split(" + ").map((p) => (p.includes("/") ? p.split("/").pop() : p)).join(" + ");
 const money = (n) => "$" + Number(n).toLocaleString("en-US");
+const pause = (ms) => new Promise((done) => setTimeout(done, ms));
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const store = {
-  get() { try { return JSON.parse(localStorage.getItem(SAVED)); } catch { return null; } },
-  set(v) { try { localStorage.setItem(SAVED, JSON.stringify(v)); } catch { /* private window */ } },
+  get(key, fallback) { try { const v = JSON.parse(localStorage.getItem(key)); return v ?? fallback; } catch { return fallback; } },
+  set(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* private window */ } },
 };
+
+function show(view) {
+  for (const id of ["setup", "replays", "game", "over"]) $("#" + id).hidden = id !== view;
+  const onReplays = view === "replays" || (mode === "replay" && view !== "setup");
+  for (const [id, on] of [["#nav-play", !onReplays], ["#nav-replays", onReplays]]) {
+    if (on) $(id).setAttribute("aria-current", "page"); else $(id).removeAttribute("aria-current");
+  }
+}
 
 // ---------- Setup ----------
 
 async function showSetup(error) {
-  over = false;
-  $("#game").hidden = true; $("#over").hidden = true; $("#setup").hidden = false;
+  leave();
+  show("setup");
   $("#status").textContent = "";
   if (!setupInfo) setupInfo = await (await fetch("/api/setup")).json();
-  const saved = store.get() || ["human", "bot", "bot"];
+  drawPickers(store.get(SAVED, ["human", "bot", "bot"]));
+  $("#setup-error").textContent = error || "";
+}
+
+function drawPickers(chosen) {
   const pickers = $("#pickers");
   pickers.innerHTML = "";
-  saved.forEach((seat, i) => pickers.appendChild(picker(i, seat)));
-  $("#setup-error").textContent = error || "";
+  chosen.forEach((seat, i) => pickers.appendChild(picker(i, seat)));
 }
 
 function picker(i, seat) {
@@ -84,42 +94,54 @@ function chosenSeats() {
 
 async function startGame() {
   const chosen = chosenSeats();
-  if (chosen.filter((s) => s === "human").length > 1) {
-    $("#setup-error").textContent = "Only one seat can be you.";
-    return;
-  }
-  store.set(chosen);
-  const seedText = $("#seed").value.trim();
+  if (chosen.filter((s) => s === "human").length > 1) { $("#setup-error").textContent = "Only one seat can be you."; return; }
+  store.set(SAVED, chosen);
   const body = { seats: chosen };
+  const seedText = $("#seed").value.trim();
   if (seedText) body.seed = Number(seedText);
   $("#start").disabled = true;
   try {
     const r = await fetch("/api/games", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await r.json();
     if (!r.ok) { $("#setup-error").textContent = data.detail || "The game couldn't start."; return; }
-    location.hash = "g=" + data.id;
+    setHash("g=" + data.id);
     connect(data.id);
   } finally {
     $("#start").disabled = false;
   }
 }
 
-// ---------- Connection ----------
+// ---------- A live game ----------
+
+function resetBoard() {
+  table = null; prompt = null; thoughts = {}; lastShown = new Set(); over = false; roundList = null;
+  pending.length = 0;
+  $("#moves").innerHTML = ""; $("#thinking").innerHTML = ""; $("#banner").hidden = true; $("#answer").hidden = true;
+  $("#board").innerHTML = ""; $("#category").textContent = ""; $("#round-line").textContent = "";
+  $("#controls").innerHTML = "";
+  show("game");
+}
 
 function connect(id) {
+  leave();
+  mode = "play";
   gameId = id;
-  table = null; prompt = null; thoughts = {}; lastShown = new Set(); over = false;
-  $("#moves").innerHTML = ""; $("#thinking").innerHTML = ""; $("#banner").hidden = true;
-  $("#setup").hidden = true; $("#over").hidden = true; $("#game").hidden = false;
+  resetBoard();
+  $("#controls").hidden = false; $("#transport").hidden = true;
   replaying = true;
   const proto = location.protocol === "https:" ? "wss" : "ws";
   ws = new WebSocket(`${proto}://${location.host}/api/games/${id}`);
   ws.onmessage = (e) => {
     clearTimeout(replayTimer);
-    replayTimer = setTimeout(() => { replaying = false; }, 250);  // the history arrives in a burst
+    replayTimer = setTimeout(() => { replaying = false; }, 250);  // a reconnect's history arrives in a burst
     enqueue(JSON.parse(e.data));
   };
-  ws.onclose = () => { if (!over) $("#status").textContent += " · disconnected"; };
+  ws.onclose = () => { if (!over && mode === "play") $("#status").textContent += " · disconnected"; };
+}
+
+function leave() {
+  if (ws) { ws.onclose = null; ws.close(); ws = null; }
+  if (rp) rp.playing = false;
 }
 
 function send(command) {
@@ -130,23 +152,29 @@ function send(command) {
 
 // Events play one at a time. A spin holds the ones after it until the wheel stops, so the next seat's
 // highlight, the wedge's result, and the human's controls wait for the wheel.
-const SPIN_MS = 1700;
 const pending = [];
 let draining = false;
-const pause = (ms) => new Promise((done) => setTimeout(done, ms));
+let rush = false;  // a replay step asked for while one plays skips the rest of its animation
+const drained = [];
 
 function enqueue(ev) {
   pending.push(ev);
   if (!draining) drain();
 }
 
+function settled() {
+  return draining || pending.length ? new Promise((done) => drained.push(done)) : Promise.resolve();
+}
+
 async function drain() {
   draining = true;
   while (pending.length) {
     const wait = handle(pending.shift());
-    if (wait && !replaying) await pause(wait);
+    if (wait && !replaying && !rush) await pause(wait);
   }
   draining = false;
+  rush = false;
+  drained.splice(0).forEach((done) => done());
 }
 
 function handle(ev) {
@@ -155,19 +183,23 @@ function handle(ev) {
       seats = ev.seats;
       me = seats.findIndex((s) => s.you);
       if (me < 0) me = null;
-      $("#thinking-panel").hidden = me !== null;  // a seat's thinking would give its best guess away
       seed = ev.seed;
-      $("#status").textContent = `seed ${seed}`;
+      $("#thinking-panel").hidden = me !== null;  // a seat's thinking would give its best guess away
+      $("#status").textContent = mode === "replay" ? `Replay · ${rp.meta.name}` : `seed ${seed}`;
       break;
-    case "round":
-      $("#round-line").textContent = ev.round ? `Round ${ev.round}` : "Bonus round";
-      $("#status").textContent = `${ev.round ? "Round " + ev.round : "Bonus round"} · seed ${seed}`;
-      addMove(ev.round ? `Round ${ev.round}: ${seatName(ev.starts)} ${ev.starts === me ? "start" : "starts"}.` : `Bonus round: ${seatName(ev.starts)} ${ev.starts === me ? "play" : "plays"} for an envelope.`, null, "big");
+    case "round": {
+      const title = ev.round ? `Round ${ev.round}` : "Bonus round";
+      $("#round-line").textContent = title;
+      if (mode === "play") $("#status").textContent = `${title} · seed ${seed}`;
+      startRound(title, ev.category);
       lastShown = new Set();
+      addInfo(ev.round ? `${seatName(ev.starts)} ${ev.starts === me ? "start" : "starts"}.` : `${seatName(ev.starts)} ${ev.starts === me ? "play" : "plays"} for an envelope.`);
       break;
+    }
     case "table":
       table = ev;
       $("#banner").hidden = true;
+      $("#board").classList.remove("solved");
       renderTable();
       break;
     case "move":
@@ -175,14 +207,14 @@ function handle(ev) {
       renderControls();
       if (ev.wedge && !replaying) {  // the wheel turns first; its result shows once it stops
         spinTo(ev.wedge);
-        pending.unshift({ type: "landed", text: ev.text, note: ev.note });
+        pending.unshift({ type: "landed", move: ev });
         return SPIN_MS;
       }
       if (ev.wedge) spinTo(ev.wedge);
-      addMove(ev.text, ev.note, ev.outcome === "solved" || ev.outcome === "bonus_solved" ? "big" : "");
+      addMove(ev);
       break;
     case "landed":
-      addMove(ev.text, ev.note, "");
+      addMove(ev.move);
       break;
     case "thoughts":
       thoughts[ev.seat] = ev.lines;
@@ -190,11 +222,12 @@ function handle(ev) {
       break;
     case "solved":
       drawBoard(ev.rows, true);
+      $("#board").classList.add("solved");
       $("#category").textContent = ev.category;
       showBanner(lastMoveText());
       break;
     case "round_over":
-      addMove(ev.text, null, "big");
+      addInfo(ev.text);
       break;
     case "prompt":
       prompt = ev;
@@ -206,18 +239,16 @@ function handle(ev) {
       break;
     case "failed":
       over = true;
-      if (!table) { location.hash = ""; showSetup(ev.text); return; }
+      if (!table) { setHash(""); showSetup(ev.text); return 0; }
       $("#controls").innerHTML = `<div class="error">${escapeHtml(ev.text)}</div>`;
       break;
   }
+  return 0;
 }
 
 // ---------- Drawing the table ----------
 
-function seatName(i) {
-  if (i === me) return "You";
-  return `Seat ${i + 1}`;
-}
+const seatName = (i) => (i === me ? "You" : `Seat ${i + 1}`);
 
 function renderTable() {
   const t = table;
@@ -227,8 +258,9 @@ function renderTable() {
   drawLetters(new Set(t.used));
   drawWheel(t.wheel);
   $("#wheel-wrap").hidden = !t.wheel.length;
-  $("#wedge-line").textContent = t.express ? "Riding the Express" : t.wedge ? `Wedge: ${t.wedge.text}` : "";
+  $("#wedge-line").innerHTML = t.express ? "Riding the <b>Express</b>" : t.wedge ? `Wedge: <b>${escapeHtml(t.wedge.text)}</b>` : "";
   drawSeats();
+  drawAnswer();
   renderControls();
 }
 
@@ -236,6 +268,7 @@ function drawBoard(rows, solved) {
   const board = $("#board");
   board.innerHTML = "";
   const shown = new Set();
+  const animate = !replaying && lastShown.size > 0;
   rows.forEach((row, r) => {
     const line = document.createElement("div");
     line.className = "row";
@@ -248,13 +281,13 @@ function drawBoard(rows, solved) {
         tile.className = "tile shown";
         tile.textContent = ch;
         shown.add(key);
-        if (!replaying && !lastShown.has(key) && lastShown.size + (solved ? 1 : 0) > 0) tile.classList.add("fresh");
+        if (animate && !lastShown.has(key)) { tile.classList.add("fresh"); tile.style.animationDelay = `${(c % 14) * 40}ms`; }
       }
       line.appendChild(tile);
     });
     board.appendChild(line);
   });
-  lastShown = shown;
+  lastShown = shown.size ? shown : new Set(["start"]);  // a blank board still counts as drawn
 }
 
 function drawLetters(used) {
@@ -266,9 +299,10 @@ function drawSeats() {
   const t = table;
   $("#seats").innerHTML = t.seats.map((label, i) => {
     const kind = seats[i] ? seats[i].kind : "";
-    const cards = [t.wild[i] ? `<span class="card">Wild Card</span>` : "", t.million[i] ? `<span class="card">Million</span>` : ""].join("");
+    const cards = (t.wild[i] ? `<span class="card">Wild Card</span>` : "") + (t.million[i] ? `<span class="card million">Million</span>` : "");
+    const tag = ["llm", "hybrid", "decision"].includes(kind) && i !== me ? ` <span class="kind">(${kind === "llm" ? "model" : kind})</span>` : "";
     return `<div class="seat${t.turn === i && t.phase !== "game_over" ? " turn" : ""}">
-      <div class="who">Seat ${i + 1} · <b>${escapeHtml(i === me ? "You" : short(label))}</b>${["llm", "hybrid", "decision"].includes(kind) && i !== me ? ` <span class="kind">(${kind === "llm" ? "model" : kind})</span>` : ""}</div>
+      <div class="who">Seat ${i + 1} · <b>${escapeHtml(i === me ? "You" : short(label))}</b>${tag}</div>
       <div class="bank">${money(t.banks[i])}</div>
       <div class="total">Total ${money(t.totals[i])}</div>
       <div class="cards">${cards}</div>
@@ -276,23 +310,59 @@ function drawSeats() {
   }).join("");
 }
 
+function drawAnswer() {
+  const box = $("#answer");
+  if (mode !== "replay" || !rp || !rp.reveal || !table) { box.hidden = true; return; }
+  const round = rp.meta.rounds.find((r) => r.round === table.round) || (table.round === null ? rp.meta.rounds.find((r) => r.round === null) : null);
+  box.hidden = !round;
+  if (round) box.textContent = `Answer: ${round.answer}`;
+}
+
 function renderThoughts() {
   if (me !== null) return;
   $("#thinking").innerHTML = Object.keys(thoughts).sort().map((s) =>
-    `<div class="think"><b>Seat ${Number(s) + 1} · ${escapeHtml(short(seats[s] ? seats[s].label : ""))}</b>${thoughts[s].map((l) => `<p>${escapeHtml(l)}</p>`).join("")}</div>`).join("");
+    `<div class="think s${s}"><b>Seat ${Number(s) + 1} · ${escapeHtml(short(seats[s] ? seats[s].label : ""))}</b>${thoughts[s].map((l) => `<p>${escapeHtml(l)}</p>`).join("")}</div>`).join("");
 }
 
-function addMove(text, note, cls) {
+// The Moves panel: a section per round, newest first, each move marked by its seat and what it did.
+
+function startRound(title, category) {
+  const sec = document.createElement("section");
+  sec.className = "mround";
+  sec.innerHTML = `<h3>${escapeHtml(title)}<span>${escapeHtml(category || "")}</span></h3><ol></ol>`;
+  $("#moves").prepend(sec);
+  roundList = sec.querySelector("ol");
+}
+
+function moveClass(ev) {
+  const o = ev.outcome, k = ev.kind, events = ev.events || [];
+  if (o === "solved" || o === "bonus_solved") return "solve";
+  if (o === "bankrupt" || o === "flipped_bankrupt" || o === "lose_a_turn" || events.includes("bankrupt")) return "bust";
+  if (o === "wrong_solve" || o === "bonus_missed" || o === "forfeit") return "wrong";
+  if (["keep", "flip", "pass", "play", "use_wild"].includes(k) || o === "flipped_prize" || o === "rode_express") return "special";
+  return "";
+}
+
+function addMove(ev) {
+  if (!roundList) startRound("Start", "");
   const li = document.createElement("li");
-  if (cls) li.className = cls;
-  li.textContent = text;
-  if (note) { const n = document.createElement("span"); n.className = "note"; n.textContent = note; li.appendChild(n); }
-  $("#moves").prepend(li);
+  li.className = `mv s${ev.seat} ${moveClass(ev)}`;
+  li.innerHTML = `<span class="dot"></span><span>${escapeHtml(ev.text)}${ev.note ? `<span class="note">${escapeHtml(ev.note)}</span>` : ""}</span>`;
+  if (mode === "replay") { li.dataset.index = ev.index; li.onclick = () => seek(ev.index); }
+  roundList.prepend(li);
+}
+
+function addInfo(text) {
+  if (!roundList) startRound("Start", "");
+  const li = document.createElement("li");
+  li.className = "mv info";
+  li.innerHTML = `<span></span><span>${escapeHtml(text)}</span>`;
+  roundList.prepend(li);
 }
 
 function lastMoveText() {
-  const first = $("#moves li");
-  return first ? first.firstChild.textContent : "";
+  const first = $("#moves .mv:not(.info)");
+  return first ? first.querySelector("span:last-child").firstChild.textContent : "";
 }
 
 function showBanner(text) {
@@ -303,30 +373,24 @@ function showBanner(text) {
 
 // ---------- The wheel ----------
 
-const CASH_TONES = ["--w-cash-1", "--w-cash-2", "--w-cash-3", "--w-cash-4", "--w-cash-5", "--w-cash-6"];
+const CASH = ["--w1", "--w2", "--w3", "--w4", "--w5", "--w6", "--w7", "--w8"];
+const LIGHT = new Set(["--w2", "--w8"]);
 
-function wedgeFill(w) {
+function wedgeStyle(w) {
   switch (w.kind) {
-    case "bankrupt": return "var(--w-bankrupt)";
-    case "lose_a_turn": return "var(--w-lose)";
-    case "free_play": return "var(--w-free)";
-    case "mystery": return "var(--w-mystery)";
-    case "express": return "var(--w-express)";
-    case "million": return "var(--w-million)";
-    default: return `var(${CASH_TONES[(w.number - 1) % CASH_TONES.length]})`;
+    case "bankrupt": return ["var(--w-bankrupt)", "#fff"];
+    case "lose_a_turn": return ["var(--w-lose)", "#1b1030"];
+    case "free_play": return ["var(--w-free)", "#1b1030"];
+    case "mystery": return ["var(--w-mystery)", "#fff"];
+    case "express": return ["var(--w-express)", "#fff"];
+    case "million": return ["var(--w-million)", "#1b1030"];
   }
+  const tone = CASH[(w.number - 1) % CASH.length];
+  return [`var(${tone})`, LIGHT.has(tone) ? "#1b1030" : "#fff"];
 }
 
 function wedgeLabel(w) {
-  switch (w.kind) {
-    case "bankrupt": return "BANKRUPT";
-    case "lose_a_turn": return "LOSE A TURN";
-    case "free_play": return "FREE PLAY";
-    case "mystery": return "MYSTERY";
-    case "express": return "EXPRESS";
-    case "million": return "MILLION";
-    default: return `${w.value}`;
-  }
+  return { bankrupt: "BANKRUPT", lose_a_turn: "LOSE A TURN", free_play: "FREE PLAY", mystery: "MYSTERY", express: "EXPRESS", million: "MILLION" }[w.kind] || `${w.value}`;
 }
 
 const point = (r, deg) => [r * Math.sin(deg * Math.PI / 180), -r * Math.cos(deg * Math.PI / 180)];
@@ -336,23 +400,23 @@ function drawWheel(thirds) {
   const signature = JSON.stringify(thirds.map((w) => [w.kind, w.value, w.wild]));
   if (signature === wheelSignature) return;
   wheelSignature = signature;
-  const g = $("#wheel-rot");
   let svg = "";
   thirds.forEach((w, i) => {
     const a1 = i * 5, a2 = a1 + 5;
-    const [x1, y1] = point(100, a1), [x2, y2] = point(100, a2);
-    const light = w.kind === "lose_a_turn";
-    svg += `<path d="M0 0 L${x1.toFixed(2)} ${y1.toFixed(2)} A100 100 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${wedgeFill(w)}" stroke="${light ? "var(--line)" : "none"}" stroke-width=".4"/>`;
+    const [x1, y1] = point(103, a1), [x2, y2] = point(103, a2);
+    svg += `<path d="M0 0 L${x1.toFixed(2)} ${y1.toFixed(2)} A103 103 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${wedgeStyle(w)[0]}"/>`;
   });
-  for (let k = 0; k < thirds.length / 3; k++) {  // a line between wedges, and a label on each
-    const [x, y] = point(100, k * 15);
-    svg += `<line x1="0" y1="0" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}" stroke="var(--surface)" stroke-width=".8"/>`;
+  for (let k = 0; k < thirds.length / 3; k++) {
+    const [x, y] = point(103, k * 15);
+    svg += `<line x1="0" y1="0" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}" stroke="rgba(0,0,0,.35)" stroke-width=".7"/>`;
+    const [px, py] = point(106.5, k * 15);
+    svg += `<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="2.1" fill="#fff3c4" stroke="#8a5a00" stroke-width=".6"/>`;
     const mid = thirds[k * 3 + 1];
-    const dark = ["bankrupt", "free_play", "mystery", "express"].includes(mid.kind);
     const text = wedgeLabel(mid);
-    const size = text.length > 6 ? 5.2 : 7.5;
-    svg += `<text transform="rotate(${k * 15 + 7.5}) translate(0 -92) rotate(90)" font-size="${size}" text-anchor="start" dominant-baseline="middle" fill="${dark ? "#fff" : "#1d1b18"}">${text}${mid.wild ? " ★" : ""}</text>`;
+    const size = text.length > 6 ? 5.6 : 8.4;
+    svg += `<text transform="rotate(${k * 15 + 7.5}) translate(0 -96) rotate(90)" font-size="${size}" text-anchor="start" dominant-baseline="middle" fill="${wedgeStyle(mid)[1]}">${text}${mid.wild ? " ★" : ""}</text>`;
   }
+  const g = $("#wheel-rot");
   g.innerHTML = svg;
   g.style.transform = `rotate(${wheelAngle}deg)`;
 }
@@ -369,7 +433,7 @@ function spinTo(wedge) {
   const g = $("#wheel-rot");
   g.classList.toggle("spinning", !replaying);
   g.style.transform = `rotate(${wheelAngle}deg)`;
-  $("#wedge-line").textContent = replaying ? `Wedge: ${wedge.text}` : "Spinning…";
+  $("#wedge-line").innerHTML = replaying ? `Wedge: <b>${escapeHtml(wedge.text)}</b>` : "Spinning…";
 }
 
 // ---------- The human's controls ----------
@@ -377,49 +441,49 @@ function spinTo(wedge) {
 function renderControls() {
   const box = $("#controls");
   clearInterval(clockTimer);
+  if (mode !== "play") return;
   if (over) { box.innerHTML = ""; return; }
   if (!prompt || prompt.seat !== me) {
     const turn = table ? table.turn : null;
-    box.innerHTML = turn === null ? "" : `<div class="waiting">${turn === me ? "Your move…" : `${seatName(turn)} (${escapeHtml(short(table.seats[turn]))}) is up.`}</div>`;
+    box.innerHTML = turn === null ? "" : `<div class="waiting">${turn === me ? "Your move…" : `<b>${seatName(turn)}</b> (${escapeHtml(short(table.seats[turn]))}) is on the wheel.`}</div>`;
     return;
   }
   const p = prompt;
   const used = new Set(table ? table.used : []);
   const legal = new Set(p.legal);
   let html = p.error ? `<div class="error">${escapeHtml(p.error)}</div>` : "";
-  const keys = (letters, cmd, cls = "") => `<div class="keys">${[...letters].map((c) =>
-    `<button class="key${VOWELS.has(c) ? " vowel" : ""} ${cls}" data-cmd="${cmd(c)}" ${used.has(c) ? "disabled" : ""} aria-label="${c}">${c}</button>`).join("")}</div>`;
-  const consonants = [...ALPHABET].filter((c) => !VOWELS.has(c)).join("");
+  const keys = (letters, cmd) => `<div class="keys">${[...letters].map((c) =>
+    `<button class="key${VOWELS.has(c) ? " vowel" : ""}" data-cmd="${cmd(c)}" ${used.has(c) ? "disabled" : ""} aria-label="${c}">${c}</button>`).join("")}</div>`;
 
   switch (p.phase) {
     case "turn":
     case "express":
       html += `<div class="actions">
-        ${legal.has("spin") ? `<button class="primary" data-cmd="s">Spin</button>` : ""}
-        ${p.phase === "express" ? `<span class="label">Riding the Express: call a consonant, buy a vowel, or solve.</span>` : ""}
+        ${legal.has("spin") ? `<button class="spin-btn" data-cmd="s">Spin</button>` : ""}
+        ${p.phase === "express" ? `<span class="label">Riding the Express: call a consonant, buy a vowel, or solve.</span>` : `<span class="label">Spin, buy a vowel, or solve. Press S to spin.</span>`}
       </div>`;
-      if (p.phase === "express" && legal.has("call_consonant")) html += keys(consonants, (c) => c);
+      if (p.phase === "express" && legal.has("call_consonant")) html += keys(CONSONANTS, (c) => c);
       if (legal.has("buy_vowel")) html += `<div class="actions"><span class="label">Buy a vowel ($250):</span>${keys("AEIOU", (c) => `v ${c}`)}</div>`;
       if (legal.has("solve")) html += solveBox("Solve", (text) => `solve ${text}`);
       break;
     case "call_consonant":
     case "wild_consonant":
-      html += `<div class="label">${p.phase === "wild_consonant" ? "Call your extra consonant." : "Call a consonant."}</div>` + keys(consonants, (c) => c);
+      html += `<div class="label">${p.phase === "wild_consonant" ? "Call your extra consonant." : "Call a consonant, or type it."}</div>` + keys(CONSONANTS, (c) => c);
       break;
     case "free_play":
       html += `<div class="label">Free Play: call any letter. A vowel is free, and a miss keeps your turn.</div>` + keys(ALPHABET, (c) => c);
       break;
     case "mystery_choice":
       html += `<div class="actions"><span class="label">Keep the money, or flip the wedge: $10,000 or Bankrupt.</span>
-        <button data-cmd="keep">Keep</button><button class="primary" data-cmd="flip">Flip</button></div>`;
+        <button data-cmd="keep">Keep</button><button class="go" data-cmd="flip">Flip it</button></div>`;
       break;
     case "express_choice":
       html += `<div class="actions"><span class="label">Ride the Express? Any miss or wrong solve is Bankrupt.</span>
-        <button data-cmd="pass">Pass</button><button class="primary" data-cmd="play">Ride</button></div>`;
+        <button data-cmd="pass">Pass</button><button class="go" data-cmd="play">Ride</button></div>`;
       break;
     case "wild_choice":
       html += `<div class="actions"><span class="label">Spend the Wild Card on one more consonant at this value?</span>
-        <button data-cmd="no">Keep the card</button><button class="primary" data-cmd="wild">Spend it</button></div>`;
+        <button data-cmd="no">Keep the card</button><button class="go" data-cmd="wild">Spend it</button></div>`;
       break;
     case "bonus_picks":
       html += picksBox(p.bonus_consonants || 3, used);
@@ -439,7 +503,7 @@ function solveBox(label, toCommand, focus = false) {
   solveBox.toCommand = toCommand;
   return `<form class="solve" data-solve>
     <input name="answer" placeholder="Type the whole answer" autocomplete="off" aria-label="Your answer" ${focus ? "autofocus" : ""}>
-    <button class="primary" type="submit">${label}</button></form>`;
+    <button class="go" type="submit">${label}</button></form>`;
 }
 
 function wireSolve(box) {
@@ -457,7 +521,7 @@ function picksBox(n, used) {
   const letters = [...ALPHABET].filter((c) => !used.has(c));
   return `<div class="label">Pick ${n} consonants and 1 vowel. R S T L N E are already up.</div>
     <div class="keys" data-picks>${letters.map((c) => `<button class="key${VOWELS.has(c) ? " vowel" : ""}" data-pick="${c}">${c}</button>`).join("")}</div>
-    <div class="actions"><button class="primary" data-picks-go disabled>Reveal</button><span class="label" data-picks-left></span></div>`;
+    <div class="actions"><button class="spin-btn" data-picks-go disabled>Reveal</button><span class="label" data-picks-left></span></div>`;
 }
 
 function wirePicks(box, n) {
@@ -498,8 +562,156 @@ function startClock(seconds) {
   }, 50);
 }
 
+// ---------- Replays ----------
+
+const STOPS = [
+  ["solve", "Solves"], ["wrong", "Wrong solves"], ["bust", "Bankrupt & Lose a Turn"], ["round", "New rounds"],
+  ["special", "Mystery, Express, Wild"], ["bonus", "Bonus round"], ["s0", "Seat 1"], ["s1", "Seat 2"], ["s2", "Seat 3"],
+];
+
+async function showReplays() {
+  leave();
+  mode = "replay";
+  show("replays");
+  $("#status").textContent = "";
+  const list = $("#replay-list");
+  list.innerHTML = `<div class="empty">Reading the log folder…</div>`;
+  const r = await fetch("/api/logs");
+  if (!r.ok) { list.innerHTML = `<div class="empty">Replays are off on this server.</div>`; return; }
+  const data = await r.json();
+  if (!data.logs.length) { list.innerHTML = `<div class="empty">No games in ${escapeHtml(data.folder)} yet.</div>`; return; }
+  list.innerHTML = data.logs.map((l) => {
+    const when = l.started ? new Date(l.started).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : l.name;
+    const best = l.totals ? Math.max(...l.totals) : null;
+    const res = l.finished ? l.totals.map((t, i) => (t === best ? `<b>${money(t)}</b>` : money(t))).join(" · ") : "unfinished";
+    return `<button class="replay-row" data-name="${escapeHtml(l.name)}">
+      <span class="when">${escapeHtml(when)}</span>
+      <span class="who">${l.seats.map((s, i) => `<span class="pill s${i}" title="${escapeHtml(s)}">${escapeHtml(short(s))}</span>`).join("")}</span>
+      <span class="seedcol">seed ${l.seed}</span>
+      <span class="res">${res}</span></button>`;
+  }).join("");
+  list.querySelectorAll("[data-name]").forEach((b) => { b.onclick = () => { setHash("r=" + encodeURIComponent(b.dataset.name)); openReplay(b.dataset.name); }; });
+}
+
+async function openReplay(name) {
+  leave();
+  mode = "replay";
+  const r = await fetch(`/api/logs/${encodeURIComponent(name)}`);
+  const data = await r.json();
+  if (!r.ok) { await showReplays(); $("#replay-list").insertAdjacentHTML("afterbegin", `<div class="setup-error">${escapeHtml(data.detail || "That log couldn't be replayed.")}</div>`); return; }
+  const groups = [[]];
+  for (const ev of data.events) {
+    if (ev.type === "move") groups.push([ev]);
+    else groups[groups.length - 1].push(ev);
+  }
+  rp = { meta: data.meta, groups, pos: 0, playing: false, speed: 1, reveal: false, stops: new Set(store.get(STOPS_SAVED, ["solve", "bust", "round"])) };
+  $("#controls").hidden = true; $("#transport").hidden = false;
+  seek(0);
+}
+
+function seek(k) {
+  if (!rp) return;
+  rp.playing = false;
+  k = Math.max(0, Math.min(k, rp.groups.length - 1));
+  resetBoard();
+  $("#controls").hidden = true; $("#transport").hidden = false;
+  replaying = true;
+  for (let i = 0; i <= k; i++) for (const ev of rp.groups[i]) handle(ev);
+  replaying = false;
+  rp.pos = k;
+  renderTransport();
+}
+
+async function stepForward() {
+  if (!rp || rp.pos >= rp.groups.length - 1) return false;
+  if (draining) rush = true;
+  rp.pos += 1;
+  updatePosition();
+  if ($("#over").hidden === false) show("game");
+  for (const ev of rp.groups[rp.pos]) enqueue(ev);
+  await settled();
+  renderTransport();
+  return true;
+}
+
+function stopsAt(group) {
+  const move = group[0];
+  if (!move || move.type !== "move") return false;
+  const cls = moveClass(move);
+  if (cls && rp.stops.has(cls)) return true;
+  if (rp.stops.has("round") && group.some((e) => e.type === "round")) return true;
+  if (rp.stops.has("bonus") && (move.kind === "bonus_picks" || move.kind === "bonus_solve")) return true;
+  return rp.stops.has(`s${move.seat}`);
+}
+
+async function play() {
+  if (!rp) return;
+  rp.playing = !rp.playing;
+  renderTransport();
+  while (rp && rp.playing) {
+    const moved = await stepForward();
+    if (!moved || !rp.playing) break;
+    if (stopsAt(rp.groups[rp.pos])) break;
+    await pause(900 / rp.speed);
+  }
+  if (rp) { rp.playing = false; renderTransport(); }
+}
+
+function updatePosition() {
+  const pos = $("#transport .pos"), scrub = $('#transport [data-t="scrub"]');
+  if (pos) pos.textContent = `Move ${rp.pos} of ${rp.groups.length - 1}`;
+  if (scrub) scrub.value = rp.pos;
+}
+
+function renderTransport() {
+  if (!rp) return;
+  const last = rp.groups.length - 1;
+  const box = $("#transport");
+  box.innerHTML = `
+    <div class="bar">
+      <button class="icon" data-t="start" title="Start (Home)" aria-label="Back to the start">⏮</button>
+      <button class="icon" data-t="back" title="Back a move (←)" aria-label="Back a move">◀</button>
+      <button class="spin-btn" data-t="play" title="Play or pause (space)">${rp.playing ? "Pause" : "Play"}</button>
+      <button class="icon" data-t="fwd" title="Forward a move (→)" aria-label="Forward a move">▶</button>
+      <button class="icon" data-t="end" title="End (End)" aria-label="To the end">⏭</button>
+      <select data-t="speed" aria-label="Speed">${[0.5, 1, 2, 4].map((s) => `<option value="${s}" ${s === rp.speed ? "selected" : ""}>${s}×</option>`).join("")}</select>
+      <span class="pos">Move ${rp.pos} of ${last}</span>
+      <label class="toggle"><input type="checkbox" data-t="reveal" ${rp.reveal ? "checked" : ""}> Show the answer</label>
+    </div>
+    <input type="range" min="0" max="${last}" value="${rp.pos}" data-t="scrub" aria-label="Move">
+    <div class="stops"><span class="label">Stop at:</span>${STOPS.map(([key, name]) =>
+      `<button class="chip${rp.stops.has(key) ? " on" : ""}" data-stop="${key}">${name}</button>`).join("")}</div>`;
+  box.querySelector('[data-t="start"]').onclick = () => seek(0);
+  box.querySelector('[data-t="back"]').onclick = () => seek(rp.pos - 1);
+  box.querySelector('[data-t="fwd"]').onclick = () => { rp.playing = false; stepForward(); };
+  box.querySelector('[data-t="end"]').onclick = () => seek(last);
+  box.querySelector('[data-t="play"]').onclick = play;
+  box.querySelector('[data-t="speed"]').onchange = (e) => { rp.speed = Number(e.target.value); };
+  box.querySelector('[data-t="reveal"]').onchange = (e) => { rp.reveal = e.target.checked; drawAnswer(); };
+  box.querySelector('[data-t="scrub"]').oninput = (e) => seek(Number(e.target.value));
+  box.querySelectorAll("[data-stop]").forEach((b) => {
+    b.onclick = () => {
+      const key = b.dataset.stop;
+      if (rp.stops.has(key)) rp.stops.delete(key); else rp.stops.add(key);
+      store.set(STOPS_SAVED, [...rp.stops]);
+      b.classList.toggle("on", rp.stops.has(key));
+    };
+  });
+  document.querySelectorAll(".mv.now").forEach((m) => m.classList.remove("now"));
+  const now = document.querySelector(`.mv[data-index="${rp.pos}"]`);
+  if (now) now.classList.add("now");
+}
+
+// ---------- Keys ----------
+
 document.addEventListener("keydown", (e) => {
-  if (!prompt || prompt.seat !== me || e.target.closest("input, select, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.target.closest("input, select, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (mode === "replay" && rp && !$("#game").hidden) {
+    const acts = { ArrowRight: () => { rp.playing = false; stepForward(); }, ArrowLeft: () => seek(rp.pos - 1), " ": play, Home: () => seek(0), End: () => seek(rp.groups.length - 1) };
+    if (acts[e.key]) { e.preventDefault(); acts[e.key](); }
+    return;
+  }
+  if (!prompt || prompt.seat !== me) return;
   const c = e.key.toUpperCase();
   if (c.length !== 1 || !ALPHABET.includes(c) || (table && table.used.includes(c))) return;
   const phase = prompt.phase;
@@ -516,12 +728,12 @@ document.addEventListener("keydown", (e) => {
 // ---------- The result ----------
 
 function renderOver(ev) {
-  $("#game").hidden = true;
+  show("over");
   const box = $("#over");
-  box.hidden = false;
   const totals = ev.totals, best = Math.max(...totals);
   const b = ev.bonus;
-  const rows = b ? b.rows.map((row) => `<div class="row">${row.map((ch) => ch === " " ? `<div class="tile gap"></div>` : `<div class="tile shown">${ch}</div>`).join("")}</div>`).join("") : "";
+  const rows = b ? b.rows.map((row) => `<div class="row">${row.map((ch) => (ch === " " ? `<div class="tile gap"></div>` : `<div class="tile shown">${ch}</div>`)).join("")}</div>`).join("") : "";
+  const replayButtons = mode === "replay" ? `<button data-o="back">Back to the game</button><button data-o="list">All replays</button>` : "";
   box.innerHTML = `
     <h1>${winnerLine(totals)}</h1>
     ${b ? `<div class="board-wrap"><div class="round-line">Bonus round · ${escapeHtml(b.category)}</div><div class="board">${rows}</div>
@@ -529,35 +741,57 @@ function renderOver(ev) {
     <table class="totals"><thead><tr><th>Seat</th><th class="num">Before the bonus</th><th class="num">Final total</th></tr></thead>
       <tbody>${totals.map((t, i) => `<tr class="${t === best ? "winner" : ""}"><td>Seat ${i + 1} · ${escapeHtml(i === me ? "You" : short(seats[i] ? seats[i].label : ""))}</td>
         <td class="num">${money(ev.before_bonus[i])}</td><td class="num">${money(t)}</td></tr>`).join("")}</tbody></table>
-    ${ev.usage.length ? `<div class="usage">${ev.usage.map((u) => `${escapeHtml(u.model)}: ${u.calls} calls, ${u.tokens.toLocaleString()} tokens (${u.cached.toLocaleString()} from cache), $${u.cost.toFixed(4)}`).join("<br>")}</div>` : ""}
+    ${ev.usage.length ? `<div class="usage">${ev.usage.map((u) => `${escapeHtml(u.model)}: ${u.calls} calls, ${Number(u.tokens).toLocaleString()} tokens (${Number(u.cached).toLocaleString()} from cache), $${Number(u.cost).toFixed(4)}`).join("<br>")}</div>` : ""}
     <div class="usage">Log: <code>${escapeHtml(ev.log)}</code></div>
-    <div class="actions"><button class="primary" id="again">New game</button></div>`;
-  $("#again").onclick = newGame;
-  $("#status").textContent = "Game over";
+    <div class="actions"><button class="spin-btn" data-o="new">New game</button>${replayButtons}</div>`;
+  box.querySelector('[data-o="new"]').onclick = newGame;
+  if (mode === "replay") {
+    box.querySelector('[data-o="back"]').onclick = () => seek(rp.groups.length - 1 - 1 >= 0 ? rp.groups.length - 2 : 0);
+    box.querySelector('[data-o="list"]').onclick = () => { setHash("replays"); showReplays(); };
+  } else {
+    $("#status").textContent = "Game over";
+  }
 }
 
 function winnerLine(totals) {
   const best = Math.max(...totals);
   const winners = totals.map((t, i) => (t === best ? i : -1)).filter((i) => i >= 0);
   if (winners.length > 1) return `A tie at ${money(best)}`;
-  return winners[0] === me ? `You won with ${money(best)}!` : `${seatName(winners[0])} won with ${money(best)}`;
+  return winners[0] === me ? `You won with ${money(best)}!` : `${seatName(winners[0])} wins with ${money(best)}`;
 }
 
-async function newGame() {
-  if (gameId) { fetch(`/api/games/${gameId}`, { method: "DELETE" }).catch(() => {}); }
-  if (ws) ws.close();
-  gameId = null;
+function newGame() {
+  if (gameId && mode === "play") fetch(`/api/games/${gameId}`, { method: "DELETE" }).catch(() => {});
+  gameId = null; rp = null; mode = "play";
   history.replaceState(null, "", location.pathname);
+  routed = "";
   showSetup();
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 // ---------- Start ----------
 
 $("#start").onclick = startGame;
-$(".brand").onclick = (e) => { e.preventDefault(); newGame(); };
-const hashed = location.hash.match(/g=([0-9a-f]+)/);
-if (hashed) connect(hashed[1]); else showSetup();
+$("#brand").onclick = (e) => { e.preventDefault(); newGame(); };
+$("#nav-play").onclick = newGame;
+$("#nav-replays").onclick = () => { setHash("replays"); showReplays(); };
+document.querySelectorAll("[data-preset]").forEach((b) => { b.onclick = () => drawPickers(b.dataset.preset.split(",")); });
+
+// The address after # says what's on screen: g=<game>, r=<log>, or replays. Changes the page makes itself are
+// remembered, so only the back and forward buttons, or a typed address, route again.
+let routed = null;
+function setHash(h) {
+  routed = h;
+  if (location.hash.slice(1) !== h) location.hash = h;
+}
+
+function route() {
+  const h = location.hash.slice(1);
+  if (h === routed) return;
+  routed = h;
+  if (h.startsWith("g=")) connect(h.slice(2));
+  else if (h.startsWith("r=")) openReplay(decodeURIComponent(h.slice(2)));
+  else if (h === "replays") showReplays();
+  else showSetup();
+}
+window.addEventListener("hashchange", route);
+route();

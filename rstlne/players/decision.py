@@ -95,21 +95,7 @@ class DecisionPlayer(Player):
             self.last_call = CallRecord(raw=self._record, usage=self._call_usage)
 
     def thoughts(self) -> list[str]:
-        """One line per question: P(yes), or the top three options with their probabilities and the pick."""
-        label = lambda option: _MOVES.get(option, option)  # noqa: E731
-        lines = []
-        for decision in self._record.get("decisions", []):
-            for name, picked in decision["chosen"].items():
-                answer = decision["answers"].get(name, {})
-                if answer.get("type") == "noul":
-                    lines.append(f"{name}: {picked:.0%} sure")
-                elif name in decision.get("only_option", ()):
-                    lines.append(f"{name} {picked} (only option)")
-                else:
-                    top = sorted(answer.get("probabilities", {}).items(), key=lambda kv: -kv[1])[:3]
-                    odds = ", ".join(f"{label(o)} {p:.0%}" for o, p in top)
-                    lines.append(f"{_QUESTIONS.get(name, name)}: {odds} → {label(picked)}")
-        return lines
+        return decision_lines(self._record)
 
     def _choose(self, view: PublicView) -> Action:
         match view.phase:
@@ -251,3 +237,22 @@ class DecisionPlayer(Player):
             "call_consonant": f"Call a consonant at {money(self.spec.express)}, with no spin. A miss is Bankrupt.",
             "solve": "Solve: give the whole answer now. A correct solve banks the round; a wrong one passes your turn.",
         }[kind]
+
+
+def decision_lines(record: dict) -> list[str]:
+    """A decision record in plain words, one line per question: P(yes), or the top three options with their
+    probabilities and the pick. The web page's replays read it from the log."""
+    label = lambda option: _MOVES.get(option, option)  # noqa: E731
+    lines = []
+    for decision in record.get("decisions", []):
+        for name, picked in decision["chosen"].items():
+            answer = decision["answers"].get(name, {})
+            if answer.get("type") == "noul":
+                lines.append(f"{name}: {picked:.0%} sure")
+            elif name in decision.get("only_option", ()):
+                lines.append(f"{name} {picked} (only option)")
+            else:
+                top = sorted(answer.get("probabilities", {}).items(), key=lambda kv: -kv[1])[:3]
+                odds = ", ".join(f"{label(o)} {p:.0%}" for o, p in top)
+                lines.append(f"{_QUESTIONS.get(name, name)}: {odds} → {label(picked)}")
+    return lines

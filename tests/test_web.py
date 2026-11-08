@@ -179,3 +179,64 @@ def test_a_game_plays_over_the_websocket(client):
         ws.send_json({"command": "zzz"})
         assert ws.receive_json()["error"].startswith("Try:")
     client.delete(f"/api/games/{game_id}")
+
+
+# Replays of logged games
+
+def logged_game(rules, wheel_spec, path, seed=9):
+    from rstlne.runner import GameLog, play_game
+    players = [bot(i, rules, wheel_spec) for i in range(3)]
+    s = state(rules, wheel_spec, seed)
+    with GameLog(path, s, players) as log:
+        return play_game(s, players, log)
+
+
+def test_a_log_replays_move_by_move_to_the_same_result(rules, wheel_spec, tmp_path):
+    from rstlne.web.replay import replay
+    path = tmp_path / "game.jsonl"
+    final = logged_game(rules, wheel_spec, path)
+    out = replay(path)
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    moves = [e for e in out["events"] if e["type"] == "move"]
+    assert len(moves) == sum(r["type"] == "action" for r in rows)
+    assert [m["index"] for m in moves] == list(range(1, len(moves) + 1))
+    assert out["events"][-1]["type"] == "over" and out["events"][-1]["totals"] == [s.total for s in final.seats]
+    assert any(e["type"] == "thoughts" for e in out["events"])  # the bots' records give their thinking back
+    assert out["meta"]["seats"] == ["bot v1", "bot v1", "bot v1"] and out["meta"]["finished"]
+    assert all(r["answer"] for r in out["meta"]["rounds"])  # answers for the replay's show-the-answer switch
+
+
+def test_a_log_that_no_longer_replays_is_refused(rules, wheel_spec, tmp_path):
+    from rstlne.web.replay import replay
+    path = tmp_path / "game.jsonl"
+    logged_game(rules, wheel_spec, path)
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    first = next(r for r in rows if r["type"] == "action" and r["action"]["kind"] == "spin")
+    first["result"]["wedge"]["number"] = first["result"]["wedge"]["number"] % 24 + 1  # a different wedge than the seed gives
+    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    with pytest.raises(ValueError, match="doesn't replay"):
+        replay(path)
+
+
+def test_the_log_list_shows_finished_and_unfinished_games_newest_first(rules, wheel_spec, tmp_path):
+    from rstlne.web.replay import list_logs
+    logged_game(rules, wheel_spec, tmp_path / "20261101-120000-seed9.jsonl")
+    lines = (tmp_path / "20261101-120000-seed9.jsonl").read_text().splitlines()
+    (tmp_path / "20261102-120000-seed4.jsonl").write_text("\n".join(lines[:5]) + "\n")  # stopped part way
+    (tmp_path / "notes.txt").write_text("not a log")
+    logs = list_logs(tmp_path)
+    assert [l["name"] for l in logs] == ["20261102-120000-seed4.jsonl", "20261101-120000-seed9.jsonl"]
+    assert logs[0]["finished"] is False and logs[1]["finished"] is True and logs[1]["seed"] == 9
+    assert logs[1]["seats"] == ["bot v1", "bot v1", "bot v1"] and len(logs[1]["totals"]) == 3
+
+
+def test_the_server_lists_and_replays_logs_but_never_reads_outside_the_log_folder(tmp_path, rules, wheel_spec):
+    logged_game(rules, wheel_spec, tmp_path / "20261101-120000-seed9.jsonl")
+    app = server.create_app(log_dir=tmp_path, pause=0, solve_pause=0)
+    with TestClient(app) as c:
+        listed = c.get("/api/logs").json()["logs"]
+        assert listed[0]["name"] == "20261101-120000-seed9.jsonl"
+        replayed = c.get("/api/logs/20261101-120000-seed9.jsonl").json()
+        assert replayed["events"][0]["type"] == "start"
+        assert c.get("/api/logs/..%2Fconfig.toml").status_code in (400, 404)
+        assert c.get("/api/logs/missing.jsonl").status_code == 404

@@ -19,6 +19,7 @@ from rstlne.cli import build_players, clients, log_path, parse_seats, pick_puzzl
 from rstlne.engine.rules import new_game
 from rstlne.players.bot import versions
 from rstlne.players.hybrid import curves_for
+from rstlne.web.replay import list_logs, replay
 from rstlne.web.session import WebGame, WebHuman
 
 STATIC = Path(__file__).parent / "static"
@@ -31,7 +32,8 @@ class NewGame(BaseModel):
 
 
 def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, log_dir: Path | None = None,
-               pause: float | None = None, solve_pause: float | None = None) -> FastAPI:
+               pause: float | None = None, solve_pause: float | None = None, replays: bool = True) -> FastAPI:
+    """The app. `replays` serves the log folder's games for replay: right on this machine, never on a shared host."""
     config = config or settings.load_config()
     rules, spec = settings.load_rules(), settings.load_wheel()
     puzzles = settings.load_puzzles(Path(puzzles_path or settings.ROOT / "puzzles" / "dev.json"))
@@ -89,6 +91,29 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
         games[game_id] = game
         game.start()
         return {"id": game_id, "seed": seed}
+
+    def log_file(name: str) -> Path:
+        path = (log_dir / name).resolve()
+        if path.parent != log_dir.resolve() or path.suffix != ".jsonl":
+            raise HTTPException(400, "replays read game logs in the log folder only")
+        if not path.is_file():
+            raise HTTPException(404, f"no log named {name}")
+        return path
+
+    @app.get("/api/logs")
+    def logs() -> dict:
+        if not replays:
+            raise HTTPException(404, "replays are off")
+        return {"folder": str(log_dir), "logs": list_logs(log_dir)}
+
+    @app.get("/api/logs/{name}")
+    def replay_log(name: str) -> dict:
+        if not replays:
+            raise HTTPException(404, "replays are off")
+        try:
+            return replay(log_file(name))
+        except ValueError as err:
+            raise HTTPException(422, str(err)) from None
 
     @app.delete("/api/games/{game_id}")
     def close(game_id: str) -> dict:

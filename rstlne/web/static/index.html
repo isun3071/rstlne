@@ -3,27 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d0820">
 <title>rstlne</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+<div class="spotlights" aria-hidden="true"></div>
+
 <header class="top">
-  <a class="brand" href="/" aria-label="rstlne, new game">rstlne</a>
+  <a class="marquee" href="/" id="brand" aria-label="rstlne, new game">
+    <span class="bulbs" aria-hidden="true"></span>
+    <span class="word">rstlne</span>
+  </a>
+  <nav class="nav">
+    <button class="tab" id="nav-play" aria-current="page">Play</button>
+    <button class="tab" id="nav-replays">Replays</button>
+  </nav>
   <div class="status" id="status"></div>
 </header>
 
 <main>
   <!-- Setup -->
   <section id="setup" class="setup" hidden>
-    <h1>Pick the table</h1>
-    <p class="lede">Three seats. Play one yourself, or seat bots and models and watch.</p>
+    <h1>Tonight's table</h1>
+    <p class="lede">Three seats. Take one yourself, or fill them with bots and models and watch the show.</p>
+    <div class="presets">
+      <button class="chip" data-preset="human,bot,bot">You against two bots</button>
+      <button class="chip" data-preset="bot,bot,bot">Watch three bots</button>
+    </div>
     <div class="seat-pickers" id="pickers"></div>
     <div class="setup-row">
       <label class="field">Seed <input id="seed" inputmode="numeric" placeholder="random" autocomplete="off"></label>
-      <button class="primary" id="start">Start the game</button>
+      <button class="spin-btn wide" id="start">Start the game</button>
     </div>
     <p class="setup-error" id="setup-error" role="alert"></p>
     <p class="fine">Model seats call OpenRouter with the key in <code>.env</code>. A hybrid seat is the bot playing, with a model reading the board on its turns.</p>
+  </section>
+
+  <!-- Replays -->
+  <section id="replays" class="replays" hidden>
+    <h1>Replays</h1>
+    <p class="lede">Every game in your log folder, newest first. Step through one move by move, or let it play and stop at the moments you choose.</p>
+    <div class="replay-list" id="replay-list"></div>
   </section>
 
   <!-- The game -->
@@ -33,28 +54,35 @@
         <div class="round-line" id="round-line"></div>
         <div class="board" id="board" aria-live="polite"></div>
         <div class="category" id="category"></div>
+        <div class="answer" id="answer" hidden></div>
         <div class="banner" id="banner" hidden></div>
       </div>
       <div class="wheel-wrap" id="wheel-wrap">
-        <svg viewBox="-110 -110 220 220" class="wheel" id="wheel" role="img" aria-label="The wheel">
+        <svg viewBox="-118 -122 236 240" class="wheel" id="wheel" role="img" aria-label="The wheel">
+          <defs>
+            <radialGradient id="rim" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#ffe39a"/><stop offset="1" stop-color="#b77a12"/></radialGradient>
+            <radialGradient id="shine" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient>
+          </defs>
+          <circle r="111" fill="url(#rim)"></circle>
           <g id="wheel-rot"></g>
-          <circle r="12" class="hub"></circle>
-          <path d="M -7 -112 L 7 -112 L 0 -96 Z" class="pointer"></path>
+          <circle r="104" fill="url(#shine)" pointer-events="none"></circle>
+          <circle r="17" class="hub"></circle>
+          <text class="hub-word" text-anchor="middle" dominant-baseline="middle">rstlne</text>
+          <path d="M -9 -121 L 9 -121 L 0 -98 Z" class="pointer"></path>
         </svg>
         <div class="wedge-line" id="wedge-line"></div>
       </div>
     </div>
 
     <div class="letters" id="letters" aria-label="Letters"></div>
-
     <div class="seats" id="seats"></div>
-
     <div class="controls" id="controls"></div>
+    <div class="transport" id="transport" hidden></div>
 
     <div class="panels">
       <section class="panel" id="moves-panel">
         <h2>Moves</h2>
-        <ol class="moves" id="moves"></ol>
+        <div class="moves" id="moves"></div>
       </section>
       <section class="panel" id="thinking-panel" hidden>
         <h2>Thinking</h2>

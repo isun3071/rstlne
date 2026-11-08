@@ -238,22 +238,8 @@ class HybridPlayer(BotPlayer):
 
     def thoughts(self) -> list[str]:
         lines = super().thoughts()
-        ask = self._ask
-        if ask:
-            name, reply, status = self.model.split("/")[-1], ask["reply"], ask["status"]
-            if status == "failed":
-                said = f"{name} gave no answer (the call failed)"
-            elif not reply["solvable"]:
-                said = f"{name} said: not solvable"
-            elif not reply["answer"]:
-                said = f"{name} said: solvable, but gave no answer"
-            elif status == "used":
-                said = (f"{name} said: solvable, {reply['answer']} · fits, trusted {ask['trust']:.0%} · the bot's read "
-                        f"went from {ask['reader_confidence']:.0%} to {ask['merged_confidence']:.0%}")
-            else:
-                why = "already ruled wrong" if status == "refuted" else "doesn't fit the board"
-                said = f"{name} said: solvable, {reply['answer']} · {why}, ignored"
-            lines.append(said + (" (asked about this board already)" if ask["reused"] else ""))
+        if self._ask:
+            lines.append(ask_line(self.model, self._ask))
         return lines
 
     # The bot's hooks
@@ -314,3 +300,21 @@ class HybridPlayer(BotPlayer):
             "merged_confidence": belief.confidence, "attempts": asked.attempts, "seconds": round(asked.seconds, 2),
         }
         return {"record": record, "belief": belief}
+
+
+def ask_line(model: str, ask: dict) -> str:
+    """What a hybrid's model said about the board, and what the bot made of it. Replays read it from the log."""
+    name, reply, status = model.split("/")[-1], ask["reply"], ask["status"]
+    if status == "failed":
+        said = f"{name} gave no answer (the call failed)"
+    elif not reply["solvable"]:
+        said = f"{name} said: not solvable"
+    elif not reply["answer"]:
+        said = f"{name} said: solvable, but gave no answer"
+    elif status == "used":
+        said = (f"{name} said: solvable, {reply['answer']} · fits, trusted {ask['trust']:.0%} · the bot's read "
+                f"went from {ask['reader_confidence']:.0%} to {ask['merged_confidence']:.0%}")
+    else:
+        why = "already ruled wrong" if status == "refuted" else "doesn't fit the board"
+        said = f"{name} said: solvable, {reply['answer']} · {why}, ignored"
+    return said + (" (asked about this board already)" if ask.get("reused") else "")
