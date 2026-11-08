@@ -158,11 +158,11 @@ This is mostly already written in the earlier FINDINGS.md, in git history at `a8
   - Bot 95; hybrids 99 and 97 with the bot's own picks.
   - Contestants 38% with a 10-second clock.
   - Source: `bonus.entrants`. Figure 5, chart 6.
-  - Gap: a citation for 38%.
+  - Source: Spaniel 2014, The New Republic: 37.76% over bonus puzzles from 2007 to January 2014.
 - Picks:
   - Sol's and Terra's letters leave 77% of the board showing, against the bot's 55%, and Sol still solves every puzzle.
   - The bot picks D, H, C, A on almost every puzzle. Contestants favour C, M, D, A.
-  - Gap: a citation for contestants' picks.
+  - Source: Spaniel 2013 (blog): C, M, D and A called 64.6%, 59.9%, 57.9% and 48.3% of the time, over about 1,166 bonus puzzles.
 - Style:
   - The bot plays nothing like a contestant: it flips every Mystery and keeps spinning on known boards.
   - LLMs play closer to contestants.
