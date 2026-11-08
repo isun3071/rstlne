@@ -117,7 +117,7 @@ function connect(id) {
   ws.onmessage = (e) => {
     clearTimeout(replayTimer);
     replayTimer = setTimeout(() => { replaying = false; }, 250);  // the history arrives in a burst
-    handle(JSON.parse(e.data));
+    enqueue(JSON.parse(e.data));
   };
   ws.onclose = () => { if (!over) $("#status").textContent += " · disconnected"; };
 }
@@ -126,6 +126,27 @@ function send(command) {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ command }));
   prompt = null;
   renderControls();
+}
+
+// Events play one at a time. A spin holds the ones after it until the wheel stops, so the next seat's
+// highlight, the wedge's result, and the human's controls wait for the wheel.
+const SPIN_MS = 1700;
+const pending = [];
+let draining = false;
+const pause = (ms) => new Promise((done) => setTimeout(done, ms));
+
+function enqueue(ev) {
+  pending.push(ev);
+  if (!draining) drain();
+}
+
+async function drain() {
+  draining = true;
+  while (pending.length) {
+    const wait = handle(pending.shift());
+    if (wait && !replaying) await pause(wait);
+  }
+  draining = false;
 }
 
 function handle(ev) {
@@ -151,9 +172,17 @@ function handle(ev) {
       break;
     case "move":
       prompt = null;
-      addMove(ev.text, ev.note, ev.outcome === "solved" || ev.outcome === "bonus_solved" ? "big" : "");
-      if (ev.wedge) spinTo(ev.wedge);
       renderControls();
+      if (ev.wedge && !replaying) {  // the wheel turns first; its result shows once it stops
+        spinTo(ev.wedge);
+        pending.unshift({ type: "landed", text: ev.text, note: ev.note });
+        return SPIN_MS;
+      }
+      if (ev.wedge) spinTo(ev.wedge);
+      addMove(ev.text, ev.note, ev.outcome === "solved" || ev.outcome === "bonus_solved" ? "big" : "");
+      break;
+    case "landed":
+      addMove(ev.text, ev.note, "");
       break;
     case "thoughts":
       thoughts[ev.seat] = ev.lines;
@@ -340,7 +369,7 @@ function spinTo(wedge) {
   const g = $("#wheel-rot");
   g.classList.toggle("spinning", !replaying);
   g.style.transform = `rotate(${wheelAngle}deg)`;
-  $("#wedge-line").textContent = `Wedge: ${wedge.text}`;
+  $("#wedge-line").textContent = replaying ? `Wedge: ${wedge.text}` : "Spinning…";
 }
 
 // ---------- The human's controls ----------
