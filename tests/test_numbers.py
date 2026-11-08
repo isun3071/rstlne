@@ -82,6 +82,8 @@ def test_build_reads_the_phase_and_skips_analyses_not_yet_run(played, tmp_path):
     assert out["lineups"]["L"]["label"] == "one · two · decision"
     assert out["pairs"][0]["label"] == "L one minus two" and out["pairs"][0]["sets"] == 2
     assert out["letters"] is None and out["reading_gap"] is None and out["bonus"] is None
+    assert all("play" in e for e in out["lineups"]["L"]["entrants"].values())
+    assert set(out["comebacks"]) == {"3", "4", "round_4_by_kind"} and "pairs" in out["noise"]
     json.dumps(out)  # writable as is
 
 

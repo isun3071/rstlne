@@ -24,7 +24,7 @@ from pathlib import Path
 from statistics import mean, median, pstdev
 
 from rstlne import settings, tournament
-from rstlne.analysis import common, letters as letters_mod
+from rstlne.analysis import common, letters as letters_mod, play
 from rstlne.engine.puzzle import LETTERS
 
 VOWELS = set("AEIOU")
@@ -197,6 +197,18 @@ def letters_summary(data: dict) -> dict:
     return {"judge_version": data.get("judge_version"), "rows": json.loads(json.dumps(out))}
 
 
+def noise_floor(lineups: dict) -> dict:
+    """How far apart two identical bots in one lineup finish: each lineup's bot #1 minus bot #2, in win rate, with its
+    interval, and the widest gap. Chance alone moves a seat this much."""
+    gaps = []
+    for lid, L in lineups.items():
+        for p in L.get("pairwise", []):
+            if p["a"].startswith("bot #") and p["b"].startswith("bot #"):
+                gaps.append({"lineup": lid, "gap": p["win_rate_gap"], "ci95": p["ci95"]})
+    return {"pairs": gaps, "largest": max((abs(g["gap"]) for g in gaps if g["gap"] is not None), default=None),
+            "median": round(median(abs(g["gap"]) for g in gaps if g["gap"] is not None), 4) if gaps else None}
+
+
 def lineup_id(name: str) -> str:
     """A lineup's id from the name analyses give it ("lineup 3b" for an id, a folder's name otherwise)."""
     return name.removeprefix("lineup ")
@@ -253,6 +265,9 @@ def build(phase: str | None = None, toml: Path = common.LINEUPS, *, pairs=PAIRS,
         if not any(True for _ in common.games(m["folder"])):
             continue
         out_lineups[lid] = {"label": m.get("label"), "note": m.get("note"), "folder": m["folder"].name, **lineup(m["folder"])}
+        for name, detail in play.play_stats(m["folder"]).items():
+            if name in out_lineups[lid]["entrants"]:
+                out_lineups[lid]["entrants"][name]["play"] = detail
         shares[lid] = set_shares(m["folder"])
     out_pairs = []
     for label, (la, ea), (lb, eb) in pairs:
@@ -275,6 +290,8 @@ def build(phase: str | None = None, toml: Path = common.LINEUPS, *, pairs=PAIRS,
                  "resamples": tournament.RESAMPLES, "interval": "95%, percentile bootstrap over whole sets, seed 0"},
         "lineups": out_lineups,
         "pairs": out_pairs,
+        "noise": noise_floor(out_lineups),
+        "comebacks": play.comebacks([m["folder"] for lid, m in meta_lineups.items() if lid in out_lineups]),
         "bonus": bonus_report(bonus),
         "letters": {**letters_summary(letter_data), "lineups_missing": [k for k in out_lineups if k not in {
             r["lineup"] for r in letter_data["rows"]}]} if letter_data else None,
