@@ -304,3 +304,10 @@ def test_the_server_seats_up_to_three_humans(client):
         ws.send_json({"command": "zzz", "seat": 0})
         assert ws.receive_json()["error"].startswith("Try:")
     client.delete(f"/api/games/{game_id}")
+
+
+def test_the_page_and_its_files_are_checked_for_changes_on_every_load(client):
+    # Without this, a browser keeps an old app.js after the server updates it
+    for path in ("/", "/static/app.js", "/static/style.css"):
+        assert client.get(path).headers.get("cache-control") == "no-cache", path
+    assert "cache-control" not in client.get("/api/setup").headers or client.get("/api/setup").headers["cache-control"] != "no-cache"

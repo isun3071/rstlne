@@ -45,6 +45,15 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
     app = FastAPI(title="rstlne", docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
+    @app.middleware("http")
+    async def revalidate(request, call_next):
+        """The page and its files: a browser checks for a newer copy on every load (an unchanged file still comes from
+        its cache, by ETag), so an updated app.js reaches the page without a hard refresh."""
+        response = await call_next(request)
+        if request.url.path == "/" or request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
     @app.get("/")
     def page() -> FileResponse:
         return FileResponse(STATIC / "index.html")
