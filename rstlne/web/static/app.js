@@ -10,7 +10,9 @@ const CONSONANTS = [...ALPHABET].filter((c) => !VOWELS.has(c)).join("");
 const KIND_NAMES = { human: "Human", bot: "Bot", llm: "Model", hybrid: "Hybrid (bot + model)", decision: "Decision seat" };
 const SAVED = "rstlne.setup", NAMES_SAVED = "rstlne.names", STOPS_SAVED = "rstlne.stops";
 const SPIN_MS = 1700;
-const LANDED_MS = 1200;  // after a bot's or model's spin lands, a beat to read the wedge before its next move
+const LANDED_MS = 1200;
+const CALL_MS = 1100;  // a bot's or model's letter shows big over the board this long before the tiles turn
+const LETTER_KINDS = new Set(["call_consonant", "call_letter", "buy_vowel"]);  // after a bot's or model's spin lands, a beat to read the wedge before its next move
 
 let setupInfo = null;
 let mode = "play";       // "play" a live game, or "replay" a log
@@ -130,7 +132,7 @@ function resetBoard() {
   table = null; prompt = null; thoughts = {}; lastShown = new Set(); over = false; roundList = null;
   thinkingSeat = null; bonusSpun = false; wheelSignature = "";
   pending.length = 0;
-  $("#moves").innerHTML = ""; $("#thinking").innerHTML = ""; $("#banner").hidden = true; $("#answer").hidden = true;
+  $("#moves").innerHTML = ""; $("#thinking").innerHTML = ""; $("#banner").hidden = true; $("#answer").hidden = true; $("#call").hidden = true;
   $("#board").innerHTML = ""; $("#category").textContent = ""; $("#round-line").textContent = "";
   $("#controls").innerHTML = "";
   show("game");
@@ -229,6 +231,11 @@ function handle(ev) {
       prompt = null;
       thinkingSeat = null;
       renderControls();
+      if (!replaying && LETTER_KINDS.has(ev.kind) && (mode === "replay" || !humans.includes(ev.seat))) {
+        showCall(ev);  // the letter first, big; the tiles and the result follow
+        pending.unshift({ type: "called", move: ev });
+        return CALL_MS;
+      }
       if (ev.wedge && !replaying) {  // the wheel turns first; its result shows once it stops
         spinTo(ev.wedge);
         pending.unshift({ type: "landed", move: ev });
@@ -236,6 +243,10 @@ function handle(ev) {
       }
       if (ev.wedge) spinTo(ev.wedge);
       addMove(ev);
+      break;
+    case "called":
+      $("#call").hidden = true;
+      addMove(ev.move);
       break;
     case "landed":
       addMove(ev.move);
@@ -393,6 +404,18 @@ function addInfo(text) {
 function lastMoveText() {
   const first = $("#moves .mv:not(.info)");
   return first ? first.querySelector("span:last-child").firstChild.textContent : "";
+}
+
+function showCall(ev) {
+  const letter = (ev.text.match(/(?:called|bought) ([A-Z])/) || [])[1];
+  if (!letter) return;
+  const verb = ev.kind === "buy_vowel" ? "buys" : "calls";
+  $("#call-who").textContent = `${seatName(ev.seat)} ${isYou(ev.seat) ? verb.replace(/s$/, "") : verb}`;
+  $("#call-letter").textContent = letter;
+  $("#call-letter").classList.toggle("vowel", VOWELS.has(letter));
+  const box = $("#call");
+  box.hidden = false;
+  box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");  // restart the animation
 }
 
 function showBanner(text) {

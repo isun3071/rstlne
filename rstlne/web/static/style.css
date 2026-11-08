@@ -145,6 +145,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   padding: 7px 18px; border-radius: 999px; font-size: 14px; text-align: center; box-shadow: 0 0 24px rgba(255, 201, 74, .6);
 }
 
+.call {
+  position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; border-radius: 16px;
+  background: radial-gradient(circle at 50% 45%, rgba(26, 16, 54, .55), rgba(10, 6, 26, .88)); z-index: 3;
+}
+.call-who { color: var(--ink2); font-weight: 800; letter-spacing: .2em; text-transform: uppercase; font-size: 13px; }
+.call-letter {
+  width: calc(var(--tile) * 2.4); height: calc(var(--tile) * 2.8); border-radius: 12px; display: grid; place-items: center;
+  font-weight: 900; font-size: calc(var(--tile) * 1.8); color: #2a1600;
+  background: radial-gradient(circle at 35% 30%, #fff6cf, var(--gold) 55%, #d68b0c);
+  box-shadow: 0 0 0 3px rgba(255, 201, 74, .35), 0 0 40px rgba(255, 201, 74, .6);
+}
+.call-letter.vowel { background: radial-gradient(circle at 35% 30%, #ffd4e8, var(--pink) 60%, #c2346f); color: #2a0516; box-shadow: 0 0 40px rgba(255, 95, 162, .6); }
+.call.pop .call-letter { animation: call-pop .45s cubic-bezier(.2, 1.4, .4, 1); }
+@keyframes call-pop { from { transform: scale(.3) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .wheel-wrap { display: grid; gap: 8px; justify-items: center; }
 .wheel { width: 100%; max-width: 300px; overflow: visible; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .55)); }
 #wheel-rot { transform-box: view-box; transform-origin: 0 0; }  /* the wheel is drawn around (0, 0) */
