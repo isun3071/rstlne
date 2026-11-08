@@ -46,6 +46,8 @@ def label_of(seat: dict) -> str:
         return f"{seat.get('model')} + {seat.get('solver')}"
     if kind == "llm":
         return str(seat.get("model"))
+    if kind == "human":
+        return str(seat.get("name") or "human")
     return str(kind or "seat")
 
 
@@ -120,7 +122,8 @@ def replay(path: Path) -> dict:
     names = (header.get("tournament") or {}).get("names")
     entrants = (header.get("tournament") or {}).get("entrants")
     labels = [names[entrants[i]] if names and entrants else label_of(s) for i, s in enumerate(seats)]
-    narrator = Narrator(labels, [s.get("kind") for s in seats], viewer=None, thoughts=True)  # the game is over: thinking gives nothing away
+    narrator = Narrator(labels, [s.get("kind") for s in seats], viewer=None, thoughts=True,
+                        names=[s.get("name") if s.get("kind") == "human" else None for s in seats])  # the game is over: thinking gives nothing away
     state = game_of(header)
     events = narrator.start(state)
     rounds = [{"round": p["round"] if p.get("round") else i + 1, "category": p["category"], "answer": p["answer"]}

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import sys
 
 from rstlne.engine.puzzle import compact
@@ -38,7 +40,10 @@ def money(amount: int) -> str:
     return f"-${-amount:,}" if amount < 0 else f"${amount:,}"
 
 
-def seat_name(seat: int, viewer: int | None = None) -> str:
+def seat_name(seat: int, viewer: int | None = None, names: Sequence[str | None] | None = None) -> str:
+    """A seat in the text: its nickname if a human gave one (web page only), "You" for the viewer, else its number."""
+    if names and seat < len(names) and names[seat]:
+        return str(names[seat])
     return "You" if seat == viewer else f"Seat {seat + 1}"
 
 
@@ -102,13 +107,13 @@ def table(view: PublicView, viewer: int | None = None) -> list[str]:
     return lines
 
 
-def describe(result: Result, viewer: int | None = None) -> str:
+def describe(result: Result, viewer: int | None = None, names: Sequence[str | None] | None = None) -> str:
     """One line for what an action did, like "Seat 2 called N: 2 Ns, +$1,600."."""
     extras = []
     if "bankrupt" in result.events and result.outcome not in ("bankrupt", "flipped_bankrupt"):
         extras.append("Bankrupt!")  # an Express bust
     extras += [_EVENTS[e] for e in result.events if e in _EVENTS]
-    return " ".join([_outcome(seat_name(result.seat, viewer), result), *extras])
+    return " ".join([_outcome(seat_name(result.seat, viewer, names), result), *extras])
 
 
 def _outcome(who: str, result: Result) -> str:

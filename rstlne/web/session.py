@@ -57,8 +57,10 @@ def table_json(view: PublicView, seats: Sequence[str]) -> dict:
 class Narrator:
     """Turns a game's states into the page's events, for a viewer's seat or, with none, for a spectator."""
 
-    def __init__(self, labels: Sequence[str], kinds: Sequence[str], viewer: int | None, thoughts: bool | None = None):
+    def __init__(self, labels: Sequence[str], kinds: Sequence[str], viewer: int | None, thoughts: bool | None = None,
+                 names: Sequence[str | None] | None = None):
         self.labels = list(labels)
+        self.names = list(names) if names else [None] * len(self.labels)  # human seats' nicknames
         self.kinds = list(kinds)
         self.viewer = viewer
         # Thinking would give a bot's or model's best guess away, so it shows only when no human plays
@@ -66,8 +68,8 @@ class Narrator:
         self.moves = 0
 
     def start(self, state: GameState) -> list[dict]:
-        seats = [{"label": label, "kind": kind, "you": i == self.viewer}
-                 for i, (label, kind) in enumerate(zip(self.labels, self.kinds))]
+        seats = [{"label": label, "kind": kind, "you": i == self.viewer, "name": name}
+                 for i, (label, kind, name) in enumerate(zip(self.labels, self.kinds, self.names))]
         return [{"type": "start", "seed": state.seed, "seats": seats}, *self.banner(state), *self.table(state)]
 
     def view(self, state: GameState) -> PublicView:
@@ -90,7 +92,7 @@ class Narrator:
         """The events for one applied action: the move, any thinking, a solved board, the next round, the table."""
         result = state.last
         self.moves += 1
-        move = {"type": "move", "index": self.moves, "seat": result.seat, "text": describe(result, self.viewer),
+        move = {"type": "move", "index": self.moves, "seat": result.seat, "text": describe(result, self.viewer, self.names),
                 "outcome": result.outcome, "kind": result.action.kind, "events": list(result.events),
                 "wedge": wedge_json(result.wedge) if result.action.kind == "spin" else None}
         if result.outcome == "solved" and before.round:
@@ -128,17 +130,18 @@ class WebHuman(Player):
 
     max_attempts = None
 
-    def __init__(self, seat: int, emit: Callable[[dict], None], seconds: float):
+    def __init__(self, seat: int, emit: Callable[[dict], None], seconds: float, name: str | None = None):
         self.seat = seat
+        self.name = name  # a nickname typed on the setup screen; models never see it
         self.emit = emit
         self.seconds = seconds  # the bonus solve's clock
         self.inbox: queue.Queue = queue.Queue()
 
     def describe(self) -> dict:
-        return {"kind": "human"}
+        return {"kind": "human", **({"name": self.name} if self.name else {})}
 
     def label(self) -> str:
-        return "human"
+        return self.name or "human"
 
     def submit(self, command: str) -> None:
         self.inbox.put(command)
@@ -207,8 +210,9 @@ class WebGame:
         self.sleep = sleep
         self.humans = [i for i, p in enumerate(players) if isinstance(p, WebHuman)]
         self.viewer = self.humans[0] if len(self.humans) == 1 else None  # "You" only when one human plays
-        labels = ["You" if i == self.viewer else p.label() for i, p in enumerate(players)]
-        self.narrator = Narrator(labels, [p.describe().get("kind") for p in players], self.viewer)
+        names = [p.name if isinstance(p, WebHuman) else None for p in players]
+        labels = ["You" if i == self.viewer and not names[i] else p.label() for i, p in enumerate(players)]
+        self.narrator = Narrator(labels, [p.describe().get("kind") for p in players], self.viewer, names=names)
         self.history: list[dict] = []
         self.subscribers: list[queue.Queue] = []
         self.lock = threading.Lock()

@@ -311,3 +311,48 @@ def test_the_page_and_its_files_are_checked_for_changes_on_every_load(client):
     for path in ("/", "/static/app.js", "/static/style.css"):
         assert client.get(path).headers.get("cache-control") == "no-cache", path
     assert "cache-control" not in client.get("/api/setup").headers or client.get("/api/setup").headers["cache-control"] != "no-cache"
+
+
+# Nicknames for human seats
+
+def test_a_move_names_a_seat_by_its_nickname(rules, wheel_spec):
+    from rstlne.engine.rules import apply
+    from rstlne.narrate import describe
+    after = apply(state(rules, wheel_spec), Spin())
+    assert describe(after.last, viewer=0, names=["Ian", None, None]).startswith("Ian spun")
+    assert describe(after.last, viewer=0).startswith("You spun")  # no nickname: as before
+    assert describe(after.last).startswith("Seat 1 spun")
+
+
+def test_nicknames_reach_the_page_and_the_log_and_replays_keep_them(rules, wheel_spec, tmp_path):
+    from rstlne.web.replay import replay
+    a = WebHuman(0, emit=lambda e: None, seconds=10, name="Ian")
+    b = WebHuman(1, emit=lambda e: None, seconds=10, name="Mom")
+    game = WebGame(state(rules, wheel_spec), [a, b, bot(2, rules, wheel_spec)], tmp_path / "game.jsonl", pause=0, solve_pause=0)
+    game.start()
+    events = collect(game, lambda e: e["type"] == "prompt")
+    assert [s["label"] for s in events[0]["seats"]] == ["Ian", "Mom", "bot v1"]
+    assert [s.get("name") for s in events[0]["seats"]] == ["Ian", "Mom", None]
+    game.submit("solve not it", seat=0)
+    events = collect(game, lambda e: e["type"] == "move")
+    assert events[-1]["text"].startswith('Ian tried "NOT IT"')
+    game.stop()
+    game.thread.join(5)
+    header = json.loads((tmp_path / "game.jsonl").read_text().splitlines()[0])
+    assert header["seats"][0] == {"kind": "human", "name": "Ian"}
+    out = replay(tmp_path / "game.jsonl")
+    assert out["meta"]["seats"][:2] == ["Ian", "Mom"]
+    assert next(e for e in out["events"] if e["type"] == "move")["text"].startswith("Ian tried")
+
+
+def test_the_server_takes_a_nickname_for_each_human_seat_and_checks_it(client):
+    ok = client.post("/api/games", json={"seats": ["human", "bot", "human"], "names": ["  Ian ", None, "Mom"], "seed": 5})
+    assert ok.status_code == 200
+    with client.websocket_connect(f"/api/games/{ok.json()['id']}") as ws:
+        start = ws.receive_json()
+        assert [s["label"] for s in start["seats"]][::2] == ["Ian", "Mom"]
+    client.delete(f"/api/games/{ok.json()['id']}")
+    long = client.post("/api/games", json={"seats": ["human", "bot", "bot"], "names": ["x" * 21, None, None]})
+    assert long.status_code == 400 and "20" in long.json()["detail"]
+    bot_named = client.post("/api/games", json={"seats": ["human", "bot", "bot"], "names": [None, "Robo", None]})
+    assert bot_named.status_code == 400 and "human" in bot_named.json()["detail"]

@@ -8,7 +8,7 @@ const VOWELS = new Set("AEIOU");
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const CONSONANTS = [...ALPHABET].filter((c) => !VOWELS.has(c)).join("");
 const KIND_NAMES = { human: "Human", bot: "Bot", llm: "Model", hybrid: "Hybrid (bot + model)", decision: "Decision seat" };
-const SAVED = "rstlne.setup", STOPS_SAVED = "rstlne.stops";
+const SAVED = "rstlne.setup", NAMES_SAVED = "rstlne.names", STOPS_SAVED = "rstlne.stops";
 const SPIN_MS = 1700;
 const LANDED_MS = 1200;  // after a bot's or model's spin lands, a beat to read the wedge before its next move
 
@@ -47,17 +47,17 @@ async function showSetup(error) {
   show("setup");
   $("#status").textContent = "";
   if (!setupInfo) setupInfo = await (await fetch("/api/setup")).json();
-  drawPickers(store.get(SAVED, ["human", "bot", "bot"]));
+  drawPickers(store.get(SAVED, ["human", "bot", "bot"]), store.get(NAMES_SAVED, [null, null, null]));
   $("#setup-error").textContent = error || "";
 }
 
-function drawPickers(chosen) {
+function drawPickers(chosen, names = []) {
   const pickers = $("#pickers");
   pickers.innerHTML = "";
-  chosen.forEach((seat, i) => pickers.appendChild(picker(i, seat)));
+  chosen.forEach((seat, i) => pickers.appendChild(picker(i, seat, names[i] || "")));
 }
 
-function picker(i, seat) {
+function picker(i, seat, name = "") {
   const [kind, ...rest] = seat.split(":");
   const model = rest.join(":");
   const box = document.createElement("div");
@@ -67,8 +67,11 @@ function picker(i, seat) {
       ${Object.entries(KIND_NAMES).map(([k, name]) => `<option value="${k}">${name}</option>`).join("")}
     </select>
     <select class="model" aria-label="Seat ${i + 1} model"></select>
-    <input class="other" placeholder="any OpenRouter slug, like openai/gpt-6-luna" hidden>`;
+    <input class="other" placeholder="any OpenRouter slug, like openai/gpt-6-luna" hidden>
+    <input class="nick" placeholder="Nickname (optional)" maxlength="20" autocomplete="off" aria-label="Seat ${i + 1} nickname" hidden>`;
   const kindSel = box.querySelector(".kind"), modelSel = box.querySelector(".model"), other = box.querySelector(".other");
+  const nick = box.querySelector(".nick");
+  nick.value = name;
   kindSel.value = KIND_NAMES[kind] ? kind : "bot";
   const fill = () => {
     const k = kindSel.value;
@@ -78,6 +81,7 @@ function picker(i, seat) {
     if (list.includes(model)) modelSel.value = model;
     else if (k === "llm" && model) { modelSel.value = "__other"; other.value = model; }
     other.hidden = modelSel.value !== "__other" || modelSel.hidden;
+    nick.hidden = k !== "human";
   };
   kindSel.onchange = fill;
   modelSel.onchange = () => { other.hidden = modelSel.value !== "__other"; };
@@ -95,10 +99,17 @@ function chosenSeats() {
   });
 }
 
+function chosenNames() {
+  return [...document.querySelectorAll(".picker")].map((box) =>
+    (box.querySelector(".kind").value === "human" ? box.querySelector(".nick").value.trim() || null : null));
+}
+
 async function startGame() {
   const chosen = chosenSeats();
+  const names = chosenNames();
+  store.set(NAMES_SAVED, names);
   store.set(SAVED, chosen);
-  const body = { seats: chosen };
+  const body = { seats: chosen, names };
   const seedText = $("#seed").value.trim();
   if (seedText) body.seed = Number(seedText);
   $("#start").disabled = true;
@@ -197,7 +208,7 @@ function handle(ev) {
       if (mode === "play") $("#status").textContent = `${title} · seed ${seed}`;
       startRound(title, ev.category);
       lastShown = new Set();
-      addInfo(ev.round ? `${seatName(ev.starts)} ${ev.starts === me ? "start" : "starts"}.` : `${seatName(ev.starts)} ${ev.starts === me ? "play" : "plays"} for an envelope.`);
+      addInfo(ev.round ? `${seatName(ev.starts)} ${isYou(ev.starts) ? "start" : "starts"}.` : `${seatName(ev.starts)} ${isYou(ev.starts) ? "play" : "plays"} for an envelope.`);
       break;
     }
     case "table":
@@ -262,7 +273,10 @@ function handle(ev) {
 
 // ---------- Drawing the table ----------
 
-const seatName = (i) => (i === me ? "You" : `Seat ${i + 1}`);
+// A seat's name on the page: a human's nickname, "You" when one human plays unnamed, or its number.
+const nameOf = (i) => (seats[i] && seats[i].name) || null;
+const isYou = (i) => i === me && !nameOf(i);
+const seatName = (i) => nameOf(i) || (isYou(i) ? "You" : `Seat ${i + 1}`);
 
 function renderTable() {
   const t = table;
@@ -318,7 +332,7 @@ function drawSeats() {
     const cards = (t.wild[i] ? `<span class="card">Wild Card</span>` : "") + (t.million[i] ? `<span class="card million">Million</span>` : "");
     const tag = ["llm", "hybrid", "decision"].includes(kind) && i !== me ? ` <span class="kind">(${kind === "llm" ? "model" : kind})</span>` : "";
     return `<div class="seat${t.turn === i && t.phase !== "game_over" ? " turn" : ""}">
-      <div class="who">Seat ${i + 1} · <b>${escapeHtml(i === me ? "You" : short(label))}</b>${tag}</div>
+      <div class="who">Seat ${i + 1} · <b>${escapeHtml(nameOf(i) || (isYou(i) ? "You" : short(label)))}</b>${tag}</div>
       <div class="bank">${money(t.banks[i])}</div>
       <div class="total">Total ${money(t.totals[i])}</div>
       <div class="cards">${cards}</div>
@@ -491,16 +505,16 @@ function renderControls() {
   if (over) { box.innerHTML = ""; return; }
   if (!prompt || !humans.includes(prompt.seat)) {
     const turn = table ? table.turn : null;
-    const who = turn === null ? "" : `<b>${seatName(turn)}</b> (${escapeHtml(short(table.seats[turn]))})`;
-    box.innerHTML = turn === null ? "" : `<div class="waiting">${turn === me ? "Your move…"
-      : humans.includes(turn) ? `<b>${seatName(turn)}</b> is up.`
+    const who = turn === null ? "" : `<b>${escapeHtml(seatName(turn))}</b> (${escapeHtml(short(table.seats[turn]))})`;
+    box.innerHTML = turn === null ? "" : `<div class="waiting">${isYou(turn) ? "Your move…"
+      : humans.includes(turn) ? `<b>${escapeHtml(seatName(turn))}</b> is up.`
       : thinkingSeat === turn ? `${who} is thinking<span class="dots"></span>` : `${who} is on the wheel.`}</div>`;
     return;
   }
   const p = prompt;
   const used = new Set(table ? table.used : []);
   const legal = new Set(p.legal);
-  let html = humans.length > 1 ? `<div class="whose seat-c${p.seat}"><b>${seatName(p.seat)}</b>, you're up.</div>` : "";
+  let html = humans.length > 1 || nameOf(p.seat) ? `<div class="whose seat-c${p.seat}"><b>${escapeHtml(seatName(p.seat))}</b>, you're up.</div>` : "";
   if (p.error) html += `<div class="error">${escapeHtml(p.error)}</div>`;
   const keys = (letters, cmd) => `<div class="keys">${[...letters].map((c) =>
     `<button class="key${VOWELS.has(c) ? " vowel" : ""}" data-cmd="${cmd(c)}" ${used.has(c) ? "disabled" : ""} aria-label="${c}">${c}</button>`).join("")}</div>`;
@@ -787,9 +801,9 @@ function renderOver(ev) {
   box.innerHTML = `
     <h1>${winnerLine(totals)}</h1>
     ${b ? `<div class="board-wrap"><div class="round-line">Bonus round · ${escapeHtml(b.category)}</div><div class="board">${rows}</div>
-      <div class="category">${seatName(b.seat)} ${b.solved ? "solved it" : "missed it"}. The envelope held ${b.envelope_text}.</div></div>` : ""}
+      <div class="category">${escapeHtml(seatName(b.seat))} ${b.solved ? "solved it" : "missed it"}. The envelope held ${b.envelope_text}.</div></div>` : ""}
     <table class="totals"><thead><tr><th>Seat</th><th class="num">Before the bonus</th><th class="num">Final total</th></tr></thead>
-      <tbody>${totals.map((t, i) => `<tr class="${t === best ? "winner" : ""}"><td>Seat ${i + 1} · ${escapeHtml(i === me ? "You" : short(seats[i] ? seats[i].label : ""))}</td>
+      <tbody>${totals.map((t, i) => `<tr class="${t === best ? "winner" : ""}"><td>Seat ${i + 1} · ${escapeHtml(nameOf(i) || (isYou(i) ? "You" : short(seats[i] ? seats[i].label : "")))}</td>
         <td class="num">${money(ev.before_bonus[i])}</td><td class="num">${money(t)}</td></tr>`).join("")}</tbody></table>
     ${ev.usage.length ? `<div class="usage">${ev.usage.map((u) => `${escapeHtml(u.model)}: ${u.calls} calls, ${Number(u.tokens).toLocaleString()} tokens (${Number(u.cached).toLocaleString()} from cache), $${Number(u.cost).toFixed(4)}`).join("<br>")}</div>` : ""}
     <div class="usage">Log: <code>${escapeHtml(ev.log)}</code></div>
@@ -807,7 +821,7 @@ function winnerLine(totals) {
   const best = Math.max(...totals);
   const winners = totals.map((t, i) => (t === best ? i : -1)).filter((i) => i >= 0);
   if (winners.length > 1) return `A tie at ${money(best)}`;
-  return winners[0] === me ? `You won with ${money(best)}!` : `${seatName(winners[0])} wins with ${money(best)}`;
+  return isYou(winners[0]) ? `You won with ${money(best)}!` : `${escapeHtml(seatName(winners[0]))} wins with ${money(best)}!`;
 }
 
 function newGame() {

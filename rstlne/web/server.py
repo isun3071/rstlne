@@ -29,6 +29,27 @@ MODEL_KINDS = {"llm", "decision", "hybrid"}
 class NewGame(BaseModel):
     seats: list[str]
     seed: int | None = None
+    names: list[str | None] | None = None  # a nickname for each human seat, or none
+
+
+NAME_LENGTH = 20
+
+
+def nicknames(names: list[str | None] | None, kinds: list[str]) -> list[str | None]:
+    """Each seat's nickname, trimmed: human seats only, printable, at most NAME_LENGTH characters."""
+    names = list(names or []) + [None] * (len(kinds) - len(names or []))
+    out = []
+    for i, (name, kind) in enumerate(zip(names, kinds)):
+        name = " ".join(str(name).split()) if name else ""
+        if not name:
+            out.append(None)
+            continue
+        if kind != "human":
+            raise ValueError(f"seat {i + 1} isn't a human seat, so it can't take a nickname")
+        if len(name) > NAME_LENGTH or not name.isprintable():
+            raise ValueError(f"seat {i + 1}'s nickname must be at most {NAME_LENGTH} printable characters")
+        out.append(name)
+    return out
 
 
 def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, log_dir: Path | None = None,
@@ -77,6 +98,10 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
         except ValueError as err:
             raise HTTPException(400, str(err)) from None
         kinds = {kind for kind, _ in seats}
+        try:
+            names = nicknames(new.names, [kind for kind, _ in seats])
+        except ValueError as err:
+            raise HTTPException(400, str(err)) from None
         if kinds & MODEL_KINDS:
             load_dotenv(settings.ROOT / ".env")
             if not os.environ.get("OPENROUTER_API_KEY"):
@@ -91,7 +116,7 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
             path.unlink(missing_ok=True)
             raise HTTPException(400, str(err)) from None
         seconds = config["cli"]["bonus_solve_seconds"]
-        players = [WebHuman(i, emit=lambda e: None, seconds=seconds) if kind == "human" else p
+        players = [WebHuman(i, emit=lambda e: None, seconds=seconds, name=names[i]) if kind == "human" else p
                    for i, ((kind, _), p) in enumerate(zip(seats, players))]
         game = WebGame(new_game(seed, rules, spec, main, bonus), players, path, pause=pause, solve_pause=solve_pause)
         game_id = uuid.uuid4().hex[:12]
