@@ -63,7 +63,7 @@ The grading runs used GPT-6.1 Sol, GPT-6 Luna, Claude Haiku 5.5, and DeepSeek V4
 uv run python -m rstlne.web          # then open http://127.0.0.1:8000
 ```
 
-Pick the three seats on the page, then play or watch. Model seats use the key in `.env`. `--port`, `--puzzles` and `--log-dir` work as in the CLI. Games log to `logs/` like CLI games. The Replays tab replays any game in the log folder, move by move, with breakpoints: stop at solves, Bankrupts, new rounds, a seat's moves, and more. The arrow keys step and the space bar plays.
+Pick the three seats on the page, then play or watch. Up to three humans can share the screen, taking turns with the same controls. Model seats use the key in `.env`. `--port`, `--puzzles` and `--log-dir` work as in the CLI. Games log to `logs/` like CLI games. The Replays tab replays any game in the log folder, move by move, with breakpoints: stop at solves, Bankrupts, new rounds, a seat's moves, and more. The arrow keys step and the space bar plays.
 
 ## Tournaments
 

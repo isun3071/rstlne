@@ -158,8 +158,6 @@ def test_setup_lists_the_seat_kinds_and_the_models_from_config(client):
 def test_a_bad_seat_list_is_refused_with_the_reason(client):
     response = client.post("/api/games", json={"seats": ["human", "bot"]})
     assert response.status_code == 400 and "three seats" in response.json()["detail"]
-    response = client.post("/api/games", json={"seats": ["human", "human", "bot"]})
-    assert response.status_code == 400 and "one human" in response.json()["detail"]
 
 
 def test_model_seats_need_a_key(client, monkeypatch):
@@ -264,3 +262,45 @@ def test_no_beat_before_the_humans_own_move(rules, wheel_spec, tmp_path):
     events = collect(game, lambda e: e["type"] == "prompt")
     assert not any(e["type"] == "thinking" for e in events) and waits == []
     game.stop()
+
+
+
+# Several humans at one screen
+
+def test_two_humans_share_the_screen_and_each_command_goes_to_the_seat_it_names(rules, wheel_spec, tmp_path):
+    a, b = WebHuman(0, emit=lambda e: None, seconds=10), WebHuman(1, emit=lambda e: None, seconds=10)
+    game = WebGame(state(rules, wheel_spec), [a, b, bot(2, rules, wheel_spec)], tmp_path / "game.jsonl", pause=0, solve_pause=0)
+    game.start()
+    events = collect(game, lambda e: e["type"] == "prompt")
+    start = events[0]
+    assert [s["you"] for s in start["seats"]] == [False, False, False]  # nobody is "You" when two share the screen
+    assert [s["kind"] for s in start["seats"]] == ["human", "human", "bot"]
+    assert events[-1]["seat"] == 0
+    game.submit("solve break the ice", seat=1)  # not seat 2's turn: ignored
+    game.submit("solve not it", seat=0)
+    events = collect(game, lambda e: e["type"] == "move")
+    assert events[-1]["seat"] == 0 and events[-1]["text"].startswith("Seat 1 tried")
+    assert not any(e["type"] == "thoughts" for e in game.history)
+    game.stop()
+
+
+def test_a_command_for_a_seat_that_isnt_human_is_ignored(rules, wheel_spec, tmp_path):
+    human = WebHuman(0, emit=lambda e: None, seconds=10)
+    game = WebGame(state(rules, wheel_spec), [human, bot(1, rules, wheel_spec), bot(2, rules, wheel_spec)],
+                   tmp_path / "game.jsonl", pause=0, solve_pause=0)
+    game.submit("s", seat=1)
+    game.submit("s", seat=7)
+    assert human.inbox.empty()
+    game.submit("s")  # one human: a command with no seat is theirs
+    assert human.inbox.get_nowait() == "s"
+
+
+def test_the_server_seats_up_to_three_humans(client):
+    game_id = client.post("/api/games", json={"seats": ["human", "human", "human"], "seed": 5}).json()["id"]
+    with client.websocket_connect(f"/api/games/{game_id}") as ws:
+        while (event := ws.receive_json())["type"] != "prompt":
+            pass
+        assert event["seat"] == 0
+        ws.send_json({"command": "zzz", "seat": 0})
+        assert ws.receive_json()["error"].startswith("Try:")
+    client.delete(f"/api/games/{game_id}")

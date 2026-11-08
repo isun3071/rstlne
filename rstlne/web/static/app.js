@@ -7,7 +7,7 @@ const $ = (sel) => document.querySelector(sel);
 const VOWELS = new Set("AEIOU");
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const CONSONANTS = [...ALPHABET].filter((c) => !VOWELS.has(c)).join("");
-const KIND_NAMES = { human: "You", bot: "Bot", llm: "Model", hybrid: "Hybrid (bot + model)", decision: "Decision seat" };
+const KIND_NAMES = { human: "Human", bot: "Bot", llm: "Model", hybrid: "Hybrid (bot + model)", decision: "Decision seat" };
 const SAVED = "rstlne.setup", STOPS_SAVED = "rstlne.stops";
 const SPIN_MS = 1700;
 const LANDED_MS = 1200;  // after a bot's or model's spin lands, a beat to read the wedge before its next move
@@ -15,7 +15,7 @@ const LANDED_MS = 1200;  // after a bot's or model's spin lands, a beat to read 
 let setupInfo = null;
 let mode = "play";       // "play" a live game, or "replay" a log
 let ws = null, gameId = null;
-let seats = [], me = null, table = null, prompt = null, thoughts = {};
+let seats = [], humans = [], me = null, table = null, prompt = null, thoughts = {};
 let lastShown = new Set(), replaying = false, replayTimer = null;
 let wheelSignature = "", wheelAngle = 0, clockTimer = null, over = false, seed = null;
 let roundList = null;
@@ -97,7 +97,6 @@ function chosenSeats() {
 
 async function startGame() {
   const chosen = chosenSeats();
-  if (chosen.filter((s) => s === "human").length > 1) { $("#setup-error").textContent = "Only one seat can be you."; return; }
   store.set(SAVED, chosen);
   const body = { seats: chosen };
   const seedText = $("#seed").value.trim();
@@ -149,7 +148,8 @@ function leave() {
 }
 
 function send(command) {
-  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ command }));
+  const seat = prompt ? prompt.seat : me;
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ command, seat }));
   prompt = null;
   renderControls();
 }
@@ -185,10 +185,10 @@ function handle(ev) {
   switch (ev.type) {
     case "start":
       seats = ev.seats;
-      me = seats.findIndex((s) => s.you);
-      if (me < 0) me = null;
+      humans = seats.map((s, i) => (s.kind === "human" ? i : -1)).filter((i) => i >= 0);
+      me = humans.length === 1 ? humans[0] : null;  // "You" only when one human plays
       seed = ev.seed;
-      $("#thinking-panel").hidden = me !== null;  // a seat's thinking would give its best guess away
+      $("#thinking-panel").hidden = mode === "play" && humans.length > 0;  // it would give a bot's best guess away
       $("#status").textContent = mode === "replay" ? `Replay · ${rp.meta.name}` : `seed ${seed}`;
       break;
     case "round": {
@@ -489,17 +489,19 @@ function renderControls() {
   clearInterval(clockTimer);
   if (mode !== "play") return;
   if (over) { box.innerHTML = ""; return; }
-  if (!prompt || prompt.seat !== me) {
+  if (!prompt || !humans.includes(prompt.seat)) {
     const turn = table ? table.turn : null;
     const who = turn === null ? "" : `<b>${seatName(turn)}</b> (${escapeHtml(short(table.seats[turn]))})`;
     box.innerHTML = turn === null ? "" : `<div class="waiting">${turn === me ? "Your move…"
+      : humans.includes(turn) ? `<b>${seatName(turn)}</b> is up.`
       : thinkingSeat === turn ? `${who} is thinking<span class="dots"></span>` : `${who} is on the wheel.`}</div>`;
     return;
   }
   const p = prompt;
   const used = new Set(table ? table.used : []);
   const legal = new Set(p.legal);
-  let html = p.error ? `<div class="error">${escapeHtml(p.error)}</div>` : "";
+  let html = humans.length > 1 ? `<div class="whose seat-c${p.seat}"><b>${seatName(p.seat)}</b>, you're up.</div>` : "";
+  if (p.error) html += `<div class="error">${escapeHtml(p.error)}</div>`;
   const keys = (letters, cmd) => `<div class="keys">${[...letters].map((c) =>
     `<button class="key${VOWELS.has(c) ? " vowel" : ""}" data-cmd="${cmd(c)}" ${used.has(c) ? "disabled" : ""} aria-label="${c}">${c}</button>`).join("")}</div>`;
 
@@ -759,7 +761,7 @@ document.addEventListener("keydown", (e) => {
     if (acts[e.key]) { e.preventDefault(); acts[e.key](); }
     return;
   }
-  if (!prompt || prompt.seat !== me) return;
+  if (!prompt || !humans.includes(prompt.seat)) return;
   const c = e.key.toUpperCase();
   if (c.length !== 1 || !ALPHABET.includes(c) || (table && table.used.includes(c))) return;
   const phase = prompt.phase;

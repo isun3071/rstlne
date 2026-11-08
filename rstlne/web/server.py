@@ -68,8 +68,6 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
         except ValueError as err:
             raise HTTPException(400, str(err)) from None
         kinds = {kind for kind, _ in seats}
-        if sum(kind == "human" for kind, _ in seats) > 1:
-            raise HTTPException(400, "the page seats one human; the other seats are bots or models")
         if kinds & MODEL_KINDS:
             load_dotenv(settings.ROOT / ".env")
             if not os.environ.get("OPENROUTER_API_KEY"):
@@ -142,7 +140,8 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
             while True:
                 message = await ws.receive_json()
                 if isinstance(message, dict) and isinstance(message.get("command"), str):
-                    game.submit(message["command"])
+                    seat = message.get("seat")
+                    game.submit(message["command"], seat if isinstance(seat, int) else None)
 
         tasks = [asyncio.create_task(send()), asyncio.create_task(receive())]
         try:

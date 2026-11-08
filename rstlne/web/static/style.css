@@ -197,6 +197,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .dots::after { content: ""; display: inline-block; width: 1.2em; text-align: left; animation: dots 1.2s steps(4) infinite; }
 @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
 .controls .error { color: var(--red); font-size: 14px; }
+.whose { font-size: 15px; }
+.whose.seat-c0 b { color: var(--seat-0); } .whose.seat-c1 b { color: var(--seat-1); } .whose.seat-c2 b { color: var(--seat-2); }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .keys { display: flex; flex-wrap: wrap; gap: 6px; }
 .key { width: 40px; padding: 8px 0; font-weight: 800; background: rgba(255, 255, 255, .07); }

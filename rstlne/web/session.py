@@ -57,10 +57,12 @@ def table_json(view: PublicView, seats: Sequence[str]) -> dict:
 class Narrator:
     """Turns a game's states into the page's events, for a viewer's seat or, with none, for a spectator."""
 
-    def __init__(self, labels: Sequence[str], kinds: Sequence[str], viewer: int | None):
+    def __init__(self, labels: Sequence[str], kinds: Sequence[str], viewer: int | None, thoughts: bool | None = None):
         self.labels = list(labels)
         self.kinds = list(kinds)
         self.viewer = viewer
+        # Thinking would give a bot's or model's best guess away, so it shows only when no human plays
+        self.thoughts = ("human" not in self.kinds) if thoughts is None else thoughts
         self.moves = 0
 
     def start(self, state: GameState) -> list[dict]:
@@ -94,7 +96,7 @@ class Narrator:
         if result.outcome == "solved" and before.round:
             move["note"] = missed_money(before).strip()
         events = [move]
-        if self.viewer is None and thoughts:
+        if self.thoughts and thoughts:
             events.append({"type": "thoughts", "seat": result.seat, "lines": [t for t in thoughts if t.strip()]})
         puzzle = before.round.puzzle if before.round else None
         if result.outcome == "solved" and puzzle:
@@ -136,7 +138,7 @@ class WebHuman(Player):
         return {"kind": "human"}
 
     def label(self) -> str:
-        return "You"
+        return "human"
 
     def submit(self, command: str) -> None:
         self.inbox.put(command)
@@ -203,8 +205,8 @@ class WebGame:
         self.pause = pause
         self.solve_pause = solve_pause
         self.sleep = sleep
-        humans = [i for i, p in enumerate(players) if isinstance(p, WebHuman)]
-        self.viewer = humans[0] if humans else None
+        self.humans = [i for i, p in enumerate(players) if isinstance(p, WebHuman)]
+        self.viewer = self.humans[0] if len(self.humans) == 1 else None  # "You" only when one human plays
         labels = ["You" if i == self.viewer else p.label() for i, p in enumerate(players)]
         self.narrator = Narrator(labels, [p.describe().get("kind") for p in players], self.viewer)
         self.history: list[dict] = []
@@ -247,9 +249,12 @@ class WebGame:
 
     # The human's commands, and closing the game
 
-    def submit(self, command: str) -> None:
-        if self.viewer is not None:
-            self.players[self.viewer].submit(command)
+    def submit(self, command: str, seat: int | None = None) -> None:
+        """A command from the page, for the human seat it names (with one human, it may name none). It counts only
+        while that seat is the one to move, so a stray click can't wait in a seat's inbox for its next turn."""
+        seat = self.viewer if seat is None else seat
+        if seat in self.humans and seat == self.state.seat:
+            self.players[seat].submit(command)
 
     def stop(self) -> None:
         self.stopped.set()
