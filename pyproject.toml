@@ -14,10 +14,16 @@ dependencies = [
     "rich>=15.0.0",
     "numpy>=2.4.6",
     "wordfreq>=3.1.1",
+    "fastapi>=0.162.2",
+    "uvicorn>=0.30",
+    "websockets>=17.4",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8"]  # uv installs this group by default
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8",
+]  # uv installs this group by default
 
 [tool.setuptools.packages.find]
 include = ["rstlne*"]

@@ -82,6 +82,7 @@ rstlne/
   show.py          # line-by-line game printout
   live.py          # --live: one fixed screen, redrawn with rich
   cli.py           # play a game in the terminal
+  web/             # play in a browser: server.py (FastAPI), session.py, static/; python -m rstlne.web
   tournament.py    # seeded model only runs
   bonustest.py     # the bonus round alone: every player on every bonus puzzle in a file
   calibrate.py     # picks each decision model's solve threshold from data

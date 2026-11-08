@@ -1,0 +1,181 @@
+import json
+import threading
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+from rstlne.engine.puzzle import Puzzle
+from rstlne.engine.rules import new_game
+from rstlne.engine.state import BonusSolve, Forfeit, Phase, Spin
+from rstlne.players.bot.player import BotPlayer
+from rstlne.players.bot.reader import FrequencyReader
+from rstlne.web import server
+from rstlne.web.session import WebGame, WebHuman, table_json
+
+PUZZLES = [Puzzle("Phrase", "BREAK THE ICE"), Puzzle("Thing", "SPARE TIRE"), Puzzle("Place", "HOT SPRINGS"),
+           Puzzle("Food & Drink", "HOT COCOA")]
+BONUS = Puzzle("Phrase", "GOOD LUCK", bonus=True)
+
+
+def state(rules, wheel_spec, seed=7):
+    return new_game(seed, rules, wheel_spec, PUZZLES, BONUS)
+
+
+def bot(seat, rules, wheel_spec):
+    return BotPlayer(seat, rules, wheel_spec, FrequencyReader())
+
+
+def collect(game, until, timeout=30.0):
+    """Events until `until(event)` is true, from a game running on its thread."""
+    seen, sub = [], game.subscribe()
+    end = time.monotonic() + timeout
+    while time.monotonic() < end:
+        event = game.next_event(sub, timeout=0.5)
+        if event is None:
+            continue
+        seen.append(event)
+        if until(event):
+            return seen
+    raise AssertionError(f"timed out; last events: {seen[-5:]}")
+
+
+# A human seat in the browser
+
+def test_the_human_seat_reads_the_same_commands_as_the_terminal(rules, wheel_spec):
+    from rstlne.engine.rules import public_view
+    events = []
+    human = WebHuman(0, emit=events.append, seconds=10)
+    human.submit("s")
+    view = public_view(state(rules, wheel_spec), 0)
+    assert human.decide(view) == Spin()
+    assert events[-1]["type"] == "prompt" and "spin" in events[-1]["legal"]
+
+
+def test_a_typo_reprompts_with_a_hint_and_waits_for_the_next_command(rules, wheel_spec):
+    from rstlne.engine.rules import public_view
+    events = []
+    human = WebHuman(0, emit=events.append, seconds=10)
+    human.submit("hello")
+    human.submit("s")
+    assert human.decide(public_view(state(rules, wheel_spec), 0)) == Spin()
+    assert [e["type"] for e in events] == ["prompt", "prompt"]
+    assert events[1]["error"].startswith("Try:")
+
+
+def test_the_bonus_solve_has_a_clock_and_a_late_or_empty_answer_forfeits(rules, wheel_spec):
+    from dataclasses import replace
+
+    from rstlne.engine.rules import public_view
+    view = replace(public_view(state(rules, wheel_spec), 0), phase=Phase.BONUS_SOLVE)
+    events = []
+    human = WebHuman(0, emit=events.append, seconds=0.05)
+    assert human.decide(view) == Forfeit()  # nothing typed in time
+    assert events[0]["seconds"] == 0.05
+    human.seconds = 2
+    threading.Timer(0.05, human.submit, ["good luck"]).start()  # typed while the clock runs
+    assert human.decide(view) == BonusSolve("good luck")
+    threading.Timer(0.05, human.submit, ["   "]).start()
+    assert human.decide(view) == Forfeit()
+    human.submit("typed too early")  # before the clock starts: it doesn't count
+    threading.Timer(0.05, human.submit, ["good luck"]).start()
+    assert human.decide(view) == BonusSolve("good luck")
+
+
+def test_the_table_sent_to_the_browser_is_the_public_view(rules, wheel_spec):
+    from rstlne.engine.rules import public_view
+    t = table_json(public_view(state(rules, wheel_spec), 0), ["You", "bot v6", "bot v6"])
+    assert t["category"] == "Phrase" and t["round"] == 1
+    assert all(tile in "_ " for row in t["rows"] for tile in row)  # a fresh board: hidden squares and gaps only
+    assert t["banks"] == [0, 0, 0] and t["legal"] and t["seats"][0] == "You"
+    assert len(t["wheel"]) == 72 and {"number", "kind", "value", "text"} <= set(t["wheel"][0])
+    assert "BREAK" not in json.dumps(t)
+
+
+# A whole game on its thread
+
+def test_a_spectated_game_streams_moves_thoughts_and_the_result_and_never_leaks_an_answer_early(rules, wheel_spec, tmp_path):
+    players = [bot(i, rules, wheel_spec) for i in range(3)]
+    game = WebGame(state(rules, wheel_spec), players, tmp_path / "game.jsonl", pause=0, solve_pause=0)
+    game.start()
+    events = collect(game, lambda e: e["type"] == "over")
+    kinds = {e["type"] for e in events}
+    assert {"start", "table", "move", "thoughts", "over"} <= kinds  # no human: the bots' thinking is shown
+    over = events[-1]
+    assert len(over["totals"]) == 3 and over["log"].endswith("game.jsonl")
+    # every answer stays out of the stream until its round is solved or over
+    for puzzle in PUZZLES:
+        first_seen = next((i for i, e in enumerate(events) if puzzle.answer in json.dumps(e)), None)
+        if first_seen is not None:
+            assert events[first_seen]["type"] in ("move", "solved", "round_over", "over"), events[first_seen]
+    assert (tmp_path / "game.jsonl").read_text().splitlines()[-1].startswith('{"type": "summary"')
+
+
+def test_with_a_human_seated_the_thinking_panel_stays_hidden(rules, wheel_spec, tmp_path):
+    human = WebHuman(0, emit=lambda e: None, seconds=10)
+    players = [human, bot(1, rules, wheel_spec), bot(2, rules, wheel_spec)]
+    game = WebGame(state(rules, wheel_spec), players, tmp_path / "game.jsonl", pause=0, solve_pause=0)
+    game.start()
+    events = collect(game, lambda e: e["type"] == "prompt")
+    assert events[-1]["seat"] == 0
+    game.submit("solve break the ice")
+    events += collect(game, lambda e: e["type"] == "move" and e["seat"] == 0)
+    assert not any(e["type"] == "thoughts" for e in events)
+    game.stop()
+
+
+def test_stopping_a_game_ends_its_thread(rules, wheel_spec, tmp_path):
+    human = WebHuman(0, emit=lambda e: None, seconds=10)
+    game = WebGame(state(rules, wheel_spec), [human, bot(1, rules, wheel_spec), bot(2, rules, wheel_spec)],
+                   tmp_path / "game.jsonl", pause=0, solve_pause=0)
+    game.start()
+    collect(game, lambda e: e["type"] == "prompt")
+    game.stop()
+    game.thread.join(5)
+    assert not game.thread.is_alive()
+
+
+# The server
+
+@pytest.fixture
+def client(tmp_path):
+    app = server.create_app(log_dir=tmp_path, pause=0, solve_pause=0)
+    with TestClient(app) as c:
+        yield c
+
+
+def test_the_page_names_rstlne_and_says_it_is_not_affiliated_with_the_show(client):
+    page = client.get("/").text
+    assert "rstlne" in page and "not affiliated" in page.lower()
+
+
+def test_setup_lists_the_seat_kinds_and_the_models_from_config(client):
+    setup = client.get("/api/setup").json()
+    assert {"human", "bot", "llm", "hybrid"} <= set(setup["kinds"])
+    assert isinstance(setup["models"], list) and setup["bot_version"] >= 1
+
+
+def test_a_bad_seat_list_is_refused_with_the_reason(client):
+    response = client.post("/api/games", json={"seats": ["human", "bot"]})
+    assert response.status_code == 400 and "three seats" in response.json()["detail"]
+    response = client.post("/api/games", json={"seats": ["human", "human", "bot"]})
+    assert response.status_code == 400 and "one human" in response.json()["detail"]
+
+
+def test_model_seats_need_a_key(client, monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.setattr(server, "load_dotenv", lambda *a, **k: None)
+    response = client.post("/api/games", json={"seats": ["human", "llm:openai/gpt-6-luna", "bot"]})
+    assert response.status_code == 400 and "OPENROUTER_API_KEY" in response.json()["detail"]
+
+
+def test_a_game_plays_over_the_websocket(client):
+    game_id = client.post("/api/games", json={"seats": ["human", "bot", "bot"], "seed": 5}).json()["id"]
+    with client.websocket_connect(f"/api/games/{game_id}") as ws:
+        first = ws.receive_json()
+        assert first["type"] == "start" and first["seats"][0]["you"] is True
+        while (event := ws.receive_json())["type"] != "prompt":
+            pass
+        ws.send_json({"command": "zzz"})
+        assert ws.receive_json()["error"].startswith("Try:")
+    client.delete(f"/api/games/{game_id}")

@@ -57,6 +57,14 @@ Each seat is `human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slu
 
 The grading runs used GPT-6.1 Sol, GPT-6 Luna, Claude Haiku 5.5, and DeepSeek V4.1 Flash (its October 17, 2026 snapshot). Any OpenRouter model with tool calling can sit.
 
+## Play in a browser
+
+```
+uv run python -m rstlne.web          # then open http://127.0.0.1:8000
+```
+
+Pick the three seats on the page, then play or watch. Model seats use the key in `.env`. `--port`, `--puzzles` and `--log-dir` work as in the CLI. Games log to `logs/` like CLI games.
+
 ## Tournaments
 
 Add `--puzzles generate` to play on fresh puzzles made for the tournament: a generator model writes them, code checks them, and a judge model from another lab confirms each one. `documentation.md` has the details. A 50-set pool costs about a cent. `python -m rstlne.puzzlegen --main 40 --bonus 10 --seed 7 --out puzzles/generated/batch.json` makes a batch on its own.
@@ -181,6 +189,7 @@ rstlne/llm/           the OpenRouter chat and Decisions API clients, with retrie
 rstlne/runner.py      the game loop: retries, forfeits, and logs
 rstlne/narrate.py     move text for the screen and the model prompts
 rstlne/cli.py         the terminal game
+rstlne/web/          the browser game: server.py (FastAPI), session.py (a game on its thread), static/ (the page)
 rstlne/tournament.py  seeded tournaments with duplicate scoring
 rstlne/bonustest.py   the bonus round alone
 rstlne/puzzlegen.py   fresh puzzles: written by one model, checked in code, judged by another

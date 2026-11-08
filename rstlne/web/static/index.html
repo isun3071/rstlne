@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rstlne</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/" aria-label="rstlne, new game">rstlne</a>
+  <div class="status" id="status"></div>
+</header>
+
+<main>
+  <!-- Setup -->
+  <section id="setup" class="setup" hidden>
+    <h1>Pick the table</h1>
+    <p class="lede">Three seats. Play one yourself, or seat bots and models and watch.</p>
+    <div class="seat-pickers" id="pickers"></div>
+    <div class="setup-row">
+      <label class="field">Seed <input id="seed" inputmode="numeric" placeholder="random" autocomplete="off"></label>
+      <button class="primary" id="start">Start the game</button>
+    </div>
+    <p class="setup-error" id="setup-error" role="alert"></p>
+    <p class="fine">Model seats call OpenRouter with the key in <code>.env</code>. A hybrid seat is the bot playing, with a model reading the board on its turns.</p>
+  </section>
+
+  <!-- The game -->
+  <section id="game" class="game" hidden>
+    <div class="stage">
+      <div class="board-wrap">
+        <div class="round-line" id="round-line"></div>
+        <div class="board" id="board" aria-live="polite"></div>
+        <div class="category" id="category"></div>
+        <div class="banner" id="banner" hidden></div>
+      </div>
+      <div class="wheel-wrap" id="wheel-wrap">
+        <svg viewBox="-110 -110 220 220" class="wheel" id="wheel" role="img" aria-label="The wheel">
+          <g id="wheel-rot"></g>
+          <circle r="12" class="hub"></circle>
+          <path d="M -7 -112 L 7 -112 L 0 -96 Z" class="pointer"></path>
+        </svg>
+        <div class="wedge-line" id="wedge-line"></div>
+      </div>
+    </div>
+
+    <div class="letters" id="letters" aria-label="Letters"></div>
+
+    <div class="seats" id="seats"></div>
+
+    <div class="controls" id="controls"></div>
+
+    <div class="panels">
+      <section class="panel" id="moves-panel">
+        <h2>Moves</h2>
+        <ol class="moves" id="moves"></ol>
+      </section>
+      <section class="panel" id="thinking-panel" hidden>
+        <h2>Thinking</h2>
+        <div id="thinking"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- The result -->
+  <section id="over" class="over" hidden></section>
+</main>
+
+<footer class="foot">
+  rstlne is an independent fan project. It is not affiliated with, endorsed by, or sponsored by Wheel of Fortune or its producers.
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

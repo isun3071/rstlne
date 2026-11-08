@@ -542,8 +542,22 @@ Write one JSONL file per game to `logs/`. The header records each bot seat's ver
 
 Every main round solve also records its timing: the share of letters showing, the consonants still hidden and the squares they fill, and the money left on the table, which is those squares times the round's average spin value with Bankrupt and Lose a Turn counted as $0. The game summary totals each seat's correct solves, average board shown at a correct solve, and money left.
 
+## Web page
+
+`python -m rstlne.web` serves a page at http://127.0.0.1:8000 for playing in a browser. It reuses the engine, the players, the runner, and the log format untouched. A web game's log is the same JSONL as a CLI game's, in `logs/`.
+
+- The setup screen picks the three seats: you, the bot, a model, a hybrid, or a decision seat, with an optional seed. At most one seat is a human. The models offered come from `[web]` in `config.toml`, and any OpenRouter slug can be typed in. A hybrid seat is offered only for models with trust and steal curves for the bot's version.
+- Model seats use `OPENROUTER_API_KEY` from `.env`. Without it, the page refuses a game with a model seat and says why.
+- The human seat follows the CLI's rules (Human player (CLI)). The page sends the same commands the terminal takes, so a typo or an illegal move reprompts with the same hint, and the three-strike rule applies to models only. The bonus solve has the same 10-second clock (`bonus_solve_seconds`), timed on the server. An answer typed before the clock starts doesn't count, and a late or empty answer counts as wrong.
+- The page shows the board as tiles, the category, the letters left, each seat's round bank, total, and cards, the wheel as it stands, the latest wedge, the moves, and the human's controls for the phase they're in. A spin turns the drawn wheel to the wedge the engine landed on. The engine picks the wedge, and the drawing follows it.
+- It gets public views only. A round's answer reaches the page only once the round is solved or ends at the turn cap, and the bonus answer only at the end. With no human seated, a Thinking panel shows each seat's latest thought, as on the `--live` screen. With a human seated, it stays hidden, since it would give the bot's or a model's best guess away.
+- Pacing follows the CLI: `model_pause` after each bot or model move, and `solve_pause` holding a solved board before the next round.
+- When the game ends, the page shows the bonus puzzle, each seat's total before the bonus round and final total, each model's calls, tokens, and cost, and the log's path.
+- The page carries its own name and look, and says that rstlne is an independent fan project, not affiliated with, endorsed by, or sponsored by Wheel of Fortune or its producers.
+- The server listens on 127.0.0.1 unless `--host` says otherwise. A game lives in the server's memory. Reloading the page reconnects to it and replays what has happened so far, and restarting the server ends it.
+- A hosted version is planned: the bot and human seats on the server, and model seats only with a key the player brings, held for that game and never logged.
+
 ## Phase 2 (planned)
 
-- Local web page with FastAPI, reusing the engine and player interface.
 - Tournament report: win rate, average banked, invalid action rate, and solve completion percentage per model.
 - Risk report: Mystery flip rate against the B < 10000 − 2000k rule, and Express ride rate against how much of the board was revealed. A model that rides the Express and bankrupts on a mostly empty board shows a calibration failure.
