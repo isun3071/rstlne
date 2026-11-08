@@ -85,7 +85,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
 .wheel-wrap { display: grid; gap: 6px; justify-items: center; }
 .wheel { width: 100%; max-width: 280px; overflow: visible; }
-#wheel-rot { transform-box: view-box; transform-origin: 50% 50%; }
+#wheel-rot { transform-box: view-box; transform-origin: 0 0; }  /* the wheel is drawn around (0, 0), the viewBox's centre */
 #wheel-rot.spinning { transition: transform 1.6s cubic-bezier(.17, .67, .2, 1); }
 .wheel text { font-weight: 700; pointer-events: none; }
 .hub { fill: var(--surface); stroke: var(--line); }
