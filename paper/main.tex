@@ -1,0 +1,46 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+
+\input{numbers.tex}  % every result in the text is a macro from paper/numbers.json
+
+\title{Can a Language Model Play Wheel of Fortune?\\Reading, Risk, and When to Solve}
+\author{Ian % TODO(Ian): full name, affiliation, email
+}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+% Drafted last, from the results sections.
+\end{abstract}
+
+\input{sections/01-introduction}
+\input{sections/02-related-work}
+\input{sections/03-game}
+\input{sections/04-players}
+\input{sections/05-puzzles-and-scoring}
+\input{sections/06-can-they-play}
+\input{sections/07-how-well}
+\input{sections/08-can-we-do-better}
+\input{sections/09-contestants}
+\input{sections/10-cost}
+\input{sections/11-limitations}
+\input{sections/12-conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\input{sections/a-appendices}
+
+\end{document}

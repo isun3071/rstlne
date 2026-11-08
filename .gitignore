@@ -28,3 +28,4 @@ dist/
 
 # fetched word data, built by python -m rstlne.data fetch
 data/
+paper/build/

@@ -1,0 +1,31 @@
+\section{The game}\label{sec:game}
+
+rstlne plays the current rules of the syndicated show: three players, four main rounds, and a bonus round for whoever finishes the main rounds with the most money. Appendix~A gives the full rules and the wheel for each round. This section covers what the results depend on.
+
+\paragraph{A turn.}
+A main round is one puzzle. The player whose turn it is spins the wheel, buys a vowel for \$250, or tries to solve. A spin that lands on a dollar value lets the player call a consonant. Each copy of it in the puzzle adds the wedge's value to the player's round bank, and the player keeps the turn. A consonant that isn't there, or was already called, passes the turn. A vowel costs \$250 whether or not it's there, and a missing vowel also passes the turn. A wrong solve passes the turn. A right one ends the round: the solver banks the round bank, or \$1,000 if the bank holds less, and everyone else's round bank goes to zero. Only money banked by solving counts toward the game.
+
+\paragraph{The wheel.}
+The wheel has 24 wedges, and a spin lands on one of 72 thirds, all equally likely. Rounds 1 to 3 have two Bankrupt wedges and one Lose a Turn. Bankrupt wipes the round bank and any held cards, and Lose a Turn passes the wheel. The top value is \$2,500 in round 1, \$3,500 in rounds 2 and 3, and \$5,000 in round 4. Four special wedges come and go by round:
+\begin{itemize}
+  \item The Wild Card, rounds 1 to 3. A player who claims it can later spend it to call one extra consonant at the same value, or keep it for a fourth consonant in the bonus round.
+  \item The Million wedge, rounds 1 to 3. Its middle third claims a card that turns one bonus envelope into \$1,000,000, but only if its holder solves that round. Its outer thirds are Bankrupt.
+  \item Two Mystery wedges, round 2. After a correct consonant, the player keeps \$1,000 a copy or flips the wedge for \$10,000 or Bankrupt.
+  \item The Express, round 3. After a correct consonant, the player may ride it: call consonants at \$1,000 a copy and buy vowels without spinning, until they solve. Any miss or wrong solve is Bankrupt.
+\end{itemize}
+Free Play stays on the wheel in every round: the player calls any letter, a consonant earns \$500 a copy, a vowel is free, and a miss keeps the turn.
+
+\paragraph{The bonus round.}
+The leader after round 4 plays alone. The board shows R, S, T, L, N and E. The player picks three more consonants and one vowel (four consonants with an unspent Wild Card), sees them revealed, and gives one answer. A right answer wins a sealed envelope, drawn from 24 holding \$40,000 to \$100,000, or \$1,000,000 with the Million card.
+
+\paragraph{Where we depart from the show.}
+Four changes are deliberate:
+\begin{itemize}
+  \item Models answer with no clock and give one solve per response. Contestants answer aloud on the spot, and have ten seconds in the bonus round. This is the largest difference, and it favours the models.
+  \item There are no toss-ups. A toss-up is a race to recognise a phrase as letters appear, which measures reading speed rather than the letter choice, risk and timing this study is about.
+  \item From round 4, the player who solved the previous round starts the next. The show uses a toss-up for this.
+  \item Free Play stays on the wheel, which the show retired in 2021.
+\end{itemize}
+
+\paragraph{The engine.}
+The engine is a pure function from a game state and an action to the next state. Every random draw, from the spins to the Mystery wedges and the envelope, comes from the game's seed. A player sees only a public view: the category, the board, the letters used, every bank, the cards held, whose turn it is, the wheel as it stands, and the moves that are legal right now. The view never contains an answer, a hidden Mystery side or an envelope. The engine checks every action against the rules and refuses an illegal one with a reason. A model then tries again, and a third refusal in a row passes its turn; these refusals are counted (Section~\ref{sec:can-they-play}). A human is simply asked again, and the bot made no illegal move in any game.
