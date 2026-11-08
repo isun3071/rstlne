@@ -12,7 +12,10 @@ const SAVED = "rstlne.setup", NAMES_SAVED = "rstlne.names", STOPS_SAVED = "rstln
 const SPIN_MS = 1700;
 const LANDED_MS = 1200;
 const CALL_MS = 1100;  // a bot's or model's letter shows big over the board this long before the tiles turn
-const LETTER_KINDS = new Set(["call_consonant", "call_letter", "buy_vowel"]);  // after a bot's or model's spin lands, a beat to read the wedge before its next move
+const LETTER_KINDS = new Set(["call_consonant", "call_letter", "buy_vowel"]);
+const SOLVE_LEAD_MS = 1000;  // the board as it stands, before a bot's or model's answer covers it
+const SOLVE_MS = 1500;  // a bot's or model's answer shows on the board this long before it's judged
+const SOLVE_KINDS = new Set(["solve", "bonus_solve"]);  // after a bot's or model's spin lands, a beat to read the wedge before its next move
 
 let setupInfo = null;
 let mode = "play";       // "play" a live game, or "replay" a log
@@ -231,6 +234,10 @@ function handle(ev) {
       prompt = null;
       thinkingSeat = null;
       renderControls();
+      if (!replaying && SOLVE_KINDS.has(ev.kind) && (mode === "replay" || !humans.includes(ev.seat))) {
+        pending.unshift({ type: "solving", move: ev });  // a beat on the board, then the answer, then the judgement
+        return SOLVE_LEAD_MS;
+      }
       if (!replaying && LETTER_KINDS.has(ev.kind) && (mode === "replay" || !humans.includes(ev.seat))) {
         showCall(ev);  // the letter first, big; the tiles and the result follow
         pending.unshift({ type: "called", move: ev });
@@ -243,6 +250,13 @@ function handle(ev) {
       }
       if (ev.wedge) spinTo(ev.wedge);
       addMove(ev);
+      break;
+    case "solving":
+      if (showSolve(ev.move)) {
+        pending.unshift({ type: "called", move: ev.move });
+        return SOLVE_MS;
+      }
+      addMove(ev.move);
       break;
     case "called":
       $("#call").hidden = true;
@@ -412,10 +426,26 @@ function showCall(ev) {
   const verb = ev.kind === "buy_vowel" ? "buys" : "calls";
   $("#call-who").textContent = `${seatName(ev.seat)} ${isYou(ev.seat) ? verb.replace(/s$/, "") : verb}`;
   $("#call-letter").textContent = letter;
+  $("#call-letter").hidden = false;
+  $("#call-answer").hidden = true;
   $("#call-letter").classList.toggle("vowel", VOWELS.has(letter));
   const box = $("#call");
   box.hidden = false;
   box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");  // restart the animation
+}
+
+function showSolve(ev) {
+  const m = ev.text.match(/solved it: (.+?)! Banked|tried "(.+?)"\.|solved the bonus puzzle: (.+?)! The envelope|guessed "(.+?)"\./);
+  const answer = m && (m[1] || m[2] || m[3] || m[4]);
+  if (!answer) return false;
+  $("#call-who").textContent = `${seatName(ev.seat)} ${isYou(ev.seat) ? "solve" : "solves"}`;
+  $("#call-letter").hidden = true;
+  $("#call-answer").textContent = answer;
+  $("#call-answer").hidden = false;
+  const box = $("#call");
+  box.hidden = false;
+  box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");
+  return true;
 }
 
 function showBanner(text) {

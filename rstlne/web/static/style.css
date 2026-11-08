@@ -157,6 +157,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   box-shadow: 0 0 0 3px rgba(255, 201, 74, .35), 0 0 40px rgba(255, 201, 74, .6);
 }
 .call-letter.vowel { background: radial-gradient(circle at 35% 30%, #ffd4e8, var(--pink) 60%, #c2346f); color: #2a0516; box-shadow: 0 0 40px rgba(255, 95, 162, .6); }
+.call-answer {
+  max-width: 92%; padding: 12px 22px; border-radius: 14px; text-align: center; font-weight: 900; letter-spacing: .08em;
+  font-size: clamp(16px, 2.6vw, 28px); color: #2a1600; background: linear-gradient(180deg, var(--gold-2), var(--gold));
+  box-shadow: 0 0 0 3px rgba(255, 201, 74, .35), 0 0 40px rgba(255, 201, 74, .55);
+}
+.call.pop .call-answer { animation: call-pop .45s cubic-bezier(.2, 1.4, .4, 1); }
 .call.pop .call-letter { animation: call-pop .45s cubic-bezier(.2, 1.4, .4, 1); }
 @keyframes call-pop { from { transform: scale(.3) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .wheel-wrap { display: grid; gap: 8px; justify-items: center; }
