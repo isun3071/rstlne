@@ -158,6 +158,7 @@ models = [
     "anthropic/claude-haiku-5.5",
 ]
 decision_models = ["openai/gpt-6-luna-decisions", "liquid/d1-ultra"]
+idle_minutes = 5  # a game no page has watched this long is stopped, its log kept: models' games stop spending
 
 [providers]
 # Pin a model to one OpenRouter provider, by the tag on its endpoints page, so every game runs on

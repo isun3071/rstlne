@@ -370,3 +370,47 @@ def test_the_bonus_answer_fills_the_board_after_the_bonus_solve_right_or_wrong(r
     assert "".join(c for row in reveal["rows"] for c in row if c.strip()) == BONUS.answer.replace(" ", "")
     assert reveal["solved"] == (events[bonus]["outcome"] == "bonus_solved")
     assert shown.index(reveal) < shown.index(next(e for e in shown if e["type"] == "over"))
+
+
+# Games nobody is watching
+
+def test_a_game_counts_its_watchers_and_notes_when_the_last_one_left(rules, wheel_spec, tmp_path):
+    clock = [100.0]
+    game = WebGame(state(rules, wheel_spec), [bot(i, rules, wheel_spec) for i in range(3)], tmp_path / "g.jsonl",
+                   pause=0, solve_pause=0, clock=lambda: clock[0])
+    assert game.watchers == 0 and game.idle_since == 100.0  # made, never opened: idle from the start
+    a, b = game.subscribe(), game.subscribe()
+    clock[0] = 150.0
+    game.unsubscribe(a)
+    assert game.watchers == 1 and game.idle_since is None
+    clock[0] = 160.0
+    game.unsubscribe(b)
+    assert game.watchers == 0 and game.idle_since == 160.0
+
+
+def test_the_reaper_stops_games_left_alone_too_long_and_keeps_the_rest(rules, wheel_spec, tmp_path):
+    clock = [0.0]
+    def make(name):
+        human = WebHuman(0, emit=lambda e: None, seconds=10)
+        return WebGame(state(rules, wheel_spec), [human, bot(1, rules, wheel_spec), bot(2, rules, wheel_spec)],
+                       tmp_path / f"{name}.jsonl", pause=0, solve_pause=0, clock=lambda: clock[0])
+    games = {"left": make("left"), "watched": make("watched"), "recent": make("recent")}
+    for g in games.values():
+        g.start()
+    games["watched"].subscribe()
+    clock[0] = 200.0
+    games["recent"].idle_since = 150.0  # its page closed 50 seconds ago
+    stopped = server.reap(games, timeout=120.0, now=clock[0])
+    assert stopped == ["left"] and set(games) == {"watched", "recent"}
+    stopped_game_thread = games.get("left")
+    assert stopped_game_thread is None
+    for g in games.values():
+        g.stop()
+
+
+def test_the_server_reads_the_idle_window_from_config(tmp_path):
+    from rstlne import settings
+    config = settings.load_config()
+    assert config["web"]["idle_minutes"] > 0
+    app = server.create_app(config={**config, "web": {**config["web"], "idle_minutes": 0.5}}, log_dir=tmp_path, pause=0, solve_pause=0)
+    assert app.state.idle_seconds == 30

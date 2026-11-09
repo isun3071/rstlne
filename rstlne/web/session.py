@@ -206,7 +206,8 @@ class WebGame:
     """One game on its own thread. Events go to every subscriber, and a late subscriber gets the history first."""
 
     def __init__(self, state: GameState, players: Sequence[Player], log_path: Path, *, pause: float,
-                 solve_pause: float, sleep: Callable[[float], None] = time.sleep):
+                 solve_pause: float, sleep: Callable[[float], None] = time.sleep,
+                 clock: Callable[[], float] = time.monotonic):
         self.state = state
         self.players = players
         self.log_path = Path(log_path)
@@ -220,6 +221,9 @@ class WebGame:
         self.narrator = Narrator(labels, [p.describe().get("kind") for p in players], self.viewer, names=names)
         self.history: list[dict] = []
         self.subscribers: list[queue.Queue] = []
+        self.clock = clock
+        self.watchers = 0  # pages connected right now
+        self.idle_since: float | None = clock()  # when the last page left, or the game was made; None while watched
         self.lock = threading.Lock()
         self.stopped = threading.Event()
         self.thread = threading.Thread(target=self._run, daemon=True)
@@ -242,12 +246,17 @@ class WebGame:
             for event in self.history:
                 sub.put(event)
             self.subscribers.append(sub)
+            self.watchers += 1
+            self.idle_since = None
         return sub
 
     def unsubscribe(self, sub: queue.Queue) -> None:
         with self.lock:
             if sub in self.subscribers:
                 self.subscribers.remove(sub)
+                self.watchers -= 1
+                if self.watchers == 0:
+                    self.idle_since = self.clock()
 
     @staticmethod
     def next_event(sub: queue.Queue, timeout: float) -> dict | None:

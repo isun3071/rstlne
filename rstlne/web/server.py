@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import os
 import random
+import threading
+import time
 import uuid
 from pathlib import Path
 
@@ -24,6 +26,19 @@ from rstlne.web.session import WebGame, WebHuman
 
 STATIC = Path(__file__).parent / "static"
 MODEL_KINDS = {"llm", "decision", "hybrid"}
+
+
+def reap(games: dict[str, WebGame], timeout: float, now: float) -> list[str]:
+    """Stop and forget every game no page has watched for `timeout` seconds: a game a human walked away from, or
+    a models' game nobody is watching, which would otherwise keep spending API credits. Its log stays, unfinished
+    if it was. Finished games are forgotten the same way. Returns the ids it stopped."""
+    stopped = []
+    for game_id, game in list(games.items()):
+        if game.watchers == 0 and game.idle_since is not None and now - game.idle_since >= timeout:
+            game.stop()
+            games.pop(game_id, None)
+            stopped.append(game_id)
+    return stopped
 
 
 class NewGame(BaseModel):
@@ -64,6 +79,14 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
     games: dict[str, WebGame] = {}
 
     app = FastAPI(title="rstlne", docs_url=None, redoc_url=None)
+    app.state.idle_seconds = float(config.get("web", {}).get("idle_minutes", 5)) * 60
+
+    def reaper() -> None:  # every 30 seconds, stop the games nobody has watched for the idle window
+        while True:
+            time.sleep(30)
+            reap(games, app.state.idle_seconds, time.monotonic())
+
+    threading.Thread(target=reaper, daemon=True).start()
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
     @app.middleware("http")
@@ -159,7 +182,7 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
         game = games.get(game_id)
         await ws.accept()
         if game is None:
-            await ws.send_json({"type": "failed", "text": "No such game. It may have ended when the server restarted."})
+            await ws.send_json({"type": "failed", "text": "That game has ended: no page watched it for a while, or the server restarted. Its log is in Replays."})
             await ws.close()
             return
         sub = game.subscribe()
