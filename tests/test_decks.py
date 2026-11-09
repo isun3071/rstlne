@@ -56,7 +56,9 @@ def test_the_mega_deck_joins_aired_and_generated_puzzles_with_where_each_came_fr
     assert ("ANYTHING IS POSSIBLE", False) not in by and ("A" * 60, False) not in by
     tire = by[("SPARE TIRE", False)]
     assert tire["round"] == 1 and tire["source"]["kind"] == "aired"
-    assert tire["source"]["airings"] == [{"season": 31, "episode": 5851, "date": "2013-09-16", "round": "R1"}]
+    assert tire["source"]["airings"] == [{"season": 31, "episode": 5851, "season_episode": 1, "date": "2013-09-16", "round": "R1"}]
+    cocoa = by[("HOT COCOA", False)]["source"]["airings"][0]
+    assert cocoa["season"] == 31 and cocoa["season_episode"] == 2  # the season's second episode in the archive, in air order
     ice = by[("BREAK THE ICE", False)]
     assert ice["round"] == 4 and [a["episode"] for a in ice["source"]["airings"]] == [7101, 7700]
     assert by[("HOT COCOA", False)]["round"] == 2

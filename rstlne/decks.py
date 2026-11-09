@@ -60,8 +60,13 @@ def build_mega(archive: Path, generated: Sequence[Path]) -> dict:
     def fits(answer: str, bonus: bool) -> bool:
         return fits_rows(answer, bonus_rows if bonus else main_rows)
 
+    season_episodes: dict[int, set] = {}  # each season's episodes in the archive (air date, number), from every row, toss-ups too
     with Path(archive).open(newline="") as fh:
         for row in csv.DictReader(fh):
+            aired = _air_date(row.get("Date", ""))
+            number = row.get("Episode_Number", "").lstrip("#")
+            if aired and number.isdigit():
+                season_episodes.setdefault(season_of(aired.year, aired.month), set()).add((aired, int(number)))
             mark = (row.get("Round") or "").strip()
             if not row.get("Puzzle") or mark.startswith("T"):  # toss-ups and empty rows
                 continue
@@ -110,6 +115,14 @@ def build_mega(archive: Path, generated: Sequence[Path]) -> dict:
                 tag = raw.get("round")
                 entry["round"] = tag if isinstance(tag, int) and 1 <= tag <= 4 else _round_for(answer)
             puzzles[key] = entry
+    # The archive numbers episodes across the whole run. Within a season, count them in the order they aired: the
+    # COVID seasons' numbers overlap (season 37's last episodes aired in August 2020, numbered past season 38's first).
+    order = {(season, number): i for season, eps in season_episodes.items()
+             for i, (_, number) in enumerate(sorted(eps), 1)}
+    for p in puzzles.values():
+        for a in p["source"].get("airings", []):
+            if (a["season"], a["episode"]) in order:
+                a["season_episode"] = order[(a["season"], a["episode"])]
     out = list(puzzles.values())
     counts = {f"{kind}_{part}": sum(1 for p in out if p["source"]["kind"] == kind and p["bonus"] == (part == "bonus"))
               for kind in ("aired", "generated") for part in ("main", "bonus")}

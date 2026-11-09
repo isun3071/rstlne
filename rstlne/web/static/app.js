@@ -21,6 +21,7 @@ const MISS_MS = 900;     // a letter that isn't there, a wrong answer, or a choi
 const CHOICE_MS = 1200;  // a special wedge choice or bonus picks show this long before they play out
 const ROUND_MS = 2600;   // a new round's card
 const SOLVED_MS = 5000;
+const SOURCE_MS = 8000;  // the same, when the puzzle's source shows under it
 const BONUS_EMPTY_MS = 1800;  // the bonus board, empty, before its wheel spins
 const BONUS_FREE_MS = 1600;   // R S T L N E announced
 const BONUS_LIT_MS = 1600;    // R S T L N E lit on the board before the picks  // a solved board holds this long, its banner up, before the next round's card
@@ -355,9 +356,10 @@ function handle(ev) {
       $("#board").classList.add("solved");
       $("#category").textContent = ev.category;
       showSource(ev.source);
+      const hold = ev.source ? SOURCE_MS : SOLVED_MS;  // a longer look when the puzzle's origin shows too
       showBanner(ev.bonus && !ev.solved ? `The answer was ${ev.answer}.` : lastMoveText());
       if (ev.bonus) bonusRevealed = true;  // the bonus board's hold stands in for the one before the final scores
-      return replaying ? 0 : SOLVED_MS;  // the page holds the solved board itself: it may run behind the server
+      return replaying ? 0 : hold;  // the page holds the solved board itself: it may run behind the server
     case "round_over":
       addInfo(ev.text);
       showSource(ev.source);
@@ -482,10 +484,24 @@ function drawAnswer() {
   if (round) box.textContent = `Answer: ${round.answer}`;
 }
 
+const expandedThoughts = new Set();  // seats whose thinking the viewer opened in full
+
 function renderThoughts() {
-  if (me !== null) return;
-  $("#thinking").innerHTML = Object.keys(thoughts).sort().map((s) =>
-    `<div class="think s${s}"><b>Seat ${Number(s) + 1} · ${escapeHtml(short(seats[s] ? seats[s].label : ""))}</b>${thoughts[s].map((l) => `<p>${escapeHtml(l)}</p>`).join("")}</div>`).join("");
+  if (mode === "play" && humans.length) return;  // live, it would give a bot's best guess away; a replay shows it all
+  const box = $("#thinking");
+  box.innerHTML = Object.keys(thoughts).sort().map((s) =>
+    `<div class="think s${s}"><b>Seat ${Number(s) + 1} · ${escapeHtml(short(seats[s] ? seats[s].label : ""))}</b>
+      <div class="think-body${expandedThoughts.has(s) ? " open" : ""}">${thoughts[s].map((l) => `<p>${escapeHtml(l)}</p>`).join("")}</div>
+      <button class="more" data-seat="${s}" hidden>${expandedThoughts.has(s) ? "Show less" : "Show all"}</button></div>`).join("");
+  box.querySelectorAll(".think").forEach((t) => {  // a button only where six lines don't hold it all
+    const body = t.querySelector(".think-body"), more = t.querySelector(".more");
+    more.hidden = !(body.classList.contains("open") || body.scrollHeight > body.clientHeight + 2);
+    more.onclick = () => {
+      const s = more.dataset.seat;
+      if (expandedThoughts.has(s)) expandedThoughts.delete(s); else expandedThoughts.add(s);
+      renderThoughts();
+    };
+  });
 }
 
 // The Moves panel: a section per round, newest first, each move marked by its seat and what it did.
@@ -610,7 +626,8 @@ function showSource(source) {
   const first = (source.airings || [])[0] || {};
   const when = first.date ? new Date(`${first.date}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "";
   const round = first.round === "BR" ? "bonus round" : first.round ? `round ${String(first.round).replace(/[^0-9]/g, "")}` : "";
-  const parts = [first.season ? `Aired in season ${first.season}` : "Aired", first.episode ? `episode #${first.episode}` : "", when, round].filter(Boolean);
+  const episode = first.season_episode ? `episode ${first.season_episode} (#${first.episode} overall)` : first.episode ? `episode #${first.episode}` : "";
+  const parts = [first.season ? `Aired in season ${first.season}` : "Aired", episode, when, round].filter(Boolean);
   const more = (source.airings || []).length > 1 ? ` · aired ${source.airings.length} times` : "";
   box.textContent = parts.join(" · ").replace(" · episode", ", episode") + more;
 }
