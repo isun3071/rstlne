@@ -40,6 +40,7 @@ After lineup 1 every LLM seat was OpenAI's (Sol, and Luna in the hybrid and alon
 | 3f | hybrid:Haiku, bot, bot | the hybrid's lift on a second lab, in place of 3e | 60 |
 | 2t | Terra, bot, bot | the mid-range model's yardstick, between Sol and Luna (added 2026-11-06, on v6 only) | 60 |
 | 3r | Qwen 3.8 Flash, bot, bot | Alibaba's solo yardstick, a fourth lab (added 2026-11-06, on v6 only) | 60 |
+| 3m | Muse Ember, bot, bot | Meta's solo yardstick, a fifth lab (added 2026-11-09, on v6 only) | 60 |
 | d1 | decision:d1-ultra, bot, bot | a decision model deciding everything, Luna solving | 60 |
 | d2 | decision:Luna Decisions, bot, bot | the same, with the solver's own family deciding | 60 |
 
@@ -65,6 +66,7 @@ The paper uses one bot version and one deck, so the grid reruns with bot v6 on g
 | 6a | bot, Luna, Luna | `seed707-0724ada8` | done | bot **58.6%** (52–65%), Lunas 20.6% and 20.8%; +38 points over each (+28 to +48) | $2.39 |
 | 6b | bot, Haiku, Haiku | `seed707-345192e8` | done | bot **65.8%** (61–71%), Haikus 19.2% and 15.0%; +47 and +51 points (+38 to +58) | $4.92 |
 | 3r | Qwen 3.8 Flash, bot, bot | `seed707-a8527439` | done | Qwen **16.4%** (12–20%), bots 42.2% and 41.4%; −25.8 and −25.0 (−33 to −18) | $10.31 |
+| 3m | Muse Ember, bot, bot | `seed707-2d45bc0e` | set 0 done (6 games); Ian runs the rest | | $0.04 so far |
 | 6d1 | bot, d1-ultra seat, d1-ultra seat | `seed707-3067b84e` | done (games cut off when the OpenRouter key hit its limit were replayed) | bot **88.3%** (84–92%), d1-ultras 4.2% and 7.5%; +84 and +81 points (+74 to +89) | $0.77 |
 | 6d2 | bot, Luna Decisions seat, Luna Decisions seat | `seed707-10d97f0a` | done (the same) | bot **83.3%** (78–88%), Luna Decisions 6.4% and 10.3%; +77 and +73 points (+65 to +84) | $2.23 |
 | d1 | d1-ultra decision seat, bot, bot | `seed707-f06fd2a1` | done | d1-ultra **1.9%** (0–4%), bots 49.2% and 48.9%; −47 points | $0.31 |
@@ -89,6 +91,8 @@ In lineups 6d1 and 6d2 on v6, against two decision seats, the bot wins 88.3% and
 In lineup 3f on v6, the Haiku hybrid ties the bots (+5.0 and +3.3 points, both intervals crossing zero). On v4 it won 44%. It won 1.42 rounds a game to the bots' 1.30 and 1.29, solving at a median 62% showing (bots 63–64%) with 97% right and a median bank of $4,575 at its solves. Bonus 124 of 130. The hybrid's lift holds on a second lab: Haiku hybrid minus Haiku alone, set by set, is **+28.6 points (+23.3 to +33.9)**, against Luna's +26.1 (+19.2 to +32.8). The Haiku hybrid trails the Luna hybrid by 4.4 points (−8.9 to −0.0). Haiku hands the bot an answer later. Asked each turn, Luna said solvable with a fitting answer on 49% of asks and Haiku on 29%, and the first such answer in a round came at a median 36% showing for Luna (781 rounds) against 50% for Haiku (553). Only 2% of Luna's hybrid asks and 1% of Haiku's were dropped for not fitting the board.
 
 In two test games on 2026-11-06, Qwen 3.8 Flash (3r) cost $0.03–0.06 a game. Its provider caches only up to a marked message, and only the system prompt was marked (19% of input cached). Its thinking also ran long (one move took 18,564 output tokens). Marking the newest message too (commit 4b31b8a) lifted caching to 74–91%. In two more test games it cost $0.008 and $0.041, and in one it solved at 32%, 40% and 64% showing (3 right, 1 wrong) and won. Ian chose 60 sets at an estimated $10–12.
+
+In a one-set trial on 2026-11-09, Muse Ember (3m, `meta/muse-ember`) won 1 of 6 games (set 0: Sol 3, Luna 1, Terra 0, Haiku 0), solved 6 of 6 right at a median 53% showing, and made no invalid moves, for $0.040 (0.67¢ a game). Meta's API accepts only `tool_choice: auto`, and Meta caches a repeated opening on its own (54% of input tokens in the trial), so its calls carry no cache marks. Its shown reasoning ran a median 28 words a move, but it was billed about 580 output tokens a move. The full 60 sets should cost about $2.40.
 
 In lineup 3r on v6, Qwen 3.8 Flash won 1.11 rounds a game to the bots' 1.44 and 1.45, solving at a median 65% showing (bots 67–68%) with 85% right and 0.19 wrong solves a game, at a median bank of $2,400 at its solves (bots $4,800–4,900). By seat it won 19%, 15%, 15%, and it won 35 of 59 bonus rounds (bots 142 of 152 and 136 of 149). Set by set: +1.9 points over Luna alone (−3.9 to +7.2, a tie), +8.9 over Haiku alone (+4.4 to +13.3), −7.2 against DeepSeek (−12.8 to −1.9). Cost per game: mean $0.029, median $0.023, costliest $0.107. Each game's two costliest moves were 31% of its spend, and 11% of its moves ran past 5,000 output tokens.
 
@@ -389,6 +393,7 @@ The same flags go at the end of every command:
 | 3d | `uv run python -m rstlne.tournament --seats llm:anthropic/claude-haiku-5.5,bot,bot --sets 60 --parallel 8 --max-cost 4` |
 | 3e | `uv run python -m rstlne.tournament --seats hybrid:deepseek/deepseek-v4.1-flash-1017,bot,bot --sets 60 --parallel 8 --max-cost 5` |
 | 3f | `uv run python -m rstlne.tournament --seats hybrid:anthropic/claude-haiku-5.5,bot,bot --sets 60 --parallel 12 --max-cost 6` |
+| 3m | `uv run python -m rstlne.tournament --seats llm:meta/muse-ember,bot,bot --sets 60 --parallel 6 --max-cost 5` (v6: with `--puzzles puzzles/generated/grading-606b.json --seed 707`) |
 | d1 | `uv run python -m rstlne.tournament --seats decision:liquid/d1-ultra,bot,bot --sets 60 --parallel 8 --max-cost 2` |
 | d2 | `uv run python -m rstlne.tournament --seats decision:openai/gpt-6-luna-decisions,bot,bot --sets 60 --parallel 8 --max-cost 2` |
 
