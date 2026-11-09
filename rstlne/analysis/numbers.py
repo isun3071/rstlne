@@ -34,6 +34,7 @@ BONUSTEST = settings.ROOT / "logs" / "bonustest"
 # The set by set comparisons the paper cites: (label, (lineup, entrant), (lineup, entrant)), the first minus the second.
 SOL, TERRA, LUNA, HAIKU = "llm:openai/gpt-6.1-sol", "llm:openai/gpt-6.1-terra", "llm:openai/gpt-6-luna", "llm:anthropic/claude-haiku-5.5"
 DEEPSEEK, QWEN = "llm:deepseek/deepseek-v4.1-flash-1017", "llm:qwen/qwen3.8-flash"
+EMBER = "llm:meta/muse-ember"
 LUNA_HYBRID, HAIKU_HYBRID = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5"
 LUNA_DEC, D1 = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra"
 PAIRS = [
@@ -47,6 +48,10 @@ PAIRS = [
     ("DeepSeek minus Qwen 3.8 Flash", ("3c", DEEPSEEK), ("3r", QWEN)),
     ("Qwen 3.8 Flash minus Luna", ("3r", QWEN), ("3b", LUNA)),
     ("Qwen 3.8 Flash minus Haiku", ("3r", QWEN), ("3d", HAIKU)),
+    ("DeepSeek minus Ember", ("3c", DEEPSEEK), ("3m", EMBER)),
+    ("Ember minus Qwen 3.8 Flash", ("3m", EMBER), ("3r", QWEN)),
+    ("Ember minus Luna", ("3m", EMBER), ("3b", LUNA)),
+    ("Ember minus Haiku", ("3m", EMBER), ("3d", HAIKU)),
     ("Luna minus Haiku", ("3b", LUNA), ("3d", HAIKU)),
     ("Luna alone minus the Luna Decisions seat", ("3b", LUNA), ("d2", LUNA_DEC)),
     ("Luna Decisions seat minus d1-ultra seat", ("d2", LUNA_DEC), ("d1", D1)),
