@@ -30,3 +30,14 @@ dist/
 # fetched word data, built by python -m rstlne.data fetch
 data/
 paper/build/
+# LaTeX output that lands beside the sources (an editor build without an output folder)
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+paper/*.pdf
+paper/*.synctex.gz
+paper/*.toc
