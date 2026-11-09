@@ -266,6 +266,7 @@ class WebGame:
         state = self.state
         for event in self.narrator.start(state):
             self.emit(event)
+        self._beat(state)
         try:
             with GameLog(self.log_path, state, self.players) as log:
                 final = play_game(state, self.players, log, on_result=self._result)
@@ -286,5 +287,12 @@ class WebGame:
             self.emit(event)
             if event["type"] == "solved" and hold:
                 self.sleep(hold)
-        if not isinstance(player, WebHuman):
+        self._beat(state)
+
+    def _beat(self, state: GameState) -> None:
+        """Before a bot or model moves: tell the page who is thinking, and wait a beat so play can be followed."""
+        if state.phase is Phase.GAME_OVER or isinstance(self.players[state.seat], WebHuman):
+            return
+        self.emit({"type": "thinking", "seat": state.seat})
+        if self.pause:
             self.sleep(self.pause)

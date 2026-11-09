@@ -10,6 +10,7 @@ const CONSONANTS = [...ALPHABET].filter((c) => !VOWELS.has(c)).join("");
 const KIND_NAMES = { human: "You", bot: "Bot", llm: "Model", hybrid: "Hybrid (bot + model)", decision: "Decision seat" };
 const SAVED = "rstlne.setup", STOPS_SAVED = "rstlne.stops";
 const SPIN_MS = 1700;
+const LANDED_MS = 1200;  // after a bot's or model's spin lands, a beat to read the wedge before its next move
 
 let setupInfo = null;
 let mode = "play";       // "play" a live game, or "replay" a log
@@ -17,7 +18,9 @@ let ws = null, gameId = null;
 let seats = [], me = null, table = null, prompt = null, thoughts = {};
 let lastShown = new Set(), replaying = false, replayTimer = null;
 let wheelSignature = "", wheelAngle = 0, clockTimer = null, over = false, seed = null;
-let roundList = null;    // the <ol> the next move goes into
+let roundList = null;
+let thinkingSeat = null;  // the bot or model the server says is about to move
+let bonusSpun = false;   // the bonus wheel turns once, when the bonus round starts    // the <ol> the next move goes into
 let rp = null;           // the replay: meta, groups of events, position, playing, speed, stops
 
 const short = (label) => String(label).split(" + ").map((p) => (p.includes("/") ? p.split("/").pop() : p)).join(" + ");
@@ -115,6 +118,7 @@ async function startGame() {
 
 function resetBoard() {
   table = null; prompt = null; thoughts = {}; lastShown = new Set(); over = false; roundList = null;
+  thinkingSeat = null; bonusSpun = false; wheelSignature = "";
   pending.length = 0;
   $("#moves").innerHTML = ""; $("#thinking").innerHTML = ""; $("#banner").hidden = true; $("#answer").hidden = true;
   $("#board").innerHTML = ""; $("#category").textContent = ""; $("#round-line").textContent = "";
@@ -201,9 +205,18 @@ function handle(ev) {
       $("#banner").hidden = true;
       $("#board").classList.remove("solved");
       renderTable();
+      if (!ev.wheel.length && String(ev.phase).startsWith("bonus") && !bonusSpun) {
+        bonusSpun = true;
+        return spinBonus();  // the picks wait for the bonus wheel to stop
+      }
+      break;
+    case "thinking":
+      thinkingSeat = ev.seat;
+      renderControls();
       break;
     case "move":
       prompt = null;
+      thinkingSeat = null;
       renderControls();
       if (ev.wedge && !replaying) {  // the wheel turns first; its result shows once it stops
         spinTo(ev.wedge);
@@ -215,7 +228,8 @@ function handle(ev) {
       break;
     case "landed":
       addMove(ev.move);
-      break;
+      $("#wedge-line").innerHTML = `Wedge: <b>${escapeHtml(ev.move.wedge.text)}</b>`;
+      return ev.move.seat === me ? 0 : LANDED_MS;
     case "thoughts":
       thoughts[ev.seat] = ev.lines;
       renderThoughts();
@@ -256,9 +270,11 @@ function renderTable() {
   drawBoard(t.rows, false);
   $("#category").textContent = t.category;
   drawLetters(new Set(t.used));
-  drawWheel(t.wheel);
-  $("#wheel-wrap").hidden = !t.wheel.length;
-  $("#wedge-line").innerHTML = t.express ? "Riding the <b>Express</b>" : t.wedge ? `Wedge: <b>${escapeHtml(t.wedge.text)}</b>` : "";
+  const bonus = !t.wheel.length && String(t.phase).startsWith("bonus");
+  if (bonus) drawBonusWheel(); else drawWheel(t.wheel);
+  $("#wheel-wrap").hidden = !t.wheel.length && !bonus;
+  $("#wedge-line").innerHTML = bonus ? "An envelope, <b>sealed</b> until the end"
+    : t.express ? "Riding the <b>Express</b>" : t.wedge ? `Wedge: <b>${escapeHtml(t.wedge.text)}</b>` : "";
   drawSeats();
   drawAnswer();
   renderControls();
@@ -421,6 +437,36 @@ function drawWheel(thirds) {
   g.style.transform = `rotate(${wheelAngle}deg)`;
 }
 
+// The bonus wheel: 24 sealed envelopes. The engine picks the envelope from the seed and keeps it hidden, so the
+// drawing lands on one of 24 identical envelopes for show; where it lands says nothing about what's inside.
+function drawBonusWheel() {
+  if (wheelSignature === "bonus") return;
+  wheelSignature = "bonus";
+  let svg = "";
+  for (let k = 0; k < 24; k++) {
+    const a1 = k * 15, a2 = a1 + 15;
+    const [x1, y1] = point(103, a1), [x2, y2] = point(103, a2);
+    svg += `<path d="M0 0 L${x1.toFixed(2)} ${y1.toFixed(2)} A103 103 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${k % 2 ? "#2a1a5c" : "#3a2478"}" stroke="rgba(255,201,74,.35)" stroke-width=".6"/>`;
+    const [px, py] = point(106.5, a1);
+    svg += `<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="2.1" fill="#fff3c4" stroke="#8a5a00" stroke-width=".6"/>`;
+    svg += `<g transform="rotate(${a1 + 7.5}) translate(0 -80)"><rect x="-7" y="-5" width="14" height="10" rx="1.2" fill="#fff3d6" stroke="#b77a12" stroke-width=".6"/>`
+      + `<path d="M-7 -5 L0 1 L7 -5" fill="none" stroke="#b77a12" stroke-width=".6"/></g>`;
+  }
+  const g = $("#wheel-rot");
+  g.innerHTML = svg;
+  g.style.transform = `rotate(${wheelAngle}deg)`;
+}
+
+function spinBonus() {
+  const k = Math.floor(Math.random() * 24);
+  const target = ((-(k * 15 + 7.5) - wheelAngle) % 360 + 360) % 360;
+  wheelAngle += (replaying ? 0 : 1080) + target;
+  const g = $("#wheel-rot");
+  g.classList.toggle("spinning", !replaying);
+  g.style.transform = `rotate(${wheelAngle}deg)`;
+  return replaying ? 0 : SPIN_MS;
+}
+
 function spinTo(wedge) {
   if (!table || !table.wheel.length) return;
   const thirds = table.wheel;
@@ -445,7 +491,9 @@ function renderControls() {
   if (over) { box.innerHTML = ""; return; }
   if (!prompt || prompt.seat !== me) {
     const turn = table ? table.turn : null;
-    box.innerHTML = turn === null ? "" : `<div class="waiting">${turn === me ? "Your move…" : `<b>${seatName(turn)}</b> (${escapeHtml(short(table.seats[turn]))}) is on the wheel.`}</div>`;
+    const who = turn === null ? "" : `<b>${seatName(turn)}</b> (${escapeHtml(short(table.seats[turn]))})`;
+    box.innerHTML = turn === null ? "" : `<div class="waiting">${turn === me ? "Your move…"
+      : thinkingSeat === turn ? `${who} is thinking<span class="dots"></span>` : `${who} is on the wheel.`}</div>`;
     return;
   }
   const p = prompt;

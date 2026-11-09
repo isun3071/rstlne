@@ -240,3 +240,27 @@ def test_the_server_lists_and_replays_logs_but_never_reads_outside_the_log_folde
         assert replayed["events"][0]["type"] == "start"
         assert c.get("/api/logs/..%2Fconfig.toml").status_code in (400, 404)
         assert c.get("/api/logs/missing.jsonl").status_code == 404
+
+
+def test_each_bot_or_model_move_waits_a_beat_first_and_the_page_hears_who_is_thinking(rules, wheel_spec, tmp_path):
+    waits = []
+    players = [bot(i, rules, wheel_spec) for i in range(3)]
+    game = WebGame(state(rules, wheel_spec), players, tmp_path / "game.jsonl", pause=1.5, solve_pause=0, sleep=waits.append)
+    game.start()
+    events = collect(game, lambda e: e["type"] == "over")
+    moves = [i for i, e in enumerate(events) if e["type"] == "move"]
+    for i in moves:  # the last event before each move, tables aside, says that seat is thinking
+        before = next(e for e in reversed(events[:i]) if e["type"] != "table")
+        assert before == {"type": "thinking", "seat": events[i]["seat"]}
+    assert waits.count(1.5) == len(moves)
+
+
+def test_no_beat_before_the_humans_own_move(rules, wheel_spec, tmp_path):
+    waits = []
+    human = WebHuman(0, emit=lambda e: None, seconds=10)
+    game = WebGame(state(rules, wheel_spec), [human, bot(1, rules, wheel_spec), bot(2, rules, wheel_spec)],
+                   tmp_path / "game.jsonl", pause=1.5, solve_pause=0, sleep=waits.append)
+    game.start()
+    events = collect(game, lambda e: e["type"] == "prompt")
+    assert not any(e["type"] == "thinking" for e in events) and waits == []
+    game.stop()
