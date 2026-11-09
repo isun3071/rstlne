@@ -148,7 +148,9 @@ def replay(path: Path) -> dict:
             raise ValueError(f"{Path(path).name} doesn't replay: line {n} logged {logged['outcome']}"
                              f"{' on wedge ' + str(landed[0]) if landed[0] else ''}, the engine gives {got.outcome}"
                              f"{' on wedge ' + str(landed[1]) if landed[1] else ''}")
-        events += narrator.move(before, state, thoughts_of(seats[row["seat"]], row.get("raw")))
+        raw = row.get("raw") if isinstance(row.get("raw"), dict) else {}
+        skipped = got.outcome == "forfeit" and bool(raw.get("skipped"))
+        events += narrator.move(before, state, [] if skipped else thoughts_of(seats[row["seat"]], raw), skipped=skipped)
     if summary is not None:
         usage = [{"model": labels[i], **u} for i, u in enumerate(summary.get("usage_by_seat") or []) if (u or {}).get("calls")]
         usage = [{"model": u["model"], "calls": u.get("calls", 0), "tokens": u.get("total_tokens", 0),

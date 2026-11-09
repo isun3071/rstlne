@@ -196,7 +196,9 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
         async def receive() -> None:
             while True:
                 message = await ws.receive_json()
-                if isinstance(message, dict) and isinstance(message.get("command"), str):
+                if isinstance(message, dict) and message.get("control") in ("retry", "skip"):
+                    game.control(message["control"])
+                elif isinstance(message, dict) and isinstance(message.get("command"), str):
                     seat = message.get("seat")
                     game.submit(message["command"], seat if isinstance(seat, int) else None)
 

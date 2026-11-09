@@ -414,3 +414,74 @@ def test_the_server_reads_the_idle_window_from_config(tmp_path):
     assert config["web"]["idle_minutes"] > 0
     app = server.create_app(config={**config, "web": {**config["web"], "idle_minutes": 0.5}}, log_dir=tmp_path, pause=0, solve_pause=0)
     assert app.state.idle_seconds == 30
+
+
+# A model's calls failing after their retries
+
+class Flaky(BotPlayer):
+    """A bot whose first `fails` decisions raise, as a model's do when its provider keeps failing."""
+
+    def __init__(self, *args, fails=1, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fails = fails
+
+    def decide(self, view, error=None):
+        if self.fails:
+            self.fails -= 1
+            raise RuntimeError("EmptyResponse: the provider returned no choices")
+        return super().decide(view, error)
+
+
+def flaky_game(rules, wheel_spec, tmp_path, fails):
+    players = [Flaky(0, rules, wheel_spec, FrequencyReader(), fails=fails), bot(1, rules, wheel_spec), bot(2, rules, wheel_spec)]
+    return WebGame(state(rules, wheel_spec), players, tmp_path / "game.jsonl", pause=0, solve_pause=0)
+
+
+def test_a_failed_model_call_pauses_the_game_and_try_again_resumes_it(rules, wheel_spec, tmp_path):
+    game = flaky_game(rules, wheel_spec, tmp_path, fails=2)
+    game.start()
+    stalled = collect(game, lambda e: e["type"] == "stalled")[-1]
+    assert stalled["seat"] == 0 and "no choices" in stalled["text"]
+    assert game.thread.is_alive()  # waiting, not dead
+    game.control("retry")
+    collect(game, lambda e: e["type"] == "stalled" and e is not stalled)  # it failed again, and asks again
+    game.control("retry")
+    move = collect(game, lambda e: e["type"] == "move")[-1]
+    assert move["seat"] == 0 and move["outcome"] != "forfeit"
+    game.stop()
+
+
+def test_skip_the_turn_forfeits_it_and_the_log_says_why(rules, wheel_spec, tmp_path):
+    game = flaky_game(rules, wheel_spec, tmp_path, fails=1)
+    game.start()
+    collect(game, lambda e: e["type"] == "stalled")
+    game.control("skip")
+    move = collect(game, lambda e: e["type"] == "move")[-1]
+    assert move["seat"] == 0 and move["outcome"] == "forfeit"
+    assert move["text"] == "Seat 1's turn was skipped: its model didn't answer."
+    game.stop()
+    game.thread.join(5)
+    rows = [json.loads(line) for line in (tmp_path / "game.jsonl").read_text().splitlines()]
+    forfeit = next(r for r in rows if r["type"] == "action" and r["result"]["outcome"] == "forfeit")
+    assert "no choices" in forfeit["raw"]["api_failure"] and forfeit["raw"]["skipped"] is True
+
+
+def test_a_stray_control_does_nothing_while_the_game_isnt_stalled(rules, wheel_spec, tmp_path):
+    game = flaky_game(rules, wheel_spec, tmp_path, fails=0)
+    game.control("skip")
+    assert game.controls.empty()
+
+
+def test_the_page_sends_retry_and_skip_over_the_websocket(client, monkeypatch):
+    from rstlne.web import session
+    seen = []
+    monkeypatch.setattr(session.WebGame, "control", lambda self, what: seen.append(what))
+    game_id = client.post("/api/games", json={"seats": ["bot", "bot", "bot"], "seed": 5}).json()["id"]
+    with client.websocket_connect(f"/api/games/{game_id}") as ws:
+        ws.receive_json()
+        ws.send_json({"control": "retry"})
+        ws.send_json({"control": "nonsense"})
+        ws.send_json({"control": "skip"})
+        ws.receive_json()
+    client.delete(f"/api/games/{game_id}")
+    assert seen == ["retry", "skip"]

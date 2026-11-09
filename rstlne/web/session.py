@@ -16,11 +16,12 @@ from pathlib import Path
 from rstlne.engine.bonus import before_bonus
 from rstlne.engine.puzzle import LETTERS, board
 from rstlne.engine.rules import public_view
-from rstlne.engine.state import Action, BonusSolve, Forfeit, GameState, Phase, PublicView
+from rstlne.engine.state import Action, BonusSolve, Forfeit, GameState, IllegalAction, Phase, PublicView
 from rstlne.engine.wheel import Wedge
 from rstlne.live import board_rows, missed_money
 from rstlne.narrate import describe, money, wedge_text
-from rstlne.players.base import Player
+from rstlne.llm.openrouter import Usage
+from rstlne.players.base import CallRecord, InvalidResponse, Player
 from rstlne.players.decision import DecisionPlayer
 from rstlne.players.human_cli import parse_command, prompt
 from rstlne.players.llm import LLMPlayer
@@ -88,11 +89,16 @@ class Narrator:
             return [{"type": "round", "round": None, "starts": state.seat, "category": state.bonus.puzzle.category}]
         return []
 
-    def move(self, before: GameState, state: GameState, thoughts: Sequence[str] = (), hold: float = 0) -> list[dict]:
+    def move(self, before: GameState, state: GameState, thoughts: Sequence[str] = (), hold: float = 0,
+             skipped: bool = False) -> list[dict]:
         """The events for one applied action: the move, any thinking, a solved board, the next round, the table."""
         result = state.last
         self.moves += 1
-        move = {"type": "move", "index": self.moves, "seat": result.seat, "text": describe(result, self.viewer, self.names),
+        text = describe(result, self.viewer, self.names)
+        if skipped:  # a turn skipped from the page after the model's calls failed, not three invalid replies
+            who = text.split(" used up")[0]
+            text = f"{who}'s turn was skipped: its model didn't answer."
+        move = {"type": "move", "index": self.moves, "seat": result.seat, "text": text,
                 "outcome": result.outcome, "kind": result.action.kind, "events": list(result.events),
                 "wedge": wedge_json(result.wedge) if result.action.kind == "spin" else None}
         if result.outcome == "solved" and before.round:
@@ -226,10 +232,46 @@ class WebGame:
         self.idle_since: float | None = clock()  # when the last page left, or the game was made; None while watched
         self.lock = threading.Lock()
         self.stopped = threading.Event()
+        self.controls: queue.Queue = queue.Queue()  # Try again or Skip, from the page, while a seat is stalled
+        self.stalled: int | None = None
         self.thread = threading.Thread(target=self._run, daemon=True)
-        for p in players:
+        for seat, p in enumerate(players):
             if isinstance(p, WebHuman):
                 p.emit = self.emit
+            else:
+                p.decide = self._guarded(seat, p, p.decide)  # this game's copy only: tournaments still fail a game
+
+    # A model's calls failing after the client's retries
+
+    def _guarded(self, seat: int, player: Player, decide: Callable) -> Callable:
+        """The seat's decide, but a failure after its retries pauses the game instead of ending it. The page offers
+        Try again (ask for the same move; nothing was applied) and Skip (the seat forfeits the turn, and the log says why)."""
+        def guarded(view: PublicView, error: str | None = None) -> Action:
+            while True:
+                try:
+                    return decide(view, error)
+                except (GameStopped, InvalidResponse, IllegalAction):
+                    raise  # a stop, or an invalid reply the runner counts toward its three tries
+                except Exception as err:
+                    text = f"{type(err).__name__}: {err}"
+                    while not self.controls.empty():  # a click from before this failure doesn't count
+                        self.controls.get_nowait()
+                    self.stalled = seat
+                    self.emit({"type": "stalled", "seat": seat, "text": text})
+                    choice = self.controls.get()
+                    self.stalled = None
+                    if choice is _STOP:
+                        raise GameStopped from None
+                    if choice == "skip":
+                        player.last_call = CallRecord(raw={"api_failure": text, "skipped": True}, usage=Usage())
+                        return Forfeit()
+                    self.emit({"type": "retrying", "seat": seat})
+        return guarded
+
+    def control(self, what: str) -> None:
+        """Try again or Skip from the page; it counts only while a seat is stalled."""
+        if what in ("retry", "skip") and self.stalled is not None:
+            self.controls.put(what)
 
     # Events
 
@@ -276,6 +318,7 @@ class WebGame:
 
     def stop(self) -> None:
         self.stopped.set()
+        self.controls.put(_STOP)
         for p in self.players:
             if isinstance(p, WebHuman):
                 p.stop()
@@ -306,7 +349,9 @@ class WebGame:
         before, self.state = self.state, state
         player = self.players[state.last.seat]
         hold = self.solve_pause if self.pause else 0
-        for event in self.narrator.move(before, state, player.thoughts(), hold):
+        raw = player.last_call.raw if player.last_call and isinstance(player.last_call.raw, dict) else {}
+        skipped = state.last.outcome == "forfeit" and bool(raw.get("skipped"))
+        for event in self.narrator.move(before, state, [] if skipped else player.thoughts(), hold, skipped=skipped):
             self.emit(event)
             if event["type"] == "solved" and hold:
                 self.sleep(hold)

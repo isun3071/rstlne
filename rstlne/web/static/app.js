@@ -371,6 +371,27 @@ function handle(ev) {
       hideOverlay();
       renderOver(ev);
       break;
+    case "stalled": {
+      // A model's calls failed after their retries. The game waits: ask again, or let the seat lose the turn.
+      thinkingSeat = null;
+      const who = escapeHtml(seatName(ev.seat));
+      const box = $("#controls");
+      box.innerHTML = `<div class="error"><b>${who}</b>'s model didn't answer: ${escapeHtml(ev.text)}</div>
+        <div class="actions"><button class="spin-btn" data-control="retry">Try again</button>
+        <button data-control="skip">Skip the turn</button>
+        <span class="label">Nothing was played yet, so trying again picks up right here. Skipping counts as ${who}'s forfeit.</span></div>`;
+      box.querySelectorAll("[data-control]").forEach((b) => {
+        b.onclick = () => {
+          if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ control: b.dataset.control }));
+          box.innerHTML = `<div class="waiting">${b.dataset.control === "retry" ? `Asking <b>${who}</b>'s model again…` : `Skipping <b>${who}</b>'s turn…`}</div>`;
+        };
+      });
+      return 0;
+    }
+    case "retrying":
+      thinkingSeat = ev.seat;
+      renderControls();
+      break;
     case "failed":
       over = true;
       if (!table) { setHash(""); showSetup(ev.text); return 0; }
