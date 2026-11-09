@@ -102,8 +102,13 @@ class Narrator:
             events.append({"type": "thoughts", "seat": result.seat, "lines": [t for t in thoughts if t.strip()]})
         puzzle = before.round.puzzle if before.round else None
         if result.outcome == "solved" and puzzle:
-            events.append({"type": "solved", "category": puzzle.category,
+            events.append({"type": "solved", "category": puzzle.category, "bonus": False, "solved": True,
                            "rows": board_rows(board(puzzle.answer, LETTERS)), "seconds": hold})
+        elif result.outcome in ("bonus_solved", "bonus_missed") and before.bonus:
+            bp = before.bonus.puzzle  # the bonus answer goes up on the board, right or wrong, as on the show
+            events.append({"type": "solved", "category": bp.category, "bonus": True,
+                           "solved": result.outcome == "bonus_solved", "answer": bp.answer,
+                           "rows": board_rows(board(bp.answer, LETTERS)), "seconds": 0})
         elif "turn_cap" in result.events and puzzle:
             events.append({"type": "round_over", "text": f"Nobody solved it. The answer was {puzzle.answer}."})
         if "round_over" in result.events and state.phase is not Phase.GAME_OVER:

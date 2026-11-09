@@ -34,7 +34,8 @@ let lastShown = new Set(), replaying = false, replayTimer = null;
 let wheelSignature = "", wheelAngle = 0, clockTimer = null, over = false, seed = null;
 let roundList = null;
 let thinkingSeat = null;  // the bot or model the server says is about to move
-let bonusSpun = false;   // the bonus wheel turns once, when the bonus round starts    // the <ol> the next move goes into
+let bonusSpun = false;
+let bonusRevealed = false;   // the bonus wheel turns once, when the bonus round starts    // the <ol> the next move goes into
 let rp = null;           // the replay: meta, groups of events, position, playing, speed, stops
 
 const short = (label) => String(label).split(" + ").map((p) => (p.includes("/") ? p.split("/").pop() : p)).join(" + ");
@@ -142,7 +143,7 @@ async function startGame() {
 
 function resetBoard() {
   table = null; prompt = null; thoughts = {}; lastShown = new Set(); over = false; roundList = null;
-  thinkingSeat = null; bonusSpun = false; wheelSignature = "";
+  thinkingSeat = null; bonusSpun = false; bonusRevealed = false; wheelSignature = "";
   pending.length = 0;
   $("#moves").innerHTML = ""; $("#thinking").innerHTML = ""; $("#banner").hidden = true; $("#answer").hidden = true; $("#call").hidden = true;
   $("#board").innerHTML = ""; $("#category").textContent = ""; $("#round-line").textContent = "";
@@ -252,14 +253,14 @@ function handle(ev) {
       prompt = null;
       thinkingSeat = null;
       renderControls();
+      if (!replaying && LETTER_KINDS.has(ev.kind) && showCall(ev)) {  // every seat's letter, big; then a miss, or the tiles
+        pending.unshift({ type: "called", move: ev });
+        return CALL_MS;
+      }
       if (!replaying && staged(ev.seat)) {
         if (SOLVE_KINDS.has(ev.kind)) {  // a beat on the board, then the answer, then the verdict
           pending.unshift({ type: "solving", move: ev });
           return SOLVE_LEAD_MS;
-        }
-        if (LETTER_KINDS.has(ev.kind) && showCall(ev)) {  // the letter first, big; then a miss, or the tiles
-          pending.unshift({ type: "called", move: ev });
-          return CALL_MS;
         }
         const choice = choiceOverlay(ev);
         if (choice) {  // a special wedge choice or the bonus picks, then what came of it
@@ -330,7 +331,8 @@ function handle(ev) {
       drawBoard(ev.rows, true);
       $("#board").classList.add("solved");
       $("#category").textContent = ev.category;
-      showBanner(lastMoveText());
+      showBanner(ev.bonus && !ev.solved ? `The answer was ${ev.answer}.` : lastMoveText());
+      if (ev.bonus) bonusRevealed = true;  // the bonus board's hold stands in for the one before the final scores
       return replaying ? 0 : SOLVED_MS;  // the page holds the solved board itself: it may run behind the server
     case "round_over":
       addInfo(ev.text);
@@ -340,7 +342,7 @@ function handle(ev) {
       renderControls();
       break;
     case "over":
-      if (!replaying && !ev.held) {  // let the bonus result land on the stage before the final scores
+      if (!replaying && !ev.held && !bonusRevealed) {  // let the result land on the stage before the final scores
         pending.unshift({ ...ev, held: true });
         return OVER_MS;
       }

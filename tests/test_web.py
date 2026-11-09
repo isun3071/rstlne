@@ -356,3 +356,17 @@ def test_the_server_takes_a_nickname_for_each_human_seat_and_checks_it(client):
     assert long.status_code == 400 and "20" in long.json()["detail"]
     bot_named = client.post("/api/games", json={"seats": ["human", "bot", "bot"], "names": [None, "Robo", None]})
     assert bot_named.status_code == 400 and "human" in bot_named.json()["detail"]
+
+
+def test_the_bonus_answer_fills_the_board_after_the_bonus_solve_right_or_wrong(rules, wheel_spec, tmp_path):
+    from rstlne.web.replay import replay
+    path = tmp_path / "game.jsonl"
+    logged_game(rules, wheel_spec, path)
+    events = replay(path)["events"]
+    bonus = next(i for i, e in enumerate(events) if e["type"] == "move" and e["kind"] == "bonus_solve")
+    shown = events[bonus + 1:]
+    reveal = next(e for e in shown if e["type"] == "solved")
+    assert reveal["bonus"] is True and reveal["category"] == BONUS.category
+    assert "".join(c for row in reveal["rows"] for c in row if c.strip()) == BONUS.answer.replace(" ", "")
+    assert reveal["solved"] == (events[bonus]["outcome"] == "bonus_solved")
+    assert shown.index(reveal) < shown.index(next(e for e in shown if e["type"] == "over"))
