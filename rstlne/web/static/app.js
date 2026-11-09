@@ -149,6 +149,7 @@ function resetBoard() {
   thinkingSeat = null; bonusSpun = false; bonusRevealed = false; wheelSignature = "";
   pending.length = 0;
   $("#moves").innerHTML = ""; $("#thinking").innerHTML = ""; $("#banner").hidden = true; $("#answer").hidden = true; $("#call").hidden = true;
+  $("#source").hidden = true;
   $("#board").innerHTML = ""; $("#category").textContent = ""; $("#round-line").textContent = "";
   $("#controls").innerHTML = "";
   $("#wheel-rot").innerHTML = ""; $("#wheel-rot").classList.remove("spinning"); wheelAngle = 0;
@@ -241,6 +242,7 @@ function handle(ev) {
     case "table":
       table = ev;
       $("#banner").hidden = true;
+      $("#source").hidden = true;
       $("#board").classList.remove("solved");
       renderTable();
       if (!ev.wheel.length && String(ev.phase).startsWith("bonus") && !bonusSpun) {
@@ -352,11 +354,13 @@ function handle(ev) {
       drawBoard(ev.rows, true);
       $("#board").classList.add("solved");
       $("#category").textContent = ev.category;
+      showSource(ev.source);
       showBanner(ev.bonus && !ev.solved ? `The answer was ${ev.answer}.` : lastMoveText());
       if (ev.bonus) bonusRevealed = true;  // the bonus board's hold stands in for the one before the final scores
       return replaying ? 0 : SOLVED_MS;  // the page holds the solved board itself: it may run behind the server
     case "round_over":
       addInfo(ev.text);
+      showSource(ev.source);
       break;
     case "prompt":
       prompt = ev;
@@ -591,6 +595,24 @@ function choiceResult(ev) {
   if (ev.outcome === "flipped_prize") return { who: "Behind the wedge", text: "$10,000!", tone: "good" };
   if (ev.outcome === "flipped_bankrupt") return { who: "Behind the wedge", text: "BANKRUPT", tone: "miss" };
   return null;
+}
+
+// Where the puzzle came from, once its round is over: an aired puzzle's season, episode, air date and round;
+// a generated one's deck.
+function showSource(source) {
+  const box = $("#source");
+  box.hidden = !source;
+  if (!source) return;
+  if (source.kind === "generated") {
+    box.textContent = `Written for rstlne · ${(source.decks || []).join(", ")}`;
+    return;
+  }
+  const first = (source.airings || [])[0] || {};
+  const when = first.date ? new Date(`${first.date}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "";
+  const round = first.round === "BR" ? "bonus round" : first.round ? `round ${String(first.round).replace(/[^0-9]/g, "")}` : "";
+  const parts = [first.season ? `Aired in season ${first.season}` : "Aired", first.episode ? `episode #${first.episode}` : "", when, round].filter(Boolean);
+  const more = (source.airings || []).length > 1 ? ` · aired ${source.airings.length} times` : "";
+  box.textContent = parts.join(" · ").replace(" · episode", ", episode") + more;
 }
 
 function showBanner(text) {

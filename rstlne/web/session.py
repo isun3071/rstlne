@@ -59,9 +59,10 @@ class Narrator:
     """Turns a game's states into the page's events, for a viewer's seat or, with none, for a spectator."""
 
     def __init__(self, labels: Sequence[str], kinds: Sequence[str], viewer: int | None, thoughts: bool | None = None,
-                 names: Sequence[str | None] | None = None):
+                 names: Sequence[str | None] | None = None, sources: dict | None = None):
         self.labels = list(labels)
         self.names = list(names) if names else [None] * len(self.labels)  # human seats' nicknames
+        self.sources = sources or {}  # where each puzzle came from, shown once its round is over: {"rounds": [...], "bonus": ...}
         self.kinds = list(kinds)
         self.viewer = viewer
         # Thinking would give a bot's or model's best guess away, so it shows only when no human plays
@@ -107,19 +108,26 @@ class Narrator:
         if self.thoughts and thoughts:
             events.append({"type": "thoughts", "seat": result.seat, "lines": [t for t in thoughts if t.strip()]})
         puzzle = before.round.puzzle if before.round else None
+        source = self._source(before)
         if result.outcome == "solved" and puzzle:
             events.append({"type": "solved", "category": puzzle.category, "bonus": False, "solved": True,
-                           "rows": board_rows(board(puzzle.answer, LETTERS)), "seconds": hold})
+                           "rows": board_rows(board(puzzle.answer, LETTERS)), "seconds": hold, "source": source})
         elif result.outcome in ("bonus_solved", "bonus_missed") and before.bonus:
             bp = before.bonus.puzzle  # the bonus answer goes up on the board, right or wrong, as on the show
             events.append({"type": "solved", "category": bp.category, "bonus": True,
                            "solved": result.outcome == "bonus_solved", "answer": bp.answer,
-                           "rows": board_rows(board(bp.answer, LETTERS)), "seconds": 0})
+                           "rows": board_rows(board(bp.answer, LETTERS)), "seconds": 0, "source": source})
         elif "turn_cap" in result.events and puzzle:
-            events.append({"type": "round_over", "text": f"Nobody solved it. The answer was {puzzle.answer}."})
+            events.append({"type": "round_over", "text": f"Nobody solved it. The answer was {puzzle.answer}.", "source": source})
         if "round_over" in result.events and state.phase is not Phase.GAME_OVER:
             events += self.banner(state)
         return events + self.table(state)
+
+    def _source(self, state: GameState) -> dict | None:
+        if state.round:
+            rounds = self.sources.get("rounds") or []
+            return rounds[state.round.number - 1] if state.round.number <= len(rounds) else None
+        return self.sources.get("bonus") if state.bonus else None
 
     def over(self, state: GameState, usage: Sequence[dict], log: str) -> dict:
         b = state.bonus
@@ -213,7 +221,7 @@ class WebGame:
 
     def __init__(self, state: GameState, players: Sequence[Player], log_path: Path, *, pause: float,
                  solve_pause: float, sleep: Callable[[float], None] = time.sleep,
-                 clock: Callable[[], float] = time.monotonic):
+                 clock: Callable[[], float] = time.monotonic, sources: dict | None = None):
         self.state = state
         self.players = players
         self.log_path = Path(log_path)
@@ -224,7 +232,9 @@ class WebGame:
         self.viewer = self.humans[0] if len(self.humans) == 1 else None  # "You" only when one human plays
         names = [p.name if isinstance(p, WebHuman) else None for p in players]
         labels = ["You" if i == self.viewer and not names[i] else p.label() for i, p in enumerate(players)]
-        self.narrator = Narrator(labels, [p.describe().get("kind") for p in players], self.viewer, names=names)
+        self.sources = sources
+        self.narrator = Narrator(labels, [p.describe().get("kind") for p in players], self.viewer, names=names,
+                                 sources=sources)
         self.history: list[dict] = []
         self.subscribers: list[queue.Queue] = []
         self.clock = clock
@@ -334,7 +344,7 @@ class WebGame:
             self.emit(event)
         self._beat(state)
         try:
-            with GameLog(self.log_path, state, self.players) as log:
+            with GameLog(self.log_path, state, self.players, {"puzzle_sources": self.sources} if self.sources else None) as log:
                 final = play_game(state, self.players, log, on_result=self._result)
         except GameStopped:
             return

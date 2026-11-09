@@ -485,3 +485,50 @@ def test_the_page_sends_retry_and_skip_over_the_websocket(client, monkeypatch):
         ws.receive_json()
     client.delete(f"/api/games/{game_id}")
     assert seen == ["retry", "skip"]
+
+
+# Where a puzzle came from
+
+AIRED = {"kind": "aired", "airings": [{"season": 31, "episode": 5851, "date": "2013-09-16", "round": "R1"}]}
+GENERATED = {"kind": "generated", "decks": ["grading-606b"]}
+
+
+def test_a_solved_board_says_where_its_puzzle_came_from_and_the_log_keeps_it(rules, wheel_spec, tmp_path):
+    from rstlne.web.replay import replay
+    sources = {"rounds": [AIRED, GENERATED, None, None], "bonus": GENERATED}
+    human = WebHuman(0, emit=lambda e: None, seconds=10)
+    game = WebGame(state(rules, wheel_spec), [human, bot(1, rules, wheel_spec), bot(2, rules, wheel_spec)],
+                   tmp_path / "g.jsonl", pause=0, solve_pause=0, sources=sources)
+    game.start()
+    collect(game, lambda e: e["type"] == "prompt")
+    assert not any("source" in e for e in game.history)  # nothing about the source before the round is over
+    game.submit("solve break the ice", seat=0)
+    solved = collect(game, lambda e: e["type"] == "solved")[-1]
+    assert solved["source"] == AIRED
+    game.stop()
+    game.thread.join(5)
+    header = json.loads((tmp_path / "g.jsonl").read_text().splitlines()[0])
+    assert header["puzzle_sources"] == sources
+    out = replay(tmp_path / "g.jsonl")
+    assert next(e for e in out["events"] if e["type"] == "solved")["source"] == AIRED
+
+
+def test_the_server_reads_each_puzzles_source_from_the_deck(tmp_path):
+    deck = tmp_path / "mega.json"
+    deck.write_text(json.dumps({"name": "mega", "puzzles": [
+        {"category": "Phrase", "answer": "BREAK THE ICE", "bonus": False, "round": 1, "source": AIRED},
+        {"category": "Thing", "answer": "SPARE TIRE", "bonus": False, "round": 2, "source": GENERATED},
+        {"category": "Place", "answer": "HOT SPRINGS", "bonus": False, "round": 3},
+        {"category": "Food & Drink", "answer": "HOT COCOA", "bonus": False, "round": 4},
+        {"category": "Phrase", "answer": "GOOD LUCK", "bonus": True, "source": GENERATED},
+    ]}))
+    app = server.create_app(puzzles_path=deck, log_dir=tmp_path, pause=0, solve_pause=0)
+    assert app.state.sources[("BREAK THE ICE", False)] == AIRED and ("HOT SPRINGS", False) not in app.state.sources
+    assert app.state.deck == "mega.json"
+
+
+def test_the_web_page_plays_the_mega_deck_when_there_is_one(tmp_path, monkeypatch):
+    from rstlne import settings
+    assert server.default_deck(tmp_path) == settings.ROOT / "puzzles" / "dev.json"
+    (tmp_path / "mega.json").write_text("[]")
+    assert server.default_deck(tmp_path) == tmp_path / "mega.json"

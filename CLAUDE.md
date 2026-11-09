@@ -83,6 +83,7 @@ rstlne/
   live.py          # --live: one fixed screen, redrawn with rich
   cli.py           # play a game in the terminal
   web/             # play in a browser: server.py (FastAPI), session.py, static/; python -m rstlne.web
+  decks.py         # play decks: the mega deck, every aired and generated puzzle with its source
   tournament.py    # seeded model only runs
   bonustest.py     # the bonus round alone: every player on every bonus puzzle in a file
   calibrate.py     # picks each decision model's solve threshold from data

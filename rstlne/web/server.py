@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import random
 import threading
@@ -18,6 +19,7 @@ from pydantic import BaseModel
 
 from rstlne import settings
 from rstlne.cli import build_players, clients, log_path, parse_seats, pick_puzzles
+from rstlne.engine.puzzle import normalize
 from rstlne.engine.rules import new_game
 from rstlne.players.bot import versions
 from rstlne.players.hybrid import curves_for
@@ -26,6 +28,26 @@ from rstlne.web.session import WebGame, WebHuman
 
 STATIC = Path(__file__).parent / "static"
 MODEL_KINDS = {"llm", "decision", "hybrid"}
+
+
+def default_deck(puzzles: Path = settings.ROOT / "puzzles") -> Path:
+    """The deck the page plays: the mega deck when it's been built (python -m rstlne.decks mega), else dev.json."""
+    mega = Path(puzzles) / "mega.json"
+    return mega if mega.exists() else settings.ROOT / "puzzles" / "dev.json"
+
+
+def deck_sources(path: Path) -> dict[tuple[str, bool], dict]:
+    """Each puzzle's source in a deck file that records them (the mega deck), keyed by answer and bonus."""
+    data = json.loads(Path(path).read_text())
+    rows = data["puzzles"] if isinstance(data, dict) else data
+    out = {}
+    for p in rows:
+        if isinstance(p, dict) and p.get("source"):
+            try:
+                out[(normalize(p["answer"]), bool(p.get("bonus", False)))] = p["source"]
+            except (ValueError, KeyError):
+                continue
+    return out
 
 
 def reap(games: dict[str, WebGame], timeout: float, now: float) -> list[str]:
@@ -72,7 +94,9 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
     """The app. `replays` serves the log folder's games for replay: right on this machine, never on a shared host."""
     config = config or settings.load_config()
     rules, spec = settings.load_rules(), settings.load_wheel()
-    puzzles = settings.load_puzzles(Path(puzzles_path or settings.ROOT / "puzzles" / "dev.json"))
+    deck_path = Path(puzzles_path or default_deck())
+    puzzles = settings.load_puzzles(deck_path)
+    sources = deck_sources(deck_path)
     log_dir = Path(log_dir or settings.ROOT / "logs")
     pause = config["cli"]["model_pause"] if pause is None else pause
     solve_pause = config["cli"]["solve_pause"] if solve_pause is None else solve_pause
@@ -80,6 +104,7 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
 
     app = FastAPI(title="rstlne", docs_url=None, redoc_url=None)
     app.state.idle_seconds = float(config.get("web", {}).get("idle_minutes", 5)) * 60
+    app.state.sources, app.state.deck = sources, deck_path.name
 
     def reaper() -> None:  # every 30 seconds, stop the games nobody has watched for the idle window
         while True:
@@ -141,7 +166,9 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
         seconds = config["cli"]["bonus_solve_seconds"]
         players = [WebHuman(i, emit=lambda e: None, seconds=seconds, name=names[i]) if kind == "human" else p
                    for i, ((kind, _), p) in enumerate(zip(seats, players))]
-        game = WebGame(new_game(seed, rules, spec, main, bonus), players, path, pause=pause, solve_pause=solve_pause)
+        game_sources = {"rounds": [sources.get((p.answer, False)) for p in main], "bonus": sources.get((bonus.answer, True))}
+        game = WebGame(new_game(seed, rules, spec, main, bonus), players, path, pause=pause, solve_pause=solve_pause,
+                       sources=game_sources if any(game_sources["rounds"]) or game_sources["bonus"] else None)
         game_id = uuid.uuid4().hex[:12]
         games[game_id] = game
         game.start()

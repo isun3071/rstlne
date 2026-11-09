@@ -9,6 +9,7 @@ puzzles/generated/
 # real show puzzles: the show's content, never committed
 puzzles/*.csv
 puzzles/aired-*.json
+puzzles/mega.json
 logs/
  
 # python

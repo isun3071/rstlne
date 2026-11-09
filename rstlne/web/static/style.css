@@ -138,6 +138,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .board.solved .tile.shown { animation: solved 1.2s ease-out; }
 @keyframes solved { 0%, 100% { box-shadow: 0 0 0 1px rgba(255, 201, 74, .6); } 40% { box-shadow: 0 0 22px var(--gold); } }
 .category { text-align: center; margin-top: 14px; font-weight: 800; font-size: 17px; letter-spacing: .06em; color: var(--ink); text-shadow: 0 0 12px rgba(255, 255, 255, .25); }
+.source { text-align: center; margin-top: 6px; color: var(--teal); font-size: 13px; letter-spacing: .04em; }
 .answer { text-align: center; margin-top: 4px; color: var(--pink); font-weight: 700; letter-spacing: .08em; font-size: 13px; }
 .banner {
   position: absolute; left: 0; right: 0; bottom: -16px; margin: auto; width: fit-content; max-width: 92%;
