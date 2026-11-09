@@ -20,7 +20,10 @@ const GAP_MS = 900;      // at least this long between two moves by bots or mode
 const MISS_MS = 900;     // a letter that isn't there, a wrong answer, or a choice's outcome holds this long
 const CHOICE_MS = 1200;  // a special wedge choice or bonus picks show this long before they play out
 const ROUND_MS = 2600;   // a new round's card
-const SOLVED_MS = 5000;  // a solved board holds this long, its banner up, before the next round's card
+const SOLVED_MS = 5000;
+const BONUS_EMPTY_MS = 1800;  // the bonus board, empty, before its wheel spins
+const BONUS_FREE_MS = 1600;   // R S T L N E announced
+const BONUS_LIT_MS = 1600;    // R S T L N E lit on the board before the picks  // a solved board holds this long, its banner up, before the next round's card
 const ROUND_START_MS = 700;  // and the new round's board shows this much longer than the usual gap before its first move
 const OVER_MS = 3000;    // the last result holds this long before the final scores
 let lastMoveAt = 0;
@@ -148,6 +151,10 @@ function resetBoard() {
   $("#moves").innerHTML = ""; $("#thinking").innerHTML = ""; $("#banner").hidden = true; $("#answer").hidden = true; $("#call").hidden = true;
   $("#board").innerHTML = ""; $("#category").textContent = ""; $("#round-line").textContent = "";
   $("#controls").innerHTML = "";
+  $("#wheel-rot").innerHTML = ""; $("#wheel-rot").classList.remove("spinning"); wheelAngle = 0;
+  $("#wheel-rot").style.transform = "rotate(0deg)";
+  $("#wheel-wrap").hidden = true;  // until the new game's first table draws its own wheel
+  $("#seats").innerHTML = ""; $("#letters").innerHTML = ""; $("#wedge-line").textContent = "";
   show("game");
 }
 
@@ -238,9 +245,23 @@ function handle(ev) {
       renderTable();
       if (!ev.wheel.length && String(ev.phase).startsWith("bonus") && !bonusSpun) {
         bonusSpun = true;
-        return spinBonus();  // the picks wait for the bonus wheel to stop
+        if (replaying) { spinBonus(); break; }
+        // An empty board, a beat, the envelope wheel, then R S T L N E: the picks wait for all of it
+        drawBoard(blankRows(ev.rows), false);
+        pending.unshift({ type: "bonus_spin" }, { type: "bonus_free", table: ev });
+        return BONUS_EMPTY_MS;
       }
       break;
+    case "bonus_spin":
+      return spinBonus();
+    case "bonus_free":
+      overlay({ who: "Every bonus round starts with", text: "R  S  T  L  N  E" });
+      pending.unshift({ type: "bonus_lit", table: ev.table });
+      return BONUS_FREE_MS;
+    case "bonus_lit":
+      hideOverlay();
+      drawBoard(ev.table.rows, false);  // the free letters light up
+      return BONUS_LIT_MS;
     case "thinking":
       thinkingSeat = ev.seat;
       renderControls();
@@ -527,16 +548,19 @@ function showSolve(ev) {
 }
 
 function choiceOverlay(ev) {
-  const who = (verb) => doing(ev.seat, verb);
+  const on = (wedge) => `${seatName(ev.seat)} · ${wedge}`;  // the caption: who, and which wedge; the big text: what they did
   switch (ev.kind) {
-    case "keep": return { who: who("keeps"), text: "The money" };
-    case "flip": return { who: who("flips"), text: "The Mystery wedge…" };
-    case "play": return { who: who("rides"), text: "The Express!" };
-    case "pass": return { who: who("passes on"), text: "The Express" };
-    case "use_wild": return { who: who(ev.outcome === "used_wild" ? "spends" : "keeps"), text: "The Wild Card" };
+    case "keep": {
+      const amount = (ev.text.match(/kept the (\$[\d,]+)/) || [])[1];
+      return { who: on("Mystery wedge"), text: amount ? `Kept ${amount}` : "Kept" };
+    }
+    case "flip": return { who: on("Mystery wedge"), text: "Flips!" };
+    case "play": return { who: on("Express"), text: "Rides!" };
+    case "pass": return { who: on("Express"), text: "Passes" };
+    case "use_wild": return { who: on("Wild Card"), text: ev.outcome === "used_wild" ? "Spent!" : "Kept" };
     case "bonus_picks": {
       const m = ev.text.match(/picked (.+?) and ([A-Z])\./);
-      return m ? { who: who("picks"), text: `${m[1]}  ${m[2]}` } : null;
+      return m ? { who: doing(ev.seat, "picks"), text: `${m[1]}  ${m[2]}` } : null;
     }
   }
   return null;
@@ -622,6 +646,11 @@ function drawBonusWheel() {
   const g = $("#wheel-rot");
   g.innerHTML = svg;
   g.style.transform = `rotate(${wheelAngle}deg)`;
+}
+
+// The board with every letter hidden: the bonus puzzle before R S T L N E go up. Punctuation shows, as on the board.
+function blankRows(rows) {
+  return rows.map((row) => row.map((ch) => (ch === " " || !/[A-Z]/.test(ch) ? ch : "_")));
 }
 
 function spinBonus() {
