@@ -61,6 +61,7 @@ The grading runs used GPT-6.1 Sol, GPT-6 Luna, Claude Haiku 5.5, and DeepSeek V4
 
 ```
 uv run python -m rstlne.decks mega   # once: the mega deck, every aired and generated puzzle (stays out of git)
+uv run python -m rstlne.decks aired  # or the aired puzzles alone: puzzles/aired-all.json (stays out of git)
 uv run python -m rstlne.web          # then open http://127.0.0.1:8000
 ```
 

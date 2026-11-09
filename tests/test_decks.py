@@ -77,3 +77,11 @@ def test_the_mega_deck_loads_and_deals_by_round(sources, tmp_path):
     puzzles = settings.load_puzzles(path)
     pools = round_pools([p for p in puzzles if not p.bonus], 4)
     assert pools is not None and all(pools)
+
+
+def test_the_aired_deck_holds_only_aired_puzzles(sources):
+    from rstlne.decks import build_aired
+    archive, _ = sources
+    deck = build_aired(archive)
+    assert deck["name"] == "aired" and {p["source"]["kind"] for p in deck["puzzles"]} == {"aired"}
+    assert deck["counts"]["generated_main"] == 0 and deck["counts"]["aired_main"] == 4 and deck["counts"]["aired_bonus"] == 1

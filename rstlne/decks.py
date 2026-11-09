@@ -1,6 +1,8 @@
-"""Building play decks. The mega deck joins every aired puzzle in the archive with every generated puzzle:
+"""Building play decks. The mega deck joins every aired puzzle in the archive with every generated puzzle, and the
+aired deck holds the aired puzzles alone:
 
-    uv run python -m rstlne.decks mega --out puzzles/mega.json
+    uv run python -m rstlne.decks mega    # puzzles/mega.json
+    uv run python -m rstlne.decks aired   # puzzles/aired-all.json
 
 Each puzzle keeps where it came from: an aired puzzle its airings (season, episode, air date, round), a
 generated one the decks it's in. The web page shows that once a round is over. The mega deck holds aired
@@ -49,7 +51,7 @@ def _round_for(answer: str) -> int:
     return int(hashlib.sha256(answer.encode()).hexdigest(), 16) % 3 + 1
 
 
-def build_mega(archive: Path, generated: Sequence[Path]) -> dict:
+def build_mega(archive: Path, generated: Sequence[Path], name: str = "mega") -> dict:
     """The mega deck from the aired archive (a CSV with Puzzle, Category, Date, Episode_Number, Round) and
     generated deck files. Toss-ups, empty rows, answers that don't normalize, and answers that don't fit the board are
     left out. An answer in both keeps its aired copy; one in several generated decks lists them all."""
@@ -126,7 +128,12 @@ def build_mega(archive: Path, generated: Sequence[Path]) -> dict:
     out = list(puzzles.values())
     counts = {f"{kind}_{part}": sum(1 for p in out if p["source"]["kind"] == kind and p["bonus"] == (part == "bonus"))
               for kind in ("aired", "generated") for part in ("main", "bonus")}
-    return {"name": "mega", "built_from": [str(archive), *(str(p) for p in generated)], "counts": counts, "puzzles": out}
+    return {"name": name, "built_from": [str(archive), *(str(p) for p in generated)], "counts": counts, "puzzles": out}
+
+
+def build_aired(archive: Path) -> dict:
+    """Every aired puzzle in the archive and nothing generated: the mega deck's aired half, with the same rules and sources."""
+    return build_mega(archive, [], name="aired")
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -136,9 +143,15 @@ def main(argv: Sequence[str] | None = None) -> None:
     m.add_argument("--archive", default=str(settings.ROOT / "puzzles" / "all_recent_puzzles_ktebbe.csv"))
     m.add_argument("--generated", nargs="*", help="generated deck files (default: every one in puzzles/generated/)")
     m.add_argument("--out", default=str(settings.ROOT / "puzzles" / "mega.json"))
+    a = jobs.add_parser("aired", help="every aired puzzle in the archive, with its airings, and nothing generated")
+    a.add_argument("--archive", default=str(settings.ROOT / "puzzles" / "all_recent_puzzles_ktebbe.csv"))
+    a.add_argument("--out", default=str(settings.ROOT / "puzzles" / "aired-all.json"))
     args = parser.parse_args(argv)
-    generated = [Path(p) for p in args.generated] if args.generated else sorted((settings.ROOT / "puzzles" / "generated").glob("*.json"))
-    deck = build_mega(Path(args.archive), generated)
+    if args.job == "aired":
+        deck = build_aired(Path(args.archive))
+    else:
+        generated = [Path(p) for p in args.generated] if args.generated else sorted((settings.ROOT / "puzzles" / "generated").glob("*.json"))
+        deck = build_mega(Path(args.archive), generated)
     Path(args.out).write_text(json.dumps(deck))
     print(f"wrote {args.out}: {len(deck['puzzles'])} puzzles; " + ", ".join(f"{k.replace('_', ' ')} {v:,}" for k, v in deck["counts"].items()))
 
