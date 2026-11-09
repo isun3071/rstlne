@@ -1,8 +1,8 @@
 {
  "meta": {
   "phase": "v6",
-  "made": "2026-11-07T19:55:30+00:00",
-  "commit": "3bc103a",
+  "made": "2026-11-09T22:50:49+00:00",
+  "commit": "84734ad",
   "lineups": [
    "2",
    "2t",
@@ -11,6 +11,7 @@
    "3c",
    "3d",
    "3r",
+   "3m",
    "3f",
    "6a",
    "6b",
@@ -233,6 +234,107 @@
       "median": 742.0,
       "p10": 300,
       "p90": 1371
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 21,
+       "called letter in a blank": 3
+      },
+      "wrong_solves_total": 24,
+      "stages": {
+       "open": {
+        "consonants": 1318,
+        "hits": 1190,
+        "copies": 2515,
+        "vowels": 506,
+        "solve_tries": 46,
+        "solves_right": 44,
+        "hit_rate": 0.9029,
+        "copies_per_call": 1.9082,
+        "solve_accuracy": 0.9565
+       },
+       "middle": {
+        "consonants": 838,
+        "hits": 819,
+        "copies": 1504,
+        "vowels": 162,
+        "solve_tries": 309,
+        "solves_right": 294,
+        "hit_rate": 0.9773,
+        "copies_per_call": 1.7947,
+        "solve_accuracy": 0.9515
+       },
+       "late": {
+        "consonants": 537,
+        "hits": 522,
+        "copies": 632,
+        "vowels": 23,
+        "solve_tries": 367,
+        "solves_right": 360,
+        "hit_rate": 0.9721,
+        "copies_per_call": 1.1769,
+        "solve_accuracy": 0.9809
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 190,
+        "share": 0.4948,
+        "median_shown": 0.5
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 273,
+        "share": 0.484,
+        "median_shown": 0.5
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 155,
+        "share": 0.5065,
+        "median_shown": 0.48
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 80,
+        "share": 0.4301,
+        "median_shown": 0.5357
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 23,
+        "flip": 35,
+        "flipped_bankrupt": 25,
+        "flipped_prize": 10
+       },
+       "express": {
+        "play": 27,
+        "ride_solved": 25,
+        "ride_bust": 2
+       },
+       "wild": {
+        "kept": 187,
+        "used": 14
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 17934376,
+       "cached_tokens": 14829899,
+       "cached_share": 0.8269,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 804.7528,
+        "median": 742.0
+       },
+       "cost_cv": 0.3823
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "bot #1": {
@@ -412,7 +514,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 10
+      },
+      "wrong_solves_total": 10,
+      "stages": {
+       "open": {
+        "consonants": 1351,
+        "hits": 1162,
+        "copies": 2344,
+        "vowels": 128,
+        "solve_tries": 16,
+        "solves_right": 11,
+        "hit_rate": 0.8601,
+        "copies_per_call": 1.735,
+        "solve_accuracy": 0.6875
+       },
+       "middle": {
+        "consonants": 827,
+        "hits": 777,
+        "copies": 1290,
+        "vowels": 205,
+        "solve_tries": 75,
+        "solves_right": 75,
+        "hit_rate": 0.9395,
+        "copies_per_call": 1.5599,
+        "solve_accuracy": 1.0
+       },
+       "late": {
+        "consonants": 565,
+        "hits": 520,
+        "copies": 652,
+        "vowels": 160,
+        "solve_tries": 289,
+        "solves_right": 284,
+        "hit_rate": 0.9204,
+        "copies_per_call": 1.154,
+        "solve_accuracy": 0.9827
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 100,
+        "share": 0.2604,
+        "median_shown": 0.6154
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 141,
+        "share": 0.25,
+        "median_shown": 0.619
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 79,
+        "share": 0.2582,
+        "median_shown": 0.625
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 50,
+        "share": 0.2688,
+        "median_shown": 0.6956
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 43,
+        "flipped_bankrupt": 26,
+        "keep": 14,
+        "flipped_prize": 17
+       },
+       "express": {
+        "play": 12,
+        "ride_solved": 11,
+        "pass": 3,
+        "ride_bust": 1
+       },
+       "wild": {
+        "kept": 101,
+        "used": 36
+       },
+       "million": {
+        "won": 1
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 234,
+       "won": 0.6965811965811965,
+       "mean_gain": 2704.9079754601225,
+       "median_gain": 2200,
+       "bank_when_lost": 1619.0140845070423,
+       "lost_to": {
+        "llm": 36,
+        "bot": 35
+       },
+       "lost_wheel": {
+        "missing": 6,
+        "lose_a_turn": 17,
+        "bankrupt": 45,
+        "flipped_bankrupt": 3
+       },
+       "per_game": 0.65
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -591,7 +813,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 8
+      },
+      "wrong_solves_total": 8,
+      "stages": {
+       "open": {
+        "consonants": 1371,
+        "hits": 1173,
+        "copies": 2392,
+        "vowels": 123,
+        "solve_tries": 11,
+        "solves_right": 8,
+        "hit_rate": 0.8556,
+        "copies_per_call": 1.7447,
+        "solve_accuracy": 0.7273
+       },
+       "middle": {
+        "consonants": 806,
+        "hits": 754,
+        "copies": 1266,
+        "vowels": 206,
+        "solve_tries": 78,
+        "solves_right": 77,
+        "hit_rate": 0.9355,
+        "copies_per_call": 1.5707,
+        "solve_accuracy": 0.9872
+       },
+       "late": {
+        "consonants": 609,
+        "hits": 567,
+        "copies": 723,
+        "vowels": 160,
+        "solve_tries": 291,
+        "solves_right": 287,
+        "hit_rate": 0.931,
+        "copies_per_call": 1.1872,
+        "solve_accuracy": 0.9863
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 94,
+        "share": 0.2448,
+        "median_shown": 0.6154
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 150,
+        "share": 0.266,
+        "median_shown": 0.6151
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 72,
+        "share": 0.2353,
+        "median_shown": 0.612
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 56,
+        "share": 0.3011,
+        "median_shown": 0.7143
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 44,
+        "flipped_bankrupt": 24,
+        "flipped_prize": 20,
+        "keep": 15
+       },
+       "express": {
+        "play": 13,
+        "ride_solved": 12,
+        "pass": 1,
+        "ride_bust": 1
+       },
+       "wild": {
+        "kept": 99,
+        "used": 38
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 242,
+       "won": 0.6818181818181818,
+       "mean_gain": 2725.151515151515,
+       "median_gain": 2100,
+       "bank_when_lost": 1777.2727272727273,
+       "lost_to": {
+        "llm": 40,
+        "bot": 37
+       },
+       "lost_wheel": {
+        "bankrupt": 47,
+        "lose_a_turn": 23,
+        "missing": 4,
+        "flipped_bankrupt": 3
+       },
+       "per_game": 0.6722
+      }
+     }
     }
    },
    "generated_by": {
@@ -830,6 +1172,109 @@
       "median": 1183.5,
       "p10": 518,
       "p90": 1967
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 10,
+       "fits, but wrong": 34,
+       "contradicts a shown letter": 1,
+       "wrong shape": 1
+      },
+      "wrong_solves_total": 46,
+      "stages": {
+       "open": {
+        "consonants": 1210,
+        "hits": 1095,
+        "copies": 2354,
+        "vowels": 584,
+        "solve_tries": 78,
+        "solves_right": 66,
+        "hit_rate": 0.905,
+        "copies_per_call": 1.9455,
+        "solve_accuracy": 0.8462
+       },
+       "middle": {
+        "consonants": 725,
+        "hits": 714,
+        "copies": 1398,
+        "vowels": 183,
+        "solve_tries": 328,
+        "solves_right": 307,
+        "hit_rate": 0.9848,
+        "copies_per_call": 1.9283,
+        "solve_accuracy": 0.936
+       },
+       "late": {
+        "consonants": 417,
+        "hits": 408,
+        "copies": 522,
+        "vowels": 29,
+        "solve_tries": 378,
+        "solves_right": 365,
+        "hit_rate": 0.9784,
+        "copies_per_call": 1.2518,
+        "solve_accuracy": 0.9656
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 207,
+        "share": 0.5391,
+        "median_shown": 0.5
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 275,
+        "share": 0.4876,
+        "median_shown": 0.5
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 163,
+        "share": 0.5327,
+        "median_shown": 0.4615
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 93,
+        "share": 0.5,
+        "median_shown": 0.5172
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 38,
+        "flipped_bankrupt": 22,
+        "keep": 15,
+        "flipped_prize": 16
+       },
+       "express": {
+        "play": 16,
+        "ride_solved": 16,
+        "pass": 7
+       },
+       "wild": {
+        "kept": 178,
+        "used": 11
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 16975035,
+       "cached_tokens": 13920297,
+       "cached_share": 0.82,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 1248.8972,
+        "median": 1183.5
+       },
+       "cost_cv": 0.4413
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "bot #1": {
@@ -1009,7 +1454,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 7
+      },
+      "wrong_solves_total": 7,
+      "stages": {
+       "open": {
+        "consonants": 1319,
+        "hits": 1136,
+        "copies": 2307,
+        "vowels": 126,
+        "solve_tries": 10,
+        "solves_right": 8,
+        "hit_rate": 0.8613,
+        "copies_per_call": 1.7491,
+        "solve_accuracy": 0.8
+       },
+       "middle": {
+        "consonants": 817,
+        "hits": 768,
+        "copies": 1309,
+        "vowels": 187,
+        "solve_tries": 71,
+        "solves_right": 71,
+        "hit_rate": 0.94,
+        "copies_per_call": 1.6022,
+        "solve_accuracy": 1.0
+       },
+       "late": {
+        "consonants": 575,
+        "hits": 540,
+        "copies": 687,
+        "vowels": 159,
+        "solve_tries": 276,
+        "solves_right": 271,
+        "hit_rate": 0.9391,
+        "copies_per_call": 1.1948,
+        "solve_accuracy": 0.9819
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 86,
+        "share": 0.224,
+        "median_shown": 0.645
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 145,
+        "share": 0.2571,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 73,
+        "share": 0.2386,
+        "median_shown": 0.6087
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 46,
+        "share": 0.2473,
+        "median_shown": 0.6886
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 36,
+        "flipped_bankrupt": 20,
+        "flipped_prize": 16,
+        "keep": 11
+       },
+       "express": {
+        "play": 13,
+        "ride_solved": 12,
+        "pass": 1,
+        "ride_bust": 1
+       },
+       "wild": {
+        "kept": 116,
+        "used": 34
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 231,
+       "won": 0.6320346320346321,
+       "mean_gain": 2767.8082191780823,
+       "median_gain": 2400.0,
+       "bank_when_lost": 1899.4117647058824,
+       "lost_to": {
+        "llm": 53,
+        "bot": 32
+       },
+       "lost_wheel": {
+        "bankrupt": 54,
+        "lose_a_turn": 26,
+        "missing": 2,
+        "flipped_bankrupt": 3
+       },
+       "per_game": 0.6417
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -1188,7 +1753,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 10
+      },
+      "wrong_solves_total": 10,
+      "stages": {
+       "open": {
+        "consonants": 1325,
+        "hits": 1142,
+        "copies": 2311,
+        "vowels": 129,
+        "solve_tries": 13,
+        "solves_right": 9,
+        "hit_rate": 0.8619,
+        "copies_per_call": 1.7442,
+        "solve_accuracy": 0.6923
+       },
+       "middle": {
+        "consonants": 843,
+        "hits": 793,
+        "copies": 1311,
+        "vowels": 198,
+        "solve_tries": 71,
+        "solves_right": 69,
+        "hit_rate": 0.9407,
+        "copies_per_call": 1.5552,
+        "solve_accuracy": 0.9718
+       },
+       "late": {
+        "consonants": 579,
+        "hits": 540,
+        "copies": 691,
+        "vowels": 155,
+        "solve_tries": 278,
+        "solves_right": 274,
+        "hit_rate": 0.9326,
+        "copies_per_call": 1.1934,
+        "solve_accuracy": 0.9856
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 91,
+        "share": 0.237,
+        "median_shown": 0.6471
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 144,
+        "share": 0.2553,
+        "median_shown": 0.6111
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 70,
+        "share": 0.2288,
+        "median_shown": 0.612
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 47,
+        "share": 0.2527,
+        "median_shown": 0.7037
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 19,
+        "flip": 37,
+        "flipped_bankrupt": 19,
+        "flipped_prize": 18
+       },
+       "express": {
+        "play": 14,
+        "ride_solved": 13,
+        "pass": 2,
+        "ride_bust": 1
+       },
+       "wild": {
+        "kept": 113,
+        "used": 36
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 241,
+       "won": 0.6431535269709544,
+       "mean_gain": 2981.935483870968,
+       "median_gain": 2150,
+       "bank_when_lost": 1847.093023255814,
+       "lost_to": {
+        "llm": 59,
+        "bot": 27
+       },
+       "lost_wheel": {
+        "bankrupt": 57,
+        "lose_a_turn": 21,
+        "missing": 5,
+        "flipped_bankrupt": 3
+       },
+       "per_game": 0.6694
+      }
+     }
     }
    },
    "generated_by": {
@@ -1425,6 +2110,137 @@
       "median": 7799.5,
       "p10": 2961,
       "p90": 13800
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 14
+      },
+      "wrong_solves_total": 14,
+      "stages": {
+       "open": {
+        "consonants": 1527,
+        "hits": 1319,
+        "copies": 2671,
+        "vowels": 153,
+        "solve_tries": 13,
+        "solves_right": 8,
+        "hit_rate": 0.8638,
+        "copies_per_call": 1.7492,
+        "solve_accuracy": 0.6154
+       },
+       "middle": {
+        "consonants": 1014,
+        "hits": 955,
+        "copies": 1564,
+        "vowels": 189,
+        "solve_tries": 151,
+        "solves_right": 147,
+        "hit_rate": 0.9418,
+        "copies_per_call": 1.5424,
+        "solve_accuracy": 0.9735
+       },
+       "late": {
+        "consonants": 750,
+        "hits": 730,
+        "copies": 870,
+        "vowels": 76,
+        "solve_tries": 417,
+        "solves_right": 412,
+        "hit_rate": 0.9733,
+        "copies_per_call": 1.16,
+        "solve_accuracy": 0.988
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 165,
+        "share": 0.4297,
+        "median_shown": 0.6154
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 220,
+        "share": 0.3901,
+        "median_shown": 0.619
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 114,
+        "share": 0.3725,
+        "median_shown": 0.5652
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 68,
+        "share": 0.3656,
+        "median_shown": 0.603
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 47,
+        "flipped_prize": 16,
+        "flipped_bankrupt": 31,
+        "keep": 14
+       },
+       "express": {
+        "play": 23,
+        "ride_solved": 22,
+        "pass": 3,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 47,
+        "kept": 111
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 1816442,
+       "cached_tokens": 0,
+       "cached_share": 0.0,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 8241.2667,
+        "median": 7799.5
+       },
+       "cost_cv": 0.5111
+      },
+      "hybrid_asks": {
+       "asks": 4868,
+       "statuses": {
+        "not solvable": 2380,
+        "used": 2389,
+        "doesn't fit": 99
+       },
+       "fitting_share": 0.4908,
+       "first_fitting_answer_shown": {
+        "n": 781,
+        "mean": 0.3751,
+        "median": 0.3636
+       }
+      },
+      "milking": {
+       "rounds": 452,
+       "won": 0.6902654867256637,
+       "mean_gain": 2628.6858974358975,
+       "median_gain": 1900.0,
+       "bank_when_lost": 1599.642857142857,
+       "lost_to": {
+        "bot": 140
+       },
+       "lost_wheel": {
+        "lose_a_turn": 35,
+        "bankrupt": 90,
+        "flipped_bankrupt": 11,
+        "missing": 3,
+        "wrong_solve": 1
+       },
+       "per_game": 1.2556
+      }
      }
     },
     "bot #1": {
@@ -1604,7 +2420,125 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 12
+      },
+      "wrong_solves_total": 12,
+      "stages": {
+       "open": {
+        "consonants": 1481,
+        "hits": 1270,
+        "copies": 2575,
+        "vowels": 153,
+        "solve_tries": 14,
+        "solves_right": 10,
+        "hit_rate": 0.8575,
+        "copies_per_call": 1.7387,
+        "solve_accuracy": 0.7143
+       },
+       "middle": {
+        "consonants": 996,
+        "hits": 910,
+        "copies": 1533,
+        "vowels": 255,
+        "solve_tries": 94,
+        "solves_right": 90,
+        "hit_rate": 0.9137,
+        "copies_per_call": 1.5392,
+        "solve_accuracy": 0.9574
+       },
+       "late": {
+        "consonants": 707,
+        "hits": 658,
+        "copies": 834,
+        "vowels": 177,
+        "solve_tries": 340,
+        "solves_right": 336,
+        "hit_rate": 0.9307,
+        "copies_per_call": 1.1796,
+        "solve_accuracy": 0.9882
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 106,
+        "share": 0.276,
+        "median_shown": 0.625
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 175,
+        "share": 0.3103,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 96,
+        "share": 0.3137,
+        "median_shown": 0.612
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 59,
+        "share": 0.3172,
+        "median_shown": 0.6897
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 43,
+        "flipped_bankrupt": 26,
+        "flipped_prize": 17,
+        "keep": 17
+       },
+       "express": {
+        "play": 18,
+        "ride_solved": 17,
+        "pass": 4,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 47,
+        "kept": 111
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 276,
+       "won": 0.6557971014492754,
+       "mean_gain": 2557.182320441989,
+       "median_gain": 1700,
+       "bank_when_lost": 1838.421052631579,
+       "lost_to": {
+        "bot": 45,
+        "hybrid": 50
+       },
+       "lost_wheel": {
+        "bankrupt": 59,
+        "missing": 5,
+        "lose_a_turn": 27,
+        "flipped_bankrupt": 4
+       },
+       "per_game": 0.7667
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -1783,7 +2717,125 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 11
+      },
+      "wrong_solves_total": 11,
+      "stages": {
+       "open": {
+        "consonants": 1498,
+        "hits": 1288,
+        "copies": 2599,
+        "vowels": 154,
+        "solve_tries": 14,
+        "solves_right": 10,
+        "hit_rate": 0.8598,
+        "copies_per_call": 1.735,
+        "solve_accuracy": 0.7143
+       },
+       "middle": {
+        "consonants": 1008,
+        "hits": 929,
+        "copies": 1566,
+        "vowels": 257,
+        "solve_tries": 89,
+        "solves_right": 85,
+        "hit_rate": 0.9216,
+        "copies_per_call": 1.5536,
+        "solve_accuracy": 0.9551
+       },
+       "late": {
+        "consonants": 697,
+        "hits": 651,
+        "copies": 825,
+        "vowels": 181,
+        "solve_tries": 345,
+        "solves_right": 342,
+        "hit_rate": 0.934,
+        "copies_per_call": 1.1836,
+        "solve_accuracy": 0.9913
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 113,
+        "share": 0.2943,
+        "median_shown": 0.625
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 169,
+        "share": 0.2996,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 96,
+        "share": 0.3137,
+        "median_shown": 0.6087
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 59,
+        "share": 0.3172,
+        "median_shown": 0.6571
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 47,
+        "flipped_bankrupt": 30,
+        "flipped_prize": 17,
+        "keep": 17
+       },
+       "express": {
+        "play": 19,
+        "ride_solved": 18,
+        "pass": 5,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 45,
+        "kept": 108
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 286,
+       "won": 0.6678321678321678,
+       "mean_gain": 2659.1623036649216,
+       "median_gain": 1800,
+       "bank_when_lost": 1902.1052631578948,
+       "lost_to": {
+        "bot": 43,
+        "hybrid": 52
+       },
+       "lost_wheel": {
+        "bankrupt": 59,
+        "missing": 6,
+        "lose_a_turn": 25,
+        "flipped_bankrupt": 5
+       },
+       "per_game": 0.7944
+      }
+     }
     }
    },
    "generated_by": {
@@ -2023,6 +3075,109 @@
       "median": 3368.0,
       "p10": 1254,
       "p90": 6140
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 59,
+       "called letter in a blank": 143,
+       "contradicts a shown letter": 21,
+       "wrong shape": 6
+      },
+      "wrong_solves_total": 229,
+      "stages": {
+       "open": {
+        "consonants": 1150,
+        "hits": 951,
+        "copies": 1853,
+        "vowels": 451,
+        "solve_tries": 102,
+        "solves_right": 47,
+        "hit_rate": 0.827,
+        "copies_per_call": 1.6113,
+        "solve_accuracy": 0.4608
+       },
+       "middle": {
+        "consonants": 366,
+        "hits": 314,
+        "copies": 546,
+        "vowels": 345,
+        "solve_tries": 361,
+        "solves_right": 245,
+        "hit_rate": 0.8579,
+        "copies_per_call": 1.4918,
+        "solve_accuracy": 0.6787
+       },
+       "late": {
+        "consonants": 118,
+        "hits": 102,
+        "copies": 136,
+        "vowels": 57,
+        "solve_tries": 322,
+        "solves_right": 264,
+        "hit_rate": 0.8644,
+        "copies_per_call": 1.1525,
+        "solve_accuracy": 0.8199
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 138,
+        "share": 0.3594,
+        "median_shown": 0.5
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 216,
+        "share": 0.383,
+        "median_shown": 0.4762
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 133,
+        "share": 0.4346,
+        "median_shown": 0.4583
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 69,
+        "share": 0.371,
+        "median_shown": 0.5
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 21,
+        "flipped_prize": 4,
+        "flipped_bankrupt": 17,
+        "keep": 15
+       },
+       "express": {
+        "pass": 13,
+        "play": 2,
+        "ride_solved": 2
+       },
+       "wild": {
+        "used": 34,
+        "kept": 12
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 14420852,
+       "cached_tokens": 11242357,
+       "cached_share": 0.7796,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 3547.8028,
+        "median": 3368.0
+       },
+       "cost_cv": 0.5288
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "bot #1": {
@@ -2202,7 +3357,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 8
+      },
+      "wrong_solves_total": 8,
+      "stages": {
+       "open": {
+        "consonants": 1434,
+        "hits": 1216,
+        "copies": 2461,
+        "vowels": 169,
+        "solve_tries": 11,
+        "solves_right": 11,
+        "hit_rate": 0.848,
+        "copies_per_call": 1.7162,
+        "solve_accuracy": 1.0
+       },
+       "middle": {
+        "consonants": 998,
+        "hits": 937,
+        "copies": 1615,
+        "vowels": 239,
+        "solve_tries": 91,
+        "solves_right": 91,
+        "hit_rate": 0.9389,
+        "copies_per_call": 1.6182,
+        "solve_accuracy": 1.0
+       },
+       "late": {
+        "consonants": 786,
+        "hits": 734,
+        "copies": 987,
+        "vowels": 197,
+        "solve_tries": 342,
+        "solves_right": 334,
+        "hit_rate": 0.9338,
+        "copies_per_call": 1.2557,
+        "solve_accuracy": 0.9766
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 113,
+        "share": 0.2943,
+        "median_shown": 0.6154
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 172,
+        "share": 0.305,
+        "median_shown": 0.619
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 90,
+        "share": 0.2941,
+        "median_shown": 0.6154
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 61,
+        "share": 0.328,
+        "median_shown": 0.7812
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 19,
+        "flip": 45,
+        "flipped_bankrupt": 25,
+        "flipped_prize": 20
+       },
+       "express": {
+        "pass": 6,
+        "play": 10,
+        "ride_solved": 7,
+        "ride_bust": 3
+       },
+       "wild": {
+        "kept": 136,
+        "used": 48
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 293,
+       "won": 0.6177474402730375,
+       "mean_gain": 2599.723756906077,
+       "median_gain": 2000,
+       "bank_when_lost": 1432.142857142857,
+       "lost_to": {
+        "bot": 46,
+        "llm": 66
+       },
+       "lost_wheel": {
+        "bankrupt": 77,
+        "lose_a_turn": 24,
+        "flipped_bankrupt": 6,
+        "missing": 5
+       },
+       "per_game": 0.8139
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -2381,7 +3656,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 10
+      },
+      "wrong_solves_total": 10,
+      "stages": {
+       "open": {
+        "consonants": 1538,
+        "hits": 1342,
+        "copies": 2717,
+        "vowels": 175,
+        "solve_tries": 12,
+        "solves_right": 11,
+        "hit_rate": 0.8726,
+        "copies_per_call": 1.7666,
+        "solve_accuracy": 0.9167
+       },
+       "middle": {
+        "consonants": 980,
+        "hits": 914,
+        "copies": 1585,
+        "vowels": 270,
+        "solve_tries": 94,
+        "solves_right": 90,
+        "hit_rate": 0.9327,
+        "copies_per_call": 1.6173,
+        "solve_accuracy": 0.9574
+       },
+       "late": {
+        "consonants": 760,
+        "hits": 706,
+        "copies": 933,
+        "vowels": 212,
+        "solve_tries": 352,
+        "solves_right": 347,
+        "hit_rate": 0.9289,
+        "copies_per_call": 1.2276,
+        "solve_accuracy": 0.9858
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 133,
+        "share": 0.3464,
+        "median_shown": 0.6471
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 176,
+        "share": 0.3121,
+        "median_shown": 0.6364
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 83,
+        "share": 0.2712,
+        "median_shown": 0.6087
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 56,
+        "share": 0.3011,
+        "median_shown": 0.7037
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 21,
+        "flip": 47,
+        "flipped_prize": 24,
+        "flipped_bankrupt": 23
+       },
+       "express": {
+        "play": 10,
+        "ride_solved": 8,
+        "pass": 5,
+        "ride_bust": 2
+       },
+       "wild": {
+        "used": 48,
+        "kept": 122
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 292,
+       "won": 0.6506849315068494,
+       "mean_gain": 2725.7894736842104,
+       "median_gain": 2050.0,
+       "bank_when_lost": 1840.686274509804,
+       "lost_to": {
+        "bot": 36,
+        "llm": 66
+       },
+       "lost_wheel": {
+        "bankrupt": 68,
+        "lose_a_turn": 27,
+        "flipped_bankrupt": 4,
+        "missing": 3
+       },
+       "per_game": 0.8111
+      }
+     }
     }
    },
    "generated_by": {
@@ -2623,6 +4018,110 @@
       "median": 17482.0,
       "p10": 3315,
       "p90": 48939
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 50,
+       "called letter in a blank": 36,
+       "contradicts a shown letter": 4,
+       "wrong shape": 4,
+       "already ruled wrong": 1
+      },
+      "wrong_solves_total": 95,
+      "stages": {
+       "open": {
+        "consonants": 1254,
+        "hits": 1032,
+        "copies": 2065,
+        "vowels": 259,
+        "solve_tries": 147,
+        "solves_right": 96,
+        "hit_rate": 0.823,
+        "copies_per_call": 1.6467,
+        "solve_accuracy": 0.6531
+       },
+       "middle": {
+        "consonants": 380,
+        "hits": 349,
+        "copies": 638,
+        "vowels": 306,
+        "solve_tries": 291,
+        "solves_right": 263,
+        "hit_rate": 0.9184,
+        "copies_per_call": 1.6789,
+        "solve_accuracy": 0.9038
+       },
+       "late": {
+        "consonants": 281,
+        "hits": 254,
+        "copies": 332,
+        "vowels": 111,
+        "solve_tries": 298,
+        "solves_right": 282,
+        "hit_rate": 0.9039,
+        "copies_per_call": 1.1815,
+        "solve_accuracy": 0.9463
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 177,
+        "share": 0.4609,
+        "median_shown": 0.4706
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 235,
+        "share": 0.4167,
+        "median_shown": 0.4762
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 155,
+        "share": 0.5065,
+        "median_shown": 0.4167
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 74,
+        "share": 0.3978,
+        "median_shown": 0.448
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 19,
+        "flip": 27,
+        "flipped_bankrupt": 17,
+        "flipped_prize": 10
+       },
+       "express": {
+        "pass": 7,
+        "play": 2,
+        "ride_solved": 2
+       },
+       "wild": {
+        "used": 36,
+        "kept": 16
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 43012083,
+       "cached_tokens": 40424576,
+       "cached_share": 0.9398,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 22492.8333,
+        "median": 17482.0
+       },
+       "cost_cv": 0.903
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "bot #1": {
@@ -2802,7 +4301,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 9
+      },
+      "wrong_solves_total": 9,
+      "stages": {
+       "open": {
+        "consonants": 1514,
+        "hits": 1268,
+        "copies": 2557,
+        "vowels": 159,
+        "solve_tries": 16,
+        "solves_right": 11,
+        "hit_rate": 0.8375,
+        "copies_per_call": 1.6889,
+        "solve_accuracy": 0.6875
+       },
+       "middle": {
+        "consonants": 849,
+        "hits": 785,
+        "copies": 1363,
+        "vowels": 243,
+        "solve_tries": 80,
+        "solves_right": 80,
+        "hit_rate": 0.9246,
+        "copies_per_call": 1.6054,
+        "solve_accuracy": 1.0
+       },
+       "late": {
+        "consonants": 656,
+        "hits": 614,
+        "copies": 826,
+        "vowels": 158,
+        "solve_tries": 321,
+        "solves_right": 317,
+        "hit_rate": 0.936,
+        "copies_per_call": 1.2591,
+        "solve_accuracy": 0.9875
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 113,
+        "share": 0.2943,
+        "median_shown": 0.625
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 169,
+        "share": 0.2996,
+        "median_shown": 0.6111
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 77,
+        "share": 0.2516,
+        "median_shown": 0.6154
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 49,
+        "share": 0.2634,
+        "median_shown": 0.7143
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 48,
+        "flipped_bankrupt": 27,
+        "keep": 15,
+        "flipped_prize": 21
+       },
+       "express": {
+        "pass": 4,
+        "play": 14,
+        "ride_solved": 13,
+        "ride_bust": 1
+       },
+       "wild": {
+        "kept": 112,
+        "used": 42
+       },
+       "million": {
+        "won": 1
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 261,
+       "won": 0.6436781609195402,
+       "mean_gain": 2755.059523809524,
+       "median_gain": 2275.0,
+       "bank_when_lost": 1753.225806451613,
+       "lost_to": {
+        "llm": 62,
+        "bot": 31
+       },
+       "lost_wheel": {
+        "bankrupt": 66,
+        "lose_a_turn": 18,
+        "missing": 4,
+        "flipped_bankrupt": 5
+       },
+       "per_game": 0.725
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -2981,7 +4600,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 8
+      },
+      "wrong_solves_total": 8,
+      "stages": {
+       "open": {
+        "consonants": 1541,
+        "hits": 1313,
+        "copies": 2633,
+        "vowels": 163,
+        "solve_tries": 10,
+        "solves_right": 8,
+        "hit_rate": 0.852,
+        "copies_per_call": 1.7086,
+        "solve_accuracy": 0.8
+       },
+       "middle": {
+        "consonants": 876,
+        "hits": 827,
+        "copies": 1404,
+        "vowels": 251,
+        "solve_tries": 97,
+        "solves_right": 95,
+        "hit_rate": 0.9441,
+        "copies_per_call": 1.6027,
+        "solve_accuracy": 0.9794
+       },
+       "late": {
+        "consonants": 663,
+        "hits": 622,
+        "copies": 811,
+        "vowels": 141,
+        "solve_tries": 292,
+        "solves_right": 288,
+        "hit_rate": 0.9382,
+        "copies_per_call": 1.2232,
+        "solve_accuracy": 0.9863
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 94,
+        "share": 0.2448,
+        "median_shown": 0.5882
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 160,
+        "share": 0.2837,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 74,
+        "share": 0.2418,
+        "median_shown": 0.6
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 63,
+        "share": 0.3387,
+        "median_shown": 0.7037
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 18,
+        "flip": 46,
+        "flipped_prize": 19,
+        "flipped_bankrupt": 27
+       },
+       "express": {
+        "pass": 3,
+        "play": 17,
+        "ride_solved": 15,
+        "ride_bust": 2
+       },
+       "wild": {
+        "used": 38,
+        "kept": 106
+       },
+       "million": {
+        "won": 3
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 279,
+       "won": 0.6164874551971327,
+       "mean_gain": 3033.720930232558,
+       "median_gain": 2625.0,
+       "bank_when_lost": 1900,
+       "lost_to": {
+        "llm": 69,
+        "bot": 38
+       },
+       "lost_wheel": {
+        "bankrupt": 77,
+        "missing": 2,
+        "lose_a_turn": 21,
+        "flipped_bankrupt": 7
+       },
+       "per_game": 0.775
+      }
+     }
     }
    },
    "generated_by": {
@@ -3222,6 +4961,110 @@
       "median": 5480.0,
       "p10": 1940,
       "p90": 10688
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 11,
+       "fits, but wrong": 10,
+       "contradicts a shown letter": 3,
+       "already ruled wrong": 1
+      },
+      "wrong_solves_total": 25,
+      "stages": {
+       "open": {
+        "consonants": 1382,
+        "hits": 1160,
+        "copies": 2289,
+        "vowels": 189,
+        "solve_tries": 3,
+        "solves_right": 3,
+        "hit_rate": 0.8394,
+        "copies_per_call": 1.6563,
+        "solve_accuracy": 1.0
+       },
+       "middle": {
+        "consonants": 717,
+        "hits": 525,
+        "copies": 842,
+        "vowels": 384,
+        "solve_tries": 47,
+        "solves_right": 41,
+        "hit_rate": 0.7322,
+        "copies_per_call": 1.1743,
+        "solve_accuracy": 0.8723
+       },
+       "late": {
+        "consonants": 558,
+        "hits": 449,
+        "copies": 597,
+        "vowels": 348,
+        "solve_tries": 289,
+        "solves_right": 270,
+        "hit_rate": 0.8047,
+        "copies_per_call": 1.0699,
+        "solve_accuracy": 0.9343
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 95,
+        "share": 0.2474,
+        "median_shown": 0.7333
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 114,
+        "share": 0.2021,
+        "median_shown": 0.6667
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 67,
+        "share": 0.219,
+        "median_shown": 0.7083
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 38,
+        "share": 0.2043,
+        "median_shown": 0.7056
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 35,
+        "flip": 23,
+        "flipped_bankrupt": 19,
+        "flipped_prize": 4
+       },
+       "express": {
+        "pass": 12,
+        "play": 4,
+        "ride_solved": 3,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 47,
+        "kept": 62
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 39192073,
+       "cached_tokens": 33285580,
+       "cached_share": 0.8493,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 5953.7889,
+        "median": 5480.0
+       },
+       "cost_cv": 0.5167
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "bot #1": {
@@ -3401,7 +5244,128 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 9
+      },
+      "wrong_solves_total": 9,
+      "stages": {
+       "open": {
+        "consonants": 1476,
+        "hits": 1276,
+        "copies": 2569,
+        "vowels": 177,
+        "solve_tries": 15,
+        "solves_right": 13,
+        "hit_rate": 0.8645,
+        "copies_per_call": 1.7405,
+        "solve_accuracy": 0.8667
+       },
+       "middle": {
+        "consonants": 1058,
+        "hits": 993,
+        "copies": 1701,
+        "vowels": 253,
+        "solve_tries": 96,
+        "solves_right": 95,
+        "hit_rate": 0.9386,
+        "copies_per_call": 1.6078,
+        "solve_accuracy": 0.9896
+       },
+       "late": {
+        "consonants": 963,
+        "hits": 917,
+        "copies": 1197,
+        "vowels": 243,
+        "solve_tries": 442,
+        "solves_right": 436,
+        "hit_rate": 0.9522,
+        "copies_per_call": 1.243,
+        "solve_accuracy": 0.9864
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 145,
+        "share": 0.3776,
+        "median_shown": 0.6471
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 210,
+        "share": 0.3723,
+        "median_shown": 0.6667
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 113,
+        "share": 0.3693,
+        "median_shown": 0.6538
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 76,
+        "share": 0.4086,
+        "median_shown": 0.7037
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 62,
+        "flipped_prize": 29,
+        "flipped_bankrupt": 33,
+        "keep": 14
+       },
+       "express": {
+        "pass": 4,
+        "play": 22,
+        "ride_solved": 19,
+        "ride_bust": 3
+       },
+       "wild": {
+        "kept": 136,
+        "used": 49
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 380,
+       "won": 0.6736842105263158,
+       "mean_gain": 2710.7421875,
+       "median_gain": 2000.0,
+       "bank_when_lost": 1725,
+       "lost_to": {
+        "bot": 73,
+        "llm": 51
+       },
+       "lost_wheel": {
+        "bankrupt": 90,
+        "lose_a_turn": 24,
+        "missing": 3,
+        "flipped_bankrupt": 6,
+        "wrong_solve": 1
+       },
+       "per_game": 1.0556
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -3580,7 +5544,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 8
+      },
+      "wrong_solves_total": 8,
+      "stages": {
+       "open": {
+        "consonants": 1537,
+        "hits": 1343,
+        "copies": 2705,
+        "vowels": 209,
+        "solve_tries": 17,
+        "solves_right": 14,
+        "hit_rate": 0.8738,
+        "copies_per_call": 1.7599,
+        "solve_accuracy": 0.8235
+       },
+       "middle": {
+        "consonants": 1093,
+        "hits": 1024,
+        "copies": 1735,
+        "vowels": 289,
+        "solve_tries": 102,
+        "solves_right": 101,
+        "hit_rate": 0.9369,
+        "copies_per_call": 1.5874,
+        "solve_accuracy": 0.9902
+       },
+       "late": {
+        "consonants": 997,
+        "hits": 937,
+        "copies": 1191,
+        "vowels": 214,
+        "solve_tries": 471,
+        "solves_right": 467,
+        "hit_rate": 0.9398,
+        "copies_per_call": 1.1946,
+        "solve_accuracy": 0.9915
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 144,
+        "share": 0.375,
+        "median_shown": 0.625
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 240,
+        "share": 0.4255,
+        "median_shown": 0.6364
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 126,
+        "share": 0.4118,
+        "median_shown": 0.6538
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 72,
+        "share": 0.3871,
+        "median_shown": 0.6933
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 17,
+        "flip": 54,
+        "flipped_bankrupt": 27,
+        "flipped_prize": 27
+       },
+       "express": {
+        "pass": 4,
+        "play": 27,
+        "ride_solved": 25,
+        "ride_bust": 2
+       },
+       "wild": {
+        "kept": 133,
+        "used": 44
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 387,
+       "won": 0.6744186046511628,
+       "mean_gain": 2886.7816091954023,
+       "median_gain": 2150,
+       "bank_when_lost": 1559.920634920635,
+       "lost_to": {
+        "bot": 73,
+        "llm": 53
+       },
+       "lost_wheel": {
+        "bankrupt": 93,
+        "missing": 4,
+        "flipped_bankrupt": 5,
+        "lose_a_turn": 24
+       },
+       "per_game": 1.075
+      }
+     }
     }
    },
    "generated_by": {
@@ -3824,6 +5908,111 @@
       "median": 31724.5,
       "p10": 11497,
       "p90": 73700
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "already ruled wrong": 1,
+       "fits, but wrong": 16,
+       "called letter in a blank": 11,
+       "contradicts a shown letter": 9,
+       "wrong shape": 33
+      },
+      "wrong_solves_total": 70,
+      "stages": {
+       "open": {
+        "consonants": 1244,
+        "hits": 1035,
+        "copies": 2054,
+        "vowels": 376,
+        "solve_tries": 17,
+        "solves_right": 12,
+        "hit_rate": 0.832,
+        "copies_per_call": 1.6511,
+        "solve_accuracy": 0.7059
+       },
+       "middle": {
+        "consonants": 610,
+        "hits": 504,
+        "copies": 897,
+        "vowels": 504,
+        "solve_tries": 84,
+        "solves_right": 70,
+        "hit_rate": 0.8262,
+        "copies_per_call": 1.4705,
+        "solve_accuracy": 0.8333
+       },
+       "late": {
+        "consonants": 724,
+        "hits": 634,
+        "copies": 871,
+        "vowels": 302,
+        "solve_tries": 370,
+        "solves_right": 319,
+        "hit_rate": 0.8757,
+        "copies_per_call": 1.203,
+        "solve_accuracy": 0.8622
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 108,
+        "share": 0.2812,
+        "median_shown": 0.7196
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 160,
+        "share": 0.2837,
+        "median_shown": 0.6667
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 87,
+        "share": 0.2843,
+        "median_shown": 0.5417
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 46,
+        "share": 0.2473,
+        "median_shown": 0.6897
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 24,
+        "flipped_bankrupt": 12,
+        "flipped_prize": 12,
+        "keep": 24
+       },
+       "express": {
+        "pass": 8,
+        "play": 14,
+        "ride_solved": 12,
+        "ride_bust": 2
+       },
+       "wild": {
+        "kept": 38,
+        "used": 56
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 90653796,
+       "cached_tokens": 77349494,
+       "cached_share": 0.8532,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 37947.4083,
+        "median": 31724.5
+       },
+       "cost_cv": 0.6694
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "bot #1": {
@@ -4003,7 +6192,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 13
+      },
+      "wrong_solves_total": 13,
+      "stages": {
+       "open": {
+        "consonants": 1482,
+        "hits": 1276,
+        "copies": 2602,
+        "vowels": 172,
+        "solve_tries": 13,
+        "solves_right": 10,
+        "hit_rate": 0.861,
+        "copies_per_call": 1.7557,
+        "solve_accuracy": 0.7692
+       },
+       "middle": {
+        "consonants": 984,
+        "hits": 918,
+        "copies": 1535,
+        "vowels": 267,
+        "solve_tries": 91,
+        "solves_right": 86,
+        "hit_rate": 0.9329,
+        "copies_per_call": 1.56,
+        "solve_accuracy": 0.9451
+       },
+       "late": {
+        "consonants": 999,
+        "hits": 947,
+        "copies": 1253,
+        "vowels": 199,
+        "solve_tries": 426,
+        "solves_right": 421,
+        "hit_rate": 0.9479,
+        "copies_per_call": 1.2543,
+        "solve_accuracy": 0.9883
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 135,
+        "share": 0.3516,
+        "median_shown": 0.6875
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 210,
+        "share": 0.3723,
+        "median_shown": 0.6667
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 102,
+        "share": 0.3333,
+        "median_shown": 0.6522
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 70,
+        "share": 0.3763,
+        "median_shown": 0.7538
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 49,
+        "flipped_prize": 21,
+        "keep": 17,
+        "flipped_bankrupt": 28
+       },
+       "express": {
+        "pass": 5,
+        "play": 14,
+        "ride_solved": 12,
+        "ride_bust": 2
+       },
+       "wild": {
+        "kept": 145,
+        "used": 51
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 355,
+       "won": 0.6281690140845071,
+       "mean_gain": 3112.107623318386,
+       "median_gain": 2700,
+       "bank_when_lost": 1502.6515151515152,
+       "lost_to": {
+        "bot": 86,
+        "llm": 46
+       },
+       "lost_wheel": {
+        "bankrupt": 92,
+        "missing": 6,
+        "flipped_bankrupt": 8,
+        "lose_a_turn": 26
+       },
+       "per_game": 0.9861
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -4182,7 +6491,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 12
+      },
+      "wrong_solves_total": 12,
+      "stages": {
+       "open": {
+        "consonants": 1494,
+        "hits": 1293,
+        "copies": 2586,
+        "vowels": 184,
+        "solve_tries": 13,
+        "solves_right": 11,
+        "hit_rate": 0.8655,
+        "copies_per_call": 1.7309,
+        "solve_accuracy": 0.8462
+       },
+       "middle": {
+        "consonants": 988,
+        "hits": 922,
+        "copies": 1596,
+        "vowels": 269,
+        "solve_tries": 82,
+        "solves_right": 80,
+        "hit_rate": 0.9332,
+        "copies_per_call": 1.6154,
+        "solve_accuracy": 0.9756
+       },
+       "late": {
+        "consonants": 991,
+        "hits": 933,
+        "copies": 1234,
+        "vowels": 191,
+        "solve_tries": 439,
+        "solves_right": 431,
+        "hit_rate": 0.9415,
+        "copies_per_call": 1.2452,
+        "solve_accuracy": 0.9818
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 141,
+        "share": 0.3672,
+        "median_shown": 0.6667
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 194,
+        "share": 0.344,
+        "median_shown": 0.6667
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 117,
+        "share": 0.3824,
+        "median_shown": 0.6522
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 70,
+        "share": 0.3763,
+        "median_shown": 0.7165
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 54,
+        "flipped_prize": 24,
+        "keep": 16,
+        "flipped_bankrupt": 30
+       },
+       "express": {
+        "pass": 5,
+        "play": 16,
+        "ride_solved": 14,
+        "ride_bust": 2
+       },
+       "wild": {
+        "used": 40,
+        "kept": 108
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 346,
+       "won": 0.7023121387283237,
+       "mean_gain": 2977.98353909465,
+       "median_gain": 2300,
+       "bank_when_lost": 1836.893203883495,
+       "lost_to": {
+        "bot": 61,
+        "llm": 42
+       },
+       "lost_wheel": {
+        "bankrupt": 66,
+        "lose_a_turn": 28,
+        "missing": 3,
+        "flipped_bankrupt": 6
+       },
+       "per_game": 0.9611
+      }
+     }
     }
    },
    "generated_by": {
@@ -4215,6 +6644,947 @@
      "ci95": [
       -0.0583,
       0.0778
+     ]
+    }
+   ]
+  },
+  "3m": {
+   "label": "Muse Ember \u00b7 bot \u00b7 bot",
+   "note": null,
+   "folder": "seed707-2d45bc0e",
+   "games": 360,
+   "sets": 60,
+   "puzzles": "grading-606b.json",
+   "cost": 8.347427,
+   "entrants": {
+    "llm:meta/muse-ember": {
+     "kind": "llm",
+     "games": 360,
+     "win_rate": 0.2444,
+     "win_ci95": [
+      0.1944,
+      0.2972
+     ],
+     "win_rate_by_seat": [
+      0.2333,
+      0.2167,
+      0.2833
+     ],
+     "place": {
+      "n": 360,
+      "mean": 2.1625,
+      "sd": 0.7848,
+      "median": 2.0,
+      "p10": 1.0,
+      "p90": 3.0
+     },
+     "places": [
+      0.2444,
+      0.3486,
+      0.4069
+     ],
+     "rounds_won_per_game": 1.5056,
+     "solve_tries_per_game": 1.5361,
+     "solve_accuracy": 0.9801,
+     "solve_accuracy_ci95": [
+      0.9657,
+      0.9927
+     ],
+     "wrong_solves_per_game": 0.0306,
+     "shown_at_correct_solve": {
+      "n": 542,
+      "mean": 0.6378,
+      "sd": 0.1895,
+      "median": 0.6364,
+      "p10": 0.3889,
+      "p90": 0.9048
+     },
+     "shown_at_wrong_solve": {
+      "n": 11,
+      "mean": 0.5676,
+      "sd": 0.2067,
+      "median": 0.4688,
+      "p10": 0.3333,
+      "p90": 0.8438
+     },
+     "money_per_round_won": {
+      "n": 542,
+      "mean": 3173.2472,
+      "sd": 3130.8553,
+      "median": 1850.0,
+      "p10": 1000,
+      "p90": 7000
+     },
+     "money_per_round_won_by_round": {
+      "1": {
+       "n": 142,
+       "mean": 2829.2254,
+       "sd": 2538.4525,
+       "median": 1600.0,
+       "p10": 1000,
+       "p90": 6450
+      },
+      "2": {
+       "n": 134,
+       "mean": 3606.7164,
+       "sd": 3946.6441,
+       "median": 1800.0,
+       "p10": 1000,
+       "p90": 10000
+      },
+      "3": {
+       "n": 140,
+       "mean": 3069.2857,
+       "sd": 2821.7306,
+       "median": 1900.0,
+       "p10": 1000,
+       "p90": 7000
+      },
+      "4": {
+       "n": 126,
+       "mean": 3215.4762,
+       "sd": 3023.9813,
+       "median": 2300.0,
+       "p10": 1000,
+       "p90": 7050
+      }
+     },
+     "main_winnings": {
+      "n": 360,
+      "mean": 4777.5,
+      "sd": 4753.5565,
+      "median": 3525.0,
+      "p10": 0,
+      "p90": 11000
+     },
+     "main_winnings_ci95": [
+      4235.8333,
+      5336.1111
+     ],
+     "total_winnings": {
+      "n": 360,
+      "mean": 15138.6111,
+      "sd": 22947.5896,
+      "median": 3550.0,
+      "p10": 0,
+      "p90": 58050
+     },
+     "consonants": {
+      "per_game": 6.6361,
+      "hit_rate": 0.8388,
+      "copies": {
+       "n": 2389,
+       "mean": 1.4751,
+       "sd": 1.0646,
+       "median": 1,
+       "p10": 0,
+       "p90": 3
+      },
+      "copies_when_hit": {
+       "n": 2004,
+       "mean": 1.7585,
+       "sd": 0.9235,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 3
+      },
+      "board_when_called": {
+       "n": 2389,
+       "mean": 0.2668,
+       "sd": 0.2611,
+       "median": 0.1905,
+       "p10": 0.0,
+       "p90": 0.6842
+      }
+     },
+     "vowels": {
+      "per_game": 3.8167,
+      "hit_rate": 0.9447,
+      "copies": {
+       "n": 1374,
+       "mean": 2.0328,
+       "sd": 1.2484,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 4
+      },
+      "copies_when_hit": {
+       "n": 1298,
+       "mean": 2.1518,
+       "sd": 1.1806,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 4
+      },
+      "board_when_called": {
+       "n": 1374,
+       "mean": 0.3659,
+       "sd": 0.1916,
+       "median": 0.3571,
+       "p10": 0.1111,
+       "p90": 0.625
+      }
+     },
+     "spins_per_game": 7.6111,
+     "bankrupts_per_game": 0.7722,
+     "lose_a_turn_per_game": 0.3,
+     "lost_to_bankrupt_per_game": 1081.1111,
+     "bonus_reached": 88,
+     "bonus_won": 81,
+     "invalid_per_game": 0.2056,
+     "invalid": {
+      "bad tool call": 64,
+      "solve doesn't fit the board": 7,
+      "bad bonus picks": 3
+     },
+     "cost": {
+      "n": 360,
+      "mean": 0.0232,
+      "sd": 0.0283,
+      "median": 0.0135,
+      "p10": 0.0029,
+      "p90": 0.053
+     },
+     "output_tokens_per_game": {
+      "n": 360,
+      "mean": 32126.9306,
+      "sd": 40962.2771,
+      "median": 18513.5,
+      "p10": 3467,
+      "p90": 79868
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 9,
+       "wrong shape": 2
+      },
+      "wrong_solves_total": 11,
+      "stages": {
+       "open": {
+        "consonants": 1344,
+        "hits": 1072,
+        "copies": 2046,
+        "vowels": 392,
+        "solve_tries": 6,
+        "solves_right": 6,
+        "hit_rate": 0.7976,
+        "copies_per_call": 1.5223,
+        "solve_accuracy": 1.0
+       },
+       "middle": {
+        "consonants": 499,
+        "hits": 417,
+        "copies": 748,
+        "vowels": 608,
+        "solve_tries": 131,
+        "solves_right": 125,
+        "hit_rate": 0.8357,
+        "copies_per_call": 1.499,
+        "solve_accuracy": 0.9542
+       },
+       "late": {
+        "consonants": 546,
+        "hits": 515,
+        "copies": 730,
+        "vowels": 349,
+        "solve_tries": 416,
+        "solves_right": 411,
+        "hit_rate": 0.9432,
+        "copies_per_call": 1.337,
+        "solve_accuracy": 0.988
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 145,
+        "share": 0.3776,
+        "median_shown": 0.6471
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 201,
+        "share": 0.3564,
+        "median_shown": 0.6364
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 130,
+        "share": 0.4248,
+        "median_shown": 0.596
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 66,
+        "share": 0.3548,
+        "median_shown": 0.678
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 32,
+        "flipped_bankrupt": 24,
+        "keep": 9,
+        "flipped_prize": 8
+       },
+       "express": {
+        "pass": 16,
+        "play": 5,
+        "ride_solved": 5
+       },
+       "wild": {
+        "used": 36,
+        "kept": 57
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 58229062,
+       "cached_tokens": 33940904,
+       "cached_share": 0.5829,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 32126.9306,
+        "median": 18513.5
+       },
+       "cost_cv": 1.22
+      },
+      "hybrid_asks": null,
+      "milking": null
+     }
+    },
+    "bot #1": {
+     "kind": "bot",
+     "games": 360,
+     "win_rate": 0.3611,
+     "win_ci95": [
+      0.3139,
+      0.4083
+     ],
+     "win_rate_by_seat": [
+      0.3417,
+      0.3333,
+      0.4083
+     ],
+     "place": {
+      "n": 360,
+      "mean": 1.9444,
+      "sd": 0.8086,
+      "median": 2.0,
+      "p10": 1.0,
+      "p90": 3.0
+     },
+     "places": [
+      0.3611,
+      0.3333,
+      0.3056
+     ],
+     "rounds_won_per_game": 1.2194,
+     "solve_tries_per_game": 1.2528,
+     "solve_accuracy": 0.9734,
+     "solve_accuracy_ci95": [
+      0.9537,
+      0.9894
+     ],
+     "wrong_solves_per_game": 0.0333,
+     "shown_at_correct_solve": {
+      "n": 439,
+      "mean": 0.6388,
+      "sd": 0.1919,
+      "median": 0.6316,
+      "p10": 0.4,
+      "p90": 0.9
+     },
+     "shown_at_wrong_solve": {
+      "n": 12,
+      "mean": 0.4372,
+      "sd": 0.2444,
+      "median": 0.5263,
+      "p10": 0.0,
+      "p90": 0.64
+     },
+     "money_per_round_won": {
+      "n": 439,
+      "mean": 5778.0182,
+      "sd": 3671.3802,
+      "median": 5200,
+      "p10": 1300,
+      "p90": 11150
+     },
+     "money_per_round_won_by_round": {
+      "1": {
+       "n": 112,
+       "mean": 5872.3214,
+       "sd": 2744.3435,
+       "median": 5300.0,
+       "p10": 2600,
+       "p90": 10250
+      },
+      "2": {
+       "n": 113,
+       "mean": 6842.4779,
+       "sd": 3956.1268,
+       "median": 6100,
+       "p10": 1550,
+       "p90": 12650
+      },
+      "3": {
+       "n": 98,
+       "mean": 6176.5306,
+       "sd": 4249.1848,
+       "median": 5050.0,
+       "p10": 2350,
+       "p90": 13300
+      },
+      "4": {
+       "n": 116,
+       "mean": 4313.3621,
+       "sd": 3138.1026,
+       "median": 3700.0,
+       "p10": 1000,
+       "p90": 9150
+      }
+     },
+     "main_winnings": {
+      "n": 360,
+      "mean": 7045.9722,
+      "sd": 6683.1851,
+      "median": 5850.0,
+      "p10": 0,
+      "p90": 16550
+     },
+     "main_winnings_ci95": [
+      6235.9722,
+      7892.7778
+     ],
+     "total_winnings": {
+      "n": 360,
+      "mean": 28198.75,
+      "sd": 78615.7467,
+      "median": 6100.0,
+      "p10": 0,
+      "p90": 65300
+     },
+     "consonants": {
+      "per_game": 8.8528,
+      "hit_rate": 0.9043,
+      "copies": {
+       "n": 3187,
+       "mean": 1.6006,
+       "sd": 1.0074,
+       "median": 1,
+       "p10": 1,
+       "p90": 3
+      },
+      "copies_when_hit": {
+       "n": 2882,
+       "mean": 1.77,
+       "sd": 0.9069,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 3
+      },
+      "board_when_called": {
+       "n": 3187,
+       "mean": 0.3,
+       "sd": 0.248,
+       "median": 0.2632,
+       "p10": 0.0,
+       "p90": 0.6667
+      }
+     },
+     "vowels": {
+      "per_game": 1.6528,
+      "hit_rate": 0.963,
+      "copies": {
+       "n": 595,
+       "mean": 2.084,
+       "sd": 1.2077,
+       "median": 2,
+       "p10": 1,
+       "p90": 4
+      },
+      "copies_when_hit": {
+       "n": 573,
+       "mean": 2.164,
+       "sd": 1.1582,
+       "median": 2,
+       "p10": 1,
+       "p90": 4
+      },
+      "board_when_called": {
+       "n": 595,
+       "mean": 0.3738,
+       "sd": 0.2028,
+       "median": 0.3667,
+       "p10": 0.1053,
+       "p90": 0.65
+      }
+     },
+     "spins_per_game": 10.1056,
+     "bankrupts_per_game": 1.0583,
+     "lose_a_turn_per_game": 0.4472,
+     "lost_to_bankrupt_per_game": 2285.0,
+     "bonus_reached": 130,
+     "bonus_won": 119,
+     "invalid_per_game": 0.0,
+     "invalid": {},
+     "cost": null,
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 12
+      },
+      "wrong_solves_total": 12,
+      "stages": {
+       "open": {
+        "consonants": 1495,
+        "hits": 1288,
+        "copies": 2634,
+        "vowels": 162,
+        "solve_tries": 14,
+        "solves_right": 11,
+        "hit_rate": 0.8615,
+        "copies_per_call": 1.7619,
+        "solve_accuracy": 0.7857
+       },
+       "middle": {
+        "consonants": 945,
+        "hits": 888,
+        "copies": 1529,
+        "vowels": 245,
+        "solve_tries": 86,
+        "solves_right": 86,
+        "hit_rate": 0.9397,
+        "copies_per_call": 1.618,
+        "solve_accuracy": 1.0
+       },
+       "late": {
+        "consonants": 747,
+        "hits": 706,
+        "copies": 938,
+        "vowels": 170,
+        "solve_tries": 351,
+        "solves_right": 342,
+        "hit_rate": 0.9451,
+        "copies_per_call": 1.2557,
+        "solve_accuracy": 0.9744
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 110,
+        "share": 0.2865,
+        "median_shown": 0.6471
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 176,
+        "share": 0.3121,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 91,
+        "share": 0.2974,
+        "median_shown": 0.6
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 62,
+        "share": 0.3333,
+        "median_shown": 0.7037
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 58,
+        "flipped_bankrupt": 36,
+        "keep": 14,
+        "flipped_prize": 22
+       },
+       "express": {
+        "play": 13,
+        "ride_solved": 11,
+        "pass": 2,
+        "ride_bust": 2
+       },
+       "wild": {
+        "used": 43,
+        "kept": 109
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 315,
+       "won": 0.6825396825396826,
+       "mean_gain": 2862.7906976744184,
+       "median_gain": 2300,
+       "bank_when_lost": 1664.5,
+       "lost_to": {
+        "llm": 58,
+        "bot": 42
+       },
+       "lost_wheel": {
+        "bankrupt": 68,
+        "lose_a_turn": 24,
+        "flipped_bankrupt": 6,
+        "missing": 1,
+        "wrong_solve": 1
+       },
+       "per_game": 0.875
+      }
+     }
+    },
+    "bot #2": {
+     "kind": "bot",
+     "games": 360,
+     "win_rate": 0.3944,
+     "win_ci95": [
+      0.3528,
+      0.4389
+     ],
+     "win_rate_by_seat": [
+      0.375,
+      0.3333,
+      0.475
+     ],
+     "place": {
+      "n": 360,
+      "mean": 1.8931,
+      "sd": 0.8116,
+      "median": 2.0,
+      "p10": 1.0,
+      "p90": 3.0
+     },
+     "places": [
+      0.3944,
+      0.3181,
+      0.2875
+     ],
+     "rounds_won_per_game": 1.275,
+     "solve_tries_per_game": 1.3139,
+     "solve_accuracy": 0.9704,
+     "solve_accuracy_ci95": [
+      0.9509,
+      0.9866
+     ],
+     "wrong_solves_per_game": 0.0389,
+     "shown_at_correct_solve": {
+      "n": 459,
+      "mean": 0.6241,
+      "sd": 0.1858,
+      "median": 0.6207,
+      "p10": 0.3846,
+      "p90": 0.875
+     },
+     "shown_at_wrong_solve": {
+      "n": 14,
+      "mean": 0.4486,
+      "sd": 0.2635,
+      "median": 0.5032,
+      "p10": 0.0,
+      "p90": 0.6667
+     },
+     "money_per_round_won": {
+      "n": 459,
+      "mean": 5662.854,
+      "sd": 3615.8041,
+      "median": 5200,
+      "p10": 1250,
+      "p90": 11250
+     },
+     "money_per_round_won_by_round": {
+      "1": {
+       "n": 106,
+       "mean": 5810.8491,
+       "sd": 2701.7902,
+       "median": 5250.0,
+       "p10": 2600,
+       "p90": 11200
+      },
+      "2": {
+       "n": 113,
+       "mean": 6973.4513,
+       "sd": 3893.6019,
+       "median": 6100,
+       "p10": 1500,
+       "p90": 12300
+      },
+      "3": {
+       "n": 122,
+       "mean": 5855.3279,
+       "sd": 3778.9202,
+       "median": 5150.0,
+       "p10": 1850,
+       "p90": 11250
+      },
+      "4": {
+       "n": 118,
+       "mean": 4075.8475,
+       "sd": 3285.5664,
+       "median": 3025.0,
+       "p10": 1000,
+       "p90": 8600
+      }
+     },
+     "main_winnings": {
+      "n": 360,
+      "mean": 7220.1389,
+      "sd": 6368.3182,
+      "median": 6125.0,
+      "p10": 0,
+      "p90": 15900
+     },
+     "main_winnings_ci95": [
+      6528.6111,
+      7943.3333
+     ],
+     "total_winnings": {
+      "n": 360,
+      "mean": 26970.1389,
+      "sd": 58605.9486,
+      "median": 7100.0,
+      "p10": 0,
+      "p90": 62150
+     },
+     "consonants": {
+      "per_game": 8.9139,
+      "hit_rate": 0.9012,
+      "copies": {
+       "n": 3209,
+       "mean": 1.5924,
+       "sd": 0.9934,
+       "median": 1,
+       "p10": 1,
+       "p90": 3
+      },
+      "copies_when_hit": {
+       "n": 2892,
+       "mean": 1.7669,
+       "sd": 0.8869,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 3
+      },
+      "board_when_called": {
+       "n": 3209,
+       "mean": 0.2968,
+       "sd": 0.2468,
+       "median": 0.2581,
+       "p10": 0.0,
+       "p90": 0.6571
+      }
+     },
+     "vowels": {
+      "per_game": 1.7778,
+      "hit_rate": 0.9656,
+      "copies": {
+       "n": 640,
+       "mean": 2.0438,
+       "sd": 1.1584,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 4
+      },
+      "copies_when_hit": {
+       "n": 618,
+       "mean": 2.1165,
+       "sd": 1.1116,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 4
+      },
+      "board_when_called": {
+       "n": 640,
+       "mean": 0.357,
+       "sd": 0.1974,
+       "median": 0.3529,
+       "p10": 0.1053,
+       "p90": 0.6316
+      }
+     },
+     "spins_per_game": 10.1694,
+     "bankrupts_per_game": 1.0472,
+     "lose_a_turn_per_game": 0.4583,
+     "lost_to_bankrupt_per_game": 2009.3056,
+     "bonus_reached": 142,
+     "bonus_won": 132,
+     "invalid_per_game": 0.0,
+     "invalid": {},
+     "cost": null,
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 14
+      },
+      "wrong_solves_total": 14,
+      "stages": {
+       "open": {
+        "consonants": 1528,
+        "hits": 1318,
+        "copies": 2627,
+        "vowels": 201,
+        "solve_tries": 14,
+        "solves_right": 11,
+        "hit_rate": 0.8626,
+        "copies_per_call": 1.7192,
+        "solve_accuracy": 0.7857
+       },
+       "middle": {
+        "consonants": 930,
+        "hits": 874,
+        "copies": 1537,
+        "vowels": 251,
+        "solve_tries": 101,
+        "solves_right": 97,
+        "hit_rate": 0.9398,
+        "copies_per_call": 1.6527,
+        "solve_accuracy": 0.9604
+       },
+       "late": {
+        "consonants": 751,
+        "hits": 700,
+        "copies": 946,
+        "vowels": 167,
+        "solve_tries": 358,
+        "solves_right": 351,
+        "hit_rate": 0.9321,
+        "copies_per_call": 1.2597,
+        "solve_accuracy": 0.9804
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 129,
+        "share": 0.3359,
+        "median_shown": 0.5882
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 187,
+        "share": 0.3316,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 85,
+        "share": 0.2778,
+        "median_shown": 0.6087
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 58,
+        "share": 0.3118,
+        "median_shown": 0.6782
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 48,
+        "flipped_bankrupt": 31,
+        "flipped_prize": 17,
+        "keep": 12
+       },
+       "express": {
+        "play": 15,
+        "ride_solved": 14,
+        "ride_bust": 1,
+        "pass": 4
+       },
+       "wild": {
+        "kept": 110,
+        "used": 42
+       },
+       "million": {
+        "won": 1
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 308,
+       "won": 0.685064935064935,
+       "mean_gain": 2663.7440758293837,
+       "median_gain": 2000,
+       "bank_when_lost": 1466.4948453608247,
+       "lost_to": {
+        "bot": 41,
+        "llm": 56
+       },
+       "lost_wheel": {
+        "bankrupt": 67,
+        "lose_a_turn": 24,
+        "flipped_bankrupt": 4,
+        "missing": 2
+       },
+       "per_game": 0.8556
+      }
+     }
+    }
+   },
+   "generated_by": {
+    "generator": "minimax/minimax-m3",
+    "judge": "z-ai/glm-5.3-flash"
+   },
+   "pairwise": [
+    {
+     "a": "llm:meta/muse-ember",
+     "b": "bot #1",
+     "win_rate_gap": -0.1167,
+     "ci95": [
+      -0.2028,
+      -0.025
+     ]
+    },
+    {
+     "a": "llm:meta/muse-ember",
+     "b": "bot #2",
+     "win_rate_gap": -0.15,
+     "ci95": [
+      -0.2333,
+      -0.0667
+     ]
+    },
+    {
+     "a": "bot #1",
+     "b": "bot #2",
+     "win_rate_gap": -0.0333,
+     "ci95": [
+      -0.1056,
+      0.0361
      ]
     }
    ]
@@ -4419,6 +7789,135 @@
       "median": 19190.5,
       "p10": 6153,
       "p90": 34056
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 16
+      },
+      "wrong_solves_total": 16,
+      "stages": {
+       "open": {
+        "consonants": 1467,
+        "hits": 1250,
+        "copies": 2540,
+        "vowels": 148,
+        "solve_tries": 15,
+        "solves_right": 8,
+        "hit_rate": 0.8521,
+        "copies_per_call": 1.7314,
+        "solve_accuracy": 0.5333
+       },
+       "middle": {
+        "consonants": 976,
+        "hits": 897,
+        "copies": 1493,
+        "vowels": 204,
+        "solve_tries": 125,
+        "solves_right": 121,
+        "hit_rate": 0.9191,
+        "copies_per_call": 1.5297,
+        "solve_accuracy": 0.968
+       },
+       "late": {
+        "consonants": 764,
+        "hits": 721,
+        "copies": 884,
+        "vowels": 111,
+        "solve_tries": 386,
+        "solves_right": 381,
+        "hit_rate": 0.9437,
+        "copies_per_call": 1.1571,
+        "solve_accuracy": 0.987
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 137,
+        "share": 0.3568,
+        "median_shown": 0.625
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 208,
+        "share": 0.3688,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 103,
+        "share": 0.3366,
+        "median_shown": 0.5833
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 62,
+        "share": 0.3333,
+        "median_shown": 0.6429
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 48,
+        "flipped_bankrupt": 30,
+        "keep": 14,
+        "flipped_prize": 18
+       },
+       "express": {
+        "play": 17,
+        "ride_solved": 17,
+        "pass": 4
+       },
+       "wild": {
+        "used": 46,
+        "kept": 89
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 3576208,
+       "cached_tokens": 1640554,
+       "cached_share": 0.4587,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 20071.4417,
+        "median": 19190.5
+       },
+       "cost_cv": 0.5308
+      },
+      "hybrid_asks": {
+       "asks": 4770,
+       "statuses": {
+        "not solvable": 3347,
+        "used": 1396,
+        "doesn't fit": 27
+       },
+       "fitting_share": 0.2927,
+       "first_fitting_answer_shown": {
+        "n": 553,
+        "mean": 0.4963,
+        "median": 0.5
+       }
+      },
+      "milking": {
+       "rounds": 395,
+       "won": 0.6911392405063291,
+       "mean_gain": 2627.289377289377,
+       "median_gain": 1750,
+       "bank_when_lost": 1808.1967213114754,
+       "lost_to": {
+        "bot": 122
+       },
+       "lost_wheel": {
+        "bankrupt": 72,
+        "lose_a_turn": 36,
+        "flipped_bankrupt": 8,
+        "missing": 6
+       },
+       "per_game": 1.0972
+      }
      }
     },
     "bot #1": {
@@ -4598,7 +8097,125 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 11
+      },
+      "wrong_solves_total": 11,
+      "stages": {
+       "open": {
+        "consonants": 1526,
+        "hits": 1319,
+        "copies": 2662,
+        "vowels": 166,
+        "solve_tries": 13,
+        "solves_right": 9,
+        "hit_rate": 0.8644,
+        "copies_per_call": 1.7444,
+        "solve_accuracy": 0.6923
+       },
+       "middle": {
+        "consonants": 1017,
+        "hits": 942,
+        "copies": 1585,
+        "vowels": 262,
+        "solve_tries": 100,
+        "solves_right": 97,
+        "hit_rate": 0.9263,
+        "copies_per_call": 1.5585,
+        "solve_accuracy": 0.97
+       },
+       "late": {
+        "consonants": 792,
+        "hits": 743,
+        "copies": 919,
+        "vowels": 202,
+        "solve_tries": 365,
+        "solves_right": 361,
+        "hit_rate": 0.9381,
+        "copies_per_call": 1.1604,
+        "solve_accuracy": 0.989
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 129,
+        "share": 0.3359,
+        "median_shown": 0.6429
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 176,
+        "share": 0.3121,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 99,
+        "share": 0.3235,
+        "median_shown": 0.6087
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 63,
+        "share": 0.3387,
+        "median_shown": 0.6786
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 46,
+        "flipped_bankrupt": 27,
+        "flipped_prize": 19,
+        "keep": 17
+       },
+       "express": {
+        "play": 19,
+        "ride_solved": 18,
+        "pass": 6,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 49,
+        "kept": 108
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 304,
+       "won": 0.6611842105263158,
+       "mean_gain": 2710.1990049751244,
+       "median_gain": 1800,
+       "bank_when_lost": 2072.8155339805826,
+       "lost_to": {
+        "bot": 46,
+        "hybrid": 57
+       },
+       "lost_wheel": {
+        "bankrupt": 63,
+        "lose_a_turn": 30,
+        "flipped_bankrupt": 5,
+        "missing": 5
+       },
+       "per_game": 0.8444
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -4777,7 +8394,125 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 13
+      },
+      "wrong_solves_total": 13,
+      "stages": {
+       "open": {
+        "consonants": 1490,
+        "hits": 1283,
+        "copies": 2597,
+        "vowels": 166,
+        "solve_tries": 15,
+        "solves_right": 9,
+        "hit_rate": 0.8611,
+        "copies_per_call": 1.743,
+        "solve_accuracy": 0.6
+       },
+       "middle": {
+        "consonants": 1045,
+        "hits": 964,
+        "copies": 1609,
+        "vowels": 270,
+        "solve_tries": 99,
+        "solves_right": 96,
+        "hit_rate": 0.9225,
+        "copies_per_call": 1.5397,
+        "solve_accuracy": 0.9697
+       },
+       "late": {
+        "consonants": 796,
+        "hits": 739,
+        "copies": 912,
+        "vowels": 198,
+        "solve_tries": 362,
+        "solves_right": 358,
+        "hit_rate": 0.9284,
+        "copies_per_call": 1.1457,
+        "solve_accuracy": 0.989
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 118,
+        "share": 0.3073,
+        "median_shown": 0.645
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 180,
+        "share": 0.3191,
+        "median_shown": 0.6364
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 104,
+        "share": 0.3399,
+        "median_shown": 0.6154
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 61,
+        "share": 0.328,
+        "median_shown": 0.6786
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 48,
+        "flipped_bankrupt": 30,
+        "flipped_prize": 18,
+        "keep": 17
+       },
+       "express": {
+        "play": 18,
+        "ride_solved": 17,
+        "pass": 6,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 51,
+        "kept": 111
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 299,
+       "won": 0.6622073578595318,
+       "mean_gain": 2614.3939393939395,
+       "median_gain": 1800.0,
+       "bank_when_lost": 1875.7425742574258,
+       "lost_to": {
+        "bot": 46,
+        "hybrid": 55
+       },
+       "lost_wheel": {
+        "bankrupt": 62,
+        "lose_a_turn": 29,
+        "missing": 5,
+        "flipped_bankrupt": 5
+       },
+       "per_game": 0.8306
+      }
+     }
     }
    },
    "generated_by": {
@@ -5000,7 +8735,126 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 16
+      },
+      "wrong_solves_total": 16,
+      "stages": {
+       "open": {
+        "consonants": 1438,
+        "hits": 1253,
+        "copies": 2515,
+        "vowels": 199,
+        "solve_tries": 17,
+        "solves_right": 14,
+        "hit_rate": 0.8713,
+        "copies_per_call": 1.749,
+        "solve_accuracy": 0.8235
+       },
+       "middle": {
+        "consonants": 977,
+        "hits": 929,
+        "copies": 1691,
+        "vowels": 282,
+        "solve_tries": 92,
+        "solves_right": 89,
+        "hit_rate": 0.9509,
+        "copies_per_call": 1.7308,
+        "solve_accuracy": 0.9674
+       },
+       "late": {
+        "consonants": 807,
+        "hits": 759,
+        "copies": 1098,
+        "vowels": 195,
+        "solve_tries": 358,
+        "solves_right": 348,
+        "hit_rate": 0.9405,
+        "copies_per_call": 1.3606,
+        "solve_accuracy": 0.9721
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 111,
+        "share": 0.2891,
+        "median_shown": 0.6154
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 201,
+        "share": 0.3564,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 80,
+        "share": 0.2614,
+        "median_shown": 0.5917
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 59,
+        "share": 0.3172,
+        "median_shown": 0.7857
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 59,
+        "flipped_prize": 30,
+        "keep": 22,
+        "flipped_bankrupt": 29
+       },
+       "express": {
+        "play": 16,
+        "ride_solved": 14,
+        "pass": 2,
+        "ride_bust": 2
+       },
+       "wild": {
+        "kept": 173,
+        "used": 47
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 271,
+       "won": 0.7269372693726938,
+       "mean_gain": 3044.416243654822,
+       "median_gain": 2300,
+       "bank_when_lost": 1414.1891891891892,
+       "lost_to": {
+        "llm": 74
+       },
+       "lost_wheel": {
+        "missing": 4,
+        "bankrupt": 50,
+        "lose_a_turn": 19,
+        "flipped_bankrupt": 1
+       },
+       "per_game": 0.7528
+      }
+     }
     },
     "llm:openai/gpt-6-luna #1": {
      "kind": "llm",
@@ -5197,6 +9051,112 @@
       "median": 3473.0,
       "p10": 1307,
       "p90": 7010
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 148,
+       "fits, but wrong": 54,
+       "contradicts a shown letter": 16,
+       "wrong shape": 6,
+       "already ruled wrong": 3
+      },
+      "wrong_solves_total": 227,
+      "stages": {
+       "open": {
+        "consonants": 1185,
+        "hits": 990,
+        "copies": 1908,
+        "vowels": 455,
+        "solve_tries": 93,
+        "solves_right": 41,
+        "hit_rate": 0.8354,
+        "copies_per_call": 1.6101,
+        "solve_accuracy": 0.4409
+       },
+       "middle": {
+        "consonants": 414,
+        "hits": 349,
+        "copies": 636,
+        "vowels": 320,
+        "solve_tries": 354,
+        "solves_right": 253,
+        "hit_rate": 0.843,
+        "copies_per_call": 1.5362,
+        "solve_accuracy": 0.7147
+       },
+       "late": {
+        "consonants": 140,
+        "hits": 115,
+        "copies": 171,
+        "vowels": 68,
+        "solve_tries": 278,
+        "solves_right": 204,
+        "hit_rate": 0.8214,
+        "copies_per_call": 1.2214,
+        "solve_accuracy": 0.7338
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 125,
+        "share": 0.3255,
+        "median_shown": 0.4167
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 193,
+        "share": 0.3422,
+        "median_shown": 0.45
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 106,
+        "share": 0.3464,
+        "median_shown": 0.44
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 74,
+        "share": 0.3978,
+        "median_shown": 0.5312
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 14,
+        "flipped_bankrupt": 12,
+        "flipped_prize": 2,
+        "keep": 27
+       },
+       "express": {
+        "pass": 13,
+        "play": 1,
+        "ride_solved": 1
+       },
+       "wild": {
+        "used": 50,
+        "kept": 7
+       },
+       "million": {
+        "won": 1
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 15362458,
+       "cached_tokens": 12031097,
+       "cached_share": 0.7831,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 3927.95,
+        "median": 3473.0
+       },
+       "cost_cv": 0.5401
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "llm:openai/gpt-6-luna #2": {
@@ -5394,6 +9354,111 @@
       "median": 3376.5,
       "p10": 1347,
       "p90": 6420
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 157,
+       "contradicts a shown letter": 13,
+       "fits, but wrong": 46,
+       "already ruled wrong": 3,
+       "wrong shape": 3
+      },
+      "wrong_solves_total": 222,
+      "stages": {
+       "open": {
+        "consonants": 1154,
+        "hits": 934,
+        "copies": 1840,
+        "vowels": 439,
+        "solve_tries": 103,
+        "solves_right": 49,
+        "hit_rate": 0.8094,
+        "copies_per_call": 1.5945,
+        "solve_accuracy": 0.4757
+       },
+       "middle": {
+        "consonants": 376,
+        "hits": 309,
+        "copies": 554,
+        "vowels": 291,
+        "solve_tries": 341,
+        "solves_right": 239,
+        "hit_rate": 0.8218,
+        "copies_per_call": 1.4734,
+        "solve_accuracy": 0.7009
+       },
+       "late": {
+        "consonants": 147,
+        "hits": 129,
+        "copies": 184,
+        "vowels": 61,
+        "solve_tries": 269,
+        "solves_right": 203,
+        "hit_rate": 0.8776,
+        "copies_per_call": 1.2517,
+        "solve_accuracy": 0.7546
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 148,
+        "share": 0.3854,
+        "median_shown": 0.4375
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 170,
+        "share": 0.3014,
+        "median_shown": 0.4618
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 120,
+        "share": 0.3922,
+        "median_shown": 0.4167
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 53,
+        "share": 0.2849,
+        "median_shown": 0.4643
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 19,
+        "flipped_bankrupt": 15,
+        "keep": 15,
+        "flipped_prize": 4
+       },
+       "express": {
+        "play": 3,
+        "ride_solved": 2,
+        "pass": 9,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 45,
+        "kept": 4
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 14438511,
+       "cached_tokens": 11234020,
+       "cached_share": 0.7781,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 3695.75,
+        "median": 3376.5
+       },
+       "cost_cv": 0.5105
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     }
    },
@@ -5617,7 +9682,126 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 17
+      },
+      "wrong_solves_total": 17,
+      "stages": {
+       "open": {
+        "consonants": 1562,
+        "hits": 1337,
+        "copies": 2707,
+        "vowels": 260,
+        "solve_tries": 21,
+        "solves_right": 18,
+        "hit_rate": 0.856,
+        "copies_per_call": 1.733,
+        "solve_accuracy": 0.8571
+       },
+       "middle": {
+        "consonants": 1209,
+        "hits": 1134,
+        "copies": 1965,
+        "vowels": 286,
+        "solve_tries": 135,
+        "solves_right": 130,
+        "hit_rate": 0.938,
+        "copies_per_call": 1.6253,
+        "solve_accuracy": 0.963
+       },
+       "late": {
+        "consonants": 1153,
+        "hits": 1106,
+        "copies": 1477,
+        "vowels": 216,
+        "solve_tries": 550,
+        "solves_right": 541,
+        "hit_rate": 0.9592,
+        "copies_per_call": 1.281,
+        "solve_accuracy": 0.9836
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 201,
+        "share": 0.5234,
+        "median_shown": 0.6471
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 272,
+        "share": 0.4823,
+        "median_shown": 0.65
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 129,
+        "share": 0.4216,
+        "median_shown": 0.6154
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 87,
+        "share": 0.4677,
+        "median_shown": 0.7143
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 74,
+        "flipped_bankrupt": 40,
+        "flipped_prize": 34,
+        "keep": 16
+       },
+       "express": {
+        "pass": 5,
+        "play": 32,
+        "ride_solved": 29,
+        "ride_bust": 3
+       },
+       "wild": {
+        "used": 47,
+        "kept": 180
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 453,
+       "won": 0.7019867549668874,
+       "mean_gain": 2861.949685534591,
+       "median_gain": 2100.0,
+       "bank_when_lost": 1448.5185185185185,
+       "lost_to": {
+        "llm": 135
+       },
+       "lost_wheel": {
+        "bankrupt": 92,
+        "flipped_bankrupt": 8,
+        "lose_a_turn": 31,
+        "missing": 4
+       },
+       "per_game": 1.2583
+      }
+     }
     },
     "llm:anthropic/claude-haiku-5.5 #1": {
      "kind": "llm",
@@ -5815,6 +9999,110 @@
       "median": 6301.5,
       "p10": 2309,
       "p90": 12215
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 13,
+       "contradicts a shown letter": 1,
+       "fits, but wrong": 8,
+       "wrong shape": 4,
+       "already ruled wrong": 1
+      },
+      "wrong_solves_total": 27,
+      "stages": {
+       "open": {
+        "consonants": 1476,
+        "hits": 1228,
+        "copies": 2391,
+        "vowels": 185,
+        "solve_tries": 6,
+        "solves_right": 6,
+        "hit_rate": 0.832,
+        "copies_per_call": 1.6199,
+        "solve_accuracy": 1.0
+       },
+       "middle": {
+        "consonants": 767,
+        "hits": 558,
+        "copies": 926,
+        "vowels": 390,
+        "solve_tries": 59,
+        "solves_right": 56,
+        "hit_rate": 0.7275,
+        "copies_per_call": 1.2073,
+        "solve_accuracy": 0.9492
+       },
+       "late": {
+        "consonants": 642,
+        "hits": 526,
+        "copies": 720,
+        "vowels": 383,
+        "solve_tries": 370,
+        "solves_right": 346,
+        "hit_rate": 0.8193,
+        "copies_per_call": 1.1215,
+        "solve_accuracy": 0.9351
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 88,
+        "share": 0.2292,
+        "median_shown": 0.7143
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 176,
+        "share": 0.3121,
+        "median_shown": 0.7143
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 98,
+        "share": 0.3203,
+        "median_shown": 0.7083
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 46,
+        "share": 0.2473,
+        "median_shown": 0.75
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 28,
+        "flip": 23,
+        "flipped_bankrupt": 19,
+        "flipped_prize": 4
+       },
+       "express": {
+        "pass": 19,
+        "play": 2,
+        "ride_solved": 2
+       },
+       "wild": {
+        "used": 65,
+        "kept": 51
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 42963141,
+       "cached_tokens": 36039786,
+       "cached_share": 0.8389,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 6829.5444,
+        "median": 6301.5
+       },
+       "cost_cv": 0.4846
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "llm:anthropic/claude-haiku-5.5 #2": {
@@ -6013,6 +10301,111 @@
       "median": 6029.0,
       "p10": 2327,
       "p90": 12834
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "contradicts a shown letter": 2,
+       "wrong shape": 4,
+       "already ruled wrong": 2,
+       "fits, but wrong": 10,
+       "called letter in a blank": 11
+      },
+      "wrong_solves_total": 29,
+      "stages": {
+       "open": {
+        "consonants": 1401,
+        "hits": 1176,
+        "copies": 2305,
+        "vowels": 180,
+        "solve_tries": 3,
+        "solves_right": 1,
+        "hit_rate": 0.8394,
+        "copies_per_call": 1.6453,
+        "solve_accuracy": 0.3333
+       },
+       "middle": {
+        "consonants": 805,
+        "hits": 598,
+        "copies": 977,
+        "vowels": 424,
+        "solve_tries": 47,
+        "solves_right": 44,
+        "hit_rate": 0.7429,
+        "copies_per_call": 1.2137,
+        "solve_accuracy": 0.9362
+       },
+       "late": {
+        "consonants": 721,
+        "hits": 585,
+        "copies": 756,
+        "vowels": 403,
+        "solve_tries": 322,
+        "solves_right": 298,
+        "hit_rate": 0.8114,
+        "copies_per_call": 1.0485,
+        "solve_accuracy": 0.9255
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 95,
+        "share": 0.2474,
+        "median_shown": 0.6667
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 116,
+        "share": 0.2057,
+        "median_shown": 0.7273
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 79,
+        "share": 0.2582,
+        "median_shown": 0.76
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 53,
+        "share": 0.2849,
+        "median_shown": 0.7333
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 18,
+        "flipped_bankrupt": 10,
+        "keep": 41,
+        "flipped_prize": 8
+       },
+       "express": {
+        "pass": 18,
+        "play": 4,
+        "ride_solved": 3,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 55,
+        "kept": 67
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 44962606,
+       "cached_tokens": 38239212,
+       "cached_share": 0.8505,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 6901.5889,
+        "median": 6029.0
+       },
+       "cost_cv": 0.5399
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     }
    },
@@ -6236,7 +10629,126 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 18
+      },
+      "wrong_solves_total": 18,
+      "stages": {
+       "open": {
+        "consonants": 1716,
+        "hits": 1483,
+        "copies": 2954,
+        "vowels": 335,
+        "solve_tries": 25,
+        "solves_right": 19,
+        "hit_rate": 0.8642,
+        "copies_per_call": 1.7214,
+        "solve_accuracy": 0.76
+       },
+       "middle": {
+        "consonants": 1418,
+        "hits": 1351,
+        "copies": 2431,
+        "vowels": 370,
+        "solve_tries": 160,
+        "solves_right": 154,
+        "hit_rate": 0.9528,
+        "copies_per_call": 1.7144,
+        "solve_accuracy": 0.9625
+       },
+       "late": {
+        "consonants": 1870,
+        "hits": 1806,
+        "copies": 2472,
+        "vowels": 311,
+        "solve_tries": 833,
+        "solves_right": 827,
+        "hit_rate": 0.9658,
+        "copies_per_call": 1.3219,
+        "solve_accuracy": 0.9928
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 272,
+        "share": 0.7083,
+        "median_shown": 0.625
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 376,
+        "share": 0.6667,
+        "median_shown": 0.6667
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 225,
+        "share": 0.7353,
+        "median_shown": 0.6923
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 127,
+        "share": 0.6828,
+        "median_shown": 0.7241
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 87,
+        "flipped_bankrupt": 45,
+        "flipped_prize": 42,
+        "keep": 16
+       },
+       "express": {
+        "pass": 5,
+        "play": 31,
+        "ride_solved": 28,
+        "ride_bust": 3
+       },
+       "wild": {
+        "kept": 261,
+        "used": 66
+       },
+       "million": {
+        "won": 1
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 627,
+       "won": 0.7878787878787878,
+       "mean_gain": 2947.3684210526317,
+       "median_gain": 2300.0,
+       "bank_when_lost": 1195.1127819548872,
+       "lost_to": {
+        "decision": 133
+       },
+       "lost_wheel": {
+        "flipped_bankrupt": 7,
+        "bankrupt": 102,
+        "lose_a_turn": 22,
+        "missing": 2
+       },
+       "per_game": 1.7417
+      }
+     }
     },
     "decision:liquid/d1-ultra #1": {
      "kind": "decision",
@@ -6431,6 +10943,110 @@
       "median": 63.5,
       "p10": 0,
       "p90": 500
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 16,
+       "fits, but wrong": 11,
+       "wrong shape": 2,
+       "contradicts a shown letter": 5,
+       "already ruled wrong": 2
+      },
+      "wrong_solves_total": 36,
+      "stages": {
+       "open": {
+        "consonants": 1403,
+        "hits": 1117,
+        "copies": 2139,
+        "vowels": 163,
+        "solve_tries": 0,
+        "solves_right": 0,
+        "hit_rate": 0.7962,
+        "copies_per_call": 1.5246,
+        "solve_accuracy": null
+       },
+       "middle": {
+        "consonants": 855,
+        "hits": 538,
+        "copies": 881,
+        "vowels": 366,
+        "solve_tries": 10,
+        "solves_right": 8,
+        "hit_rate": 0.6292,
+        "copies_per_call": 1.0304,
+        "solve_accuracy": 0.8
+       },
+       "late": {
+        "consonants": 583,
+        "hits": 304,
+        "copies": 402,
+        "vowels": 309,
+        "solve_tries": 258,
+        "solves_right": 224,
+        "hit_rate": 0.5214,
+        "copies_per_call": 0.6895,
+        "solve_accuracy": 0.8682
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 64,
+        "share": 0.1667,
+        "median_shown": 0.75
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 90,
+        "share": 0.1596,
+        "median_shown": 0.7321
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 42,
+        "share": 0.1373,
+        "median_shown": 0.7496
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 36,
+        "share": 0.1935,
+        "median_shown": 0.776
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 20,
+        "flipped_bankrupt": 16,
+        "keep": 35,
+        "flipped_prize": 4
+       },
+       "express": {
+        "pass": 11,
+        "play": 10,
+        "ride_bust": 10
+       },
+       "wild": {
+        "kept": 104,
+        "used": 36
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 7529327,
+       "cached_tokens": 22193,
+       "cached_share": 0.0029,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 218.9722,
+        "median": 63.5
+       },
+       "cost_cv": 0.5795
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "decision:liquid/d1-ultra #2": {
@@ -6626,6 +11242,109 @@
       "median": 0.0,
       "p10": 0,
       "p90": 484
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 24,
+       "fits, but wrong": 7,
+       "contradicts a shown letter": 4
+      },
+      "wrong_solves_total": 35,
+      "stages": {
+       "open": {
+        "consonants": 1363,
+        "hits": 1074,
+        "copies": 2097,
+        "vowels": 148,
+        "solve_tries": 0,
+        "solves_right": 0,
+        "hit_rate": 0.788,
+        "copies_per_call": 1.5385,
+        "solve_accuracy": null
+       },
+       "middle": {
+        "consonants": 851,
+        "hits": 543,
+        "copies": 854,
+        "vowels": 348,
+        "solve_tries": 7,
+        "solves_right": 4,
+        "hit_rate": 0.6381,
+        "copies_per_call": 1.0035,
+        "solve_accuracy": 0.5714
+       },
+       "late": {
+        "consonants": 629,
+        "hits": 352,
+        "copies": 488,
+        "vowels": 303,
+        "solve_tries": 236,
+        "solves_right": 204,
+        "hit_rate": 0.5596,
+        "copies_per_call": 0.7758,
+        "solve_accuracy": 0.8644
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 48,
+        "share": 0.125,
+        "median_shown": 0.75
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 98,
+        "share": 0.1738,
+        "median_shown": 0.7273
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 39,
+        "share": 0.1275,
+        "median_shown": 0.6923
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 23,
+        "share": 0.1237,
+        "median_shown": 0.7333
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 22,
+        "flipped_prize": 10,
+        "keep": 31,
+        "flipped_bankrupt": 12
+       },
+       "express": {
+        "pass": 9,
+        "play": 11,
+        "ride_bust": 7,
+        "ride_solved": 4
+       },
+       "wild": {
+        "used": 39,
+        "kept": 94
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 7483581,
+       "cached_tokens": 6731,
+       "cached_share": 0.0009,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 195.3556,
+        "median": 0.0
+       },
+       "cost_cv": 0.5719
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     }
    },
@@ -6849,7 +11568,127 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 27
+      },
+      "wrong_solves_total": 27,
+      "stages": {
+       "open": {
+        "consonants": 1960,
+        "hits": 1710,
+        "copies": 3484,
+        "vowels": 262,
+        "solve_tries": 19,
+        "solves_right": 15,
+        "hit_rate": 0.8724,
+        "copies_per_call": 1.7776,
+        "solve_accuracy": 0.7895
+       },
+       "middle": {
+        "consonants": 1709,
+        "hits": 1603,
+        "copies": 2725,
+        "vowels": 523,
+        "solve_tries": 169,
+        "solves_right": 159,
+        "hit_rate": 0.938,
+        "copies_per_call": 1.5945,
+        "solve_accuracy": 0.9408
+       },
+       "late": {
+        "consonants": 911,
+        "hits": 868,
+        "copies": 1144,
+        "vowels": 363,
+        "solve_tries": 572,
+        "solves_right": 559,
+        "hit_rate": 0.9528,
+        "copies_per_call": 1.2558,
+        "solve_accuracy": 0.9773
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 231,
+        "share": 0.6016,
+        "median_shown": 0.5882
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 280,
+        "share": 0.4965,
+        "median_shown": 0.5752
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 121,
+        "share": 0.3954,
+        "median_shown": 0.6154
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 101,
+        "share": 0.543,
+        "median_shown": 0.6562
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 28,
+        "flip": 72,
+        "flipped_bankrupt": 31,
+        "flipped_prize": 41
+       },
+       "express": {
+        "play": 31,
+        "ride_bust": 4,
+        "ride_solved": 27,
+        "pass": 4
+       },
+       "wild": {
+        "kept": 256,
+        "used": 67
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 387,
+       "won": 0.6821705426356589,
+       "mean_gain": 3032.7651515151515,
+       "median_gain": 2125.0,
+       "bank_when_lost": 1721.5447154471544,
+       "lost_to": {
+        "decision": 123
+       },
+       "lost_wheel": {
+        "bankrupt": 77,
+        "missing": 6,
+        "lose_a_turn": 38,
+        "flipped_bankrupt": 1,
+        "wrong_solve": 1
+       },
+       "per_game": 1.075
+      }
+     }
     },
     "decision:openai/gpt-6-luna-decisions #1": {
      "kind": "decision",
@@ -7044,6 +11883,108 @@
       "median": 1180.0,
       "p10": 0,
       "p90": 5869
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 202,
+       "contradicts a shown letter": 23,
+       "fits, but wrong": 54,
+       "wrong shape": 27,
+       "already ruled wrong": 3
+      },
+      "wrong_solves_total": 309,
+      "stages": {
+       "open": {
+        "consonants": 1710,
+        "hits": 1252,
+        "copies": 2318,
+        "vowels": 18,
+        "solve_tries": 112,
+        "solves_right": 30,
+        "hit_rate": 0.7322,
+        "copies_per_call": 1.3556,
+        "solve_accuracy": 0.2679
+       },
+       "middle": {
+        "consonants": 562,
+        "hits": 293,
+        "copies": 424,
+        "vowels": 15,
+        "solve_tries": 394,
+        "solves_right": 218,
+        "hit_rate": 0.5214,
+        "copies_per_call": 0.7544,
+        "solve_accuracy": 0.5533
+       },
+       "late": {
+        "consonants": 19,
+        "hits": 7,
+        "copies": 12,
+        "vowels": 0,
+        "solve_tries": 151,
+        "solves_right": 100,
+        "hit_rate": 0.3684,
+        "copies_per_call": 0.6316,
+        "solve_accuracy": 0.6623
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 76,
+        "share": 0.1979,
+        "median_shown": 0.4615
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 139,
+        "share": 0.2465,
+        "median_shown": 0.4
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 95,
+        "share": 0.3105,
+        "median_shown": 0.3846
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 38,
+        "share": 0.2043,
+        "median_shown": 0.4286
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 15,
+        "flipped_bankrupt": 10,
+        "keep": 24,
+        "flipped_prize": 5
+       },
+       "express": {
+        "pass": 16
+       },
+       "wild": {
+        "used": 33,
+        "kept": 1
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 7206247,
+       "cached_tokens": 234658,
+       "cached_share": 0.0326,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 2149.3556,
+        "median": 1180.0
+       },
+       "cost_cv": 0.6091
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "decision:openai/gpt-6-luna-decisions #2": {
@@ -7239,6 +12180,108 @@
       "median": 1050.0,
       "p10": 0,
       "p90": 5901
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 195,
+       "contradicts a shown letter": 25,
+       "wrong shape": 23,
+       "fits, but wrong": 58,
+       "already ruled wrong": 9
+      },
+      "wrong_solves_total": 310,
+      "stages": {
+       "open": {
+        "consonants": 1723,
+        "hits": 1276,
+        "copies": 2327,
+        "vowels": 19,
+        "solve_tries": 116,
+        "solves_right": 35,
+        "hit_rate": 0.7406,
+        "copies_per_call": 1.3506,
+        "solve_accuracy": 0.3017
+       },
+       "middle": {
+        "consonants": 551,
+        "hits": 292,
+        "copies": 420,
+        "vowels": 15,
+        "solve_tries": 399,
+        "solves_right": 218,
+        "hit_rate": 0.5299,
+        "copies_per_call": 0.7623,
+        "solve_accuracy": 0.5464
+       },
+       "late": {
+        "consonants": 20,
+        "hits": 10,
+        "copies": 16,
+        "vowels": 0,
+        "solve_tries": 154,
+        "solves_right": 106,
+        "hit_rate": 0.5,
+        "copies_per_call": 0.8,
+        "solve_accuracy": 0.6883
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 77,
+        "share": 0.2005,
+        "median_shown": 0.4118
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 145,
+        "share": 0.2571,
+        "median_shown": 0.4
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 90,
+        "share": 0.2941,
+        "median_shown": 0.3846
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 47,
+        "share": 0.2527,
+        "median_shown": 0.4286
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 20,
+        "flipped_bankrupt": 13,
+        "keep": 23,
+        "flipped_prize": 7
+       },
+       "express": {
+        "pass": 14
+       },
+       "wild": {
+        "used": 35,
+        "kept": 1
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 7333811,
+       "cached_tokens": 246676,
+       "cached_share": 0.0336,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 2174.975,
+        "median": 1050.0
+       },
+       "cost_cv": 0.6275
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     }
    },
@@ -7478,6 +12521,110 @@
       "median": 0.0,
       "p10": 0,
       "p90": 318
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 7,
+       "called letter in a blank": 15,
+       "wrong shape": 3,
+       "contradicts a shown letter": 2
+      },
+      "wrong_solves_total": 27,
+      "stages": {
+       "open": {
+        "consonants": 1303,
+        "hits": 1063,
+        "copies": 2040,
+        "vowels": 157,
+        "solve_tries": 0,
+        "solves_right": 0,
+        "hit_rate": 0.8158,
+        "copies_per_call": 1.5656,
+        "solve_accuracy": null
+       },
+       "middle": {
+        "consonants": 665,
+        "hits": 426,
+        "copies": 721,
+        "vowels": 341,
+        "solve_tries": 2,
+        "solves_right": 1,
+        "hit_rate": 0.6406,
+        "copies_per_call": 1.0842,
+        "solve_accuracy": 0.5
+       },
+       "late": {
+        "consonants": 447,
+        "hits": 224,
+        "copies": 299,
+        "vowels": 217,
+        "solve_tries": 181,
+        "solves_right": 155,
+        "hit_rate": 0.5011,
+        "copies_per_call": 0.6689,
+        "solve_accuracy": 0.8564
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 38,
+        "share": 0.099,
+        "median_shown": 0.7857
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 62,
+        "share": 0.1099,
+        "median_shown": 0.7273
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 36,
+        "share": 0.1176,
+        "median_shown": 0.7157
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 20,
+        "share": 0.1075,
+        "median_shown": 0.8571
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 22,
+        "flip": 22,
+        "flipped_bankrupt": 20,
+        "flipped_prize": 2
+       },
+       "express": {
+        "pass": 11,
+        "play": 11,
+        "ride_bust": 3,
+        "ride_solved": 8
+       },
+       "wild": {
+        "used": 30,
+        "kept": 64
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 6297730,
+       "cached_tokens": 4244,
+       "cached_share": 0.0007,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 104.7889,
+        "median": 0.0
+       },
+       "cost_cv": 0.5554
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "bot #1": {
@@ -7657,7 +12804,128 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 16
+      },
+      "wrong_solves_total": 16,
+      "stages": {
+       "open": {
+        "consonants": 1547,
+        "hits": 1334,
+        "copies": 2689,
+        "vowels": 209,
+        "solve_tries": 14,
+        "solves_right": 12,
+        "hit_rate": 0.8623,
+        "copies_per_call": 1.7382,
+        "solve_accuracy": 0.8571
+       },
+       "middle": {
+        "consonants": 1153,
+        "hits": 1093,
+        "copies": 1886,
+        "vowels": 292,
+        "solve_tries": 103,
+        "solves_right": 99,
+        "hit_rate": 0.948,
+        "copies_per_call": 1.6357,
+        "solve_accuracy": 0.9612
+       },
+       "late": {
+        "consonants": 1245,
+        "hits": 1173,
+        "copies": 1498,
+        "vowels": 225,
+        "solve_tries": 541,
+        "solves_right": 531,
+        "hit_rate": 0.9422,
+        "copies_per_call": 1.2032,
+        "solve_accuracy": 0.9815
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 170,
+        "share": 0.4427,
+        "median_shown": 0.6875
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 253,
+        "share": 0.4486,
+        "median_shown": 0.65
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 137,
+        "share": 0.4477,
+        "median_shown": 0.64
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 82,
+        "share": 0.4409,
+        "median_shown": 0.709
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 64,
+        "flipped_prize": 30,
+        "flipped_bankrupt": 34,
+        "keep": 15
+       },
+       "express": {
+        "play": 27,
+        "ride_solved": 24,
+        "pass": 1,
+        "ride_bust": 3
+       },
+       "wild": {
+        "kept": 172,
+        "used": 49
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 448,
+       "won": 0.6674107142857143,
+       "mean_gain": 2783.9464882943143,
+       "median_gain": 2100,
+       "bank_when_lost": 1715.7718120805368,
+       "lost_to": {
+        "bot": 109,
+        "decision": 40
+       },
+       "lost_wheel": {
+        "bankrupt": 109,
+        "lose_a_turn": 28,
+        "flipped_bankrupt": 8,
+        "missing": 3,
+        "wrong_solve": 1
+       },
+       "per_game": 1.2444
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -7836,7 +13104,128 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 16
+      },
+      "wrong_solves_total": 16,
+      "stages": {
+       "open": {
+        "consonants": 1545,
+        "hits": 1329,
+        "copies": 2689,
+        "vowels": 213,
+        "solve_tries": 14,
+        "solves_right": 12,
+        "hit_rate": 0.8602,
+        "copies_per_call": 1.7405,
+        "solve_accuracy": 0.8571
+       },
+       "middle": {
+        "consonants": 1158,
+        "hits": 1098,
+        "copies": 1893,
+        "vowels": 301,
+        "solve_tries": 103,
+        "solves_right": 99,
+        "hit_rate": 0.9482,
+        "copies_per_call": 1.6347,
+        "solve_accuracy": 0.9612
+       },
+       "late": {
+        "consonants": 1236,
+        "hits": 1162,
+        "copies": 1488,
+        "vowels": 226,
+        "solve_tries": 541,
+        "solves_right": 531,
+        "hit_rate": 0.9401,
+        "copies_per_call": 1.2039,
+        "solve_accuracy": 0.9815
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 176,
+        "share": 0.4583,
+        "median_shown": 0.6771
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 249,
+        "share": 0.4415,
+        "median_shown": 0.65
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 133,
+        "share": 0.4346,
+        "median_shown": 0.64
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 84,
+        "share": 0.4516,
+        "median_shown": 0.709
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 64,
+        "flipped_prize": 30,
+        "flipped_bankrupt": 34,
+        "keep": 15
+       },
+       "express": {
+        "play": 26,
+        "ride_solved": 23,
+        "pass": 1,
+        "ride_bust": 3
+       },
+       "wild": {
+        "kept": 173,
+        "used": 49
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 449,
+       "won": 0.6681514476614699,
+       "mean_gain": 2816.1666666666665,
+       "median_gain": 2075.0,
+       "bank_when_lost": 1717.7852348993288,
+       "lost_to": {
+        "bot": 108,
+        "decision": 41
+       },
+       "lost_wheel": {
+        "bankrupt": 109,
+        "lose_a_turn": 28,
+        "flipped_bankrupt": 8,
+        "missing": 3,
+        "wrong_solve": 1
+       },
+       "per_game": 1.2472
+      }
+     }
     }
    },
    "generated_by": {
@@ -8075,6 +13464,107 @@
       "median": 588.5,
       "p10": 0,
       "p90": 4324
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "called letter in a blank": 150,
+       "fits, but wrong": 36,
+       "wrong shape": 20,
+       "contradicts a shown letter": 16,
+       "already ruled wrong": 1
+      },
+      "wrong_solves_total": 223,
+      "stages": {
+       "open": {
+        "consonants": 1509,
+        "hits": 1114,
+        "copies": 2083,
+        "vowels": 16,
+        "solve_tries": 83,
+        "solves_right": 19,
+        "hit_rate": 0.7382,
+        "copies_per_call": 1.3804,
+        "solve_accuracy": 0.2289
+       },
+       "middle": {
+        "consonants": 452,
+        "hits": 223,
+        "copies": 328,
+        "vowels": 10,
+        "solve_tries": 257,
+        "solves_right": 142,
+        "hit_rate": 0.4934,
+        "copies_per_call": 0.7257,
+        "solve_accuracy": 0.5525
+       },
+       "late": {
+        "consonants": 35,
+        "hits": 16,
+        "copies": 20,
+        "vowels": 3,
+        "solve_tries": 185,
+        "solves_right": 141,
+        "hit_rate": 0.4571,
+        "copies_per_call": 0.5714,
+        "solve_accuracy": 0.7622
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 80,
+        "share": 0.2083,
+        "median_shown": 0.5333
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 97,
+        "share": 0.172,
+        "median_shown": 0.5263
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 86,
+        "share": 0.281,
+        "median_shown": 0.3846
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 39,
+        "share": 0.2097,
+        "median_shown": 0.4545
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 15,
+        "flipped_bankrupt": 13,
+        "keep": 20,
+        "flipped_prize": 2
+       },
+       "express": {
+        "pass": 10
+       },
+       "wild": {
+        "used": 26
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 5962825,
+       "cached_tokens": 99469,
+       "cached_share": 0.0167,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 1452.7278,
+        "median": 588.5
+       },
+       "cost_cv": 0.6578
+      },
+      "hybrid_asks": null,
+      "milking": null
      }
     },
     "bot #1": {
@@ -8254,7 +13744,128 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 12
+      },
+      "wrong_solves_total": 12,
+      "stages": {
+       "open": {
+        "consonants": 1682,
+        "hits": 1442,
+        "copies": 2914,
+        "vowels": 209,
+        "solve_tries": 15,
+        "solves_right": 12,
+        "hit_rate": 0.8573,
+        "copies_per_call": 1.7325,
+        "solve_accuracy": 0.8
+       },
+       "middle": {
+        "consonants": 1259,
+        "hits": 1188,
+        "copies": 1995,
+        "vowels": 344,
+        "solve_tries": 118,
+        "solves_right": 116,
+        "hit_rate": 0.9436,
+        "copies_per_call": 1.5846,
+        "solve_accuracy": 0.9831
+       },
+       "late": {
+        "consonants": 835,
+        "hits": 784,
+        "copies": 1007,
+        "vowels": 269,
+        "solve_tries": 449,
+        "solves_right": 442,
+        "hit_rate": 0.9389,
+        "copies_per_call": 1.206,
+        "solve_accuracy": 0.9844
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 149,
+        "share": 0.388,
+        "median_shown": 0.6429
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 237,
+        "share": 0.4202,
+        "median_shown": 0.619
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 111,
+        "share": 0.3627,
+        "median_shown": 0.6
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 73,
+        "share": 0.3925,
+        "median_shown": 0.6562
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 19,
+        "flip": 59,
+        "flipped_bankrupt": 33,
+        "flipped_prize": 26
+       },
+       "express": {
+        "pass": 5,
+        "play": 21,
+        "ride_solved": 19,
+        "ride_bust": 2
+       },
+       "wild": {
+        "kept": 155,
+        "used": 51
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 351,
+       "won": 0.6524216524216524,
+       "mean_gain": 2631.877729257642,
+       "median_gain": 1950,
+       "bank_when_lost": 1720.9016393442623,
+       "lost_to": {
+        "decision": 67,
+        "bot": 55
+       },
+       "lost_wheel": {
+        "bankrupt": 81,
+        "lose_a_turn": 27,
+        "missing": 7,
+        "flipped_bankrupt": 4,
+        "wrong_solve": 3
+       },
+       "per_game": 0.975
+      }
+     }
     },
     "bot #2": {
      "kind": "bot",
@@ -8433,7 +14044,128 @@
      "invalid_per_game": 0.0,
      "invalid": {},
      "cost": null,
-     "output_tokens_per_game": null
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 11
+      },
+      "wrong_solves_total": 11,
+      "stages": {
+       "open": {
+        "consonants": 1674,
+        "hits": 1436,
+        "copies": 2900,
+        "vowels": 202,
+        "solve_tries": 14,
+        "solves_right": 12,
+        "hit_rate": 0.8578,
+        "copies_per_call": 1.7324,
+        "solve_accuracy": 0.8571
+       },
+       "middle": {
+        "consonants": 1248,
+        "hits": 1177,
+        "copies": 1978,
+        "vowels": 348,
+        "solve_tries": 119,
+        "solves_right": 117,
+        "hit_rate": 0.9431,
+        "copies_per_call": 1.5849,
+        "solve_accuracy": 0.9832
+       },
+       "late": {
+        "consonants": 836,
+        "hits": 784,
+        "copies": 1008,
+        "vowels": 278,
+        "solve_tries": 446,
+        "solves_right": 439,
+        "hit_rate": 0.9378,
+        "copies_per_call": 1.2057,
+        "solve_accuracy": 0.9843
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 155,
+        "share": 0.4036,
+        "median_shown": 0.6429
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 230,
+        "share": 0.4078,
+        "median_shown": 0.6151
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 109,
+        "share": 0.3562,
+        "median_shown": 0.6087
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 74,
+        "share": 0.3978,
+        "median_shown": 0.6726
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 19,
+        "flip": 56,
+        "flipped_bankrupt": 30,
+        "flipped_prize": 26
+       },
+       "express": {
+        "pass": 4,
+        "play": 21,
+        "ride_solved": 19,
+        "ride_bust": 2
+       },
+       "wild": {
+        "kept": 160,
+        "used": 51
+       },
+       "million": {
+        "won": 2
+       }
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 346,
+       "won": 0.6589595375722543,
+       "mean_gain": 2700.438596491228,
+       "median_gain": 2000.0,
+       "bank_when_lost": 1638.135593220339,
+       "lost_to": {
+        "decision": 62,
+        "bot": 56
+       },
+       "lost_wheel": {
+        "bankrupt": 81,
+        "lose_a_turn": 27,
+        "missing": 5,
+        "flipped_bankrupt": 3,
+        "wrong_solve": 2
+       },
+       "per_game": 0.9611
+      }
+     }
     }
    },
    "generated_by": {
@@ -8643,6 +14375,74 @@
    ]
   },
   {
+   "label": "DeepSeek minus Ember",
+   "a": [
+    "3c",
+    "llm:deepseek/deepseek-v4.1-flash-1017"
+   ],
+   "b": [
+    "3m",
+    "llm:meta/muse-ember"
+   ],
+   "sets": 60,
+   "diff": -0.0083,
+   "ci95": [
+    -0.075,
+    0.0583
+   ]
+  },
+  {
+   "label": "Ember minus Qwen 3.8 Flash",
+   "a": [
+    "3m",
+    "llm:meta/muse-ember"
+   ],
+   "b": [
+    "3r",
+    "llm:qwen/qwen3.8-flash"
+   ],
+   "sets": 60,
+   "diff": 0.0806,
+   "ci95": [
+    0.0167,
+    0.1472
+   ]
+  },
+  {
+   "label": "Ember minus Luna",
+   "a": [
+    "3m",
+    "llm:meta/muse-ember"
+   ],
+   "b": [
+    "3b",
+    "llm:openai/gpt-6-luna"
+   ],
+   "sets": 60,
+   "diff": 0.1,
+   "ci95": [
+    0.0417,
+    0.1556
+   ]
+  },
+  {
+   "label": "Ember minus Haiku",
+   "a": [
+    "3m",
+    "llm:meta/muse-ember"
+   ],
+   "b": [
+    "3d",
+    "llm:anthropic/claude-haiku-5.5"
+   ],
+   "sets": 60,
+   "diff": 0.1694,
+   "ci95": [
+    0.1111,
+    0.2306
+   ]
+  },
+  {
    "label": "Luna minus Haiku",
    "a": [
     "3b",
@@ -8694,6 +14494,296 @@
    ]
   }
  ],
+ "noise": {
+  "pairs": [
+   {
+    "lineup": "2",
+    "gap": 0.0,
+    "ci95": [
+     -0.0528,
+     0.0556
+    ]
+   },
+   {
+    "lineup": "2t",
+    "gap": 0.0028,
+    "ci95": [
+     -0.0444,
+     0.05
+    ]
+   },
+   {
+    "lineup": "3",
+    "gap": 0.0167,
+    "ci95": [
+     -0.0194,
+     0.0528
+    ]
+   },
+   {
+    "lineup": "3b",
+    "gap": -0.0444,
+    "ci95": [
+     -0.1194,
+     0.0306
+    ]
+   },
+   {
+    "lineup": "3c",
+    "gap": -0.0083,
+    "ci95": [
+     -0.0694,
+     0.0528
+    ]
+   },
+   {
+    "lineup": "3d",
+    "gap": -0.0583,
+    "ci95": [
+     -0.1222,
+     0.0028
+    ]
+   },
+   {
+    "lineup": "3r",
+    "gap": 0.0083,
+    "ci95": [
+     -0.0583,
+     0.0778
+    ]
+   },
+   {
+    "lineup": "3m",
+    "gap": -0.0333,
+    "ci95": [
+     -0.1056,
+     0.0361
+    ]
+   },
+   {
+    "lineup": "3f",
+    "gap": -0.0167,
+    "ci95": [
+     -0.0528,
+     0.0194
+    ]
+   },
+   {
+    "lineup": "d1",
+    "gap": 0.0028,
+    "ci95": [
+     -0.0167,
+     0.0222
+    ]
+   },
+   {
+    "lineup": "d2",
+    "gap": -0.0111,
+    "ci95": [
+     -0.0472,
+     0.025
+    ]
+   }
+  ],
+  "largest": 0.0583,
+  "median": 0.0111
+ },
+ "comebacks": {
+  "3": {
+   "held": {
+    "under $2,500": {
+     "games": 1237,
+     "held": 0.4612
+    },
+    "$2,500\u20135,000": {
+     "games": 1252,
+     "held": 0.5879
+    },
+    "$5,000\u20137,500": {
+     "games": 1158,
+     "held": 0.6606
+    },
+    "$7,500\u201310,000": {
+     "games": 653,
+     "held": 0.8384
+    },
+    "$10,000\u201315,000": {
+     "games": 684,
+     "held": 0.9101
+    },
+    "$15,000 or more": {
+     "games": 380,
+     "held": 0.9368
+    }
+   },
+   "came_back": {
+    "under $2,500": {
+     "seats": 1492,
+     "came_back": 0.3455
+    },
+    "$2,500\u20135,000": {
+     "seats": 2274,
+     "came_back": 0.2247
+    },
+    "$5,000\u20137,500": {
+     "seats": 2620,
+     "came_back": 0.1823
+    },
+    "$7,500\u201310,000": {
+     "seats": 1486,
+     "came_back": 0.0932
+    },
+    "$10,000\u201315,000": {
+     "seats": 2029,
+     "came_back": 0.0488
+    },
+    "$15,000 or more": {
+     "seats": 827,
+     "came_back": 0.0302
+    }
+   }
+  },
+  "4": {
+   "held": {
+    "under $2,500": {
+     "games": 1269,
+     "held": 0.6048
+    },
+    "$2,500\u20135,000": {
+     "games": 994,
+     "held": 0.7062
+    },
+    "$5,000\u20137,500": {
+     "games": 923,
+     "held": 0.8543
+    },
+    "$7,500\u201310,000": {
+     "games": 733,
+     "held": 0.9482
+    },
+    "$10,000\u201315,000": {
+     "games": 906,
+     "held": 0.9807
+    },
+    "$15,000 or more": {
+     "games": 564,
+     "held": 0.9965
+    }
+   },
+   "came_back": {
+    "under $2,500": {
+     "seats": 1432,
+     "came_back": 0.2818
+    },
+    "$2,500\u20135,000": {
+     "seats": 1584,
+     "came_back": 0.1985
+    },
+    "$5,000\u20137,500": {
+     "seats": 1889,
+     "came_back": 0.0916
+    },
+    "$7,500\u201310,000": {
+     "seats": 1745,
+     "came_back": 0.0321
+    },
+    "$10,000\u201315,000": {
+     "seats": 2612,
+     "came_back": 0.0113
+    },
+    "$15,000 or more": {
+     "seats": 1516,
+     "came_back": 0.0059
+    }
+   }
+  },
+  "round_4_by_kind": {
+   "held": {
+    "bot": {
+     "games": 4040,
+     "held": 0.8418
+    },
+    "gpt-6.1-sol": {
+     "games": 165,
+     "held": 0.8303
+    },
+    "gpt-6.1-terra": {
+     "games": 153,
+     "held": 0.8693
+    },
+    "hybrid": {
+     "games": 242,
+     "held": 0.8347
+    },
+    "gpt-6-luna": {
+     "games": 213,
+     "held": 0.6479
+    },
+    "deepseek-v4.1-flash-1017": {
+     "games": 80,
+     "held": 0.8375
+    },
+    "claude-haiku-5.5": {
+     "games": 170,
+     "held": 0.6706
+    },
+    "qwen3.8-flash": {
+     "games": 60,
+     "held": 0.725
+    },
+    "muse-ember": {
+     "games": 78,
+     "held": 0.8077
+    },
+    "decision": {
+     "games": 188,
+     "held": 0.5585
+    }
+   },
+   "came_back": {
+    "gpt-6.1-sol": {
+     "seats": 195,
+     "came_back": 0.1487
+    },
+    "bot": {
+     "seats": 5305,
+     "came_back": 0.1286
+    },
+    "gpt-6.1-terra": {
+     "seats": 206,
+     "came_back": 0.1456
+    },
+    "hybrid": {
+     "seats": 478,
+     "came_back": 0.1548
+    },
+    "gpt-6-luna": {
+     "seats": 864,
+     "came_back": 0.0718
+    },
+    "deepseek-v4.1-flash-1017": {
+     "seats": 280,
+     "came_back": 0.0643
+    },
+    "claude-haiku-5.5": {
+     "seats": 905,
+     "came_back": 0.0381
+    },
+    "qwen3.8-flash": {
+     "seats": 300,
+     "came_back": 0.05
+    },
+    "muse-ember": {
+     "seats": 281,
+     "came_back": 0.089
+    },
+    "decision": {
+     "seats": 1964,
+     "came_back": 0.0081
+    }
+   }
+  }
+ },
  "bonus": {
   "folder": "grading-606b-seed707-d5798b90",
   "puzzles": "puzzles/generated/grading-606b.json",
@@ -8814,6 +14904,44 @@
     "misfits": 4,
     "cost": 0.345956,
     "output_tokens_per_puzzle": 5977
+   },
+   {
+    "entrant": "llm:meta/muse-ember",
+    "puzzles": 100,
+    "solved": 94,
+    "rate": 0.94,
+    "ci95": [
+     0.8752,
+     0.9722
+    ],
+    "shown_after_picks": 0.7212,
+    "consonants": {
+     "C": 48,
+     "H": 42,
+     "G": 36,
+     "P": 35,
+     "D": 30,
+     "B": 28,
+     "Y": 17,
+     "F": 15,
+     "M": 15,
+     "W": 14,
+     "K": 9,
+     "V": 8,
+     "Z": 1,
+     "X": 1,
+     "Q": 1
+    },
+    "vowels": {
+     "O": 42,
+     "A": 33,
+     "I": 22,
+     "U": 3
+    },
+    "invalid": 28,
+    "misfits": 5,
+    "cost": 2.526602,
+    "output_tokens_per_puzzle": 40386
    },
    {
     "entrant": "llm:qwen/qwen3.8-flash",
@@ -9120,6 +15248,16 @@
    },
    {
     "a": "llm:openai/gpt-6.1-sol",
+    "b": "llm:meta/muse-ember",
+    "puzzles": 100,
+    "gap": 0.06,
+    "ci95": [
+     0.02,
+     0.11
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
     "b": "llm:qwen/qwen3.8-flash",
     "puzzles": 100,
     "gap": 0.26,
@@ -9210,6 +15348,16 @@
    },
    {
     "a": "llm:openai/gpt-6.1-terra",
+    "b": "llm:meta/muse-ember",
+    "puzzles": 100,
+    "gap": 0.04,
+    "ci95": [
+     0.0,
+     0.09
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
     "b": "llm:qwen/qwen3.8-flash",
     "puzzles": 100,
     "gap": 0.24,
@@ -9290,6 +15438,16 @@
    },
    {
     "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "llm:meta/muse-ember",
+    "puzzles": 100,
+    "gap": -0.02,
+    "ci95": [
+     -0.09,
+     0.05
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
     "b": "llm:qwen/qwen3.8-flash",
     "puzzles": 100,
     "gap": 0.18,
@@ -9366,6 +15524,86 @@
     "ci95": [
      -0.09,
      0.03
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "llm:qwen/qwen3.8-flash",
+    "puzzles": 100,
+    "gap": 0.2,
+    "ci95": [
+     0.11,
+     0.29
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "llm:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": 0.15,
+    "ci95": [
+     0.07,
+     0.23
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "llm:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": 0.37,
+    "ci95": [
+     0.27,
+     0.47
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "hybrid:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": -0.05,
+    "ci95": [
+     -0.1,
+     0.0
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": -0.03,
+    "ci95": [
+     -0.09,
+     0.03
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": 0.13,
+    "ci95": [
+     0.04,
+     0.22
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": 0.1,
+    "ci95": [
+     0.02,
+     0.18
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": -0.01,
+    "ci95": [
+     -0.08,
+     0.05
     ]
    },
    {
@@ -10001,6 +16239,56 @@
       "copies": 2.1577,
       "rule_hit": 0.9357,
       "rule_copies": 2.1141
+     }
+    }
+   },
+   "3m": {
+    "bot": {
+     "consonant": {
+      "n": 6396,
+      "judge": 0.9185,
+      "hit": 0.9028,
+      "top": 0.7326,
+      "top_early": 0.6727,
+      "n_early": 4216,
+      "copies": 1.5965,
+      "rule_hit": 0.6817,
+      "rule_copies": 1.1681
+     },
+     "vowel": {
+      "n": 1235,
+      "judge": 0.9672,
+      "hit": 0.9644,
+      "top": 0.8656,
+      "top_early": 0.8174,
+      "n_early": 701,
+      "copies": 2.0632,
+      "rule_hit": 0.9069,
+      "rule_copies": 2.0
+     }
+    },
+    "llm:meta/muse-ember": {
+     "consonant": {
+      "n": 2389,
+      "judge": 0.8043,
+      "hit": 0.8388,
+      "top": 0.5416,
+      "top_early": 0.4343,
+      "n_early": 1690,
+      "copies": 1.4751,
+      "rule_hit": 0.743,
+      "rule_copies": 1.3244
+     },
+     "vowel": {
+      "n": 1374,
+      "judge": 0.927,
+      "hit": 0.9447,
+      "top": 0.8246,
+      "top_early": 0.7714,
+      "n_early": 796,
+      "copies": 2.0328,
+      "rule_hit": 0.8741,
+      "rule_copies": 1.8231
      }
     }
    },
@@ -11505,6 +17793,79 @@
      ],
      "27 or more": [
       39,
+      186
+     ]
+    }
+   },
+   "3m": {
+    "players": {
+     "llm:meta/muse-ember": {
+      "rounds": 542,
+      "categories": {
+       "the bot's reader had another answer": {
+        "share": 0.1587,
+        "rounds": 86,
+        "median_shown": 0.5228
+       },
+       "right, but the bot wasn't sure": {
+        "share": 0.297,
+        "rounds": 161,
+        "median_shown": 0.5909,
+        "median_calibrated": 0.6271
+       },
+       "the bot would have known it, but it was the other seat's turn": {
+        "share": 0.3819,
+        "rounds": 207,
+        "median_shown": 0.7368
+       },
+       "a bot knew it first and lost the wheel": {
+        "share": 0.1624,
+        "rounds": 88,
+        "median_shown": 0.5625,
+        "how": {
+         "bankrupt": 52,
+         "lose_a_turn": 25,
+         "wrong_solve": 6,
+         "flipped_bankrupt": 4,
+         "missing": 1
+        }
+       }
+      }
+     }
+    },
+    "by_round": {
+     "1": [
+      142,
+      360
+     ],
+     "2": [
+      134,
+      360
+     ],
+     "3": [
+      140,
+      360
+     ],
+     "4": [
+      126,
+      360
+     ]
+    },
+    "by_length": {
+     "17 letters or fewer": [
+      145,
+      384
+     ],
+     "18 to 22": [
+      201,
+      564
+     ],
+     "23 to 26": [
+      130,
+      306
+     ],
+     "27 or more": [
+      66,
       186
      ]
     }

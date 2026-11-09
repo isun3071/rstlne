@@ -15,9 +15,10 @@ HERE = Path(__file__).parent
 SOL, TERRA = "llm:openai/gpt-6.1-sol", "llm:openai/gpt-6.1-terra"
 LUNA, HAIKU = "llm:openai/gpt-6-luna", "llm:anthropic/claude-haiku-5.5"
 DEEPSEEK, QWEN = "llm:deepseek/deepseek-v4.1-flash-1017", "llm:qwen/qwen3.8-flash"
+EMBER = "llm:meta/muse-ember"
 LUNA_H, HAIKU_H = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5"
 LUNA_D, D1 = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra"
-ALONE = {"Sol": ("2", SOL), "Terra": ("2t", TERRA), "DeepSeek": ("3c", DEEPSEEK), "Qwen": ("3r", QWEN),
+ALONE = {"Sol": ("2", SOL), "Terra": ("2t", TERRA), "DeepSeek": ("3c", DEEPSEEK), "Qwen": ("3r", QWEN), "Ember": ("3m", EMBER),
          "Luna": ("3b", LUNA), "Haiku": ("3d", HAIKU), "LunaHybrid": ("3", LUNA_H), "HaikuHybrid": ("3f", HAIKU_H),
          "LunaDec": ("d2", LUNA_D), "Done": ("d1", D1)}
 
