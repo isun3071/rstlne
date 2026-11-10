@@ -1,0 +1,80 @@
+\section{The bot's strategy}\label{app:bot}
+
+The bot has no language model inside it. It reads the board with word data and counting. It turns every choice into one number and takes the largest. This appendix describes version 6, the only version in the results.
+
+\subsection{What it plays for}
+
+In rounds 1 and 2, the bot plays for money. It scores every move in expected dollars. From round 3, it plays for the chance of finishing first after the last main round. Winning by \$100 then counts the same as winning by \$10,000. A lead still matters, because it raises the chance of finishing first.
+
+The bot estimates that chance as
+\[
+  P(\text{first}) = \Phi\!\left(\frac{\text{lead}}{\sigma\sqrt{\text{rounds left}}}\right), \qquad \sigma = \$6{,}000,
+\]
+where the lead runs from the bot's total to the highest opponent's total.
+
+When an opponent takes a round, it banks more than it holds now. The bot counts that opponent's bank plus what such players typically add before solving. The added amount is a spread of 20 equally likely values, read from how many letter squares are still hidden. The bot keeps one spread for opponents that play like language models and one for opponents that play like bots. It mixes the two by how model-like each seat has played this game (Appendix~\ref{app:bot-opponents}).
+
+From round 3, every option's chance of finishing first can come out within 0.5 points of the best. The bot then chooses by dollars instead. So a bot that has already won or lost still plays the round out for money.
+
+The Wild Card and a held Million wedge are valued at what they would add in the bonus round. The Wild Card is assumed to raise the bonus solve chance by 10 points. The Million wedge is assumed to pay off half the time it is held into the bonus. Both values are scaled by the chance of reaching the bonus. They count as dollars in rounds 1 and 2, and only as a tiebreaker from round 3.
+
+\subsection{How it reads the board}
+
+The reader splits the board into word slots and samples 400 whole answers that fit. Word frequency from wordfreq weights each candidate word. Word-pair counts from English Wikipedia, Simple English Wikipedia and Tatoeba's English sentences weight how words follow one another, and word-triple counts from English Wikipedia reweight whole answers. fastText word vectors score each word's fit to the category. Known phrases and names from Wiktionary and Wikidata can fill a run of slots. Before \& After, Rhyme Time, What Are You Doing? and Same Name each get their own handling. Rhyme Time reads its rhymes from the CMU Pronouncing Dictionary.
+
+From the 400 answers, the reader gets each letter's chance of appearing and its expected number of copies. It also gets the top answers with their shares of the sample, and the share of samples that needed a word outside its lists. A calibration curve maps the top answer's raw share to how often answers at that share were right on practice boards. Every decision uses this calibrated number, called the confidence below. A wrong solve by any seat rules that answer out for the rest of the round.
+
+\subsection{How it judges opponents}\label{app:bot-opponents}
+
+For each opponent, the bot estimates the chance that the seat solves correctly during its next turn. The estimate depends on how much of the board shows and on the bot's own confidence. Two base curves give it. One was fit on turns by other chat models in earlier games on practice puzzles. The other was fit on turns by the bot in 600 self-play games.
+
+Each opponent's curve mixes the two by $w$, the bot's estimate of how model-like that seat plays. $w$ starts at $\tfrac12$ each game. A seat that solves early pushes it toward 1. A seat that passes up boards it could have read pushes it toward 0. The bot then scales each seat's estimate by its solves so far against its expected solves, shrunk toward the base curve by a pseudo-count of 2.
+
+When the wheel passes, the bot loses the round if the next seat solves or the seat after it does:
+\[
+  p_{\text{steal}} = q_{\text{next}} + (1 - q_{\text{next}})\, q_{\text{after}}.
+\]
+The bot uses no names and keeps no memory across games. Everything it learns about opponents resets each game.
+
+\subsection{How it scores a move}
+
+The bot scores each legal move with one formula and takes the best:
+\begin{multline*}
+  V(\text{move}) = \text{gain now} + P(\text{keep})\, V(\text{play on}) \\
+  + P(\text{lose})\left[(1 - p_{\text{steal}})\, V(\text{play on later}) + p_{\text{steal}}\, V(\text{stolen})\right].
+\end{multline*}
+$V(\text{stolen})$ is what the bot has left when an opponent solves. It keeps nothing from the round, not even the \$1,000 minimum. From round 3, the stealer's gain also lowers the bot's chance of finishing first.
+
+$V(\text{play on})$ is a race. On each turn the bot holds the wheel, it takes the round with some chance $t$. While the bot is unsure, $t$ is the chance a bot solves during a turn at that board. Once it is sure, $t$ is its confidence. The opponents get their steal chances in between, so the bot takes the round with chance $t / \big(t + (1 - t)\, p_{\text{steal}}\big)$.
+
+A spin is averaged over every wedge on the wheel as it stands. A dollar wedge is worth the best consonant call on it. Bankrupt wipes the round bank, the Wild Card and a held Million wedge, and passes the wheel. Lose a Turn passes the wheel. Free Play and the special wedges follow their own rules (Appendix~\ref{app:bot-wedges}).
+
+A vowel costs \$250 and earns nothing. Its value is what its reveal does to the bot's reading. A hit keeps the wheel, and a miss passes it. A solve is worth the value of banking the round with chance $c$, the confidence. With chance $1 - c$ it is wrong, and the wheel passes. With no candidate answer, the bot solves only when solving is its only legal move.
+
+\subsection{Through a round}
+
+On a dollar wedge, the bot calls the consonant whose call scores best. The score weighs the letter's chance of hitting, the wedge value times the expected copies, and what a hit or a miss does to the bot's confidence. A miss passes the wheel, and the steal odds make that costly. So the bot favours letters likely to hit. It gives up some hit chance only when a letter promises more copies.
+
+The bot buys a vowel only when the vowel's reveal is worth more than \$250. That usually happens late in a round, when one vowel separates two candidate answers.
+
+Once its confidence reaches 95\%, a planner takes over. The planner looks ahead through the answer's hidden consonants, most copies first, up to eight of them. At each step it compares solving now with spinning again. Another spin risks Bankrupt and Lose a Turn. It also risks a miss, if the answer the bot is sure of is wrong. Each hit makes the bot surer, and the first miss rules that answer out. The planner prices every way of losing the wheel with the opponents' steal odds. Against an opponent likely to steal, it solves sooner. It buys no vowels while milking, since a vowel earns no money.
+
+\subsection{Special wedges}\label{app:bot-wedges}
+
+On Free Play, a miss keeps the wheel. The bot calls the letter worth the most in money and information. A consonant earns \$500 a copy, and a vowel is free.
+
+On a Mystery wedge, the bot compares keeping \$1,000 a copy with flipping. It values a flip as half \$10,000 and the wheel, and half Bankrupt.
+
+The bot boards the Express only when riding it scores better than passing. The ride's value includes the chance that the final solve is right. On the ride, it calls the consonants it is at least 99\% sure of, most copies first. When those run out, it weighs buying a vowel it is that sure of against solving. Any miss on the Express is Bankrupt, so the bot rides only when it is nearly sure of the answer.
+
+The bot spends the Wild Card on an extra consonant only when the call is worth more than keeping the card. Keeping is worth the card's value in the bonus round.
+
+The middle third of the Million wedge plays as \$500, and a correct consonant there picks up the wedge. Its outer thirds are Bankrupt. The bot holds the wedge into the bonus round whenever it can.
+
+\subsection{The bonus round}
+
+The bot tries every legal set of three consonants and one vowel, or four consonants with the Wild Card. It keeps the set that gives its best guess the highest chance of being right after the reveal. Ties go to the more common letters. On most puzzles the set is D, H, C and A. The bot then answers with its best guess. With no candidate answer, it fills each blank with E.
+
+\subsection{How it was built}
+
+Each version from 1 to 6 was tuned on practice puzzles. These were generated tuning decks, plus aired one-word puzzles for one reader setting in version 5, since generated decks hold no one-word answers. No version was tuned on the deck the results use. Version 6 is version 5 with steal odds estimated per turn. Earlier versions estimated them per decision, and so underrated how often opponents solve.

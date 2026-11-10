@@ -1,31 +1,44 @@
 \section{The game}\label{sec:game}
 
-rstlne plays the current rules of the syndicated show: three players, four main rounds, and a bonus round for whoever finishes the main rounds with the most money. Appendix~A gives the full rules and the wheel for each round. This section covers what the results depend on.
+rstlne follows the current rules of the syndicated show. Three players play four main rounds, and the player with the most money after all 4 rounds play a bonus round alone. Appendix~A lists the full set of rules and the wheel for each round.
 
-\paragraph{A turn.}
-A main round is one puzzle. The player whose turn it is spins the wheel, buys a vowel for \$250, or tries to solve. A spin that lands on a dollar value lets the player call a consonant. Each copy of it in the puzzle adds the wedge's value to the player's round bank, and the player keeps the turn. A consonant that isn't there, or was already called, passes the turn. A vowel costs \$250 whether or not it's there, and a missing vowel also passes the turn. A wrong solve passes the turn. A right one ends the round: the solver banks the round bank, or \$1,000 if the bank holds less, and everyone else's round bank goes to zero. Only money banked by solving counts toward the game.
+\subsection{Turns and money}
 
-\paragraph{The wheel.}
-The wheel has 24 wedges, and a spin lands on one of 72 thirds, all equally likely. Rounds 1 to 3 have two Bankrupt wedges and one Lose a Turn. Bankrupt wipes the round bank and any held cards, and Lose a Turn passes the wheel. The top value is \$2,500 in round 1, \$3,500 in rounds 2 and 3, and \$5,000 in round 4. Four special wedges come and go by round:
+Each main round consists of the players solving a single puzzle. On a turn, a player can spin, buy a vowel or try to solve.
 \begin{itemize}
-  \item The Wild Card, rounds 1 to 3. A player who claims it can later spend it to call one extra consonant at the same value, or keep it for a fourth consonant in the bonus round.
-  \item The Million wedge, rounds 1 to 3. Its middle third claims a card that turns one bonus envelope into \$1,000,000, but only if its holder solves that round. Its outer thirds are Bankrupt.
-  \item Two Mystery wedges, round 2. After a correct consonant, the player keeps \$1,000 a copy or flips the wedge for \$10,000 or Bankrupt.
-  \item The Express, round 3. After a correct consonant, the player may ride it: call consonants at \$1,000 a copy and buy vowels without spinning, until they solve. Any miss or wrong solve is Bankrupt.
-\end{itemize}
-Free Play stays on the wheel in every round: the player calls any letter, a consonant earns \$500 a copy, a vowel is free, and a miss keeps the turn.
-
-\paragraph{The bonus round.}
-The leader after round 4 plays alone. The board shows R, S, T, L, N and E. The player picks three more consonants and one vowel (four consonants with an unspent Wild Card), sees them revealed, and gives one answer. A right answer wins a sealed envelope, drawn from 24 holding \$40,000 to \$100,000, or \$1,000,000 with the Million card.
-
-\paragraph{Where we depart from the show.}
-Four changes are deliberate:
-\begin{itemize}
-  \item Models answer with no clock and give one solve per response. Contestants answer aloud on the spot, and have ten seconds in the bonus round. This is the largest difference, and it favours the models.
-  \item There are no toss-ups. A toss-up is a race to recognise a phrase as letters appear, which measures reading speed rather than the letter choice, risk and timing this study is about.
-  \item From round 4, the player who solved the previous round starts the next. The show uses a toss-up for this.
-  \item Free Play stays on the wheel, which the show retired in 2021.
+  \item A spin that lands on a dollar value pays that value for each copy of the consonant the player called. For example, 3 copies of ``T'' at \$700 pays \$2,100.
+  \item Players keep their turn when they call a letter correctly. Anything else, such as a wrong or repeated letter (except on Free Play), or an incorrect solve, passes the turn to the next player. Players can also lose their turn if the wheel lands on Lose a Turn or Bankrupt.
+  \item A vowel costs \$250 regardless of if it's in the puzzle or not.
+  \item Money sits in a dedicated round bank until the player solves. Only with a correct solve do players pocket that round bank, or \$1,000, whichever's higher; players who failed to solve in time lose their round bank. 
 \end{itemize}
 
-\paragraph{The engine.}
-The engine is a pure function from a game state and an action to the next state. Every random draw, from the spins to the Mystery wedges and the envelope, comes from the game's seed. A player sees only a public view: the category, the board, the letters used, every bank, the cards held, whose turn it is, the wheel as it stands, and the moves that are legal right now. The view never contains an answer, a hidden Mystery side or an envelope. The engine checks every action against the rules and refuses an illegal one with a reason. A model then tries again, and a third refusal in a row passes its turn; these refusals are counted (Section~\ref{sec:can-they-play}). A human is simply asked again, and the bot made no illegal move in any game.
+\subsection{Wheel}
+
+The wheel has 24 equally sized wedges that players spin. On all 4 rounds, there are 2 fully sized Bankrupts and 1 Lose a Turn. As the name implies, Bankrupts wipe the round bank (only) and any cards held and passes the turn, whereas Lose a Turn only passes the turn. Additionally, each round consists of some special wedges, listed below, as well as a singular top dollar wedge (\$2,500 in round 1, \$3,500 in round 2 and 3, and \$5,000 in round 4). Every other wedge is a normal dollar value from \$500 to \$900. 
+
+\begin{itemize}
+  \item The Wild Card (rounds 1 to 3) grant players an extra consonant to call, usable either during the main or bonus round.
+  \item The Million wedge (rounds 1 to 3) can turn the max possible bonus prize to \$1,000,000. It only takes up 1/3 of the wedge it's on; the surrounding 2/3's are Bankrupts.
+  \item The Mystery wedges (round 2) have a face value of \$1,000. Players can keep it or flip it, which can reveal either \$10,000 or Bankrupt. There are 2 copies of this wedge.
+  \item The Express (round 3) also have a face value of \$1,000. Players can opt to ``board'' the Express, meaning that they are obligated to continuously call correct letters until they solve successfully. Consonants pay \$1,000 per copy and a vowel buy is \$250 as usual. Any outcome besides a successful solve (e.g. failed solve, missed letter, etc.) terminates their run and bankrupts the player. They can also pass.
+  \item The Free Play (all 4 rounds) allow players to call any letter of their choosing and keeps their turn even if their letter misses. Consonants count for \$500 apiece and vowels are free. Although this wedge was removed since 2021's iteration of the show, we kept this wedge to see how players make choices under this state.
+\end{itemize}
+
+\subsection{Bonus round}
+
+Bonus rounds, like the syndicated show, open with R, S, T, L, N, and E showing. The player picks 3 more consonants and 1 more vowel (4 consonants with a Wild Card). They then get one chance to solve the puzzle, with the right answer winning an envelope worth between \$40,000 to \$100,000 (also determined by a wheel spin with the value initially hidden), or \$1,000,000 replacing the \$100,000 envelope with the Million wedge on hand.
+
+\subsection{Deviations from the show}
+
+\begin{itemize}
+  \item There are no toss ups. Toss ups work by progressively revealing letters at random on a puzzle, with each of the 3 players giving one chance to solve. The first to get the puzzle right wins the preset dollar value of that toss up. Toss ups are innately speed rounds and we are unable to implement speed in this project. We considered polling every player on when to solve for each letter reveal, but that removes the speed aspect and favors non-human players like our bot and the LLMs.
+  \item There are no clocks. Each non-human player is allowed to take however long they need to make their move, including bonus round solves. In the actual show, players get only 10 seconds to solve the bonus puzzle, and main round moves cannot take too long so as to delay the flow of the show. 
+  \item Seats 1, 2 and 3 always start rounds 1, 2 and 3, with the winner of round 3 starting round 4. On the show, toss ups decide who starts rounds 1 and 4.
+  \item Free Play stays on the wheel despite the show retiring it in 2021.
+  \item Additionally, the canonical show contains sponsored prizes such as gift tags, prize wedges (earning players a trip), a ``prize puzzle'' for round 3, and potential cars on some envelopes in the bonus round. They are all left out in this project so the players play only for money.
+\end{itemize}
+
+\subsection{The game engine}
+
+The engine simply faithfully implements the design of this game in accordance to the rules and deviations listed above. For the sake of reproducibility, the PRNG (pseudorandom number generator) is pre-seeded such that reruns always yield the same sequence of wheel outcomes and puzzles. To support LLMs, we implement moves as tool calls. Incorrect tool calls are rejected with reasons given to them, and a third consecutive incorrect tool call passes the turn. Players only see what contestants see on the canonical show to avoid cheating (so no advance knowledge of the puzzles or peeks at Mystery wedges or bonus envelopes). Section~\ref{sec:can-they-play} lists them in detail.
+

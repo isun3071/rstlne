@@ -1,2 +1,86 @@
-\section{Appendices}
-% A: full rules. B: the system prompt and tools, verbatim. C: bot v6 (paper/bot-strategy.md). D: puzzle generation. E: every lineup. F: reproducing the work.
+% One file per appendix as each is drafted. Their order sets the letters: A rules, B prompt and tools, C the bot, D puzzles, E categories, F lineups, G reproducing.
+
+\section{Full rules}\label{app:rules}
+% TODO: the full rules and the wheel for each round, from documentation.md.
+
+\section{System prompt and tools}\label{app:prompt}
+% TODO: the system prompt and the tools, verbatim.
+
+\input{sections/c-bot}
+
+\section{Puzzle generation}\label{app:puzzles}
+% TODO: the generator and judge prompts, and every check.
+
+The models solve these puzzles by reading the board, not by remembering them. An earlier experiment on 2026-11-01 tested this. Sol, DeepSeek V4.1 Flash and Haiku each made one bonus solve on 100 aired bonus puzzles and on 100 generated ones that no model can have seen. Each puzzle was tried twice: once from a blank board showing only the category and word lengths, and once with R S T L N E alone. The generated deck matched aired puzzles in its share of stock phrases, 12\%, since a stock phrase can be guessed from its word lengths.
+
+\begin{center}
+\begin{tabular}{lrrrrr}
+\toprule
+ & \multicolumn{2}{c}{Blank board} & \multicolumn{2}{c}{R S T L N E only} & Gap with R S T L N E \\
+ & aired & generated & aired & generated & (95\%) \\
+\midrule
+Sol & 5\% & 3\% & 89\% & 90\% & $-1$ ($-9$ to $+7$) \\
+DeepSeek & 4\% & 5\% & 72\% & 67\% & $+5$ ($-8$ to $+18$) \\
+Haiku & 0\% & 0\% & 22\% & 30\% & $-8$ ($-20$ to $+4$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+No model recalled aired answers from a blank board. With R S T L N E showing, aired and generated puzzles scored alike, with every gap's interval spanning zero.
+
+\section{Categories}\label{app:categories}
+
+The deck uses 35 categories in the main rounds and 16 in the bonus round. Each category's share follows aired puzzles from 2013 to 2025, and those 35 cover 90\% of aired main puzzles. The players see only the category's name, as contestants do. The descriptions below are what the generator was asked to write, word for word. The judge checks every answer against its category.
+
+Five categories have a rule that code checks, marked $\dagger$. Same Letter needs every word to start with the same letter. Rhyme Time needs two main words that rhyme in the CMU Pronouncing Dictionary. What Are You Doing? needs a word ending in ING. For Before \& After and Same Name, the judge names the two phrases, and code checks that they rebuild the answer. Categories marked $\ddagger$ must be real. The generator names each answer's source, and the answer must pass the judge twice.
+
+\begin{small}
+\begin{longtable}{lrrp{0.56\textwidth}}
+\toprule
+Category & Main & Bonus & What the generator was asked for \\
+\midrule
+\endhead
+Phrase & 56 & 27 & A common saying or idiom, or something people often say in everyday life. Bonus: something people say in everyday conversation, like a remark, request, or exclamation; only now and then a well-known idiom. \\
+Before \& After$^\dagger$ & 47 & -- & Two common phrases joined into one, where the last word of the first phrase is the first word of the second and is written only once, like PIECE OF CAKE WALK. \\
+What Are You Doing?$^\dagger$ & 44 & 13 & An activity, starting with a verb that ends in ING, like WALKING THE DOG. \\
+Food \& Drink & 26 & 7 & A food, dish, or drink. \\
+Fun \& Games & 22 & 2 & A game, sport, toy, or pastime, or a fun activity or outing. \\
+Thing & 20 & 19 & A thing of any kind, often with a describing word: an object, or a quality, idea, feeling, or experience. \\
+Same Letter$^\dagger$ & 19 & -- & A phrase in which every word starts with the same letter, like BIG BLUE BUBBLES. \\
+Event & 18 & 4 & An occasion, celebration, or happening. \\
+Same Name$^\dagger$ & 15 & -- & Two things that end with the same word, written as FIRST \& SECOND SHARED, like BIRTHDAY \& WEDDING CAKE. \\
+Things & 14 & 3 & A group of everyday things, in the plural, or a list of two or three. \\
+Place & 13 & 6 & A kind of place, or a specific well-known place. \\
+Song Lyrics$^\ddagger$ & 12 & -- & A line from a real song: an album track or a lesser-known song by a well-known artist, not one of the most famous hit singles. \\
+Show Biz & 11 & -- & Something from film, television, music, or theater. \\
+Rhyme Time$^\dagger$ & 9 & -- & A natural phrase or description in which two main words rhyme, like WEAR AND TEAR. \\
+Person & 8 & 5 & A kind of person, or a famous real person. \\
+Living Things & 8 & 3 & Animals or plants, in the plural. \\
+Places & 8 & -- & Kinds of places, in the plural, or a list of two or three. \\
+People & 6 & 2 & A group of people, in the plural, or a list of two or three kinds of people. \\
+Around the House & 5 & 2 & Something found around a home. \\
+What Are You Wearing? & 4 & 3 & An item of clothing or an accessory, often with a describing word. \\
+On the Map & 4 & 1 & A specific city, country, region, or geographic feature. \\
+Title$^\ddagger$ & 4 & -- & The title of a well-known film, book, song, or show. \\
+Landmark & 3 & -- & A famous building, monument, or natural landmark. \\
+Occupation & 3 & -- & A job or profession. \\
+Quotation$^\ddagger$ & 3 & -- & A real quotation from a known person, book, or speech. \\
+Living Thing & 2 & 2 & An animal or plant. \\
+In the Kitchen & 2 & 1 & Something found or done in a kitchen. \\
+Characters$^\ddagger$ & 2 & -- & Two or more fictional characters who belong together. \\
+Headline$^\ddagger$ & 2 & -- & A newspaper-style headline about a real event. \\
+Movie Title$^\ddagger$ & 2 & -- & The title of a real film. \\
+Proper Name & 2 & -- & A real, well-known person, team, or organization, often with a describing word. \\
+Song Title$^\ddagger$ & 2 & -- & The title of a real song, preferably an album track or lesser-known song rather than a famous hit. \\
+Song/Artist$^\ddagger$ & 2 & -- & A real song and its artist, written SONG BY ARTIST, preferably an album track or lesser-known song rather than a famous hit. \\
+Character$^\ddagger$ & 1 & -- & A well-known fictional character. \\
+Movie Quote$^\ddagger$ & 1 & -- & A real line spoken in a film, preferably not one of the most quoted lines. \\
+\bottomrule
+\end{longtable}
+\end{small}
+
+\section{Every lineup}\label{app:lineups}
+% TODO: one table row per lineup.
+
+\section{Reproducing the work}\label{app:repro}
+% TODO: commands, seeds and data.

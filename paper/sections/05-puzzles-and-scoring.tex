@@ -1,21 +1,38 @@
 \section{Puzzles and scoring}\label{sec:scoring}
 
-\paragraph{Fresh puzzles.}
-Aired puzzles are on fan sites and almost certainly in the models' training data, so every scored game uses generated puzzles that no model can have seen. One model writes them (MiniMax M3). Code checks each answer, and a model from another lab judges whether it fits its category and reads naturally (GLM 5.3 Flash). Neither lab has a model at the table. The code checks are these:
+\subsection{Where did our puzzles come from?}
+
+Previously aired puzzles in past episodes of Wheel of Fortune are on fan sites and are thus almost certainly in the models' training data. Therefore, we generate our puzzles that no model could've seen. We use MiniMax M3 (MiniMax) to write them and GLM-5.3 Flash (Zhipu AI) to judge them for category fit, familiarity, and naturalness, and if the category is a song, quote, or title, whether it's real (and not hallucinated). For the sake of fairness, these models do not play this game. 
+
+Before that, though, generated puzzles must:
 \begin{itemize}
-  \item The answer must fit the board's four rows without splitting a word, and has a minimum length.
-  \item It must be spelled as the bot's word lists know it.
-  \item It may not come near any earlier puzzle, aired or generated.
-  \item A bonus puzzle must keep at least 45\% of its letters hidden after R S T L N E and the commonest picks, C D M A.
+  \item fit the board's four rows without splitting a word across rows,
+  \item meet a minimum length,
+  \item spell everything correctly as the bot's wordlists know it,
+  \item meet basic category requirements,
+  \item not be a duplicate or near duplicate of a previous puzzle, and
+  \item if it's a bonus puzzle, reveal no more than 55\% of it after R S T L N E and the common picks of C, D, M, and A. 
 \end{itemize}
-Songs, quotations and titles must name a real source and pass the judge twice. Appendix~D gives the prompts and every check.
 
-The deck, grading-606b, has 400 main-round puzzles and 100 bonus puzzles. Aired puzzles change by round: round 1's median answer is 23 letters long and round 4's is 17, and Before \& After fills 28\% of round 2 but never appears in rounds 3 and 4. The deck therefore deals each round from its own 100 puzzles. Those were chosen so their categories and lengths match aired rounds 1 to 4 from 2013 to 2025, in an archive of 22,934 aired puzzles. The median lengths come out at 23, 22, 21 and 17 letters, as aired. The deck was frozen before any game, and no setting of the bot was tuned on it.
+Appendix~D lists the prompts and checks.
 
-In an earlier experiment, Sol, DeepSeek V4.1 Flash and Haiku each tried every bonus puzzle of an aired deck and a generated deck with almost nothing showing. From a blank board, with only the category and the word lengths, none solved more than 5\% of either deck. With R S T L N E alone, aired and generated puzzles scored the same. The models solve these puzzles by reading the board, not by remembering them, and generated puzzles play like aired ones.
+\subsection{The puzzle set}
 
-\paragraph{Lineups.}
-A lineup is three seats, such as Sol against two copies of the bot. Each lineup plays \SetsPerLineup{} sets on seed \Seed{}. A set is one deal of puzzles and spins, played six times, once with the three players in each seating order, so every player meets the same luck from every seat. This is duplicate scoring, as in bridge tournaments: two lineups played on the same seed meet the same puzzles and spins set for set, so they can be compared set by set. That is how the gaps between lineups in this paper are measured. The \NumLineups{} lineups played \NumGames{} games in all.
+The puzzle set that we used contains 400 main round puzzles and 100 bonus puzzles. To ensure representativeness of the puzzle set in accordance with how the show aired its puzzles across rounds and categories, we created our deck such that each puzzle is tagged with a round number and category. For example, when it comes to categories, ``What Are You Doing?'' puzzles always have an -ING word, ``Same Letter'' puzzles are always alliterations, and ``Rhyme Time'' puzzles contain two different words that rhyme. Our code checks and the judge model ensure compliance with category requirements like these.
 
-\paragraph{Measures.}
-A game is won by the highest total after the main rounds; the bonus round only adds to the leader's lead. A tie for the top splits the win. A fair share of wins at a three-seat table is a third. Every interval is a 95\% interval from \Resamples{} resamples of whole sets, with a fixed seed, so it is the same each time the numbers are rebuilt. The noise floor comes from lineups that seat two copies of the bot. Those two seats are identical, so any gap between them is chance. Across the \NoisePairs{} such pairs, the median gap in win rate is \NoiseMedian{} and the largest \NoiseLargest{}.
+In addition, we created the puzzle set such that the length and category distributions closely resemble that of previously aired puzzles. Our set conforms to median lengths of each of the 4 rounds and the bonus of 23, 22, 21, 17, and 13 letters respectively, against an archive of 22,933 previously aired puzzles from 2013 to 2025. Separate tuning decks were created for the bot during its development, which means the bot did not have an unfair advantage when it saw this set. Appendix~\ref{app:categories} contains more information about the puzzle distribution. 
+
+The game engine as described in Section~\ref{sec:game} deals each round from the puzzles tagged with that round.
+
+
+\subsection{Lineups and duplicate scoring}
+
+A lineup is a ``tournament'' of 3 players, typically consisting of one LLM/decision model/hybrid against two copies of the bot. Each lineup plays \SetsPerLineup{} sets of 6 games each on seed \Seed{}. The 6 games correspond to each of the 6 possible permutations with these 3 seats. As the seed is shared, all 6 permutations meet the exact set of puzzles and wheel spin outcomes in the same order with only the seat order differing. Across different lineups, the shared seed makes each set directly comparable (i.e. the 40th set of lineup A can be compared to the 40th set of lineup B). 
+
+This is known as duplicate scoring, a technique also used in bridge tournaments, to remove most of the luck of the deal from comparisons.
+
+Even though two copies of the bot reduce unique permutations from 6 to 3 due to duplication, we still play as if there are 6 permutations as nondeterministic LLMs and decision models frequently occupy a seat, meaning that these models may play differently when asked to run it back. Therefore, the same seating arrangement is played twice to account for it. In total, we feature \NumLineups{} lineups that played \NumGames{} games in total.
+
+\subsection{Measures}
+
+The player with the highest total after the main rounds advances to the bonus round, and for all practical purposes, wins the game (as the bonus round is only played by the winner and can only add to the winner's total). In each lineup, we assume a ``null hypothesis'' where no player has an advantage when they each win 1/3 of the games. We draw 95\% confidence intervals from \Resamples{} resamples of these sets with fixed seeds. A model beats a bot when the 95\% interval of the set-by-set gap between them excludes zero. Section~\ref{sec:how-well} describes how these models did.
