@@ -239,10 +239,68 @@ def merge_letters(paths: Sequence[Path], keep: Sequence[str]) -> dict | None:
     return {"judge_version": versions_seen.pop(), "rows": [r for lid in keep if lid in rows for r in rows[lid]]}
 
 
+RSTLNE = set("RSTLNE")
+SHARE_BANDS = [("under 30%", 0.0, 0.3), ("30 to 40%", 0.3, 0.4), ("40% or more", 0.4, 1.01)]
+ARCHIVE = settings.ROOT / "puzzles" / "all_recent_puzzles_ktebbe.csv"  # the aired archive, git-ignored
+
+
+def rstlne_share(answer: str) -> float:
+    """The share of an answer's letters that R S T L N E fills, as the bonus board starts."""
+    letters = [c for c in answer.upper() if c.isalpha()]
+    return sum(c in RSTLNE for c in letters) / len(letters) if letters else 0.0
+
+
+def _band(share: float) -> int:
+    return next(i for i, (_, lo, hi) in enumerate(SHARE_BANDS) if lo <= share < hi)
+
+
+def bonus_shares(deck: Path, archive: Path = ARCHIVE) -> dict:
+    """How much R S T L N E fills on the deck's bonus boards, against aired bonus puzzles (each airing once), with
+    the aired puzzles' split over SHARE_BANDS. Without the archive, the aired side is None."""
+    data = json.loads(Path(deck).read_text())
+    rows = data["puzzles"] if isinstance(data, dict) else data
+    ours = [rstlne_share(p["answer"]) for p in rows if p.get("bonus")]
+    out = {"deck": {"puzzles": len(ours), "mean": _r(mean(ours)) if ours else None}, "aired": None}
+    if Path(archive).exists():
+        import csv
+        seen, aired = set(), []
+        with Path(archive).open(newline="") as fh:
+            for row in csv.DictReader(fh):
+                key = (row.get("Puzzle"), row.get("Episode_Number"))
+                if (row.get("Round") or "").strip() == "BR" and row.get("Puzzle") and key not in seen:
+                    seen.add(key)
+                    aired.append(rstlne_share(row["Puzzle"]))
+        if aired:
+            counts = [sum(_band(s) == i for s in aired) for i in range(len(SHARE_BANDS))]
+            out["aired"] = {"puzzles": len(aired), "mean": _r(mean(aired)), "bands": [_r(c / len(aired)) for c in counts]}
+    return out
+
+
+def bonus_by_share(folder: Path) -> dict:
+    """Each bonus test player's solves in each SHARE_BANDS band of R S T L N E fill, as [solved, puzzles]."""
+    entrants: dict[str, list[list[int]]] = {}
+    for path in sorted(Path(folder).glob("*/puzzle*.jsonl")):
+        lines = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+        if not lines or lines[-1].get("type") != "summary":
+            continue  # unfinished
+        name = lines[0]["bonus_test"]["entrant"]
+        bonus = lines[-1]["bonus"]
+        cell = entrants.setdefault(name, [[0, 0] for _ in SHARE_BANDS])[_band(rstlne_share(bonus["puzzle"]["answer"]))]
+        cell[0] += bool(bonus["solved"])
+        cell[1] += 1
+    return {"bands": [name for name, _, _ in SHARE_BANDS], "entrants": entrants}
+
+
 def bonus_report(path: Path | None) -> dict | None:
+    """The bonus test's report, with R S T L N E's fill on its deck against aired puzzles and each player's solves by it."""
     if path is None or not Path(path).exists():
         return None
-    return {"folder": Path(path).parent.name, **json.loads(Path(path).read_text())}
+    report = json.loads(Path(path).read_text())
+    out = {"folder": Path(path).parent.name, **report, "by_rstlne_share": bonus_by_share(Path(path).parent)}
+    deck = settings.ROOT / report["puzzles"] if report.get("puzzles") else None
+    if deck is not None and deck.exists():
+        out["rstlne_share"] = bonus_shares(deck)
+    return out
 
 
 def _latest_bonus(puzzles: str | None, seed: int | None) -> Path | None:

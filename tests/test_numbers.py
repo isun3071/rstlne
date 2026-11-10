@@ -118,3 +118,45 @@ def test_letter_files_merge_by_lineup_id_and_keep_only_the_phase(tmp_path):
     with pytest.raises(ValueError):
         numbers.merge_letters([old, other], ["2"])
     assert numbers.lineup_id("lineup 3b") == "3b" and numbers.lineup_id("seed707-abc") == "seed707-abc"
+
+
+def test_rstlne_share_counts_letters_only():
+    assert numbers.rstlne_share("RIVER STONE") == pytest.approx(7 / 10)  # R, E, R, S, T, N, E of the 10 letters
+    assert numbers.rstlne_share("QUICK JAB") == 0
+
+
+def test_bonus_shares_compare_the_deck_with_aired_bonus_puzzles_once_per_airing(tmp_path):
+    deck = tmp_path / "deck.json"
+    deck.write_text(json.dumps({"puzzles": [
+        {"category": "Thing", "answer": "TEN", "bonus": True},          # 3 of 3
+        {"category": "Thing", "answer": "BUCK", "bonus": True},         # 0 of 4
+        {"category": "Thing", "answer": "MAIN ROUND", "bonus": False},  # not a bonus puzzle
+    ]}))
+    archive = tmp_path / "aired.csv"
+    archive.write_text("Puzzle,Category,Date,Episode_Number,Round\n"
+                       "TEA,Thing,9/1/20,#7000,BR\n"     # 2 of 3
+                       "TEA,Thing,9/1/20,#7000,BR\n"     # listed twice: counted once
+                       "MOCK,Thing,9/2/20,#7001,BR\n"    # 0 of 4
+                       "STAR,Thing,9/2/20,#7001,R1\n")   # a main round: left out
+    out = numbers.bonus_shares(deck, archive)
+    assert out["deck"] == {"puzzles": 2, "mean": pytest.approx(0.5)}
+    assert out["aired"]["puzzles"] == 2 and out["aired"]["mean"] == pytest.approx(1 / 3, abs=1e-4)  # rounded to 4 places
+    assert out["aired"]["bands"] == [pytest.approx(0.5), 0, pytest.approx(0.5)]  # under 30%, 30 to 40%, 40% or more
+    assert numbers.bonus_shares(deck, tmp_path / "missing.csv")["aired"] is None
+
+
+def test_bonus_solves_split_by_how_much_rstlne_shows(tmp_path):
+    def puzzle(player, i, answer, solved):
+        folder = tmp_path / player
+        folder.mkdir(exist_ok=True)
+        rows = [{"type": "game", "bonus_test": {"entrant": player, "puzzle": i}},
+                {"type": "summary", "bonus": {"puzzle": {"answer": answer}, "solved": solved}}]
+        (folder / f"puzzle{i:03d}.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    puzzle("bot", 0, "BUCK", True)    # 0%: under 30%
+    puzzle("bot", 1, "TENT", False)   # 100%: 40% or more
+    puzzle("bot", 2, "TEN", True)
+    puzzle("bot", 3, "TUCK", False)   # 25%: under 30%, unfinished below
+    (tmp_path / "bot" / "puzzle003.jsonl").write_text(json.dumps({"type": "game", "bonus_test": {"entrant": "bot", "puzzle": 3}}) + "\n")
+    out = numbers.bonus_by_share(tmp_path)
+    assert out["bands"] == ["under 30%", "30 to 40%", "40% or more"]
+    assert out["entrants"]["bot"] == [[1, 1], [0, 0], [1, 2]]

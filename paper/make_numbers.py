@@ -56,6 +56,10 @@ def macros(n: dict) -> dict[str, str | None]:
     m["NoiseMedian"] = pct(get(n, "noise", "median"))
     m["NoiseLargest"] = pct(get(n, "noise", "largest"))
     m["NoisePairs"] = str(len(get(n, "noise", "pairs") or [])) if get(n, "noise") else None
+    m["RstlneDeck"] = pct(get(n, "bonus", "rstlne_share", "deck", "mean"), 0)  # R S T L N E's fill on our bonus boards
+    m["RstlneAired"] = pct(get(n, "bonus", "rstlne_share", "aired", "mean"), 0)  # and on aired bonus puzzles
+    aired = get(n, "bonus", "rstlne_share", "aired", "puzzles")
+    m["AiredBonusPuzzles"] = f"{aired:,}" if aired else None
     for name, (lid, key) in ALONE.items():
         e = get(lineups, lid, "entrants", key)
         m[f"{name}Win"] = pct(get(e, "win_rate"))
