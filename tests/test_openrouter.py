@@ -186,6 +186,17 @@ def test_qwen_chooses_its_tool_since_its_provider_refuses_a_forced_call_while_th
         assert request_for(model)["tool_choice"] == "required"
 
 
+def test_meta_muse_models_choose_their_tool_since_meta_accepts_only_auto():
+    # Meta's API rejects "required" and named tools ("only "auto" is supported for tool_choice"), 2026-11-09
+    assert request_for("meta/muse-ember")["tool_choice"] == "auto"
+
+
+def test_meta_muse_models_need_no_cache_marks_since_meta_caches_on_its_own():
+    # 2026-11-09 probe: unmarked, a second call read 1,396 of 1,540 input tokens from cache; marks broke the match
+    request = request_for("meta/muse-ember")
+    assert all(isinstance(m["content"], str) for m in request["messages"]) and "cache_control" not in request.get("extra_body", {})
+
+
 def test_a_provider_rejection_carries_the_provider_message():
     import httpx2
 

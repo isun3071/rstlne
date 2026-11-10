@@ -203,19 +203,19 @@ def _reasoning(model: str, effort: str | None) -> dict | None:
 
 
 def _tool_choice(model: str, reasoning: dict | None) -> str:
-    """Require a tool call, except from thinking models whose providers won't think under a forced call:
-    Claude quietly stops thinking, and Qwen's provider rejects the request. Those choose their own tool,
+    """Require a tool call, except from thinking models whose providers won't think under a forced call, and Meta's,
+    which takes only "auto": Claude quietly stops thinking, and Qwen's and Meta's providers reject the request. Those choose their own tool,
     and a reply without a tool call gets the usual reprompt. Qwen thinks unless told not to."""
     if reasoning is not None and reasoning.get("effort") == "none":
         return "required"
-    if model.startswith("qwen/") or (model.startswith("anthropic/") and reasoning is not None):
-        return "auto"
+    if model.startswith(("qwen/", "meta/")) or (model.startswith("anthropic/") and reasoning is not None):
+        return "auto"  # Meta's API accepts only "auto" (2026-11-09)
     return "required"
 
 
 def _caching(model: str, messages: list[dict]) -> tuple[list[dict], dict]:
-    """Ask for prompt caching where a provider needs asking. OpenAI, DeepSeek, and Z.AI cache
-    on their own. Anthropic takes one top level flag that follows the conversation as it grows.
+    """Ask for prompt caching where a provider needs asking. OpenAI, DeepSeek, Z.AI, and Meta cache
+    on their own (Meta, though OpenRouter lists it without implicit caching: a 2026-11-09 probe read 91% from cache, unmarked). Anthropic takes one top level flag that follows the conversation as it grows.
     Qwen's provider caches only up to a marked message, so two get marks: the system prompt, which a
     round's first move reads from the cache, and the newest message, so the next move reads everything
     before it from the cache. With the system prompt marked alone, 19% of input was cached in a Qwen 3.8

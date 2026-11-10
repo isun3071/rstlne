@@ -156,6 +156,7 @@ models = [
     "qwen/qwen3.8-flash",
     "openai/gpt-6-luna",
     "anthropic/claude-haiku-5.5",
+    "meta/muse-ember",
 ]
 decision_models = ["openai/gpt-6-luna-decisions", "liquid/d1-ultra"]
 idle_minutes = 5  # a game no page has watched this long is stopped, its log kept: models' games stop spending
@@ -200,4 +201,5 @@ slugs = [
     # backups
     "qwen/qwen3.8-flash",
     "z-ai/glm-5.3-flash",
+    "meta/muse-ember",  # Meta, released 2026-11-09: $0.10/M in, $0.50/M out; one provider (Meta), caches only when asked
 ]
