@@ -2,7 +2,7 @@
 
 Working title: Can a Language Model Play Wheel of Fortune? Reading, Risk, and When to Solve
 
-Format: arXiv preprint in LaTeX, about 8 pages plus appendices. Every number comes from `paper/numbers.json` (made at commit 3bc103a). Each claim below names its source: the JSON path in `numbers.json`, then the figure. "Gap" marks a number that `numbers.json` doesn't hold yet, or a citation we still need.
+Format: arXiv preprint in LaTeX, about 8 pages plus appendices. Every number comes from `paper/numbers.json` (made at commit 84734ad, with Ember). Each claim below names its source: the JSON path in `numbers.json`, then the figure. "Gap" marks a number that `numbers.json` doesn't hold yet, or a citation we still need.
 
 Notation: `L[2].Sol` means `lineups["2"].entrants["llm:openai/gpt-6.1-sol"]`. `P["…"]` means the pair with that label in `pairs`.
 
@@ -25,7 +25,7 @@ The abstract has one sentence for each of the four questions, plus cost:
   - an engine that plays the full current show rules, with three seats and duplicate scoring
   - a deterministic bot, with no LLM inside, as the yardstick
   - four kinds of seat: LLM, bot, hybrid, and decision seat
-  - 14 lineups and 5,040 games on a fresh deck that no model can have trained on
+  - 15 lineups and 5,400 games on a fresh deck that no model can have trained on, seven models from five labs
   - the results below, with code and logs released
 
 ## 2. Related work
@@ -104,35 +104,39 @@ This is mostly already written in the earlier FINDINGS.md, in git history at `a8
 
 - Table 1, alone against two bots:
   - For each model: wins with interval, average place, rounds won per game, solve accuracy, median board showing at a right solve, wrong solves per game.
-  - Lineups 2, 2t, 3c, 3r, 3b, 3d.
+  - Lineups 2, 2t, 3c, 3m, 3r, 3b, 3d.
   - Source: `L[id].<model>`: `win_rate`, `win_ci95`, `place`, `rounds_won_per_game`, `solve_accuracy`, `shown_at_correct_solve.median`, `wrong_solves_per_game`.
   - Figure 1, chart 1.
 - Pairs:
   - Terra ties Sol: −0.8 points (−6.9 to +5.0), `P["Terra minus Sol"]`.
   - DeepSeek beats Qwen by 7.2 points and Luna by 9.2.
   - Qwen ties Luna.
+  - Ember ties DeepSeek (−0.8, −7.5 to +5.8) and beats Qwen (+8.1), Luna (+10.0) and Haiku (+16.9), `P["... Ember ..."]`.
 - Temperament:
   - Early and right wins.
   - Sol and Terra are right on 94–97% of solves with half the board showing.
   - Luna is as early, with 71% right and 0.64 wrong solves a game.
   - Haiku and Qwen wait until 65–70% shows.
+  - Ember is the most accurate (98% right, 0.03 wrong solves a game) but solves at a median 64% showing, about when the bot would, and buys the most vowels (3.9 a game). It pays for certainty, in vowels and in thinking.
   - Figure 2, chart 2.
-  - Gap: a breakdown of wrong solves by kind (a called letter placed in a blank, an answer already ruled wrong, a misfit), from the v6 analysis "155 of Luna's 229 wrong guesses". It goes into `numbers.json`.
+  - Wrong solves by kind: `L[id].<model>.play.wrong_solves` (filled; Luna: 143 put a called letter in a blank, 59 fit but were wrong, 21 contradict a shown letter, 6 have the wrong shape).
 - Rounds and banks:
   - The bots win fewer rounds but bank more in each: a median of $4,600–5,400 against Sol's $3,350 and Luna's $1,350.
   - Source: `money_per_round_won`. Figure 3, chart 4.
 - Letter choice:
   - Sol's and Terra's consonants hit 94%, against the reader's expected 84–85%, and they take its top pick only 63–64% of the time.
   - The bots hit 90–93% against 91–94% expected.
-  - Every model playing alone beats its reader's expectation by 3–10 points.
+  - Every model playing alone beats its reader's expectation by 3–10 points: Sol +10, Terra +9, Luna +6, DeepSeek and Qwen +5, Ember and Haiku +3.
+  - Why the bot takes the reader's top letter only 74% of the time: it trades hit chance for copies (60% of its off-top calls had more expected copies).
   - Source: `letters.rows[id][player].consonant`. Table 2.
 - The reading gap:
   - 60% of Sol's and Terra's winning rounds came on boards the bot's reader got wrong or wasn't sure of.
-  - For Haiku that share is 36% and for Qwen 41%. Those two mostly win boards a bot would have known, by getting there on their own turn.
+  - For Haiku that share is 36%, for Qwen 41% and for Ember 46%. Those three mostly win boards a bot would have known, by getting there on their own turn.
+  - Figure 4 is chart 13 (`figures/13-reading-gap.png`).
   - Source: `reading_gap.lineups[id].players`. Figure 4, a stacked bar.
 - Puzzle length:
   - Long puzzles favour LLMs.
-  - Gap: chart 12's numbers aren't in `numbers.json`, so add the share of rounds won and the board needed by length band. `reading_gap.by_length` has the share part already.
+  - `L[id].<model>.play.by_length` and `reading_gap.by_length` (filled). Chart 12.
 
 ## 8. Can we do better?
 
@@ -141,7 +145,7 @@ This is mostly already written in the earlier FINDINGS.md, in git history at `a8
   - Source: `P[...]`.
   - The Luna hybrid beats the Haiku hybrid by +4.4 (0.0 to +8.9). Sol alone beats the Luna hybrid by +5.6 (−1.1 to +12.5), a tie.
   - Why the hybrid works: the bot stops Luna guessing early and makes Haiku act sooner. Inside the hybrid, 98% and 97% of solves are right.
-  - Gap: the ask statistics, meaning the share of asks answered "solvable" with a fitting answer and the board showing at the first answer: Luna 49% at 36%, Haiku 29% at 50%. They're in GRADING_PLAN.md but not in `numbers.json`.
+  - Ask statistics: `L[3|3f].<hybrid>.play.hybrid_asks` (filled): Luna said solvable with a fitting answer on 49% of asks, first at a median 36% showing; Haiku 29%, at 50%.
 - The bot against two copies of one player: 58.6% against Lunas, 65.8% against Haikus, 83.3% against Luna Decisions seats, 88.3% against d1-ultra seats (`L[6a|6b|6d2|6d1].bot`).
 - Decision seats:
   - 3.9% and 1.9% wins.
@@ -154,9 +158,10 @@ This is mostly already written in the earlier FINDINGS.md, in git history at `a8
 ## 9. How would human contestants fare?
 
 - Bonus test:
-  - Sol 100, Terra 98, DeepSeek 92, Luna 79, Qwen 74, Haiku 57.
+  - Sol 100, Terra 98, Ember 94, DeepSeek 92, Luna 79, Qwen 74, Haiku 57.
   - Bot 95; hybrids 99 and 97 with the bot's own picks.
   - Contestants 38% with a 10-second clock.
+  - Our bonus boards start fuller: R S T L N E fills 35% of their letters against 29% aired (`bonus.rstlne_share`). By band, the weaker readers gain about 4 points from it; the ranking holds (`bonus.by_rstlne_share`). The comparison with contestants is not like for like on two counts: the clock and the fuller boards.
   - Source: `bonus.entrants`. Figure 5, chart 6.
   - Source: Spaniel 2014, The New Republic: 37.76% over bonus puzzles from 2007 to January 2014.
 - Picks:
@@ -166,24 +171,26 @@ This is mostly already written in the earlier FINDINGS.md, in git history at `a8
 - Style:
   - The bot plays nothing like a contestant: it flips every Mystery and keeps spinning on known boards.
   - LLMs play closer to contestants.
-  - Gap: v6 counts for Mystery flips, vowel buys, and spins on known boards. Spins are in `numbers.json`; flips and buys aren't.
+  - Mystery flips and Express rides: `L[id].<seat>.play.specials` (filled). Vowel buys: `L[id].<seat>.vowels` (filled). Spins on known boards: `play.milking` (filled).
 
 ## 10. Cost
 
 - Per game, one model seat:
-  - Luna 0.3¢, Haiku 0.6¢, Terra 0.9¢, DeepSeek 1.4¢, Sol 1.6¢ (flex tier), Qwen 2.9¢ with 10% of games above 5.7¢.
+  - Luna 0.3¢, Haiku 0.6¢, Terra 0.9¢, DeepSeek 1.4¢, Sol 1.6¢ (flex tier), Ember 2.3¢, Qwen 2.9¢ with 10% of games above 5.7¢.
+  - Ember's tail: its one-set trial said 0.67¢ a game. 5.6% of its calls ran past 5,000 output tokens, some hit the 65,536 ceiling with no move, and one round cost 20.7¢, its reasoning summaries drifting into text about buffers and deployments. In the bonus test it spent $2.53, more than the other eleven players together ($1.91).
   - Source: `L[id].<model>.cost`. Figure 6, chart 5.
 - Why:
   - Output tokens and cache hits, not token price.
   - Qwen's provider caches only up to marked messages. The fix took caching from 19% to 74–91% of input.
   - A few long-thinking moves dominate spend.
-  - Gap: each model's cached share of input and the spread of cost per game (CV) aren't in `numbers.json`.
-- Total: $44.67 for 5,040 games (the sum of `L[*].cost`), plus $1.91 for the bonus test (`bonus.entrants[*].cost`).
+  - Cached share and cost spread: `L[id].<model>.play.usage` (filled).
+- Total: $53.02 for 5,400 games (the sum of `L[*].cost`), plus $4.43 for the bonus test (`bonus.entrants[*].cost`).
 
 ## 11. Limitations (short, factual)
 
 - One deck, one seed, one bot design, and our rule choices, above all no clock.
-- Six LLMs from four labs. Frontier models from Google, Anthropic and others were left out for cost.
+- Seven LLMs from five labs. Frontier models from Google, Anthropic and others were left out for cost.
+- The bonus deck gives away more than the show's (35% against 29% filled by R S T L N E).
 - Decision seats pair a decision model with Luna as the writer.
 
 ## 12. Conclusion
@@ -204,7 +211,7 @@ One paragraph that answers the four questions in order.
 1. Alone against two bots (chart 1).
 2. Early and right (chart 2).
 3. Rounds and banks (chart 4).
-4. The reading gap (new, from `reading_gap`).
+4. The reading gap (chart 13).
 5. The bonus test (chart 6).
 6. Cost per game (chart 5).
 
@@ -212,13 +219,6 @@ Charts 3 and 7 to 12 go in the appendices.
 
 ## Before drafting
 
-1. Add the gaps to `numbers.py`:
-   - the noise floor between bot copies
-   - forfeits
-   - wrong solves by kind
-   - puzzle length bands
-   - hybrid ask statistics
-   - Mystery flips and vowel buys
-   - cached share of input and cost spread
-2. Decide how to treat the v4-era probes (memory and decision timing): cite them as earlier experiments, or rerun them on v6.
+1. Done (2026-11-09): every gap above is in `numbers.json`, plus R S T L N E's fill and the bonus solves by it (`bonus.rstlne_share`, `bonus.by_rstlne_share`; needs one more rebuild on the server).
+2. The v4-era probes (memory and decision timing) are cited as earlier experiments. The memory probe's table is in Appendix D.
 3. Citations: found for the contestants' bonus rate and letter picks (Spaniel 2014 and 2013), the Decision Index, and the LLM game benchmarks; refs.bib marks fields still to verify.
