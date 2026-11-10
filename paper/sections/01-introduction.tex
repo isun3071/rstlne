@@ -1,2 +1,27 @@
 \section{Introduction}\label{sec:introduction}
-% To draft from paper/outline.md.
+
+% TODO(Ian): the opening is your story; tell it in your own words.
+This project started at the dinner table. Wheel of Fortune aired every evening, and calling letters at the screen was part of the meal. When large language models arrived, the old game raised new questions. Models are trained on the internet and are strong at language, so can they play it? If they can, how well? And can we help them play better?
+
+Wheel of Fortune tests more than reading. A player calls letters to reveal a hidden phrase, spins a wheel for the money each letter earns, and chooses when to solve. The wheel can wipe out the round's money with Bankrupt. An opponent can solve first and take the round. So every move has a price, and the opponents set it. Whether to spin again depends on how sure the player is of the answer, and only the player knows that. A model that reads the board well can still lose by solving too early for too little, or by spinning once too often.
+
+We ask four questions:
+\begin{enumerate}
+  \item Can language models play the full game? (Section~\ref{sec:can-they-play})
+  \item How well do they play? (Section~\ref{sec:how-well})
+  \item Can we help them play better? (Section~\ref{sec:can-we-do-better})
+  \item How would they fare as contestants? (Section~\ref{sec:contestants})
+\end{enumerate}
+
+The one earlier study of language models on Wheel of Fortune played a single model alone, with Bankrupt and Lose a Turn removed~\citep{llmike}. Its authors named play between several models as future work. We built that game. Three players share one table under the show's current rules. Luck stays in, and duplicate scoring takes it out of the comparisons. A bot with no language model inside sits at every table as the yardstick.
+
+Our contributions are these:
+\begin{itemize}
+  \item We built rstlne, an engine for the show's current rules, with three seats, every special wedge and the bonus round.
+  \item We built a bot that reads the board from word data and plays the money by expected value. It gives every model the same opponent (Appendix~\ref{app:bot}).
+  \item We tested two ways to pair a model with that bot. In a hybrid seat, the model reads the board and the bot makes every decision. In a decision seat, a decision model makes the choices.
+  \item We generated a deck of 500 fresh puzzles, matched to aired rounds 1 to 4 in category and length. On it, seven models from five labs played \NumLineups{} lineups and \NumGames{} games.
+  % TODO(Ian): what we release. The logs hold the grading deck's answers, and releasing them retires the deck for future scoring.
+\end{itemize}
+
+% Results paragraph: drafted after sections 7 and 8, one or two sentences per question.

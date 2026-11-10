@@ -11,6 +11,7 @@ puzzles/*.csv
 puzzles/aired-*.json
 puzzles/mega.json
 logs/
+webpages/
  
 # python
 __pycache__/

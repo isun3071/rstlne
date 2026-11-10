@@ -1,2 +1,27 @@
 \section{Related work}\label{sec:related-work}
-% To draft from paper/outline.md.
+
+\subsection{Wheel of Fortune and game shows}
+
+LLMike is the one earlier study of language models on Wheel of Fortune~\citep{llmike}. It tested 32 models on 80 aired puzzles from a public dataset, each model playing alone. Bankrupt and Lose a Turn were removed, and a wrong letter emptied the bank instead of passing the turn. GPT-4.1 solved 65 of the 80 puzzles, and 23 of the 32 models never solved one. With no opponents, a model never had to decide when to solve before someone else did.
+
+Economists have used game shows as natural experiments in choice under risk. Studies cover Card Sharks~\citep{gertner1993}, wagering in Jeopardy!~\citep{metrick1995}, Deal or No Deal~\citep{post2008} and the wheel in The Price Is Right~\citep{pacheco2023}. Those shows offer gambles with known odds, so a contestant's attitude to risk can be read from their choices. In Wheel of Fortune, the value of another spin depends on how sure the player is of the answer, which no observer can see.
+
+Writers have also studied the show's puzzles. Blatt ranked the hardest puzzles ever aired~\citep{blatt2014}. Spaniel counted the most common bonus-round letters and found that contestants solved 37.76\% of bonus puzzles from 2007 to early 2014~\citep{spaniel2013,spaniel2014}. Blatt later analyzed more than 6,000 bonus puzzles for the New York Times. Contestants with the Wild Card's extra consonant won 43\% of bonus rounds against 37\% without it, and Phrase puzzles were won more often than Thing puzzles~\citep{upshot2023}. These works study the puzzles, not how to play them against opponents.
+
+\subsection{Language models playing games}
+
+Games have long been chosen for the skill they isolate. Jeopardy! tested open-domain question answering~\citep{ferrucci2010}, Hanabi tested reasoning about what partners know~\citep{bard2020}, and Diplomacy tested negotiation~\citep{cicero2022}.
+
+Recent benchmarks put language models through many games at once. clembench includes Wordle among five dialogue games~\citep{chalamalasetti2023clembench}. GTBench sets models against each other in ten board and card games. It found them weak in deterministic games of complete information and competitive in games of chance~\citep{duan2024gtbench}. BALROG, lmgame-Bench and TextArena cover text adventures, video games and competitive text games~\citep{paglieri2025balrog,hu2026lmgamebench,textarena}. Kaggle's Game Arena scores poker with mirrored hands, replaying each deal with the cards swapped~\citep{doerschuktiberi2026gamearena}. That is duplicate scoring for two players. Our tables have three.
+
+Word games test language more directly. Models have played 20 Questions~\citep{zhang2024probing}, the New York Times' Connections, where the best model solved 18\% of games~\citep{samdarshi2024connecting}, crosswords~\citep{saha2025crossword} and Codenames~\citep{stephenson2025codenames}. Letter-level reading is hard for models that see tokens, not letters. Most models know how their tokens are spelled but struggle to use that knowledge~\citep{edman2024cute}. Wheel of Fortune joins a word puzzle to a money game against opponents. Each letter called both reads the board and sets what the round is worth.
+
+\subsection{Risk and confidence}
+
+Language models can stand in for people in economics experiments~\citep{horton2023homo}. On lottery tasks, GPT-4-Turbo, Claude 3 Opus and Gemini 1.0 Pro showed risk aversion and loss aversion~\citep{jia2024decision}. When predicting people's choices, models expect them to follow expected value more closely than people do~\citep{liu2025rational}. In poker, models fall short of optimal play~\citep{zhuang2025pokerbench}, and each model keeps its own steady style, from conservative to aggressive~\citep{rong2026risk}.
+
+Deciding when to solve depends on knowing what one knows. Larger models are mostly calibrated on questions in the right format~\citep{kadavath2022know}. They tend to be overconfident when they state their confidence in words~\citep{xiong2024uncertainty}, though stated confidence can be better calibrated than token probabilities~\citep{tian2023calibration}. Most benchmarks reward guessing over admitting doubt~\citep{kalai2025hallucinate}. Wheel of Fortune prices both. A wrong solve passes the turn, and waiting lets an opponent solve first.
+
+\subsection{Language models paired with solvers}
+
+Several systems split the work between a language model and a solver. In LLM+P, the model translates a problem for a classical planner and translates the plan back~\citep{liu2023llmp}. The LLM-Modulo position holds that models should propose and external components should verify and plan~\citep{kambhampati2024llmmodulo}. In Werewolf, a model proposes moves and a policy trained by reinforcement learning chooses among them, since the model's own choices are biased~\citep{xu2024werewolf}. In poker, models' actions often contradict their own reasoning, and handing decisions to a solver closes the gap~\citep{lin2026toolpoker}. Our hybrid seats make the same split. The model reads the board, and the bot makes every decision.
