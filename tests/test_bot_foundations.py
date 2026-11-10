@@ -101,8 +101,9 @@ V5_KNOBS = {"cased_lexicon": False, "one_letter": (), "ngrams": False, "triple_w
             "vector_pair_weight": 0.0, "single_fit_weight": None, "coherence_weight": 0.0,
             "express_vowels": False, "express_calibration": ()}  # added after version 4's freeze, at these values in 1 to 4
 V6_KNOBS = {"steal_turn": (), "steal_turn_bot": ()}  # added after version 5's freeze, at these values in 1 to 5
+VARIANT_KNOBS = {"vowel_first": None, "milk_all": False}  # self-play variants added after version 6's freeze, off in every version
 LATER_KNOBS = {"stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot", *V5_KNOBS,
-               *V6_KNOBS}  # off in 1 and 2
+               *V6_KNOBS, *VARIANT_KNOBS}  # off in 1 and 2
 V4_KNOBS = {"stealer_gain_llm", "stealer_gain_bot", "steal_bot"}  # added after version 3's freeze, off in it
 
 
@@ -118,16 +119,18 @@ def test_frozen_versions_never_change():
     from dataclasses import asdict
     import hashlib
     assert knob_hash(1) == "ee505edb9891" and knob_hash(2) == "4b391d4eb285"
-    v3 = {k: v for k, v in asdict(versions.knobs(3)).items() if k not in V4_KNOBS | set(V5_KNOBS) | set(V6_KNOBS)}
+    v3 = {k: v for k, v in asdict(versions.knobs(3)).items() if k not in V4_KNOBS | set(V5_KNOBS) | set(V6_KNOBS) | set(VARIANT_KNOBS)}
     assert hashlib.sha256(json.dumps(v3, sort_keys=True).encode()).hexdigest()[:12] == "342c440f08d6"
     assert all(getattr(versions.knobs(v), k) == () for v in (1, 2, 3) for k in V4_KNOBS)
-    v4 = {k: v for k, v in asdict(versions.knobs(4)).items() if k not in V5_KNOBS | V6_KNOBS.keys()}
+    v4 = {k: v for k, v in asdict(versions.knobs(4)).items() if k not in V5_KNOBS | V6_KNOBS.keys() | VARIANT_KNOBS.keys()}
     assert hashlib.sha256(json.dumps(v4, sort_keys=True).encode()).hexdigest()[:12] == "4c039cc65dbf"
     assert all(getattr(versions.knobs(v), k) == off for v in (1, 2, 3, 4) for k, off in V5_KNOBS.items())
-    v5 = {k: v for k, v in asdict(versions.knobs(5)).items() if k not in V6_KNOBS}  # knobs added later, off in 5
+    v5 = {k: v for k, v in asdict(versions.knobs(5)).items() if k not in V6_KNOBS | VARIANT_KNOBS}  # knobs added later, off in 5
     assert hashlib.sha256(json.dumps(v5, sort_keys=True).encode()).hexdigest()[:12] == "b94185438839"
     assert all(getattr(versions.knobs(v), k) == off for v in (1, 2, 3, 4, 5) for k, off in V6_KNOBS.items())
-    assert hashlib.sha256(json.dumps(asdict(versions.knobs(6)), sort_keys=True).encode()).hexdigest()[:12] == "be7b36b1cdb4"
+    v6 = {k: v for k, v in asdict(versions.knobs(6)).items() if k not in VARIANT_KNOBS}
+    assert hashlib.sha256(json.dumps(v6, sort_keys=True).encode()).hexdigest()[:12] == "be7b36b1cdb4"
+    assert all(getattr(versions.knobs(v), k) == off for v in versions.VERSIONS for k, off in VARIANT_KNOBS.items())
 
 
 def test_v6_is_v5_with_steal_odds_per_turn():

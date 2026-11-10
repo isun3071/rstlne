@@ -203,8 +203,16 @@ class BotPlayer(Player):
                 eager = self.knobs.eager_solve
                 if eager is not None and belief.best and "solve" in legal and s.c >= eager:
                     return Solve(guess(belief, view, self._refuted_in(view)))
+                vowel = None
                 if s.c >= self.knobs.known_answer:
-                    kind = self._record["planner"] = planner.decide(s, legal)
+                    if self.knobs.milk_all:  # self-play variant: milk whatever the risk, then solve
+                        kind = "spin" if "spin" in legal else "solve"
+                    else:
+                        kind = planner.decide(s, legal)
+                    self._record["planner"] = kind
+                elif (vowel := self._vowel_first(s, legal)) is not None:  # self-play variant: vowels before anything
+                    kind = self._record["chose"] = "buy_vowel"
+                    self._record["vowel_first"] = True
                 else:
                     options = s.turn_options(legal)
                     self._note(options)
@@ -212,7 +220,7 @@ class BotPlayer(Player):
                 if kind == "spin":
                     return Spin()
                 if kind == "buy_vowel":
-                    return BuyVowel(self._pick(s, "Buys", s.vowel()[0]))
+                    return BuyVowel(self._pick(s, "Buys", vowel or s.vowel()[0]))
                 return Solve(guess(belief, view, self._refuted_in(view)))
             case Phase.EXPRESS:
                 kind, letter = s.express_move(legal)
@@ -236,6 +244,14 @@ class BotPlayer(Player):
             case Phase.WILD_CHOICE:
                 return UseWild(s.wild(view.wedge))
         raise ValueError(f"the bot has no move for {view.phase}")
+
+    def _vowel_first(self, s: Situation, legal) -> str | None:
+        """With the vowel_first variant on, the likeliest open vowel when buying one is legal and it hits often enough."""
+        bar = self.knobs.vowel_first
+        if bar is None or "buy_vowel" not in legal or not s.vowels:
+            return None
+        best = max(s.vowels, key=lambda v: (s.belief.stats(v).p_hit, s.belief.stats(v).count, v))
+        return best if s.belief.stats(best).p_hit >= bar else None
 
     def _belief(self, view: PublicView) -> Belief:
         """What the bot believes when it decides. The hybrid seat mixes in its model's answer here."""

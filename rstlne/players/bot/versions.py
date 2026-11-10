@@ -74,6 +74,11 @@ class Knobs:
     # LLM-like it plays, and the bot's own turn chance reads the bot curve. Empty keeps the per-decision prior.
     steal_turn: tuple[float, ...] = ()
     steal_turn_bot: tuple[float, ...] = ()
+    # Self-play variants, off in every version. vowel_first: while the bot doesn't know the answer, buy the likeliest
+    # open vowel on any turn it hits at least this often, before weighing moves. milk_all: once it knows the answer,
+    # spin while spinning is legal, whatever the Bankrupt and steal risk, and solve only when no consonant is left.
+    vowel_first: float | None = None
+    milk_all: bool = False
 
 
 def _tuples(value):
