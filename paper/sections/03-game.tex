@@ -32,9 +32,10 @@ Bonus rounds, like the syndicated show, open with R, S, T, L, N, and E showing. 
 
 \begin{itemize}
   \item There are no toss ups. Toss ups work by progressively revealing letters at random on a puzzle, with each of the 3 players giving one chance to solve. The first to get the puzzle right wins the preset dollar value of that toss up. Toss ups are innately speed rounds and we are unable to implement speed in this project. We considered polling every player on when to solve for each letter reveal, but that removes the speed aspect and favors non-human players like our bot and the LLMs.
-  \item There are no clocks. Each non-human player is allowed to take however long they need to make their move, including bonus round solves. In the actual show, players get only 10 seconds to solve the bonus puzzle, and main round moves cannot take too long so as to delay the flow of the show. 
+  \item There are no clocks. Each player is allowed to take however long they need to make their move.
   \item Seats 1, 2 and 3 always start rounds 1, 2 and 3, with the winner of round 3 starting round 4. On the show, toss ups decide who starts rounds 1 and 4.
   \item Free Play stays on the wheel despite the show retiring it in 2021.
+  \item On the bonus round, players on the show get 10 seconds to guess the puzzle, but they can guess as many times as they want (and some of them think aloud). Players in this project get only one guess but can spend however long they want to submit it. Additionally, contestants pick the bonus puzzle category in the show, whereas this is randomly picked in this project.
   \item Additionally, the canonical show contains sponsored prizes such as gift tags, prize wedges (earning players a trip), a ``prize puzzle'' for round 3, and potential cars on some envelopes in the bonus round. They are all left out in this project so the players play only for money.
 \end{itemize}
 
