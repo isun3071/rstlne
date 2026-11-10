@@ -16,6 +16,8 @@ SOL, TERRA = "llm:openai/gpt-6.1-sol", "llm:openai/gpt-6.1-terra"
 LUNA, HAIKU = "llm:openai/gpt-6-luna", "llm:anthropic/claude-haiku-5.5"
 DEEPSEEK, QWEN = "llm:deepseek/deepseek-v4.1-flash-1017", "llm:qwen/qwen3.8-flash"
 EMBER = "llm:meta/muse-ember"
+NOT_REFUSED = {"solve doesn't fit the board", "repeated letter"}  # logged, but played with their penalty
+GUESS = "fits, but wrong"  # the one kind of wrong solve that breaks nothing the board shows
 LUNA_H, HAIKU_H = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5"
 LUNA_D, D1 = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra"
 ALONE = {"Sol": ("2", SOL), "Terra": ("2t", TERRA), "DeepSeek": ("3c", DEEPSEEK), "Qwen": ("3r", QWEN), "Ember": ("3m", EMBER),
@@ -73,6 +75,21 @@ def macros(n: dict) -> dict[str, str | None]:
         m[f"{name}RoundMoney"] = money(get(e, "money_per_round_won", "median"))
         cost = get(e, "cost", "mean")
         m[f"{name}Cost"] = None if cost is None else f"{100 * cost:.1f}\\textcent"
+        # Section 6. A refusal is a reply the engine sent back; a misfit or a repeated letter is played, with its penalty
+        invalid = get(e, "invalid")
+        if invalid is not None:
+            refused = sum(v for k, v in invalid.items() if k not in NOT_REFUSED)
+            m[f"{name}Refusals"] = f"{refused:,}"
+            m[f"{name}RefusalsPerGame"] = f"{refused / e['games']:.2f}"
+        wrong = get(e, "play", "wrong_solves")
+        if wrong is not None:
+            total = sum(wrong.values())
+            broke = total - wrong.get(GUESS, 0)
+            m[f"{name}WrongAll"] = str(total)
+            m[f"{name}WrongBoard"] = str(broke)
+            m[f"{name}WrongBoardShare"] = pct(broke / total, 0) if total else None
+    forfeits = [get(e, "play", "forfeits") for L in lineups.values() for e in L["entrants"].values()]
+    m["NumForfeits"] = str(sum(f or 0 for f in forfeits)) if any(f is not None for f in forfeits) else None
     for lid, mates in (("6a", "Lunas"), ("6b", "Haikus"), ("6d2", "LunaDecs"), ("6d1", "Dones")):
         m[f"BotVs{mates}"] = pct(get(lineups, lid, "entrants", "bot", "win_rate"))
     for p in n["pairs"]:

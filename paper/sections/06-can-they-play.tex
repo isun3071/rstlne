@@ -1,2 +1,41 @@
 \section{Can language models play?}\label{sec:can-they-play}
-% To draft from paper/outline.md.
+
+Every model can play the game. Across the \NumGames{} games, every game finished, and no seat ever lost a turn to three refusals in a row. Five DeepSeek games stopped on provider errors, and some games in two decision-seat lineups stopped when our OpenRouter key hit its spending limit. All of them were replayed from the start. Those stops came from the API, not from play.
+
+\subsection{Following the rules}
+
+The engine refuses a move that breaks a rule, and the model tries again. Most refusals were tool calls the engine could not use: a reply with no tool call, or a call to a move that wasn't legal at that moment. Table~\ref{tab:can-they-play} counts them per game. Sol made \SolRefusals{} in 360 games, and Terra made \TerraRefusals{}. Qwen 3.8 Flash made the most, at \QwenRefusalsPerGame{} a game. Some of Ember's refusals were calls that ran out of output tokens mid-thought and returned no move (Section~\ref{sec:cost}). The hybrids and the decision seats made none, since their moves come from a fixed list of options.
+
+Every model also used the special wedges. Each one flipped Mystery wedges, rode the Express and spent the Wild Card.
+
+\subsection{Reading the board}
+
+A wrong solve is legal, but its kind shows how a model reads the board. A wrong answer that fits the board is a fair guess. The other kinds break something the board already shows. They put a called letter into a blank, contradict a letter on the board, repeat an answer already ruled wrong, or have the wrong number or length of words.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+Player & Refusals a game & Wrong solves & Wrong solves that break the board \\
+\midrule
+Sol & \SolRefusalsPerGame & \SolWrongAll & \SolWrongBoard{} (\SolWrongBoardShare) \\
+Terra & \TerraRefusalsPerGame & \TerraWrongAll & \TerraWrongBoard{} (\TerraWrongBoardShare) \\
+DeepSeek & \DeepSeekRefusalsPerGame & \DeepSeekWrongAll & \DeepSeekWrongBoard{} (\DeepSeekWrongBoardShare) \\
+Ember & \EmberRefusalsPerGame & \EmberWrongAll & \EmberWrongBoard{} (\EmberWrongBoardShare) \\
+Qwen 3.8 Flash & \QwenRefusalsPerGame & \QwenWrongAll & \QwenWrongBoard{} (\QwenWrongBoardShare) \\
+Luna & \LunaRefusalsPerGame & \LunaWrongAll & \LunaWrongBoard{} (\LunaWrongBoardShare) \\
+Haiku & \HaikuRefusalsPerGame & \HaikuWrongAll & \HaikuWrongBoard{} (\HaikuWrongBoardShare) \\
+\midrule
+Luna hybrid & \LunaHybridRefusalsPerGame & \LunaHybridWrongAll & \LunaHybridWrongBoard{} (\LunaHybridWrongBoardShare) \\
+Haiku hybrid & \HaikuHybridRefusalsPerGame & \HaikuHybridWrongAll & \HaikuHybridWrongBoard{} (\HaikuHybridWrongBoardShare) \\
+Luna Decisions seat & \LunaDecRefusalsPerGame & \LunaDecWrongAll & \LunaDecWrongBoard{} (\LunaDecWrongBoardShare) \\
+d1-ultra seat & \DoneRefusalsPerGame & \DoneWrongAll & \DoneWrongBoard{} (\DoneWrongBoardShare) \\
+\bottomrule
+\end{tabular}
+\caption{Refusals and wrong solves, each player alone against two bots, 360 games each. A refusal is a move the engine sent back. A wrong solve breaks the board when it puts a called letter into a blank, contradicts a letter showing, repeats an answer already ruled wrong, or has the wrong shape.}
+\label{tab:can-they-play}
+\end{table}
+
+The models differ most in how they read. Luna made \LunaWrongAll{} wrong solves, and \LunaWrongBoard{} of them (\LunaWrongBoardShare) broke the board, most often by putting a letter already called into a blank. The Luna Decisions seat, whose solves Luna writes, did the same. Sol and Ember rarely broke the board: \SolWrongBoard{} of Sol's \SolWrongAll{} wrong solves did, and \EmberWrongBoard{} of Ember's \EmberWrongAll{}. Inside a hybrid, no wrong solve broke the board, because the bot only accepts a model's answer if it fits.
+
+So the rules are not what separates the models. Each one plays legally on almost every move. What separates them is whether they use everything the board already shows.
