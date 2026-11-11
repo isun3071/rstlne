@@ -1,5 +1,104 @@
 \section{How well do they play?}\label{sec:how-well}
-% To draft from paper/outline.md.
 
-% Moved from section 5 (results, not setup). Place where the first set-by-set gap is compared.
-Two identical seats show how large a gap chance alone can make. Across the \NoisePairs{} pairs of bot seats in the lineups, the median gap in win rate is \NoiseMedian{}, and the largest is \NoiseLargest{}.
+Each model played \GamesPerLineup{} games alone against two bots, on the same puzzles and the same spins. A seat with no edge wins a third of them. Table~\ref{tab:alone} gives each model's results.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrrrrr}
+\toprule
+ & & & \multicolumn{2}{c}{Rounds won a game} & & Board showing & Median bank \\
+\cmidrule(lr){4-5}
+Model & Games won (95\% CI) & Place & Model & Each bot & Right solves & at a right solve & per round won \\
+\midrule
+Sol & \SolWin{} (\SolWinCI) & \SolPlace & \SolRounds & \SolBotRounds & \SolAcc & \SolShown & \SolRoundMoney \\
+Terra & \TerraWin{} (\TerraWinCI) & \TerraPlace & \TerraRounds & \TerraBotRounds & \TerraAcc & \TerraShown & \TerraRoundMoney \\
+Ember & \EmberWin{} (\EmberWinCI) & \EmberPlace & \EmberRounds & \EmberBotRounds & \EmberAcc & \EmberShown & \EmberRoundMoney \\
+DeepSeek & \DeepSeekWin{} (\DeepSeekWinCI) & \DeepSeekPlace & \DeepSeekRounds & \DeepSeekBotRounds & \DeepSeekAcc & \DeepSeekShown & \DeepSeekRoundMoney \\
+Qwen 3.8 Flash & \QwenWin{} (\QwenWinCI) & \QwenPlace & \QwenRounds & \QwenBotRounds & \QwenAcc & \QwenShown & \QwenRoundMoney \\
+Luna & \LunaWin{} (\LunaWinCI) & \LunaPlace & \LunaRounds & \LunaBotRounds & \LunaAcc & \LunaShown & \LunaRoundMoney \\
+Haiku & \HaikuWin{} (\HaikuWinCI) & \HaikuPlace & \HaikuRounds & \HaikuBotRounds & \HaikuAcc & \HaikuShown & \HaikuRoundMoney \\
+\bottomrule
+\end{tabular}
+\caption{Each model alone against two bots, \GamesPerLineup{} games each. Place is the average finishing place, with ties split. A seat with no edge wins 33.3\% of games.}
+\label{tab:alone}
+\end{table}
+
+\subsection{Who wins}
+
+The models fall into four groups. Sol and Terra win \SolWin{} and \TerraWin{} of their games, and they are the only models above a third. Terra minus Sol is \PairTerraMinusSol{} points (\PairTerraMinusSolCI), a tie. Ember and DeepSeek tie at about a quarter of their games (DeepSeek minus Ember, \PairDeepseekMinusEmber{}; \PairDeepseekMinusEmberCI). Both beat Qwen 3.8 Flash and Luna. Ember minus Qwen is \PairEmberMinusQwenFlash{} points (\PairEmberMinusQwenFlashCI), and Ember minus Luna is \PairEmberMinusLuna{} (\PairEmberMinusLunaCI). DeepSeek's gaps are \PairDeepseekMinusQwenFlash{} (\PairDeepseekMinusQwenFlashCI) and \PairDeepseekMinusLuna{} (\PairDeepseekMinusLunaCI). Qwen and Luna tie (\PairQwenFlashMinusLuna{}; \PairQwenFlashMinusLunaCI). Haiku is last, with \HaikuWin{}. Luna minus Haiku is \PairLunaMinusHaiku{} points (\PairLunaMinusHaikuCI), and Qwen minus Haiku is \PairQwenFlashMinusHaiku{} (\PairQwenFlashMinusHaikuCI).
+
+Two identical seats show how large a gap chance alone can make. Across the \NoisePairs{} pairs of bot seats in the lineups, the median gap in win rate is \NoiseMedian{}, and the largest is \NoiseLargest{}. Every gap we call a win above is larger than the largest of them.
+
+\subsection{When they solve}
+
+Figure~\ref{fig:temperament} plots how early each player solves against how often it is right. Sol and Terra solve with half the board showing and are right on \TerraAcc{} to \SolAcc{} of their solves. Luna solves as early, at \LunaShown{} showing, but only \LunaAcc{} of its solves are right, and it makes \LunaWrong{} wrong solves a game. Haiku and Qwen 3.8 Flash wait until \QwenShown{} to \HaikuShown{} of the board shows.
+
+Ember is the most careful. It is right on \EmberAcc{} of its solves and makes \EmberWrong{} wrong solves a game. It waits until \EmberShown{} of the board shows, about when the bots solve (\BotShownRange\%). It also buys the most vowels of any model, \EmberVowels{} a game against Sol's \SolVowels{}. Ember pays for certainty, in vowels and in thinking tokens (Section~\ref{sec:cost}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\linewidth]{2-temperament.png}
+\caption{How early each player solves (median share of the board showing at a right solve) against how often its solves are right. Each player is alone against two bots. The bot's point is from its games against Sol.}
+\label{fig:temperament}
+\end{figure}
+
+\subsection{Rounds and banks}
+
+Five of the seven models win more rounds than either bot in their lineup. Only Qwen 3.8 Flash and Haiku win fewer. Yet only Sol and Terra win more games. The bots win fewer rounds, but they bank more in each. A bot's median bank in a round it wins is \BotRoundMoneyRange{}, against Sol's \SolRoundMoney{} and Luna's \LunaRoundMoney{} (Figure~\ref{fig:banks}). The models solve with less of the board showing, so fewer paid consonants are left. Once a bot is sure of the answer, it keeps spinning for those consonants before it solves (Section~\ref{sec:players}). Section~\ref{sec:can-we-do-better} asks what that habit is worth.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{4-rounds-and-banks.png}
+\caption{Rounds won per game, and the median bank in a round won, for each player and for each of the two bots it played.}
+\label{fig:banks}
+\end{figure}
+
+\subsection{Choosing letters}
+
+We judge each consonant a player calls with the bot's reader. Before the call, the reader reads the board and gives each letter its chance of being in the answer. That chance is what the reader expected the call to hit. Table~\ref{tab:letters} sets it against how often the calls did hit.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Model & Consonants that hit & Reader expected & Difference (points) & Reader's top pick \\
+\midrule
+Sol & \SolConsHit & \SolConsJudge & \SolConsBeat & \SolConsTop \\
+Terra & \TerraConsHit & \TerraConsJudge & \TerraConsBeat & \TerraConsTop \\
+Ember & \EmberConsHit & \EmberConsJudge & \EmberConsBeat & \EmberConsTop \\
+DeepSeek & \DeepSeekConsHit & \DeepSeekConsJudge & \DeepSeekConsBeat & \DeepSeekConsTop \\
+Qwen 3.8 Flash & \QwenConsHit & \QwenConsJudge & \QwenConsBeat & \QwenConsTop \\
+Luna & \LunaConsHit & \LunaConsJudge & \LunaConsBeat & \LunaConsTop \\
+Haiku & \HaikuConsHit & \HaikuConsJudge & \HaikuConsBeat & \HaikuConsTop \\
+\midrule
+Bots & \BotHitRange\% & \BotJudgeRange\% & & \BotTopRange\% \\
+\bottomrule
+\end{tabular}
+\caption{Consonants called by each model alone against two bots. ``Reader expected'' is the bot's reader's chance for the called letter, on the board before the call. ``Reader's top pick'' is the share of calls that matched the reader's likeliest consonant. The bots' row gives the range over the seven lineups.}
+\label{tab:letters}
+\end{table}
+
+Every model hits more often than the reader expected. Sol's consonants hit \SolConsHit{} of the time, where the reader expected \SolConsJudge{}. Terra gains \TerraConsBeat{} points, and Haiku gains the least, at \HaikuConsBeat{}. The bots hit \BotHitRange\% against \BotJudgeRange\% expected. The reader's expectation is only as good as its reading. When a model already sees an answer the reader doesn't, it calls letters the reader rates low, and they hit. So Sol and Terra take the reader's top pick only \SolConsTop{} to \TerraConsTop{} of the time and still hit more often than the bots, which take it \BotTopRange\% of the time. The bot doesn't always take its top pick either, because it weighs expected copies and what a letter reveals as well as the chance of a hit.
+
+\subsection{The reading gap}
+
+The letters suggest the best models read some boards better than the bot. We test this directly. For each round a model won, we read the board it solved with the bot's reader and sort the round into one of four groups:
+
+\begin{itemize}
+  \item the reader's best answer was wrong;
+  \item the reader was right but unsure, below the 95\% the bot needs to treat an answer as known;
+  \item the reader was sure, but the turn was the model's;
+  \item a bot already knew the answer and lost the wheel, to a Bankrupt, a Lose a Turn or a wrong solve, before the model solved.
+\end{itemize}
+
+In the first two groups, the bot was not ready to solve the board the model solved. They make up \SolGapHard{} of Sol's winning rounds and \TerraGapHard{} of Terra's (Figure~\ref{fig:reading-gap}). DeepSeek and Luna are as high, at \DeepSeekGapHard{} and \LunaGapHard{}, because they solve as early as Sol. Luna gets there by solving before it can read the board, though: only \LunaAcc{} of its solves are right. Haiku (\HaikuGapHard), Qwen 3.8 Flash (\QwenGapHard) and Ember (\EmberGapHard) win mostly on boards a bot would also have read. They win those rounds because the turn was theirs, or because a bot that knew the answer lost the wheel first. That second group alone is \HaikuGapFirst{} of Haiku's winning rounds.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{13-reading-gap.png}
+\caption{Each round a model won against two bots, sorted by what the bot's reader made of the board the model solved.}
+\label{fig:reading-gap}
+\end{figure}
+
+Sol and Terra win because they read boards the bot cannot, and they are right when they do. They lose money by solving early on boards the bot would have milked. Section~\ref{sec:can-we-do-better} asks whether a player of our own can keep the first and fix the second.

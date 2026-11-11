@@ -9,6 +9,7 @@ The text never types a result; it uses these macros. A number numbers.json doesn
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -92,6 +93,41 @@ def macros(n: dict) -> dict[str, str | None]:
     m["NumForfeits"] = str(sum(f or 0 for f in forfeits)) if any(f is not None for f in forfeits) else None
     for lid, mates in (("6a", "Lunas"), ("6b", "Haikus"), ("6d2", "LunaDecs"), ("6d1", "Dones")):
         m[f"BotVs{mates}"] = pct(get(lineups, lid, "entrants", "bot", "win_rate"))
+    # Section 7: letters, judged by the bot's reader on the board before each call, and the reading gap
+    models = ("Sol", "Terra", "DeepSeek", "Ember", "Qwen", "Luna", "Haiku")
+    gap_kinds = {"Other": "the bot's reader had another answer", "Unsure": "right, but the bot wasn't sure",
+                 "Turn": "the bot would have known it, but it was the other seat's turn",
+                 "First": "a bot knew it first and lost the wheel"}
+    bots = defaultdict(list)
+    for name in models:
+        lid, key = ALONE[name]
+        e = get(lineups, lid, "entrants", key)
+        vow = get(e, "vowels", "per_game")
+        m[f"{name}Vowels"] = None if vow is None else f"{vow:.1f}"
+        c = get(n, "letters", "rows", lid, key, "consonant")
+        m[f"{name}ConsHit"] = pct(get(c, "hit"), 0)
+        m[f"{name}ConsJudge"] = pct(get(c, "judge"), 0)
+        m[f"{name}ConsTop"] = pct(get(c, "top"), 0)
+        m[f"{name}ConsBeat"] = pts(c["hit"] - c["judge"], 0) if c else None
+        cats = get(n, "reading_gap", "lineups", lid, "players", key, "categories") or {}
+        for k, label in gap_kinds.items():
+            m[f"{name}Gap{k}"] = pct(get(cats, label, "share"), 0)
+        hard = [get(cats, gap_kinds[k], "share") for k in ("Other", "Unsure")]
+        m[f"{name}GapHard"] = pct(sum(hard), 0) if None not in hard else None
+        both = [get(lineups, lid, "entrants", seat, "rounds_won_per_game") for seat in ("bot #1", "bot #2")]
+        m[f"{name}BotRounds"] = None if None in both else "--".join(dict.fromkeys(f"{x:.2f}" for x in sorted(both)))
+        for seat in ("bot #1", "bot #2"):
+            b = get(lineups, lid, "entrants", seat)
+            bots["money"].append(get(b, "money_per_round_won", "median"))
+            bots["shown"].append(get(b, "shown_at_correct_solve", "median"))
+        bc = get(n, "letters", "rows", lid, "bot", "consonant")
+        bots["hit"].append(get(bc, "hit"))
+        bots["judge"].append(get(bc, "judge"))
+        bots["top"].append(get(bc, "top"))
+    span = lambda xs, f: None if None in xs else f"{f(min(xs))}--{f(max(xs))}"  # noqa: E731
+    m["BotRoundMoneyRange"] = span(bots["money"], lambda x: f"\\${x:,.0f}")
+    for k in ("shown", "hit", "judge", "top"):
+        m[f"Bot{k.capitalize()}Range"] = span(bots[k], lambda x: f"{100 * x:.0f}")
     # Section 9: the bonus test on our deck and on aired puzzles, the memory probe, Blatt's 15. Counts print as the
     # number right; a ...N macro holds the asks when they aren't the whole deck.
     players = {name: key for name, (_, key) in ALONE.items()} | {"Bot": "bot"}
