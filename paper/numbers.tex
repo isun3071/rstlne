@@ -12,6 +12,8 @@
 \newcommand{\AiredBonusHaikuHybrid}{93}
 \newcommand{\AiredBonusHaikuHybridShown}{52\%}
 \newcommand{\AiredBonusHaikuShown}{52\%}
+\newcommand{\AiredBonusJev}{68}
+\newcommand{\AiredBonusJevShown}{49\%}
 \newcommand{\AiredBonusLuna}{66}
 \newcommand{\AiredBonusLunaDec}{75}
 \newcommand{\AiredBonusLunaDecShown}{48\%}
@@ -49,6 +51,9 @@
 \newcommand{\BlattHaikuOwn}{4}
 \newcommand{\BlattHaikuOwnShown}{33\%}
 \newcommand{\BlattHaikuRstlne}{2}
+\newcommand{\BlattJevContestant}{10}
+\newcommand{\BlattJevOwn}{13}
+\newcommand{\BlattJevOwnShown}{32\%}
 \newcommand{\BlattLunaBlank}{1}
 \newcommand{\BlattLunaContestant}{10}
 \newcommand{\BlattLunaDecContestant}{11}
@@ -90,6 +95,8 @@
 \newcommand{\BonusHaikuHybrid}{97}
 \newcommand{\BonusHaikuHybridShown}{55\%}
 \newcommand{\BonusHaikuShown}{58\%}
+\newcommand{\BonusJev}{80}
+\newcommand{\BonusJevShown}{52\%}
 \newcommand{\BonusLuna}{79}
 \newcommand{\BonusLunaDec}{81}
 \newcommand{\BonusLunaDecShown}{49\%}
@@ -110,6 +117,7 @@
 \newcommand{\BotTopRange}{72--74}
 \newcommand{\BotVsDones}{88.3\%}
 \newcommand{\BotVsHaikus}{65.8\%}
+\newcommand{\BotVsJevs}{92.5\%}
 \newcommand{\BotVsLunaDecs}{83.3\%}
 \newcommand{\BotVsLunas}{58.6\%}
 \newcommand{\DeepSeekAcc}{87\%}
@@ -216,6 +224,20 @@
 \newcommand{\HaikuWrongAll}{25}
 \newcommand{\HaikuWrongBoard}{15}
 \newcommand{\HaikuWrongBoardShare}{60\%}
+\newcommand{\JevAcc}{82\%}
+\newcommand{\JevCost}{0.1\textcent}
+\newcommand{\JevPlace}{2.73}
+\newcommand{\JevRefusals}{0}
+\newcommand{\JevRefusalsPerGame}{0.00}
+\newcommand{\JevRoundMoney}{\$1,175}
+\newcommand{\JevRounds}{0.36}
+\newcommand{\JevShown}{65\%}
+\newcommand{\JevWin}{1.9\%}
+\newcommand{\JevWinCI}{0.6--3.9}
+\newcommand{\JevWrong}{0.08}
+\newcommand{\JevWrongAll}{29}
+\newcommand{\JevWrongBoard}{23}
+\newcommand{\JevWrongBoardShare}{79\%}
 \newcommand{\LunaAcc}{71\%}
 \newcommand{\LunaBotRounds}{1.23}
 \newcommand{\LunaConsBeat}{+6}
@@ -366,11 +388,11 @@
 \newcommand{\MemTerraRstlneGap}{+0}
 \newcommand{\MemTerraRstlneGapCI}{$-$10 to +10}
 \newcommand{\NoiseLargest}{5.8\%}
-\newcommand{\NoiseMedian}{1.1\%}
-\newcommand{\NoisePairs}{11}
+\newcommand{\NoiseMedian}{1.2\%}
+\newcommand{\NoisePairs}{12}
 \newcommand{\NumForfeits}{0}
-\newcommand{\NumGames}{5,400}
-\newcommand{\NumLineups}{15}
+\newcommand{\NumGames}{6,120}
+\newcommand{\NumLineups}{17}
 \newcommand{\PairDeepseekMinusEmber}{$-$0.8}
 \newcommand{\PairDeepseekMinusEmberCI}{$-$7.5 to +5.8}
 \newcommand{\PairDeepseekMinusLuna}{+9.2}
@@ -385,10 +407,16 @@
 \newcommand{\PairEmberMinusQwenFlashCI}{+1.7 to +14.7}
 \newcommand{\PairHaikuHybridMinusHaikuAlone}{+28.6}
 \newcommand{\PairHaikuHybridMinusHaikuAloneCI}{+23.3 to +33.9}
+\newcommand{\PairJevSeatMinusDUltraSeat}{+0.0}
+\newcommand{\PairJevSeatMinusDUltraSeatCI}{$-$2.5 to +2.5}
+\newcommand{\PairLunaAloneMinusTheJevSeat}{+12.5}
+\newcommand{\PairLunaAloneMinusTheJevSeatCI}{+8.3 to +16.9}
 \newcommand{\PairLunaAloneMinusTheLunaDecisionsSeat}{+10.6}
 \newcommand{\PairLunaAloneMinusTheLunaDecisionsSeatCI}{+5.8 to +15.6}
 \newcommand{\PairLunaDecisionsSeatMinusDUltraSeat}{+1.9}
 \newcommand{\PairLunaDecisionsSeatMinusDUltraSeatCI}{$-$1.1 to +5.0}
+\newcommand{\PairLunaDecisionsSeatMinusJevSeat}{+1.9}
+\newcommand{\PairLunaDecisionsSeatMinusJevSeatCI}{+0.0 to +4.2}
 \newcommand{\PairLunaHybridMinusHaikuHybrid}{+4.4}
 \newcommand{\PairLunaHybridMinusHaikuHybridCI}{+0.0 to +8.9}
 \newcommand{\PairLunaHybridMinusLunaAlone}{+26.1}
@@ -485,7 +513,7 @@
 \newcommand{\TerraWrongAll}{46}
 \newcommand{\TerraWrongBoard}{12}
 \newcommand{\TerraWrongBoardShare}{26\%}
-\newcommand{\TotalCost}{\$53.02}
+\newcommand{\TotalCost}{\$54.47}
 \newcommand{\VariantMilkGames}{1,002}
 \newcommand{\VariantMilkVsA}{$-$15}
 \newcommand{\VariantMilkVsACI}{$-$19 to $-$12}

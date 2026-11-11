@@ -6,7 +6,7 @@ Every model can play the game. Across the \NumGames{} games, every game finished
 
 The engine refuses a move that breaks a rule, and the model tries again. Most refusals were tool calls the engine could not use: a reply with no tool call, or a call to a move that wasn't legal at that moment. Table~\ref{tab:can-they-play} counts them per game. Sol made \SolRefusals{} in 360 games, and Terra made \TerraRefusals{}. Qwen 3.8 Flash made the most, at \QwenRefusalsPerGame{} a game. Some of Ember's refusals were calls that ran out of output tokens mid-thought and returned no move (Section~\ref{sec:cost}). The hybrids and the decision seats made none, since their moves come from a fixed list of options.
 
-Every language model also used the special wedges. Each one flipped Mystery wedges, rode the Express and spent the Wild Card. The Luna Decisions seat never rode the Express. It passed all 10 times it could have.
+Every language model also used the special wedges. Each one flipped Mystery wedges, rode the Express and spent the Wild Card. The Luna Decisions seat never rode the Express. It passed all 10 times it could have. The Jev seat took no risk on either wedge: it kept all 48 Mystery wedges it landed on and passed all 14 chances to ride the Express.
 
 \subsection{Reading the board}
 
@@ -30,6 +30,7 @@ Luna hybrid & \LunaHybridRefusalsPerGame & \LunaHybridWrongAll & \LunaHybridWron
 Haiku hybrid & \HaikuHybridRefusalsPerGame & \HaikuHybridWrongAll & \HaikuHybridWrongBoard{} (\HaikuHybridWrongBoardShare) \\
 Luna Decisions seat & \LunaDecRefusalsPerGame & \LunaDecWrongAll & \LunaDecWrongBoard{} (\LunaDecWrongBoardShare) \\
 d1-ultra seat & \DoneRefusalsPerGame & \DoneWrongAll & \DoneWrongBoard{} (\DoneWrongBoardShare) \\
+Jev seat & \JevRefusalsPerGame & \JevWrongAll & \JevWrongBoard{} (\JevWrongBoardShare) \\
 \bottomrule
 \end{tabular}
 \caption{Refusals and wrong solves, each player alone against two bots, 360 games each. A refusal is a move the engine sent back. A wrong solve breaks the board when it puts a called letter into a blank, contradicts a letter showing, repeats an answer already ruled wrong, or has the wrong shape.}
