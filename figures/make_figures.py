@@ -53,7 +53,8 @@ def short(entrant):
     if kind == "hybrid":
         name = f"Hybrid (bot + {NAMES.get(slug, slug)})"
     elif kind == "decision":
-        name = f"{NAMES.get(slug, slug)} seat"
+        decider, _, writer = slug.partition("@")
+        name = f"{NAMES.get(decider, decider)} seat" + (f" ({NAMES.get(writer, writer)} writes)" if writer else "")
     elif kind == "llm":
         name = NAMES.get(slug, slug)
     else:
@@ -115,7 +116,9 @@ solo = [(F[k], key) for k, key in (("2", "openai/gpt-6.1-sol"), ("2t", "openai/g
                                      ("3f", "hybrid:anthropic/claude-haiku-5.5"), ("3c", "deepseek/deepseek-v4.1-flash-1017"),
                                      ("3r", "qwen/qwen3.8-flash"), ("3m", "meta/muse-ember"), ("3b", "llm:openai/gpt-6-luna"), ("3d", "anthropic/claude-haiku-5.5"),
                                      ("d2", "decision:openai/gpt-6-luna-decisions"), ("d1", "decision:liquid/d1-ultra"),
-                                     ("dj", "decision:typesafe/jev-1.14"))
+                                     ("dj", "decision:typesafe/jev-1.14"),
+                                     ("d2h", "decision:openai/gpt-6-luna-decisions@"), ("d1h", "decision:liquid/d1-ultra@"),
+                                     ("djh", "decision:typesafe/jev-1.14@"))
         if have(k)]
 rows = []
 for folder, key in solo:
@@ -255,7 +258,10 @@ groups = [(g, F[k], key, kind) for g, k, key, kind in (
     ("Luna vs bots", "3b", "openai/gpt-6-luna", "LLM"),
     ("Haiku vs bots", "3d", "anthropic/claude-haiku-5.5", "LLM"),
     ("Luna Decisions seat vs bots", "d2", "openai/gpt-6-luna-decisions", "decision"),
-    ("Jev seat vs bots", "dj", "typesafe/jev-1.14", "decision")) if have(k)]
+    ("Jev seat vs bots", "dj", "typesafe/jev-1.14", "decision"),
+    ("Luna Dec. seat, Haiku writes, vs bots", "d2h", "luna-decisions", "decision"),
+    ("d1-ultra seat, Haiku writes, vs bots", "d1h", "d1-ultra", "decision"),
+    ("Jev seat, Haiku writes, vs bots", "djh", "jev-1.14", "decision")) if have(k)]
 data = [(g, kind, per_round(f, key), per_round(f, "bot")) for g, f, key, kind in groups]
 fig, axes = plt.subplots(1, 2, figsize=(12, 0.62 * len(data) + 2.2))
 fig.subplots_adjust(left=0.19, right=0.95, top=0.84, bottom=0.12, wspace=0.62)
@@ -391,6 +397,9 @@ rows7 = [(name, k, pick, kind) for name, k, pick, kind in (
          ("Luna Decisions seat", "d2", lambda s: s["kind"] == "decision", "decision"),
          ("d1-ultra seat", "d1", lambda s: s["kind"] == "decision", "decision"),
          ("Jev seat", "dj", lambda s: s["kind"] == "decision", "decision"),
+         ("Luna Dec. seat, Haiku writes", "d2h", lambda s: s["kind"] == "decision", "decision"),
+         ("d1-ultra seat, Haiku writes", "d1h", lambda s: s["kind"] == "decision", "decision"),
+         ("Jev seat, Haiku writes", "djh", lambda s: s["kind"] == "decision", "decision"),
          ("Bot, against two Lunas", "6a", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two Haikus", "6b", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two d1-ultras", "6d1", lambda s: s["kind"] == "bot", "bot"),

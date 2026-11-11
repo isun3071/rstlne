@@ -20,11 +20,34 @@ def test_parse_seats():
     ]
 
 
+def test_a_decision_seat_can_name_its_solver_after_an_at_sign(rules, wheel_spec):
+    assert cli.parse_seat("decision:liquid/d1-ultra@anthropic/claude-haiku-5.5") == (
+        "decision", "liquid/d1-ultra@anthropic/claude-haiku-5.5")
+    config = settings.load_config()
+    named, default = cli.build_players([("decision", "liquid/d1-ultra@anthropic/claude-haiku-5.5"),
+                                        ("decision", "liquid/d1-ultra"), ("bot", None)][:2],
+                                       rules, wheel_spec, config, None, None, "s")
+    assert (named.model, named.solver.model) == ("liquid/d1-ultra", "anthropic/claude-haiku-5.5")
+    assert (default.model, default.solver.model) == ("liquid/d1-ultra", config["decision"]["solver_model"])
+    assert named.describe()["solver"] == "anthropic/claude-haiku-5.5"
+
+
+def test_a_tournament_pins_the_solver_a_decision_seat_names():
+    from rstlne.tournament import _seated_models
+    config = settings.load_config()
+    assert _seated_models(["decision:liquid/d1-ultra@anthropic/claude-haiku-5.5", "bot", "bot"], config) == {
+        "liquid/d1-ultra", "anthropic/claude-haiku-5.5"}
+    assert _seated_models(["decision:liquid/d1-ultra", "bot", "bot"], config) == {
+        "liquid/d1-ultra", config["decision"]["solver_model"]}
+
+
 @pytest.mark.parametrize("seats, message", [
     ("human,human", "three seats"),
     ("bot:v2,human,human", "bot:v2"),
     ("human,llm:,human", "slug"),
     ("human,robot,human", "robot"),
+    ("decision:liquid/d1-ultra@,bot,bot", "solver"),
+    ("decision:@anthropic/claude-haiku-5.5,bot,bot", "decision model"),
 ])
 def test_bad_seats_are_explained(seats, message):
     with pytest.raises(ValueError, match=message):

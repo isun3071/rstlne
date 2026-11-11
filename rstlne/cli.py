@@ -34,7 +34,8 @@ from rstlne.show import Show
 
 
 def parse_seat(part: str) -> tuple[str, str | None]:
-    """`human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slug>` as a (kind, model) pair."""
+    """`human`, `llm:<slug>`, `decision[:<model>[@<solver>]]`, `bot`, or `hybrid:<slug>` as a (kind, model) pair.
+    A decision seat's model keeps its `@<solver>`; decision_parts splits it."""
     part = part.strip()
     if part in ("human", "bot"):
         return part, None
@@ -44,8 +45,23 @@ def parse_seat(part: str) -> tuple[str, str | None]:
             raise ValueError(f"{kind} seats need a model slug, like {kind}:openai/gpt-4o")
         return kind, slug.strip()
     if part == "decision" or part.startswith("decision:"):
-        return "decision", part.removeprefix("decision").removeprefix(":").strip() or None
+        model = part.removeprefix("decision").removeprefix(":").strip() or None
+        if model and "@" in model:
+            decider, _, solver = (x.strip() for x in model.partition("@"))
+            if not decider:
+                raise ValueError(f"{part!r} names a solver but no decision model, like decision:liquid/d1-ultra@<solver>")
+            if not solver:
+                raise ValueError(f"{part!r} has an @ but no solver slug after it")
+            model = f"{decider}@{solver}"
+        return "decision", model
     raise ValueError(f"unknown seat {part!r}. Use human, llm:<slug>, decision, bot, or hybrid:<slug>.")
+
+
+def decision_parts(model: str | None, config: dict) -> tuple[str, str]:
+    """A decision seat's decision model and solver: the seat's own, or config.toml's [decision] defaults."""
+    decider, _, solver = (model or "").partition("@")
+    decision = config["decision"]
+    return decider or decision["decision_model"], solver or decision["solver_model"]
 
 
 def parse_seats(text: str) -> list[tuple[str, str | None]]:
@@ -122,12 +138,11 @@ def build_players(
                 provider=providers.get(model),
                 all_tools=tool_list == "all",
             )
-        solver_model = decision["solver_model"]
+        model, solver_model = decision_parts(model, config)
         solver = LLMPlayer(
             i, solver_model, client, rules, spec, temperature, f"{session}-solver",
             reasoning_effort=effort_for(solver_model), provider=providers.get(solver_model),
         )
-        model = model or decision["decision_model"]
         threshold = (None if decision.get("solve", "threshold") == "choice"
                      else decision.get("thresholds", {}).get(model, decision["solve_threshold"]))
         return DecisionPlayer(i, model, decisions, solver, rules, spec, threshold, session)

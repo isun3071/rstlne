@@ -21,9 +21,11 @@ NOT_REFUSED = {"solve doesn't fit the board", "repeated letter"}  # logged, but 
 GUESS = "fits, but wrong"  # the one kind of wrong solve that breaks nothing the board shows
 LUNA_H, HAIKU_H = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5"
 LUNA_D, D1, JEV = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra", "decision:typesafe/jev-1.14"
+HAIKU_W = "@anthropic/claude-haiku-5.5"  # a decision seat whose answers Haiku writes
 ALONE = {"Sol": ("2", SOL), "Terra": ("2t", TERRA), "DeepSeek": ("3c", DEEPSEEK), "Qwen": ("3r", QWEN), "Ember": ("3m", EMBER),
          "Luna": ("3b", LUNA), "Haiku": ("3d", HAIKU), "LunaHybrid": ("3", LUNA_H), "HaikuHybrid": ("3f", HAIKU_H),
-         "LunaDec": ("d2", LUNA_D), "Done": ("d1", D1), "Jev": ("dj", JEV)}
+         "LunaDec": ("d2", LUNA_D), "Done": ("d1", D1), "Jev": ("dj", JEV),
+         "LunaDecH": ("d2h", LUNA_D + HAIKU_W), "DoneH": ("d1h", D1 + HAIKU_W), "JevH": ("djh", JEV + HAIKU_W)}
 
 
 def pct(x, places=1):

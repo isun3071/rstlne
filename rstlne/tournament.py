@@ -21,7 +21,7 @@ from itertools import combinations, permutations
 from pathlib import Path
 
 from rstlne import puzzlegen, settings
-from rstlne.cli import build_players, clients, parse_seats
+from rstlne.cli import build_players, clients, decision_parts, parse_seats
 from rstlne.engine.bonus import before_bonus
 from rstlne.engine.puzzle import Puzzle, round_pools
 from rstlne.engine.rules import new_game
@@ -165,8 +165,7 @@ def _seated_models(entrants: Sequence[str], config: dict) -> set[str]:
         if kind in ("llm", "hybrid") and slug:
             models.add(slug)
         elif kind == "decision":
-            decision = config.get("decision", {})
-            models |= {slug or decision.get("decision_model"), decision.get("solver_model")}
+            models |= set(decision_parts(slug or None, config))
     return models
 
 

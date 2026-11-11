@@ -18,7 +18,7 @@ uv run python -m rstlne.cli --seats human,bot,hybrid:anthropic/claude-haiku-5.5
 | `llm:<slug>` | A chat model through OpenRouter, making every move itself, such as `llm:openai/gpt-6.1-sol` or `llm:openai/gpt-6-luna`. Any model with tool calling works. | About 0.5 to 2 cents a game |
 | `bot` | The project's own player. It reads the board with word and phrase lists and scores every move for money and its chance of winning. No API calls. `[bot] version` in `config.toml` picks the version, 4 by default. | Free |
 | `hybrid:<slug>` | The bot makes every move, and on its turns asks the model to read the board. Only models with measured trust curves in `config.toml` can sit: `openai/gpt-6-luna`, `anthropic/claude-haiku-5.5`, and `deepseek/deepseek-v4.1-flash-1017`. | About 0.5 to 3 cents a game |
-| `decision` or `decision:<model>` | A decision model, GPT-6 Luna Decisions by default, picks every move from the legal options, including when to solve. An LLM, Luna by default, writes the answer when it solves. `[decision]` in `config.toml` sets both. | Under 1 cent a game |
+| `decision`, `decision:<model>`, or `decision:<model>@<solver>` | A decision model, GPT-6 Luna Decisions by default, picks every move from the legal options, including when to solve. An LLM, Luna by default, writes the answer when it solves. `[decision]` in `config.toml` sets both; `@<solver>` names the answer writer for one seat. | Under 1 cent a game |
 
 The bot, and so the hybrid, plays at full strength only with its word data fetched once: `uv run python -m rstlne.data fetch` (about 8 minutes, 0.2 GB). Without it, the bot reads by letter frequency alone.
 

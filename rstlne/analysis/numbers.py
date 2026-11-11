@@ -40,6 +40,7 @@ DEEPSEEK, QWEN = "llm:deepseek/deepseek-v4.1-flash-1017", "llm:qwen/qwen3.8-flas
 EMBER = "llm:meta/muse-ember"
 LUNA_HYBRID, HAIKU_HYBRID = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5"
 LUNA_DEC, D1, JEV = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra", "decision:typesafe/jev-1.14"
+HAIKU_WRITES = "@anthropic/claude-haiku-5.5"  # a decision seat whose answers Haiku writes, in place of Luna
 PAIRS = [
     ("Terra minus Sol", ("2t", TERRA), ("2", SOL)),
     ("Sol minus the Luna hybrid", ("2", SOL), ("3", LUNA_HYBRID)),
@@ -61,6 +62,12 @@ PAIRS = [
     ("Luna alone minus the Jev seat", ("3b", LUNA), ("dj", JEV)),
     ("Luna Decisions seat minus Jev seat", ("d2", LUNA_DEC), ("dj", JEV)),
     ("Jev seat minus d1-ultra seat", ("dj", JEV), ("d1", D1)),
+    ("Luna Decisions seat with Haiku writing minus with Luna writing", ("d2h", LUNA_DEC + HAIKU_WRITES), ("d2", LUNA_DEC)),
+    ("d1-ultra seat with Haiku writing minus with Luna writing", ("d1h", D1 + HAIKU_WRITES), ("d1", D1)),
+    ("Jev seat with Haiku writing minus with Luna writing", ("djh", JEV + HAIKU_WRITES), ("dj", JEV)),
+    ("Haiku alone minus the Luna Decisions seat with Haiku writing", ("3d", HAIKU), ("d2h", LUNA_DEC + HAIKU_WRITES)),
+    ("Haiku alone minus the d1-ultra seat with Haiku writing", ("3d", HAIKU), ("d1h", D1 + HAIKU_WRITES)),
+    ("Haiku alone minus the Jev seat with Haiku writing", ("3d", HAIKU), ("djh", JEV + HAIKU_WRITES)),
 ]
 
 

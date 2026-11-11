@@ -24,6 +24,9 @@ default = "v6"
 "d2" = { folder = "seed707-5a806f9e", label = "Luna Decisions · bot · bot" }
 "dj" = { folder = "seed707-d828a597", label = "Jev · bot · bot" }
 "6dj" = { folder = "seed707-2ffcafb8", label = "bot · Jev · Jev" }
+"d2h" = { folder = "seed707-b5528cba", label = "Luna Decisions, Haiku writing · bot · bot" }
+"d1h" = { folder = "seed707-fa7278d2", label = "d1-ultra, Haiku writing · bot · bot" }
+"djh" = { folder = "seed707-a999308a", label = "Jev, Haiku writing · bot · bot" }
 
 [v4]
 "1" = { folder = "seed707-d7589355", label = "Sol · DeepSeek · Haiku" }
