@@ -227,3 +227,16 @@ def test_variants_summarize_each_self_play_folder_that_exists(tmp_path, monkeypa
     monkeypatch.setattr(selfplay, "games_summary", lambda folder: {"games": 3, "folder": Path(folder).name})
     out = numbers.variants({"milk_all": tmp_path / "milk", "vowel_first": tmp_path / "none"})
     assert out == {"milk_all": {"games": 3, "folder": "milk"}}
+
+
+def test_pooled_seats_merge_every_game_round_and_solve_of_the_named_seats():
+    raw = {"bot #1": {"rounds_won": [1, 2], "tries": [1, 3], "shown_right": [0.6, 0.7, 0.8], "round_money": [1000, 3000, 5000]},
+           "bot #2": {"rounds_won": [0, 1], "tries": [0, 1], "shown_right": [0.5], "round_money": [2000]},
+           "llm:x": {"rounds_won": [9], "tries": [9], "shown_right": [0.1], "round_money": [1]}}
+    out = numbers.pool_seats(raw, ["bot #1", "bot #2"])
+    assert out["seats"] == 2 and out["seat_games"] == 4
+    assert out["rounds_won_per_game"] == pytest.approx(1.0)  # 4 rounds over 4 seat-games
+    assert out["solve_accuracy"] == pytest.approx(4 / 5)
+    assert out["shown_at_correct_solve"]["median"] == pytest.approx(0.65)  # of 0.5, 0.6, 0.7, 0.8
+    assert out["money_per_round_won"]["median"] == pytest.approx(2500)  # of 1000, 2000, 3000, 5000
+    assert numbers.pool_seats(raw, []) is None

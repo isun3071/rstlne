@@ -114,12 +114,11 @@ def macros(n: dict) -> dict[str, str | None]:
             m[f"{name}Gap{k}"] = pct(get(cats, label, "share"), 0)
         hard = [get(cats, gap_kinds[k], "share") for k in ("Other", "Unsure")]
         m[f"{name}GapHard"] = pct(sum(hard), 0) if None not in hard else None
-        both = [get(lineups, lid, "entrants", seat, "rounds_won_per_game") for seat in ("bot #1", "bot #2")]
-        m[f"{name}BotRounds"] = None if None in both else "--".join(dict.fromkeys(f"{x:.2f}" for x in sorted(both)))
-        for seat in ("bot #1", "bot #2"):
-            b = get(lineups, lid, "entrants", seat)
-            bots["money"].append(get(b, "money_per_round_won", "median"))
-            bots["shown"].append(get(b, "shown_at_correct_solve", "median"))
+        bots_here = get(lineups, lid, "bots")  # the lineup's two bots as one player, as the charts draw them
+        r = get(bots_here, "rounds_won_per_game")
+        m[f"{name}BotRounds"] = None if r is None else f"{r:.2f}"
+        bots["money"].append(get(bots_here, "money_per_round_won", "median"))
+        bots["shown"].append(get(bots_here, "shown_at_correct_solve", "median"))
         bc = get(n, "letters", "rows", lid, "bot", "consonant")
         bots["hit"].append(get(bc, "hit"))
         bots["judge"].append(get(bc, "judge"))

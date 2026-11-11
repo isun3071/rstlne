@@ -98,6 +98,18 @@ def pair_of(a: dict[int, float], b: dict[int, float]) -> dict:
     return {"sets": len(diffs), "diff": _r(mean(diffs)) if diffs else None, "ci95": list(ci) if ci else None}
 
 
+def pool_seats(E: dict, names: Sequence[str]) -> dict | None:
+    """Several seats as one player, every game, round and solve of theirs together: how a lineup's two bots are cited
+    ("a bot"), and how the charts draw them."""
+    if not names:
+        return None
+    cat = lambda k: [x for n in names for x in E[n][k]]  # noqa: E731
+    games, won, tries = len(cat("rounds_won")), sum(cat("rounds_won")), sum(cat("tries"))
+    return {"seats": len(names), "seat_games": games, "rounds_won_per_game": _r(won / games) if games else None,
+            "solve_accuracy": _r(won / tries) if tries else None,
+            "shown_at_correct_solve": summary(cat("shown_right")), "money_per_round_won": summary(cat("round_money"))}
+
+
 def lineup(folder: Path) -> dict:
     """Every per entrant stat of one lineup, from its finished games."""
     rep = tournament.report(folder)
@@ -185,6 +197,7 @@ def lineup(folder: Path) -> dict:
         }
     return {"games": n_games, "sets": rep["sets"], "puzzles": Path(rep["puzzles"]).name if rep["puzzles"] else None,
             "cost": _r(sum(e["cost"] for e in rep["entrants"]), 6), "entrants": entrants,
+            "bots": pool_seats(E, sorted(n for n in E if n == "bot" or n.startswith("bot #"))),
             "generated_by": rep.get("generated_by"), "pairwise": rep.get("pairwise", [])}
 
 

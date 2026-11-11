@@ -9,7 +9,7 @@ Each model played \GamesPerLineup{} games alone against two bots, on the same pu
 \toprule
  & & & \multicolumn{2}{c}{Rounds won a game} & & Board showing & Median bank \\
 \cmidrule(lr){4-5}
-Model & Games won (95\% CI) & Place & Model & Each bot & Right solves & at a right solve & per round won \\
+Model & Games won (95\% CI) & Place & Model & A bot & Right solves & at a right solve & per round won \\
 \midrule
 Sol & \SolWin{} (\SolWinCI) & \SolPlace & \SolRounds & \SolBotRounds & \SolAcc & \SolShown & \SolRoundMoney \\
 Terra & \TerraWin{} (\TerraWinCI) & \TerraPlace & \TerraRounds & \TerraBotRounds & \TerraAcc & \TerraShown & \TerraRoundMoney \\
@@ -20,7 +20,7 @@ Luna & \LunaWin{} (\LunaWinCI) & \LunaPlace & \LunaRounds & \LunaBotRounds & \Lu
 Haiku & \HaikuWin{} (\HaikuWinCI) & \HaikuPlace & \HaikuRounds & \HaikuBotRounds & \HaikuAcc & \HaikuShown & \HaikuRoundMoney \\
 \bottomrule
 \end{tabular}
-\caption{Each model alone against two bots, \GamesPerLineup{} games each. Place is the average finishing place, with ties split. A seat with no edge wins 33.3\% of games.}
+\caption{Each model alone against two bots, \GamesPerLineup{} games each. Place is the average finishing place, with ties split. ``A bot'' is the two bots of the lineup taken together, per bot and game. A seat with no edge wins 33.3\% of games.}
 \label{tab:alone}
 \end{table}
 
@@ -39,7 +39,7 @@ Ember is the most careful. It is right on \EmberAcc{} of its solves and makes \E
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\linewidth]{2-temperament.png}
-\caption{How early each player solves (median share of the board showing at a right solve) against how often its solves are right. Each player is alone against two bots. The bot's point is from its games against Sol.}
+\caption{How early each player solves (median share of the board showing at a right solve) against how often its solves are right. Each player is alone against two bots, and the labels give its share of games won. The bot's point is both bots of Sol's lineup.}
 \label{fig:temperament}
 \end{figure}
 
@@ -50,7 +50,7 @@ Five of the seven models win more rounds than either bot in their lineup. Only Q
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{4-rounds-and-banks.png}
-\caption{Rounds won per game, and the median bank in a round won, for each player and for each of the two bots it played.}
+\caption{Rounds won per game, and the median bank in a round won, for each player alone against two bots and for a bot in the same lineup (both bots taken together). The hybrids and the Luna Decisions seat are included for Section~\ref{sec:can-we-do-better}.}
 \label{fig:banks}
 \end{figure}
 

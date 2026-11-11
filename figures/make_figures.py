@@ -140,29 +140,37 @@ save(fig, "1-alone-against-two-bots.png", "Alone against two bots",
      f"One seat against two identical {PHASE} bots, 60 sets (360 games) each, same puzzles and spins")
 
 # 2. Temperament: how early each player solves, and how often it's right
+# From paper/numbers.json, so the chart shows the same medians as the paper's tables: the median board showing at a
+# right solve, and the bot as both bots of Sol's lineup pooled
+NUMBERS = json.loads(Path("paper/numbers.json").read_text())["lineups"]
+LID = {folder: k for k, folder in F.items()}
 pts = []
-for folder, key in solo + ([(F["2"], "bot #1")] if have("2") else []):
-    e = next(x for x in REPORTS[folder] if key in x["entrant"])
-    name, kind = short(e["entrant"])
-    name = "Bot" if kind == "bot" else name
-    pts.append((name, kind, e["avg_board_shown"] * 100, e["solve_accuracy"] * 100, e["win_rate"]))
+for folder, key in solo:
+    full = next(n for n in NUMBERS[LID[folder]]["entrants"] if key in n)
+    e = NUMBERS[LID[folder]]["entrants"][full]
+    name, kind = short(full)
+    pts.append((name, kind, e["shown_at_correct_solve"]["median"] * 100, e["solve_accuracy"] * 100, e["win_rate"]))
+if have("2"):
+    b = NUMBERS["2"]["bots"]
+    bot_win = st.mean(e["win_rate"] for n, e in NUMBERS["2"]["entrants"].items() if n.startswith("bot"))
+    pts.append(("Bot", "bot", b["shown_at_correct_solve"]["median"] * 100, b["solve_accuracy"] * 100, bot_win))
 fig, ax = plt.subplots(figsize=(9, 6.2))
 fig.subplots_adjust(left=0.1, right=0.96, top=0.84, bottom=0.12 if PHASE == "v4" else 0.17)
 if PHASE == "v4":
     OFFSETS = {"Hybrid (bot + Luna)": (9, 12), "Hybrid (bot + Haiku)": (-9, -22)}  # the two hybrids sit together
 else:  # v6: Sol and Terra sit together, and the hybrids beside the bot
-    OFFSETS = {"Sol": (-9, 4), "Terra": (-9, -18), "Hybrid (bot + Luna)": (-9, 14), "Hybrid (bot + Haiku)": (9, 14),
-               "Bot": (9, -16), "Haiku": (9, -18), "Qwen 3.8 Flash": (-9, -4), "d1-ultra seat": (0, -24),
-               "Ember": (110, -24)}
+    OFFSETS = {"Sol": (-9, 4), "Terra": (-9, -18), "Hybrid (bot + Luna)": (-9, 14), "Hybrid (bot + Haiku)": (-9, -20),
+               "Bot": (6, -22), "Haiku": (9, -18), "Qwen 3.8 Flash": (-9, -4), "d1-ultra seat": (0, -24),
+               "Ember": (9, 16)}  # four players sit within four points of each other at the top: leader lines
 for name, kind, x, y, w in pts:
     ax.scatter(x, y, s=110, color=KIND[kind], edgecolor=SURFACE, linewidth=2, zorder=3)
-    label = f"{name}\n{w:.0%} of games" if kind != "bot" else f"{name}\n(against Sol: {w:.0%})"
+    label = f"{name}\n{w:.0%} of games" if kind != "bot" else f"{name}\n({w:.0%} vs Sol)"
     dx, dy = OFFSETS.get(name, (9, -4))
     far = abs(dx) > 40  # a label set well away from its point gets a leader line
     ax.annotate(label, (x, y), textcoords="offset points", xytext=(dx, dy), fontsize=10, color=INK, va="center",
                 ha="left" if dx > 0 else "right" if dx < 0 else "center",
                 arrowprops=dict(arrowstyle="-", color=INK2, linewidth=0.8, shrinkA=2, shrinkB=6) if far else None)
-ax.set_xlabel("board showing at a correct solve (%): left solves earlier")
+ax.set_xlabel("median board showing at a correct solve (%): left solves earlier")
 ax.set_ylabel("solves that were right (%)")
 ax.set_xlim(40, 80)
 low = 60 if PHASE == "v4" else 50  # v6: the Luna Decisions seat is right 57% of the time
@@ -182,7 +190,7 @@ if PHASE == "v4":
 else:
     fig.legend(handles, ["LLM alone", "bot", "hybrid", "decision seat"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
 save(fig, "2-temperament.png", "Early and right wins",
-     "Each player alone against two bots (the bot's point is from its games against Sol); labels give games won")
+     "Each player alone against two bots (the bot's point is both bots against Sol); labels give games won")
 
 # 3. Every lineup: share of games won by each seat
 fig, ax = plt.subplots(figsize=(11, 0.62 * len(LINEUPS) + 2.6))
@@ -532,7 +540,7 @@ save(fig, "11-risk.png", "Two ways to give a round away",
      "Bankrupts come from spinning; wrong solves from guessing. Same players as charts 7 and 8")
 
 
-# 12. Puzzle length: the bots slow down on long puzzles; the LLMs don't
+# 12. Puzzle length: whether a long puzzle changes who wins the round
 BANDS = [(16, 17), (18, 19), (20, 22), (23, 26), (27, 99)]
 band_names = ["16–17", "18–19", "20–22", "23–26", "27+"]
 
@@ -609,13 +617,13 @@ tidy(ax, "rounds won on 27+ letters minus on 16–19 (points, 95%)")
 ax.set_title("Each player against two bots", loc="left", fontsize=11.5, color=INK)
 handles = [plt.Line2D([], [], marker="o", linestyle="", color=KIND[k], markersize=8) for k in KIND]
 fig.legend(handles, ["LLM", "bot", "hybrid", "decision seat"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
-save(fig, "12-puzzle-length.png", "Long puzzles slow the bot down, not the LLMs",
-     "Every main round solved in the lineups against two bots; every player gains on long puzzles")
+save(fig, "12-puzzle-length.png", "Puzzle length doesn't change who wins a round",
+     "Every main round solved in the lineups against two bots; every interval includes zero")
 # 13. The reading gap: what the bots lacked on each round a model won
 GAP = json.loads(Path("paper/numbers.json").read_text())["reading_gap"]["lineups"]
 CATS = [("the bot's reader had another answer", "out-read the bot: its reader had another answer"),
         ("right, but the bot wasn't sure", "the bot's reader was right, but unsure"),
-        ("the bot would have known it, but it was the other seat's turn", "the bot would have known it, on its own turn"),
+        ("the bot would have known it, but it was the other seat's turn", "the bot would have known it, but it was the model's turn"),
         ("a bot knew it first and lost the wheel", "a bot knew it first, then lost the wheel")]
 GAP_RAMP = ["#0b3a73", "#2a78d6", "#7fb0ec", "#c6dcf7"]  # one hue: darkest is the model reading ahead of the bot
 gap_rows = []

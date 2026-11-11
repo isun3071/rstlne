@@ -1,8 +1,8 @@
 {
  "meta": {
   "phase": "v6",
-  "made": "2026-11-11T04:56:43+00:00",
-  "commit": "332279e",
+  "made": "2026-11-11T13:38:37+00:00",
+  "commit": "df0442a",
   "lineups": [
    "2",
    "2t",
@@ -934,6 +934,28 @@
        "per_game": 0.6722
       }
      }
+    }
+   },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.0306,
+    "solve_accuracy": 0.9763,
+    "shown_at_correct_solve": {
+     "n": 742,
+     "mean": 0.6198,
+     "sd": 0.1831,
+     "median": 0.625,
+     "p10": 0.3846,
+     "p90": 0.8571
+    },
+    "money_per_round_won": {
+     "n": 742,
+     "mean": 5991.3073,
+     "sd": 4153.3357,
+     "median": 5250.0,
+     "p10": 1200,
+     "p90": 11600
     }
    },
    "generated_by": {
@@ -1874,6 +1896,28 @@
        "per_game": 0.6694
       }
      }
+    }
+   },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 0.975,
+    "solve_accuracy": 0.9764,
+    "shown_at_correct_solve": {
+     "n": 702,
+     "mean": 0.6243,
+     "sd": 0.1794,
+     "median": 0.6316,
+     "p10": 0.4091,
+     "p90": 0.8636
+    },
+    "money_per_round_won": {
+     "n": 702,
+     "mean": 6112.8205,
+     "sd": 3982.7539,
+     "median": 5400.0,
+     "p10": 1200,
+     "p90": 11550
     }
    },
    "generated_by": {
@@ -2838,6 +2882,28 @@
      }
     }
    },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.2125,
+    "solve_accuracy": 0.9743,
+    "shown_at_correct_solve": {
+     "n": 873,
+     "mean": 0.6237,
+     "sd": 0.177,
+     "median": 0.625,
+     "p10": 0.4118,
+     "p90": 0.8462
+    },
+    "money_per_round_won": {
+     "n": 873,
+     "mean": 5762.3139,
+     "sd": 3959.1051,
+     "median": 5000,
+     "p10": 1050,
+     "p90": 11550
+    }
+   },
    "generated_by": {
     "generator": "minimax/minimax-m3",
     "judge": "z-ai/glm-5.3-flash"
@@ -3777,6 +3843,28 @@
        "per_game": 0.8111
       }
      }
+    }
+   },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.2278,
+    "solve_accuracy": 0.98,
+    "shown_at_correct_solve": {
+     "n": 884,
+     "mean": 0.6291,
+     "sd": 0.1886,
+     "median": 0.6364,
+     "p10": 0.3846,
+     "p90": 0.875
+    },
+    "money_per_round_won": {
+     "n": 884,
+     "mean": 5915.3281,
+     "sd": 3938.5509,
+     "median": 5100.0,
+     "p10": 1250,
+     "p90": 11550
     }
    },
    "generated_by": {
@@ -4723,6 +4811,28 @@
      }
     }
    },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.1097,
+    "solve_accuracy": 0.9792,
+    "shown_at_correct_solve": {
+     "n": 799,
+     "mean": 0.625,
+     "sd": 0.1868,
+     "median": 0.625,
+     "p10": 0.3846,
+     "p90": 0.8696
+    },
+    "money_per_round_won": {
+     "n": 799,
+     "mean": 6075.4693,
+     "sd": 4046.3621,
+     "median": 5300,
+     "p10": 1250,
+     "p90": 11750
+    }
+   },
    "generated_by": {
     "generator": "minimax/minimax-m3",
     "judge": "z-ai/glm-5.3-flash"
@@ -5665,6 +5775,28 @@
        "per_game": 1.075
       }
      }
+    }
+   },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.5639,
+    "solve_accuracy": 0.9851,
+    "shown_at_correct_solve": {
+     "n": 1126,
+     "mean": 0.6484,
+     "sd": 0.1899,
+     "median": 0.6522,
+     "p10": 0.4167,
+     "p90": 0.9
+    },
+    "money_per_round_won": {
+     "n": 1126,
+     "mean": 5405.1066,
+     "sd": 3821.4912,
+     "median": 4650.0,
+     "p10": 1000,
+     "p90": 11050
     }
    },
    "generated_by": {
@@ -6614,6 +6746,28 @@
      }
     }
    },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.4431,
+    "solve_accuracy": 0.9765,
+    "shown_at_correct_solve": {
+     "n": 1039,
+     "mean": 0.6645,
+     "sd": 0.1895,
+     "median": 0.68,
+     "p10": 0.4211,
+     "p90": 0.9286
+    },
+    "money_per_round_won": {
+     "n": 1039,
+     "mean": 5524.9759,
+     "sd": 3900.8815,
+     "median": 4800,
+     "p10": 1000,
+     "p90": 11400
+    }
+   },
    "generated_by": {
     "generator": "minimax/minimax-m3",
     "judge": "z-ai/glm-5.3-flash"
@@ -7553,6 +7707,28 @@
        "per_game": 0.8556
       }
      }
+    }
+   },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.2472,
+    "solve_accuracy": 0.9719,
+    "shown_at_correct_solve": {
+     "n": 898,
+     "mean": 0.6313,
+     "sd": 0.1889,
+     "median": 0.625,
+     "p10": 0.3889,
+     "p90": 0.8824
+    },
+    "money_per_round_won": {
+     "n": 898,
+     "mean": 5719.1537,
+     "sd": 3643.534,
+     "median": 5200.0,
+     "p10": 1250,
+     "p90": 11200
     }
    },
    "generated_by": {
@@ -8515,6 +8691,28 @@
      }
     }
    },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.2917,
+    "solve_accuracy": 0.9748,
+    "shown_at_correct_solve": {
+     "n": 930,
+     "mean": 0.633,
+     "sd": 0.1817,
+     "median": 0.6364,
+     "p10": 0.4167,
+     "p90": 0.8824
+    },
+    "money_per_round_won": {
+     "n": 930,
+     "mean": 5692.6882,
+     "sd": 3885.6318,
+     "median": 4900.0,
+     "p10": 1050,
+     "p90": 11550
+    }
+   },
    "generated_by": {
     "generator": "minimax/minimax-m3",
     "judge": "z-ai/glm-5.3-flash"
@@ -9460,6 +9658,28 @@
       "hybrid_asks": null,
       "milking": null
      }
+    }
+   },
+   "bots": {
+    "seats": 1,
+    "seat_games": 360,
+    "rounds_won_per_game": 1.2528,
+    "solve_accuracy": 0.9657,
+    "shown_at_correct_solve": {
+     "n": 451,
+     "mean": 0.62,
+     "sd": 0.187,
+     "median": 0.6316,
+     "p10": 0.381,
+     "p90": 0.8571
+    },
+    "money_per_round_won": {
+     "n": 451,
+     "mean": 6113.7472,
+     "sd": 3935.3182,
+     "median": 5300,
+     "p10": 1800,
+     "p90": 11600
     }
    },
    "generated_by": {
@@ -10409,6 +10629,28 @@
      }
     }
    },
+   "bots": {
+    "seats": 1,
+    "seat_games": 360,
+    "rounds_won_per_game": 1.9139,
+    "solve_accuracy": 0.9759,
+    "shown_at_correct_solve": {
+     "n": 689,
+     "mean": 0.6443,
+     "sd": 0.1956,
+     "median": 0.6471,
+     "p10": 0.4,
+     "p90": 0.9167
+    },
+    "money_per_round_won": {
+     "n": 689,
+     "mean": 5168.2148,
+     "sd": 3788.5654,
+     "median": 4500,
+     "p10": 1000,
+     "p90": 10400
+    }
+   },
    "generated_by": {
     "generator": "minimax/minimax-m3",
     "judge": "z-ai/glm-5.3-flash"
@@ -11348,6 +11590,28 @@
      }
     }
    },
+   "bots": {
+    "seats": 1,
+    "seat_games": 360,
+    "rounds_won_per_game": 2.7778,
+    "solve_accuracy": 0.9823,
+    "shown_at_correct_solve": {
+     "n": 1000,
+     "mean": 0.6572,
+     "sd": 0.1793,
+     "median": 0.68,
+     "p10": 0.4211,
+     "p90": 0.88
+    },
+    "money_per_round_won": {
+     "n": 1000,
+     "mean": 4841.95,
+     "sd": 3543.1663,
+     "median": 4300.0,
+     "p10": 1000,
+     "p90": 10000
+    }
+   },
    "generated_by": {
     "generator": "minimax/minimax-m3",
     "judge": "z-ai/glm-5.3-flash"
@@ -12283,6 +12547,28 @@
       "hybrid_asks": null,
       "milking": null
      }
+    }
+   },
+   "bots": {
+    "seats": 1,
+    "seat_games": 360,
+    "rounds_won_per_game": 2.0361,
+    "solve_accuracy": 0.9645,
+    "shown_at_correct_solve": {
+     "n": 733,
+     "mean": 0.5987,
+     "sd": 0.1644,
+     "median": 0.5909,
+     "p10": 0.3889,
+     "p90": 0.8065
+    },
+    "money_per_round_won": {
+     "n": 733,
+     "mean": 5444.9523,
+     "sd": 3864.0861,
+     "median": 4800,
+     "p10": 1000,
+     "p90": 10750
     }
    },
    "generated_by": {
@@ -13228,6 +13514,28 @@
      }
     }
    },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.7833,
+    "solve_accuracy": 0.9757,
+    "shown_at_correct_solve": {
+     "n": 1284,
+     "mean": 0.6559,
+     "sd": 0.1795,
+     "median": 0.6667,
+     "p10": 0.4211,
+     "p90": 0.8889
+    },
+    "money_per_round_won": {
+     "n": 1284,
+     "mean": 5185.0857,
+     "sd": 3756.6241,
+     "median": 4600.0,
+     "p10": 1000,
+     "p90": 10500
+    }
+   },
    "generated_by": {
     "generator": "minimax/minimax-m3",
     "judge": "z-ai/glm-5.3-flash"
@@ -14166,6 +14474,28 @@
        "per_game": 0.9611
       }
      }
+    }
+   },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.5806,
+    "solve_accuracy": 0.9802,
+    "shown_at_correct_solve": {
+     "n": 1138,
+     "mean": 0.6182,
+     "sd": 0.1724,
+     "median": 0.625,
+     "p10": 0.4,
+     "p90": 0.8421
+    },
+    "money_per_round_won": {
+     "n": 1138,
+     "mean": 5551.7135,
+     "sd": 3782.5743,
+     "median": 4850.0,
+     "p10": 1000,
+     "p90": 11050
     }
    },
    "generated_by": {
