@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -160,3 +161,69 @@ def test_bonus_solves_split_by_how_much_rstlne_shows(tmp_path):
     out = numbers.bonus_by_share(tmp_path)
     assert out["bands"] == ["under 30%", "30 to 40%", "40% or more"]
     assert out["entrants"]["bot"] == [[1, 1], [0, 0], [1, 2]]
+
+
+def _jsonl(path, rows):
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return path
+
+
+def test_probe_rows_name_each_player_and_a_later_row_replaces_an_earlier_ask(tmp_path):
+    def ask(right, puzzle=0, **who):
+        return {**who, "deck": "aired", "board": "blank", "puzzle": puzzle, "right": right}
+    first = _jsonl(tmp_path / "a.jsonl", [ask(False, model="openai/x"), ask(True, 1, model="openai/x")])
+    rerun = _jsonl(tmp_path / "b.jsonl", [ask(True, model="openai/x"), ask(True, version=6), ask(False, 1, seat="bot")])
+    tally = numbers.probe_tally([first, rerun])
+    assert tally["llm:openai/x"]["aired"]["blank"] == [2, 2]  # puzzle 0 asked twice: the rerun's answer counts
+    assert tally["bot"]["aired"]["blank"] == [1, 2]  # a bot row names a version or a seat
+
+
+def test_memory_gives_each_player_aired_minus_control_with_an_interval_and_pools_the_models(tmp_path):
+    rows = []
+    for deck, rights in (("aired", [1, 1, 0, 0]), ("generated", [1, 0, 0, 0])):
+        for i, r in enumerate(rights):
+            rows += [{"model": m, "deck": deck, "board": "RSTLNE", "puzzle": i, "right": bool(r)} for m in ("a/x", "b/y")]
+            rows.append({"version": 6, "deck": deck, "board": "RSTLNE", "puzzle": i, "right": bool(r)})
+    out = numbers.memory([_jsonl(tmp_path / "m.jsonl", rows)])
+    x = out["players"]["llm:a/x"]["RSTLNE"]
+    assert x["aired"] == [2, 4] and x["generated"] == [1, 4] and x["gap"] == pytest.approx(0.25)
+    assert x["ci95"][0] <= 0.25 <= x["ci95"][1]
+    assert numbers.memory([_jsonl(tmp_path / "m.jsonl", rows)]) == out  # fixed seed
+    pooled = out["models_pooled"]["RSTLNE"]  # LLMs only: the bot is its own row
+    assert pooled["aired"] == [4, 8] and pooled["generated"] == [2, 8] and pooled["gap"] == pytest.approx(0.25)
+    assert "bot" in out["players"]
+    assert numbers.memory([tmp_path / "missing.jsonl"]) is None
+
+
+def test_shown_share_counts_the_letters_a_set_of_calls_fills():
+    assert numbers.shown_share("TOUGH WORKOUT", set("RSTLNE")) == pytest.approx(3 / 12)
+    assert numbers.shown_share("TOUGH WORKOUT", set("RSTLNEMPGA")) == pytest.approx(4 / 12)
+
+
+def test_blatt_counts_each_board_per_player_and_the_contestants_boards(tmp_path):
+    deck = tmp_path / "blatt.json"
+    deck.write_text(json.dumps({"source": "s", "puzzles": [
+        {"category": "Thing", "answer": "TOUGH WORKOUT", "bonus": True, "contestant_picks": "MPGA"},
+        {"category": "Place", "answer": "GULF", "bonus": True, "contestant_picks": "GHWO"}]}))
+    blank = _jsonl(tmp_path / "blank.jsonl", [{"seat": "bot", "puzzle": i, "right": False} for i in range(2)])
+    picks = _jsonl(tmp_path / "picks.jsonl", [{"seat": "bot", "puzzle": 0, "right": True},
+                                              {"seat": "llm:a/x", "puzzle": 0, "right": True}])
+    own = tmp_path / "report.json"
+    own.write_text(json.dumps({"entrants": [{"entrant": "bot", "solved": 2, "puzzles": 2, "shown_after_picks": 0.4,
+                                             "cost": 0.0}]}))
+    out = numbers.blatt(deck, {"blank": blank, "contestant": picks, "own": own, "RSTLNE": tmp_path / "missing.jsonl"})
+    assert out["puzzles"] == 2
+    assert out["boards"]["blank"]["bot"] == [0, 2]
+    assert out["boards"]["contestant"] == {"bot": [1, 1], "llm:a/x": [1, 1]}
+    assert out["boards"]["own"]["bot"] == [2, 2] and out["own_shown"]["bot"] == 0.4
+    assert out["boards"]["RSTLNE"] is None
+    assert out["shown"]["RSTLNE"] == pytest.approx((3 / 12 + 1 / 4) / 2, abs=1e-4)
+    assert out["shown"]["contestant"] == pytest.approx((4 / 12 + 2 / 4) / 2, abs=1e-4)
+
+
+def test_variants_summarize_each_self_play_folder_that_exists(tmp_path, monkeypatch):
+    from rstlne import selfplay
+    (tmp_path / "milk").mkdir()
+    monkeypatch.setattr(selfplay, "games_summary", lambda folder: {"games": 3, "folder": Path(folder).name})
+    out = numbers.variants({"milk_all": tmp_path / "milk", "vowel_first": tmp_path / "none"})
+    assert out == {"milk_all": {"games": 3, "folder": "milk"}}

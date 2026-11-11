@@ -1,8 +1,8 @@
 {
  "meta": {
   "phase": "v6",
-  "made": "2026-11-09T22:50:49+00:00",
-  "commit": "84734ad",
+  "made": "2026-11-11T04:56:43+00:00",
+  "commit": "332279e",
   "lineups": [
    "2",
    "2t",
@@ -15887,7 +15887,199 @@
     ]
    }
   ],
-  "stopped_by_budget": false
+  "stopped_by_budget": false,
+  "by_rstlne_share": {
+   "bands": [
+    "under 30%",
+    "30 to 40%",
+    "40% or more"
+   ],
+   "entrants": {
+    "bot": [
+     [
+      24,
+      25
+     ],
+     [
+      40,
+      43
+     ],
+     [
+      31,
+      32
+     ]
+    ],
+    "decision:liquid/d1-ultra": [
+     [
+      19,
+      25
+     ],
+     [
+      38,
+      43
+     ],
+     [
+      27,
+      32
+     ]
+    ],
+    "decision:openai/gpt-6-luna-decisions": [
+     [
+      18,
+      25
+     ],
+     [
+      35,
+      43
+     ],
+     [
+      28,
+      32
+     ]
+    ],
+    "hybrid:anthropic/claude-haiku-5.5": [
+     [
+      24,
+      25
+     ],
+     [
+      41,
+      43
+     ],
+     [
+      32,
+      32
+     ]
+    ],
+    "hybrid:openai/gpt-6-luna": [
+     [
+      24,
+      25
+     ],
+     [
+      43,
+      43
+     ],
+     [
+      32,
+      32
+     ]
+    ],
+    "llm:anthropic/claude-haiku-5.5": [
+     [
+      12,
+      25
+     ],
+     [
+      25,
+      43
+     ],
+     [
+      20,
+      32
+     ]
+    ],
+    "llm:deepseek/deepseek-v4.1-flash-1017": [
+     [
+      23,
+      25
+     ],
+     [
+      37,
+      43
+     ],
+     [
+      32,
+      32
+     ]
+    ],
+    "llm:meta/muse-ember": [
+     [
+      23,
+      25
+     ],
+     [
+      40,
+      43
+     ],
+     [
+      31,
+      32
+     ]
+    ],
+    "llm:openai/gpt-6-luna": [
+     [
+      18,
+      25
+     ],
+     [
+      32,
+      43
+     ],
+     [
+      29,
+      32
+     ]
+    ],
+    "llm:openai/gpt-6.1-sol": [
+     [
+      25,
+      25
+     ],
+     [
+      43,
+      43
+     ],
+     [
+      32,
+      32
+     ]
+    ],
+    "llm:openai/gpt-6.1-terra": [
+     [
+      25,
+      25
+     ],
+     [
+      41,
+      43
+     ],
+     [
+      32,
+      32
+     ]
+    ],
+    "llm:qwen/qwen3.8-flash": [
+     [
+      18,
+      25
+     ],
+     [
+      29,
+      43
+     ],
+     [
+      27,
+      32
+     ]
+    ]
+   }
+  },
+  "rstlne_share": {
+   "deck": {
+    "puzzles": 100,
+    "mean": 0.3509
+   },
+   "aired": {
+    "puzzles": 2176,
+    "mean": 0.2891,
+    "bands": [
+     0.5267,
+     0.3373,
+     0.136
+    ]
+   }
+  }
  },
  "letters": {
   "judge_version": 6,
@@ -17870,6 +18062,2016 @@
      ]
     }
    }
+  }
+ },
+ "aired_bonus": {
+  "folder": "private-seed707-ecc4bcb6",
+  "puzzles": "puzzles/private.json",
+  "entrants": [
+   {
+    "entrant": "llm:openai/gpt-6.1-sol",
+    "puzzles": 100,
+    "solved": 98,
+    "rate": 0.98,
+    "ci95": [
+     0.93,
+     0.9945
+    ],
+    "shown_after_picks": 0.6945,
+    "consonants": {
+     "G": 45,
+     "C": 39,
+     "H": 33,
+     "D": 31,
+     "B": 30,
+     "M": 25,
+     "F": 24,
+     "P": 23,
+     "W": 18,
+     "V": 11,
+     "K": 6,
+     "Y": 6,
+     "J": 3,
+     "Q": 2,
+     "Z": 2,
+     "X": 2
+    },
+    "vowels": {
+     "O": 47,
+     "A": 31,
+     "I": 19,
+     "U": 3
+    },
+    "invalid": 0,
+    "misfits": 0,
+    "cost": 0.2539,
+    "output_tokens_per_puzzle": 253
+   },
+   {
+    "entrant": "llm:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "solved": 98,
+    "rate": 0.98,
+    "ci95": [
+     0.93,
+     0.9945
+    ],
+    "shown_after_picks": 0.6862,
+    "consonants": {
+     "G": 38,
+     "C": 34,
+     "P": 32,
+     "B": 32,
+     "D": 28,
+     "H": 28,
+     "M": 23,
+     "W": 20,
+     "F": 18,
+     "Y": 14,
+     "V": 14,
+     "K": 8,
+     "Q": 3,
+     "J": 3,
+     "X": 3,
+     "Z": 2
+    },
+    "vowels": {
+     "O": 43,
+     "A": 35,
+     "I": 19,
+     "U": 3
+    },
+    "invalid": 0,
+    "misfits": 0,
+    "cost": 0.197251,
+    "output_tokens_per_puzzle": 310
+   },
+   {
+    "entrant": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "puzzles": 100,
+    "solved": 88,
+    "rate": 0.88,
+    "ci95": [
+     0.8019,
+     0.93
+    ],
+    "shown_after_picks": 0.6511,
+    "consonants": {
+     "G": 39,
+     "C": 35,
+     "D": 34,
+     "B": 29,
+     "P": 28,
+     "W": 22,
+     "F": 21,
+     "H": 20,
+     "M": 20,
+     "V": 16,
+     "K": 14,
+     "Y": 11,
+     "J": 6,
+     "Q": 4,
+     "Z": 1
+    },
+    "vowels": {
+     "O": 42,
+     "A": 41,
+     "I": 13,
+     "U": 4
+    },
+    "invalid": 2,
+    "misfits": 9,
+    "cost": 0.402293,
+    "output_tokens_per_puzzle": 6251
+   },
+   {
+    "entrant": "llm:meta/muse-ember",
+    "puzzles": 100,
+    "solved": 90,
+    "rate": 0.9,
+    "ci95": [
+     0.8256,
+     0.9448
+    ],
+    "shown_after_picks": 0.6536,
+    "consonants": {
+     "D": 42,
+     "G": 40,
+     "C": 38,
+     "P": 36,
+     "M": 30,
+     "B": 23,
+     "H": 23,
+     "F": 18,
+     "W": 15,
+     "V": 12,
+     "Y": 9,
+     "K": 5,
+     "Q": 3,
+     "J": 3,
+     "X": 2,
+     "Z": 1
+    },
+    "vowels": {
+     "A": 52,
+     "O": 24,
+     "I": 22,
+     "U": 2
+    },
+    "invalid": 31,
+    "misfits": 6,
+    "cost": 2.85969,
+    "output_tokens_per_puzzle": 46235
+   },
+   {
+    "entrant": "llm:qwen/qwen3.8-flash",
+    "puzzles": 100,
+    "solved": 65,
+    "rate": 0.65,
+    "ci95": [
+     0.5525,
+     0.7364
+    ],
+    "shown_after_picks": 0.5915,
+    "consonants": {
+     "C": 56,
+     "M": 36,
+     "B": 31,
+     "P": 30,
+     "H": 30,
+     "G": 29,
+     "D": 29,
+     "F": 13,
+     "W": 12,
+     "V": 11,
+     "K": 7,
+     "Y": 7,
+     "J": 2,
+     "Q": 2,
+     "Z": 1,
+     "X": 1
+    },
+    "vowels": {
+     "A": 48,
+     "O": 34,
+     "I": 11,
+     "U": 6
+    },
+    "invalid": 10,
+    "misfits": 31,
+    "cost": 0.549194,
+    "output_tokens_per_puzzle": 8713
+   },
+   {
+    "entrant": "llm:openai/gpt-6-luna",
+    "puzzles": 100,
+    "solved": 66,
+    "rate": 0.66,
+    "ci95": [
+     0.5628,
+     0.7454
+    ],
+    "shown_after_picks": 0.5736,
+    "consonants": {
+     "C": 56,
+     "D": 37,
+     "P": 35,
+     "G": 34,
+     "H": 31,
+     "B": 23,
+     "M": 23,
+     "W": 15,
+     "F": 15,
+     "K": 8,
+     "V": 8,
+     "Y": 7,
+     "Q": 3,
+     "X": 2,
+     "J": 2,
+     "Z": 1
+    },
+    "vowels": {
+     "A": 65,
+     "O": 20,
+     "I": 9,
+     "U": 6
+    },
+    "invalid": 0,
+    "misfits": 31,
+    "cost": 0.077734,
+    "output_tokens_per_puzzle": 966
+   },
+   {
+    "entrant": "llm:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "solved": 55,
+    "rate": 0.55,
+    "ci95": [
+     0.4524,
+     0.6439
+    ],
+    "shown_after_picks": 0.5213,
+    "consonants": {
+     "C": 89,
+     "D": 85,
+     "H": 38,
+     "M": 38,
+     "G": 21,
+     "P": 16,
+     "B": 5,
+     "K": 3,
+     "F": 2,
+     "W": 2,
+     "Q": 1
+    },
+    "vowels": {
+     "A": 78,
+     "O": 13,
+     "I": 9
+    },
+    "invalid": 2,
+    "misfits": 33,
+    "cost": 0.20868,
+    "output_tokens_per_puzzle": 3050
+   },
+   {
+    "entrant": "hybrid:openai/gpt-6-luna",
+    "puzzles": 100,
+    "solved": 92,
+    "rate": 0.92,
+    "ci95": [
+     0.85,
+     0.9589
+    ],
+    "shown_after_picks": 0.5195,
+    "consonants": {
+     "H": 71,
+     "D": 65,
+     "C": 56,
+     "M": 25,
+     "G": 18,
+     "P": 15,
+     "B": 13,
+     "F": 10,
+     "Y": 7,
+     "W": 6,
+     "V": 5,
+     "K": 5,
+     "J": 3,
+     "X": 1
+    },
+    "vowels": {
+     "A": 75,
+     "O": 16,
+     "U": 6,
+     "I": 3
+    },
+    "invalid": 0,
+    "misfits": 0,
+    "cost": 0.026491,
+    "output_tokens_per_puzzle": 459
+   },
+   {
+    "entrant": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "solved": 93,
+    "rate": 0.93,
+    "ci95": [
+     0.8625,
+     0.9657
+    ],
+    "shown_after_picks": 0.5195,
+    "consonants": {
+     "H": 71,
+     "D": 65,
+     "C": 56,
+     "M": 25,
+     "G": 18,
+     "P": 15,
+     "B": 13,
+     "F": 10,
+     "Y": 7,
+     "W": 6,
+     "V": 5,
+     "K": 5,
+     "J": 3,
+     "X": 1
+    },
+    "vowels": {
+     "A": 75,
+     "O": 16,
+     "U": 6,
+     "I": 3
+    },
+    "invalid": 0,
+    "misfits": 0,
+    "cost": 0.072029,
+    "output_tokens_per_puzzle": 1263
+   },
+   {
+    "entrant": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "solved": 75,
+    "rate": 0.75,
+    "ci95": [
+     0.657,
+     0.8245
+    ],
+    "shown_after_picks": 0.4828,
+    "consonants": {
+     "M": 99,
+     "P": 93,
+     "H": 51,
+     "G": 32,
+     "C": 12,
+     "D": 3,
+     "K": 3,
+     "Y": 3,
+     "W": 3,
+     "B": 1
+    },
+    "vowels": {
+     "A": 100
+    },
+    "invalid": 0,
+    "misfits": 19,
+    "cost": 0.077678,
+    "output_tokens_per_puzzle": 583
+   },
+   {
+    "entrant": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "solved": 78,
+    "rate": 0.78,
+    "ci95": [
+     0.6893,
+     0.85
+    ],
+    "shown_after_picks": 0.4933,
+    "consonants": {
+     "D": 99,
+     "C": 84,
+     "M": 31,
+     "Y": 26,
+     "B": 22,
+     "W": 17,
+     "H": 10,
+     "G": 9,
+     "F": 1,
+     "K": 1
+    },
+    "vowels": {
+     "I": 46,
+     "O": 28,
+     "A": 26
+    },
+    "invalid": 0,
+    "misfits": 16,
+    "cost": 0.051246,
+    "output_tokens_per_puzzle": 533
+   },
+   {
+    "entrant": "bot",
+    "puzzles": 100,
+    "solved": 90,
+    "rate": 0.9,
+    "ci95": [
+     0.8256,
+     0.9448
+    ],
+    "shown_after_picks": 0.5195,
+    "consonants": {
+     "H": 71,
+     "D": 65,
+     "C": 56,
+     "M": 25,
+     "G": 18,
+     "P": 15,
+     "B": 13,
+     "F": 10,
+     "Y": 7,
+     "W": 6,
+     "V": 5,
+     "K": 5,
+     "J": 3,
+     "X": 1
+    },
+    "vowels": {
+     "A": 75,
+     "O": 16,
+     "U": 6,
+     "I": 3
+    },
+    "invalid": 0,
+    "misfits": 0,
+    "cost": 0.0,
+    "output_tokens_per_puzzle": 0
+   }
+  ],
+  "pairwise": [
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "llm:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.0,
+    "ci95": [
+     -0.03,
+     0.03
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "puzzles": 100,
+    "gap": 0.1,
+    "ci95": [
+     0.05,
+     0.16
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "llm:meta/muse-ember",
+    "puzzles": 100,
+    "gap": 0.08,
+    "ci95": [
+     0.02,
+     0.14
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "llm:qwen/qwen3.8-flash",
+    "puzzles": 100,
+    "gap": 0.33,
+    "ci95": [
+     0.24,
+     0.42
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "llm:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": 0.32,
+    "ci95": [
+     0.23,
+     0.42
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "llm:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": 0.43,
+    "ci95": [
+     0.33,
+     0.53
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "hybrid:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": 0.06,
+    "ci95": [
+     0.01,
+     0.12
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": 0.05,
+    "ci95": [
+     0.0,
+     0.1
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": 0.23,
+    "ci95": [
+     0.15,
+     0.31
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": 0.2,
+    "ci95": [
+     0.12,
+     0.29
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": 0.08,
+    "ci95": [
+     0.03,
+     0.14
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "puzzles": 100,
+    "gap": 0.1,
+    "ci95": [
+     0.04,
+     0.17
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "llm:meta/muse-ember",
+    "puzzles": 100,
+    "gap": 0.08,
+    "ci95": [
+     0.02,
+     0.15
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "llm:qwen/qwen3.8-flash",
+    "puzzles": 100,
+    "gap": 0.33,
+    "ci95": [
+     0.24,
+     0.43
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "llm:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": 0.32,
+    "ci95": [
+     0.23,
+     0.41
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "llm:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": 0.43,
+    "ci95": [
+     0.33,
+     0.53
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": 0.06,
+    "ci95": [
+     0.02,
+     0.11
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": 0.05,
+    "ci95": [
+     0.0,
+     0.1
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": 0.23,
+    "ci95": [
+     0.15,
+     0.31
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": 0.2,
+    "ci95": [
+     0.12,
+     0.28
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": 0.08,
+    "ci95": [
+     0.03,
+     0.14
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "llm:meta/muse-ember",
+    "puzzles": 100,
+    "gap": -0.02,
+    "ci95": [
+     -0.1,
+     0.06
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "llm:qwen/qwen3.8-flash",
+    "puzzles": 100,
+    "gap": 0.23,
+    "ci95": [
+     0.12,
+     0.34
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "llm:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": 0.22,
+    "ci95": [
+     0.13,
+     0.31
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "llm:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": 0.33,
+    "ci95": [
+     0.22,
+     0.44
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "hybrid:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": -0.04,
+    "ci95": [
+     -0.12,
+     0.04
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": -0.05,
+    "ci95": [
+     -0.13,
+     0.02
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": 0.13,
+    "ci95": [
+     0.04,
+     0.22
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": 0.1,
+    "ci95": [
+     0.01,
+     0.19
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": -0.02,
+    "ci95": [
+     -0.11,
+     0.07
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "llm:qwen/qwen3.8-flash",
+    "puzzles": 100,
+    "gap": 0.25,
+    "ci95": [
+     0.15,
+     0.35
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "llm:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": 0.24,
+    "ci95": [
+     0.13,
+     0.35
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "llm:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": 0.35,
+    "ci95": [
+     0.23,
+     0.47
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "hybrid:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": -0.02,
+    "ci95": [
+     -0.1,
+     0.06
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": -0.03,
+    "ci95": [
+     -0.11,
+     0.05
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": 0.15,
+    "ci95": [
+     0.06,
+     0.25
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": 0.12,
+    "ci95": [
+     0.02,
+     0.22
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": 0.0,
+    "ci95": [
+     -0.08,
+     0.08
+    ]
+   },
+   {
+    "a": "llm:qwen/qwen3.8-flash",
+    "b": "llm:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": -0.01,
+    "ci95": [
+     -0.13,
+     0.12
+    ]
+   },
+   {
+    "a": "llm:qwen/qwen3.8-flash",
+    "b": "llm:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": 0.1,
+    "ci95": [
+     -0.02,
+     0.23
+    ]
+   },
+   {
+    "a": "llm:qwen/qwen3.8-flash",
+    "b": "hybrid:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": -0.27,
+    "ci95": [
+     -0.38,
+     -0.16
+    ]
+   },
+   {
+    "a": "llm:qwen/qwen3.8-flash",
+    "b": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": -0.28,
+    "ci95": [
+     -0.38,
+     -0.18
+    ]
+   },
+   {
+    "a": "llm:qwen/qwen3.8-flash",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": -0.1,
+    "ci95": [
+     -0.21,
+     0.02
+    ]
+   },
+   {
+    "a": "llm:qwen/qwen3.8-flash",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": -0.13,
+    "ci95": [
+     -0.24,
+     -0.02
+    ]
+   },
+   {
+    "a": "llm:qwen/qwen3.8-flash",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": -0.25,
+    "ci95": [
+     -0.36,
+     -0.14
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6-luna",
+    "b": "llm:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": 0.11,
+    "ci95": [
+     -0.01,
+     0.23
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6-luna",
+    "b": "hybrid:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": -0.26,
+    "ci95": [
+     -0.36,
+     -0.16
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6-luna",
+    "b": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": -0.27,
+    "ci95": [
+     -0.37,
+     -0.17
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6-luna",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": -0.09,
+    "ci95": [
+     -0.2,
+     0.02
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6-luna",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": -0.12,
+    "ci95": [
+     -0.23,
+     -0.01
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6-luna",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": -0.24,
+    "ci95": [
+     -0.34,
+     -0.14
+    ]
+   },
+   {
+    "a": "llm:anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6-luna",
+    "puzzles": 100,
+    "gap": -0.37,
+    "ci95": [
+     -0.48,
+     -0.26
+    ]
+   },
+   {
+    "a": "llm:anthropic/claude-haiku-5.5",
+    "b": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": -0.38,
+    "ci95": [
+     -0.49,
+     -0.27
+    ]
+   },
+   {
+    "a": "llm:anthropic/claude-haiku-5.5",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": -0.2,
+    "ci95": [
+     -0.31,
+     -0.09
+    ]
+   },
+   {
+    "a": "llm:anthropic/claude-haiku-5.5",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": -0.23,
+    "ci95": [
+     -0.35,
+     -0.1
+    ]
+   },
+   {
+    "a": "llm:anthropic/claude-haiku-5.5",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": -0.35,
+    "ci95": [
+     -0.47,
+     -0.23
+    ]
+   },
+   {
+    "a": "hybrid:openai/gpt-6-luna",
+    "b": "hybrid:anthropic/claude-haiku-5.5",
+    "puzzles": 100,
+    "gap": -0.01,
+    "ci95": [
+     -0.05,
+     0.02
+    ]
+   },
+   {
+    "a": "hybrid:openai/gpt-6-luna",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": 0.17,
+    "ci95": [
+     0.09,
+     0.26
+    ]
+   },
+   {
+    "a": "hybrid:openai/gpt-6-luna",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": 0.14,
+    "ci95": [
+     0.06,
+     0.22
+    ]
+   },
+   {
+    "a": "hybrid:openai/gpt-6-luna",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": 0.02,
+    "ci95": [
+     -0.02,
+     0.06
+    ]
+   },
+   {
+    "a": "hybrid:anthropic/claude-haiku-5.5",
+    "b": "decision:openai/gpt-6-luna-decisions",
+    "puzzles": 100,
+    "gap": 0.18,
+    "ci95": [
+     0.09,
+     0.27
+    ]
+   },
+   {
+    "a": "hybrid:anthropic/claude-haiku-5.5",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": 0.15,
+    "ci95": [
+     0.07,
+     0.23
+    ]
+   },
+   {
+    "a": "hybrid:anthropic/claude-haiku-5.5",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": 0.03,
+    "ci95": [
+     -0.01,
+     0.07
+    ]
+   },
+   {
+    "a": "decision:openai/gpt-6-luna-decisions",
+    "b": "decision:liquid/d1-ultra",
+    "puzzles": 100,
+    "gap": -0.03,
+    "ci95": [
+     -0.14,
+     0.08
+    ]
+   },
+   {
+    "a": "decision:openai/gpt-6-luna-decisions",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": -0.15,
+    "ci95": [
+     -0.24,
+     -0.06
+    ]
+   },
+   {
+    "a": "decision:liquid/d1-ultra",
+    "b": "bot",
+    "puzzles": 100,
+    "gap": -0.12,
+    "ci95": [
+     -0.21,
+     -0.04
+    ]
+   }
+  ],
+  "stopped_by_budget": false,
+  "by_rstlne_share": {
+   "bands": [
+    "under 30%",
+    "30 to 40%",
+    "40% or more"
+   ],
+   "entrants": {
+    "bot": [
+     [
+      40,
+      48
+     ],
+     [
+      38,
+      39
+     ],
+     [
+      12,
+      13
+     ]
+    ],
+    "decision:liquid/d1-ultra": [
+     [
+      34,
+      48
+     ],
+     [
+      32,
+      39
+     ],
+     [
+      12,
+      13
+     ]
+    ],
+    "decision:openai/gpt-6-luna-decisions": [
+     [
+      33,
+      48
+     ],
+     [
+      33,
+      39
+     ],
+     [
+      9,
+      13
+     ]
+    ],
+    "hybrid:anthropic/claude-haiku-5.5": [
+     [
+      42,
+      48
+     ],
+     [
+      38,
+      39
+     ],
+     [
+      13,
+      13
+     ]
+    ],
+    "hybrid:openai/gpt-6-luna": [
+     [
+      40,
+      48
+     ],
+     [
+      39,
+      39
+     ],
+     [
+      13,
+      13
+     ]
+    ],
+    "llm:anthropic/claude-haiku-5.5": [
+     [
+      27,
+      48
+     ],
+     [
+      21,
+      39
+     ],
+     [
+      7,
+      13
+     ]
+    ],
+    "llm:deepseek/deepseek-v4.1-flash-1017": [
+     [
+      43,
+      48
+     ],
+     [
+      33,
+      39
+     ],
+     [
+      12,
+      13
+     ]
+    ],
+    "llm:meta/muse-ember": [
+     [
+      41,
+      48
+     ],
+     [
+      36,
+      39
+     ],
+     [
+      13,
+      13
+     ]
+    ],
+    "llm:openai/gpt-6-luna": [
+     [
+      33,
+      48
+     ],
+     [
+      23,
+      39
+     ],
+     [
+      10,
+      13
+     ]
+    ],
+    "llm:openai/gpt-6.1-sol": [
+     [
+      47,
+      48
+     ],
+     [
+      38,
+      39
+     ],
+     [
+      13,
+      13
+     ]
+    ],
+    "llm:openai/gpt-6.1-terra": [
+     [
+      46,
+      48
+     ],
+     [
+      39,
+      39
+     ],
+     [
+      13,
+      13
+     ]
+    ],
+    "llm:qwen/qwen3.8-flash": [
+     [
+      30,
+      48
+     ],
+     [
+      26,
+      39
+     ],
+     [
+      9,
+      13
+     ]
+    ]
+   }
+  },
+  "rstlne_share": {
+   "deck": {
+    "puzzles": 100,
+    "mean": 0.2932
+   },
+   "aired": {
+    "puzzles": 2176,
+    "mean": 0.2891,
+    "bands": [
+     0.5267,
+     0.3373,
+     0.136
+    ]
+   }
+  }
+ },
+ "memory": {
+  "players": {
+   "bot": {
+    "RSTLNE": {
+     "aired": [
+      53,
+      100
+     ],
+     "generated": [
+      59,
+      100
+     ],
+     "gap": -0.06,
+     "ci95": [
+      -0.2,
+      0.08
+     ],
+     "grading": [
+      66,
+      100
+     ]
+    },
+    "blank": {
+     "aired": [
+      0,
+      100
+     ],
+     "generated": [
+      1,
+      100
+     ],
+     "gap": -0.01,
+     "ci95": [
+      -0.03,
+      0.0
+     ],
+     "grading": [
+      0,
+      100
+     ]
+    }
+   },
+   "llm:anthropic/claude-haiku-5.5": {
+    "RSTLNE": {
+     "aired": [
+      22,
+      100
+     ],
+     "generated": [
+      30,
+      100
+     ],
+     "gap": -0.08,
+     "ci95": [
+      -0.2,
+      0.04
+     ]
+    },
+    "blank": {
+     "aired": [
+      0,
+      100
+     ],
+     "generated": [
+      0,
+      100
+     ],
+     "gap": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "llm:deepseek/deepseek-v4.1-flash-1017": {
+    "RSTLNE": {
+     "aired": [
+      71,
+      99
+     ],
+     "generated": [
+      67,
+      100
+     ],
+     "gap": 0.0472,
+     "ci95": [
+      -0.0739,
+      0.1681
+     ]
+    },
+    "blank": {
+     "aired": [
+      4,
+      100
+     ],
+     "generated": [
+      5,
+      100
+     ],
+     "gap": -0.01,
+     "ci95": [
+      -0.07,
+      0.05
+     ]
+    }
+   },
+   "llm:openai/gpt-6-luna": {
+    "RSTLNE": {
+     "aired": [
+      34,
+      100
+     ],
+     "generated": [
+      47,
+      100
+     ],
+     "gap": -0.13,
+     "ci95": [
+      -0.27,
+      0.0
+     ]
+    },
+    "blank": {
+     "aired": [
+      2,
+      100
+     ],
+     "generated": [
+      1,
+      100
+     ],
+     "gap": 0.01,
+     "ci95": [
+      -0.02,
+      0.04
+     ]
+    }
+   },
+   "llm:openai/gpt-6.1-sol": {
+    "RSTLNE": {
+     "aired": [
+      89,
+      100
+     ],
+     "generated": [
+      90,
+      100
+     ],
+     "gap": -0.01,
+     "ci95": [
+      -0.09,
+      0.08
+     ]
+    },
+    "blank": {
+     "aired": [
+      5,
+      100
+     ],
+     "generated": [
+      3,
+      100
+     ],
+     "gap": 0.02,
+     "ci95": [
+      -0.03,
+      0.07
+     ]
+    }
+   },
+   "llm:openai/gpt-6.1-terra": {
+    "RSTLNE": {
+     "aired": [
+      85,
+      100
+     ],
+     "generated": [
+      85,
+      100
+     ],
+     "gap": 0.0,
+     "ci95": [
+      -0.1,
+      0.1
+     ]
+    },
+    "blank": {
+     "aired": [
+      2,
+      100
+     ],
+     "generated": [
+      3,
+      100
+     ],
+     "gap": -0.01,
+     "ci95": [
+      -0.05,
+      0.03
+     ]
+    }
+   },
+   "llm:qwen/qwen3.8-flash": {
+    "RSTLNE": {
+     "aired": [
+      54,
+      99
+     ],
+     "generated": [
+      60,
+      100
+     ],
+     "gap": -0.0545,
+     "ci95": [
+      -0.1858,
+      0.0859
+     ]
+    },
+    "blank": {
+     "aired": [
+      2,
+      100
+     ],
+     "generated": [
+      2,
+      100
+     ],
+     "gap": 0.0,
+     "ci95": [
+      -0.04,
+      0.04
+     ]
+    }
+   }
+  },
+  "models_pooled": {
+   "RSTLNE": {
+    "aired": [
+     355,
+     598
+    ],
+    "generated": [
+     379,
+     600
+    ],
+    "gap": -0.038,
+    "ci95": [
+     -0.0931,
+     0.0154
+    ]
+   },
+   "blank": {
+    "aired": [
+     15,
+     600
+    ],
+    "generated": [
+     14,
+     600
+    ],
+    "gap": 0.0017,
+    "ci95": [
+     -0.015,
+     0.02
+    ]
+   }
+  },
+  "cost": 4.4329
+ },
+ "blatt": {
+  "puzzles": 15,
+  "boards": {
+   "blank": {
+    "llm:openai/gpt-6.1-sol": [
+     0,
+     15
+    ],
+    "llm:openai/gpt-6.1-terra": [
+     0,
+     15
+    ],
+    "llm:deepseek/deepseek-v4.1-flash-1017": [
+     1,
+     15
+    ],
+    "llm:qwen/qwen3.8-flash": [
+     1,
+     15
+    ],
+    "llm:openai/gpt-6-luna": [
+     1,
+     15
+    ],
+    "llm:anthropic/claude-haiku-5.5": [
+     0,
+     15
+    ],
+    "bot": [
+     0,
+     15
+    ]
+   },
+   "RSTLNE": {
+    "llm:openai/gpt-6.1-sol": [
+     12,
+     15
+    ],
+    "llm:openai/gpt-6.1-terra": [
+     10,
+     15
+    ],
+    "llm:deepseek/deepseek-v4.1-flash-1017": [
+     6,
+     15
+    ],
+    "llm:qwen/qwen3.8-flash": [
+     6,
+     15
+    ],
+    "llm:openai/gpt-6-luna": [
+     1,
+     15
+    ],
+    "llm:anthropic/claude-haiku-5.5": [
+     2,
+     15
+    ],
+    "bot": [
+     1,
+     15
+    ]
+   },
+   "contestant": {
+    "bot": [
+     8,
+     15
+    ],
+    "llm:openai/gpt-6.1-terra": [
+     14,
+     15
+    ],
+    "llm:deepseek/deepseek-v4.1-flash-1017": [
+     9,
+     15
+    ],
+    "llm:meta/muse-ember": [
+     12,
+     15
+    ],
+    "llm:qwen/qwen3.8-flash": [
+     13,
+     15
+    ],
+    "llm:openai/gpt-6.1-sol": [
+     13,
+     15
+    ],
+    "llm:openai/gpt-6-luna": [
+     10,
+     15
+    ],
+    "llm:anthropic/claude-haiku-5.5": [
+     4,
+     15
+    ],
+    "hybrid:openai/gpt-6-luna": [
+     10,
+     15
+    ],
+    "hybrid:anthropic/claude-haiku-5.5": [
+     9,
+     15
+    ],
+    "decision:openai/gpt-6-luna-decisions": [
+     11,
+     15
+    ],
+    "decision:liquid/d1-ultra": [
+     10,
+     15
+    ]
+   },
+   "own": {
+    "llm:openai/gpt-6.1-sol": [
+     15,
+     15
+    ],
+    "llm:openai/gpt-6.1-terra": [
+     15,
+     15
+    ],
+    "llm:deepseek/deepseek-v4.1-flash-1017": [
+     11,
+     15
+    ],
+    "llm:meta/muse-ember": [
+     14,
+     15
+    ],
+    "llm:qwen/qwen3.8-flash": [
+     9,
+     15
+    ],
+    "llm:openai/gpt-6-luna": [
+     11,
+     15
+    ],
+    "llm:anthropic/claude-haiku-5.5": [
+     4,
+     15
+    ],
+    "hybrid:openai/gpt-6-luna": [
+     12,
+     15
+    ],
+    "hybrid:anthropic/claude-haiku-5.5": [
+     12,
+     15
+    ],
+    "decision:openai/gpt-6-luna-decisions": [
+     12,
+     15
+    ],
+    "decision:liquid/d1-ultra": [
+     9,
+     15
+    ],
+    "bot": [
+     11,
+     15
+    ]
+   }
+  },
+  "own_shown": {
+   "llm:openai/gpt-6.1-sol": 0.6762,
+   "llm:openai/gpt-6.1-terra": 0.6648,
+   "llm:deepseek/deepseek-v4.1-flash-1017": 0.5753,
+   "llm:meta/muse-ember": 0.4488,
+   "llm:qwen/qwen3.8-flash": 0.4656,
+   "llm:openai/gpt-6-luna": 0.3832,
+   "llm:anthropic/claude-haiku-5.5": 0.3344,
+   "hybrid:openai/gpt-6-luna": 0.3847,
+   "hybrid:anthropic/claude-haiku-5.5": 0.3847,
+   "decision:openai/gpt-6-luna-decisions": 0.3492,
+   "decision:liquid/d1-ultra": 0.3254,
+   "bot": 0.3847
+  },
+  "cost": {
+   "blank": 0.1469,
+   "RSTLNE": 0.1737,
+   "contestant": 0.2625,
+   "own": 0.6603
+  },
+  "shown": {
+   "RSTLNE": 0.179,
+   "contestant": 0.262
+  }
+ },
+ "variants": {
+  "milk_all": {
+   "games": 1002,
+   "sets": 334,
+   "entrants": [
+    {
+     "entrant": "milk",
+     "games": 1002,
+     "wins": 239.0,
+     "win_rate": 0.23852295409181637,
+     "ci95": [
+      0.2146,
+      0.2615
+     ],
+     "by_seat": [
+      0.26047904191616766,
+      0.2275449101796407,
+      0.2275449101796407
+     ],
+     "avg_total": 20139.620758483034,
+     "avg_main": 7150.5988023952095,
+     "bonus": "230/239",
+     "solve_accuracy": 0.9728643216080402,
+     "shown_median": 0.7391,
+     "bankrupts_per_game": 1.3832335329341316,
+     "certain_win": 83,
+     "certain_win_lost": 2,
+     "certain_loss": 173,
+     "certain_loss_won": 5,
+     "flat_per_game": 3.248502994011976,
+     "llm_like": {
+      "v6a": 0.27117265469061874,
+      "v6b": 0.2348263473053892
+     }
+    },
+    {
+     "entrant": "v6a",
+     "games": 1002,
+     "wins": 394.0,
+     "win_rate": 0.3932135728542914,
+     "ci95": [
+      0.3713,
+      0.4152
+     ],
+     "by_seat": [
+      0.39520958083832336,
+      0.4041916167664671,
+      0.38023952095808383
+     ],
+     "avg_total": 28562.025948103794,
+     "avg_main": 8901.347305389221,
+     "bonus": "366/394",
+     "solve_accuracy": 0.9752265861027191,
+     "shown_median": 0.64,
+     "bankrupts_per_game": 1.2455089820359282,
+     "certain_win": 111,
+     "certain_win_lost": 8,
+     "certain_loss": 144,
+     "certain_loss_won": 6,
+     "flat_per_game": 3.6676646706586826,
+     "llm_like": {
+      "milk": 0.19253293413173653,
+      "v6b": 0.2554620758483034
+     }
+    },
+    {
+     "entrant": "v6b",
+     "games": 1002,
+     "wins": 369.0,
+     "win_rate": 0.36826347305389223,
+     "ci95": [
+      0.3453,
+      0.3902
+     ],
+     "by_seat": [
+      0.39221556886227543,
+      0.3772455089820359,
+      0.33532934131736525
+     ],
+     "avg_total": 27204.99001996008,
+     "avg_main": 8637.125748502995,
+     "bonus": "346/369",
+     "solve_accuracy": 0.9674355495251018,
+     "shown_median": 0.64,
+     "bankrupts_per_game": 1.1766467065868262,
+     "certain_win": 96,
+     "certain_win_lost": 5,
+     "certain_loss": 146,
+     "certain_loss_won": 4,
+     "flat_per_game": 3.463073852295409,
+     "llm_like": {
+      "milk": 0.23167764471057883,
+      "v6a": 0.24268363273453095
+     }
+    }
+   ],
+   "pairwise": [
+    {
+     "a": "milk",
+     "b": "v6a",
+     "gap": -0.15469061876247506,
+     "ci95": [
+      -0.1946,
+      -0.1168
+     ]
+    },
+    {
+     "a": "milk",
+     "b": "v6b",
+     "gap": -0.12974051896207586,
+     "ci95": [
+      -0.1687,
+      -0.0898
+     ]
+    },
+    {
+     "a": "v6a",
+     "b": "v6b",
+     "gap": 0.024950099800399195,
+     "ci95": [
+      -0.013,
+      0.0629
+     ]
+    }
+   ]
+  },
+  "vowel_first": {
+   "games": 1002,
+   "sets": 334,
+   "entrants": [
+    {
+     "entrant": "v6a",
+     "games": 1002,
+     "wins": 353.0,
+     "win_rate": 0.3522954091816367,
+     "ci95": [
+      0.3273,
+      0.3762
+     ],
+     "by_seat": [
+      0.344311377245509,
+      0.36227544910179643,
+      0.3502994011976048
+     ],
+     "avg_total": 24927.844311377245,
+     "avg_main": 8171.3572854291415,
+     "bonus": "329/353",
+     "solve_accuracy": 0.9765051395007343,
+     "shown_median": 0.7090000000000001,
+     "bankrupts_per_game": 1.0868263473053892,
+     "certain_win": 82,
+     "certain_win_lost": 3,
+     "certain_loss": 109,
+     "certain_loss_won": 8,
+     "flat_per_game": 2.9510978043912175,
+     "llm_like": {
+      "v6b": 0.3231497005988024,
+      "vowels": 0.1626297405189621
+     }
+    },
+    {
+     "entrant": "v6b",
+     "games": 1002,
+     "wins": 318.0,
+     "win_rate": 0.31736526946107785,
+     "ci95": [
+      0.2954,
+      0.3403
+     ],
+     "by_seat": [
+      0.33532934131736525,
+      0.32934131736526945,
+      0.2874251497005988
+     ],
+     "avg_total": 23650.948103792416,
+     "avg_main": 7922.405189620758,
+     "bonus": "305/318",
+     "solve_accuracy": 0.9710806697108066,
+     "shown_median": 0.6552,
+     "bankrupts_per_game": 1.0728542914171657,
+     "certain_win": 80,
+     "certain_win_lost": 7,
+     "certain_loss": 130,
+     "certain_loss_won": 5,
+     "flat_per_game": 2.992015968063872,
+     "llm_like": {
+      "v6a": 0.293687624750499,
+      "vowels": 0.19888922155688624
+     }
+    },
+    {
+     "entrant": "vowels",
+     "games": 1002,
+     "wins": 331.0,
+     "win_rate": 0.33033932135728544,
+     "ci95": [
+      0.3054,
+      0.3543
+     ],
+     "by_seat": [
+      0.3502994011976048,
+      0.3143712574850299,
+      0.3263473053892216
+     ],
+     "avg_total": 24284.630738522956,
+     "avg_main": 8266.666666666666,
+     "bonus": "308/331",
+     "solve_accuracy": 0.9770034843205575,
+     "shown_median": 0.7931,
+     "bankrupts_per_game": 1.1107784431137724,
+     "certain_win": 89,
+     "certain_win_lost": 3,
+     "certain_loss": 139,
+     "certain_loss_won": 4,
+     "flat_per_game": 3.155688622754491,
+     "llm_like": {
+      "v6a": 0.3225329341317365,
+      "v6b": 0.28899600798403197
+     }
+    }
+   ],
+   "pairwise": [
+    {
+     "a": "v6a",
+     "b": "v6b",
+     "gap": 0.03493013972055886,
+     "ci95": [
+      -0.006,
+      0.0749
+     ]
+    },
+    {
+     "a": "v6a",
+     "b": "vowels",
+     "gap": 0.021956087824351267,
+     "ci95": [
+      -0.021,
+      0.0659
+     ]
+    },
+    {
+     "a": "v6b",
+     "b": "vowels",
+     "gap": -0.012974051896207595,
+     "ci95": [
+      -0.0529,
+      0.0269
+     ]
+    }
+   ]
   }
  }
 }

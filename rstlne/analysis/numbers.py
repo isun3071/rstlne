@@ -8,6 +8,9 @@ analyses need the bot's word data and run separately on the server; their saved 
 
     uv run python -m rstlne.analysis.letters read <ids> --out logs/analysis/letters-v6.json
     uv run python -m rstlne.analysis.reading_gap <ids> --out logs/analysis/reading-gap-v6.json
+
+The side tests are folded in the same way from their saved results: the bonus test on aired puzzles (private.json),
+the memory probe, Blatt's 15 hardest bonus puzzles, and the bot's self-play variants (see MEMORY, BLATT, VARIANTS).
 """
 
 from __future__ import annotations
@@ -310,6 +313,130 @@ def _latest_bonus(puzzles: str | None, seed: int | None) -> Path | None:
     return found[-1] if found else None
 
 
+LOGS = settings.ROOT / "logs"
+# The memory probe: one bonus solve per puzzle on a blank board and on R S T L N E alone, aired puzzles against an
+# unaired control deck (logs/memory-probe.py, and logs/bot-rstlne-probe.py for the bot).
+MEMORY = [LOGS / "memory-probe.jsonl", LOGS / "memory-probe-more.jsonl", LOGS / "bot-rstlne-probe.jsonl"]
+# Blatt's 15 hardest solved bonus puzzles: one solve each on four boards (logs/blatt-picks.py, and a bonus test for
+# the players' own picks).
+BLATT_DECK = settings.ROOT / "puzzles" / "aired-blatt-15.json"
+BLATT = {"blank": LOGS / "blatt-memory-blank.jsonl", "RSTLNE": LOGS / "blatt-memory-rstlne.jsonl",
+         "contestant": LOGS / "blatt-picks.jsonl"}
+# Bot self-play variants, each against two copies of the bot (rstlne.selfplay play).
+VARIANTS = {"milk_all": LOGS / "selfplay" / "variant-milk", "vowel_first": LOGS / "selfplay" / "variant-vowels"}
+
+
+def _who(row: dict) -> str:
+    """The player a probe row belongs to: an LLM by its slug, the bot by its version or seat."""
+    if "model" in row:
+        return "llm:" + row["model"]
+    return "bot" if "version" in row else row["seat"]
+
+
+def _probe_rows(paths: Sequence[Path]) -> list[dict]:
+    """Every ask in the files that exist, one per (player, deck, board, puzzle): a later row replaces an earlier one."""
+    asks: dict[tuple, dict] = {}
+    for path in paths:
+        if Path(path).exists():
+            for line in Path(path).read_text().splitlines():
+                if line.strip():
+                    r = json.loads(line)
+                    asks[(_who(r), r.get("deck"), r.get("board"), r["puzzle"])] = {**r, "who": _who(r)}
+    return list(asks.values())
+
+
+def probe_tally(paths: Sequence[Path]) -> dict:
+    """Right answers per player, deck and board, as [right, asks]."""
+    out: dict = {}
+    for r in _probe_rows(paths):
+        cell = out.setdefault(r["who"], {}).setdefault(r["deck"], {}).setdefault(r["board"], [0, 0])
+        cell[0] += bool(r["right"])
+        cell[1] += 1
+    return out
+
+
+def _gap(aired: list[bool], control: list[bool]) -> dict:
+    """Aired minus control in share right, with a 95% interval that resamples each deck on its own (they don't pair)."""
+    import random
+    rate = lambda xs: sum(xs) / len(xs)  # noqa: E731
+    rng = random.Random(0)
+    draws = sorted(rate(rng.choices(aired, k=len(aired))) - rate(rng.choices(control, k=len(control)))
+                   for _ in range(tournament.RESAMPLES))
+    return {"aired": [sum(aired), len(aired)], "generated": [sum(control), len(control)],
+            "gap": _r(rate(aired) - rate(control)),
+            "ci95": [_r(draws[int(0.025 * (len(draws) - 1))]), _r(draws[int(0.975 * (len(draws) - 1))])]}
+
+
+def memory(paths: Sequence[Path] = MEMORY) -> dict | None:
+    """The memory probe: each player's aired minus control gap on each board, and the LLMs pooled."""
+    rows = _probe_rows(paths)
+    if not rows:
+        return None
+    by: dict[tuple, list[bool]] = defaultdict(list)
+    for r in rows:
+        by[(r["who"], r["deck"], r["board"])].append(bool(r["right"]))
+        if r["who"].startswith("llm:"):
+            by[("models", r["deck"], r["board"])].append(bool(r["right"]))
+    players: dict = {}
+    for (who, deck, board) in sorted(by):
+        if deck == "aired" and by.get((who, "generated", board)):
+            players.setdefault(who, {})[board] = _gap(by[(who, "aired", board)], by[(who, "generated", board)])
+    pooled = players.pop("models", None)
+    tally = probe_tally(paths)
+    for who, decks in tally.items():  # decks with no partner (the bot's grading deck) as plain counts
+        for deck, boards in decks.items():
+            if deck not in ("aired", "generated"):
+                for board, cell in boards.items():
+                    players.setdefault(who, {}).setdefault(board, {})[deck] = cell
+    return {"players": players, "models_pooled": pooled,
+            "cost": _r(sum(r.get("cost") or 0 for r in rows), 4)}
+
+
+def shown_share(answer: str, called) -> float:
+    """The share of an answer's letters that the called letters fill."""
+    letters = [c for c in answer.upper() if c.isalpha()]
+    return sum(c in called for c in letters) / len(letters) if letters else 0.0
+
+
+def blatt(deck: Path = BLATT_DECK, boards: dict | None = None) -> dict | None:
+    """Blatt's 15: each player's solves on every board (a jsonl of single solves, or a bonus test report for the
+    players' own picks), each player's board after its own picks, and how much R S T L N E and the contestants'
+    picks fill."""
+    if not Path(deck).exists():
+        return None
+    puzzles = json.loads(Path(deck).read_text())["puzzles"]
+    out_boards: dict = {}
+    own_shown: dict = {}
+    costs: dict = {}
+    for name, path in (boards or {}).items():
+        path = Path(path)
+        if not path.exists():
+            out_boards[name] = None
+        elif path.suffix == ".json":
+            report = json.loads(path.read_text())
+            out_boards[name] = {e["entrant"]: [e["solved"], e["puzzles"]] for e in report["entrants"]}
+            own_shown = {e["entrant"]: e.get("shown_after_picks") for e in report["entrants"]}
+            costs[name] = _r(sum(e.get("cost") or 0 for e in report["entrants"]), 4)
+        else:
+            rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+            tally: dict = {}
+            for r in rows:
+                cell = tally.setdefault(r["seat"], [0, 0])
+                cell[0] += bool(r["right"])
+                cell[1] += 1
+            out_boards[name] = tally
+            costs[name] = _r(sum(r.get("cost") or 0 for r in rows), 4)
+    fill = lambda called: _r(mean(shown_share(p["answer"], called(p)) for p in puzzles))  # noqa: E731
+    return {"puzzles": len(puzzles), "boards": out_boards, "own_shown": own_shown, "cost": costs,
+            "shown": {"RSTLNE": fill(lambda p: RSTLNE), "contestant": fill(lambda p: RSTLNE | set(p["contestant_picks"]))}}
+
+
+def variants(folders: dict = VARIANTS) -> dict:
+    """Each bot self-play variant's games against two copies of the bot, summarized as rstlne.selfplay does."""
+    from rstlne import selfplay
+    return {name: selfplay.games_summary(folder) for name, folder in folders.items() if Path(folder).exists()}
+
+
 def _commit() -> str | None:
     try:
         return subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=settings.ROOT, capture_output=True,
@@ -374,10 +501,16 @@ def main(argv: Sequence[str] | None = None) -> None:
     letter_files = [Path(f) for f in args.letters] if args.letters else sorted(ANALYSIS.glob(f"letters-{phase}*.json"))
     out = build(phase, letters=letter_files,
                 gap=Path(args.gap) if args.gap else ANALYSIS / f"reading-gap-{phase}.json", bonus=None)
-    out["bonus"] = bonus_report(Path(args.bonus) if args.bonus else _latest_bonus(out["meta"]["deck"], out["meta"]["seed"]))
+    seed = out["meta"]["seed"]
+    out["bonus"] = bonus_report(Path(args.bonus) if args.bonus else _latest_bonus(out["meta"]["deck"], seed))
+    out["aired_bonus"] = bonus_report(_latest_bonus("puzzles/private.json", seed))
+    out["memory"] = memory()
+    own = _latest_bonus(str(BLATT_DECK.relative_to(settings.ROOT)), seed)
+    out["blatt"] = blatt(BLATT_DECK, {**BLATT, **({"own": own} if own else {})})
+    out["variants"] = variants() or None
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(out, indent=1))
-    missing = [k for k in ("bonus", "letters", "reading_gap") if out[k] is None]
+    missing = [k for k in ("bonus", "letters", "reading_gap", "aired_bonus", "memory", "blatt", "variants") if out[k] is None]
     if out["letters"] and out["letters"]["lineups_missing"]:
         missing.append("letters for " + " ".join(out["letters"]["lineups_missing"]))
     print(f"wrote {args.out}: {len(out['lineups'])} lineups, {len(out['pairs'])} pairs"

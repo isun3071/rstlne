@@ -92,6 +92,60 @@ def macros(n: dict) -> dict[str, str | None]:
     m["NumForfeits"] = str(sum(f or 0 for f in forfeits)) if any(f is not None for f in forfeits) else None
     for lid, mates in (("6a", "Lunas"), ("6b", "Haikus"), ("6d2", "LunaDecs"), ("6d1", "Dones")):
         m[f"BotVs{mates}"] = pct(get(lineups, lid, "entrants", "bot", "win_rate"))
+    # Section 9: the bonus test on our deck and on aired puzzles, the memory probe, Blatt's 15. Counts print as the
+    # number right; a ...N macro holds the asks when they aren't the whole deck.
+    players = {name: key for name, (_, key) in ALONE.items()} | {"Bot": "bot"}
+    for prefix, test in (("Bonus", "bonus"), ("AiredBonus", "aired_bonus")):
+        rows = {e["entrant"]: e for e in get(n, test, "entrants") or []}
+        m[f"{prefix}Puzzles"] = str(max((e["puzzles"] for e in rows.values()), default=0)) if rows else None
+        for name, key in players.items():
+            e = rows.get(key)
+            m[f"{prefix}{name}"] = str(e["solved"]) if e else None
+            m[f"{prefix}{name}Shown"] = pct(e.get("shown_after_picks"), 0) if e else None
+    boards = {"blank": "Blank", "RSTLNE": "Rstlne"}
+    probed = get(n, "memory", "players") or {}
+    for name, key in players.items():
+        if probed and key not in probed:
+            continue  # not in the probe: no macros, so citing one fails loudly
+        for board, b in boards.items():
+            cell = get(n, "memory", "players", key, board)
+            for deck, d in (("aired", "Aired"), ("generated", "Control")):
+                k = get(cell, deck)
+                m[f"Mem{name}{b}{d}"] = str(k[0]) if k else None
+                m[f"Mem{name}{b}{d}N"] = str(k[1]) if k else None
+            m[f"Mem{name}{b}Gap"] = pts(get(cell, "gap"), 0)
+            ci = get(cell, "ci95")
+            m[f"Mem{name}{b}GapCI"] = f"{pts(ci[0], 0)} to {pts(ci[1], 0)}" if ci else None
+    for board, b in boards.items():
+        cell = get(n, "memory", "models_pooled", board)
+        for deck, d in (("aired", "Aired"), ("generated", "Control")):
+            k = get(cell, deck)
+            m[f"MemPooled{b}{d}"] = f"{k[0]} of {k[1]:,}" if k else None
+            m[f"MemPooled{b}{d}Rate"] = pct(k[0] / k[1]) if k else None
+        m[f"MemPooled{b}Gap"] = pts(get(cell, "gap"))
+        ci = get(cell, "ci95")
+        m[f"MemPooled{b}GapCI"] = f"{pts(ci[0])} to {pts(ci[1])}" if ci else None
+    m["BlattPuzzles"] = str(get(n, "blatt", "puzzles")) if get(n, "blatt") else None
+    m["BlattShownRstlne"] = pct(get(n, "blatt", "shown", "RSTLNE"), 0)
+    m["BlattShownContestant"] = pct(get(n, "blatt", "shown", "contestant"), 1)
+    for board, b in (("blank", "Blank"), ("RSTLNE", "Rstlne"), ("contestant", "Contestant"), ("own", "Own")):
+        ran = get(n, "blatt", "boards", board)
+        for name, key in players.items():
+            if ran and key not in ran:
+                continue  # this player wasn't asked on this board
+            k = get(ran, key)
+            m[f"Blatt{name}{b}"] = str(k[0]) if k else None
+    for name, key in players.items():
+        m[f"Blatt{name}OwnShown"] = pct(get(n, "blatt", "own_shown", key), 0)
+    # Appendix C: the bot's self-play variants, each minus the two copies of the bot it played
+    for variant, (v, label) in {"milk_all": ("milk", "Milk"), "vowel_first": ("vowels", "Vowels")}.items():
+        for copy, c in (("v6a", "A"), ("v6b", "B")):
+            gap = next((p for p in get(n, "variants", variant, "pairwise") or [] if {p["a"], p["b"]} == {v, copy}), None)
+            sign = 1 if gap and gap["a"] == v else -1
+            m[f"Variant{label}Vs{c}"] = pts(sign * gap["gap"], 0) if gap else None
+            ci = sorted(sign * x for x in gap["ci95"]) if gap and gap.get("ci95") else None
+            m[f"Variant{label}Vs{c}CI"] = f"{pts(ci[0], 0)} to {pts(ci[1], 0)}" if ci else None
+        m[f"Variant{label}Games"] = f"{get(n, 'variants', variant, 'games'):,}" if get(n, "variants", variant) else None
     for p in n["pairs"]:
         words = p["label"].replace("-", " ").split()
         key = "Pair" + "".join("".join(c for c in w if c.isalpha()).capitalize() for w in words)  # TeX macro names are letters only
