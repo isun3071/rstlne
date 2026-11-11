@@ -94,7 +94,7 @@ class DecisionPlayer(Player):
         finally:
             self.last_call = CallRecord(raw=self._record, usage=self._call_usage)
 
-    def thoughts(self) -> list[str]:
+    def thoughts(self, verbose: bool = False) -> list[str]:
         return decision_lines(self._record)
 
     def _choose(self, view: PublicView) -> Action:

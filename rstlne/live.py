@@ -72,7 +72,9 @@ class LiveShow:
         solve_pause: float = 10,
         read: Callable[[str], str] | None = None,
         read_timed: Callable[[float], str | None] | None = None,
+        verbose: bool = False,
     ):
+        self.verbose = verbose
         self.players = players
         self.pause = pause
         self.console = console or Console()
@@ -127,7 +129,7 @@ class LiveShow:
         self.moves.append(describe(result))
         if result.outcome == "solved" and self.state.round:  # self.state is still the board before the solve
             self.moves.append(missed_money(self.state))
-        thoughts = [line for line in map(self.clean, self.players[result.seat].thoughts()) if line]
+        thoughts = [line for line in map(self.clean, self.players[result.seat].thoughts(verbose=self.verbose)) if line]
         if thoughts:
             self.thoughts[result.seat] = thoughts
         if result.outcome == "solved" and self.puzzle:
@@ -155,8 +157,9 @@ class LiveShow:
     @staticmethod
     def clean(thought: str) -> str:
         """A thought as one line, without its "reasoning:" label or bold markers. Underscores stay: they're board patterns."""
+        indent = len(thought) - len(thought.lstrip(" "))  # --verbose working nests under its move
         line = re.sub(r"^(reasoning|content):\s*", "", thought.strip())
-        return " ".join(line.replace("**", "").split())
+        return " " * indent + " ".join(line.replace("**", "").split())
 
     def stop(self) -> None:
         if self.live:

@@ -222,7 +222,7 @@ def test_a_consonant_call_records_its_top_letters(rules, wheel_spec):
     bot.decide(public_view(spin_to(start(rules, wheel_spec), 3), 0))
     pick = bot.last_call.raw["letter_pick"]
     assert pick["verb"] == "Calls" and 1 <= len(pick["ranked"]) <= 3
-    assert all(letter not in "AEIOU" and 0 <= p <= 1 for letter, p, _ in pick["ranked"])
+    assert all(letter not in "AEIOU" and 0 <= p <= 1 for letter, p, *_ in pick["ranked"])
 
 
 def test_a_vowel_bought_on_the_express_is_one_the_engine_takes(rules, wheel_spec, monkeypatch):
@@ -249,3 +249,84 @@ def test_a_per_turn_bot_counts_each_opponent_turn_once(rules, wheel_spec):
     assert watcher.steal._turn is None  # every turn it watched was closed
     assert sum(watcher.steal.solves) >= 1 and watcher.steal.solves[0] == 0
     assert 0 < watcher.steal.expected[1] < 30 and 0 < watcher.steal.expected[2] < 30
+
+
+# Each letter's worth beside its odds, and --verbose: every worth as its formula, with the numbers in
+
+def test_the_letter_line_gives_each_letters_worth_so_a_less_likely_pick_makes_sense():
+    record = {"answers": [], "oov": 0.1, "p_steal": None, "values": {},
+              "letter_pick": {"verb": "Calls", "win_mode": False,
+                              "ranked": [["N", 0.95, 2.4, 1640.0], ["R", 0.98, 1.1, 1580.0], ["T", 0.99, 1.2, 1560.0]]}}
+    assert explain(record)[-1] == ("Calls N, worth $1,640: 95% likely, about 2.4 copies. "
+                                   "Next best: R $1,580 (98%, 1.1 copies), T $1,560 (99%, 1.2 copies)")
+    win = {**record, "letter_pick": {**record["letter_pick"], "win_mode": True,
+                                     "ranked": [["N", 0.95, 2.4, 0.612], ["R", 0.98, 1.1, 0.608]]}}
+    assert explain(win)[-1] == ("Calls N, worth 61.2% to win: 95% likely, about 2.4 copies. "
+                                "Next best: R 60.8% (98%, 1.1 copies)")
+
+
+def test_a_letter_line_from_an_older_log_reads_as_before():
+    record = {"answers": [], "oov": 0.1, "p_steal": None, "values": {},
+              "letter_pick": {"verb": "Calls", "ranked": [["T", 0.9, 1.84], ["N", 0.75, 1.0]]}}
+    assert explain(record)[-1] == "Calls T: 90% likely, about 1.8 copies (then N 75%)"
+
+
+def test_the_known_answer_line_says_what_solving_and_spinning_were_worth():
+    record = {"answers": [["WHEEL OF FORTUNE", 0.99]], "oov": 0.0, "p_steal": 0.77, "values": {},
+              "planner": "solve", "planner_values": {"solve": 3450.0, "spin": 3100.0}, "win_mode": False}
+    assert explain(record)[-1] == "Knows the answer: solves now (solve $3,450, spin again $3,100)"
+
+
+def _turn(rules, wheel_spec):
+    bot = bots(rules, wheel_spec)[0]
+    state = start(rules, wheel_spec)
+    return bot, state, bot._situation(public_view(state, 0), bot._read(public_view(state, 0)))
+
+
+def test_each_breakdown_adds_up_to_the_value_the_bot_chose_by(rules, wheel_spec):
+    from rstlne.engine.wheel import Kind
+    bot, state, s = _turn(rules, wheel_spec)
+    solve = s.solve_parts()
+    assert solve["total"] == pytest.approx(s.solve().main)
+    assert solve["c"] * solve["win"] + (1 - solve["c"]) * solve["after_wrong"] == pytest.approx(solve["total"])
+    assert solve["after_wrong"] == pytest.approx(solve["steal"] * solve["stolen"] + (1 - solve["steal"]) * solve["back"])
+    spin = s.spin_parts()
+    assert sum(g["n"] for g in spin) == len(s.wheel)
+    assert sum(g["n"] * g["value"] for g in spin) / len(s.wheel) == pytest.approx(s.spin().main)
+    cash = next(w for w in s.wheel if w.kind is Kind.CASH)
+    for letter in s.consonants[:5]:
+        parts = s.letter_parts(letter, s.bank, cash.value, claim_wild=cash.wild)
+        assert parts["total"] == pytest.approx(s.call(letter, cash.value, claim_wild=cash.wild).main)
+        assert parts["p"] * parts["hit"] + (1 - parts["p"]) * parts["miss"] == pytest.approx(parts["total"])
+    for vowel in s.vowels:
+        parts = s.letter_parts(vowel, s.bank - rules.vowel_cost, 0)
+        assert parts["total"] == pytest.approx(s.vowel_value(vowel).main)
+
+
+def test_the_planners_values_are_the_ones_it_chose_by(rules, wheel_spec):
+    from rstlne.players.bot import planner
+    bot, state, s = _turn(rules, wheel_spec)
+    if s.belief.best is None:
+        s.belief = replace(s.belief, answers=(("WHEEL OF FORTUNE", 0.9),))
+    plan = planner.plan(s, ("spin", "solve"))
+    assert planner.decide(s, ("spin", "solve")) == s.goal.choose(plan.options)
+    if "spin" in plan.options:
+        assert sum(g["share"] * g["value"] for g in plan.spin) == pytest.approx(plan.options["spin"].main)
+
+
+def test_verbose_thoughts_show_the_formulas_and_plain_ones_dont(rules, wheel_spec):
+    bot = bots(rules, wheel_spec)[0]
+    state = start(rules, wheel_spec)
+    bot.decide(public_view(state, 0))
+    plain, verbose = bot.thoughts(), bot.thoughts(verbose=True)
+    assert plain == explain(bot.last_call.raw)
+    extra = [line for line in verbose if line not in plain]
+    assert any(line.strip().startswith("spin = average over the 24 wedges") for line in extra)
+    bot.decide(public_view(spin_to(state, 3), 0))  # a consonant call on a cash wedge
+    letter = bot.last_call.raw["letter_pick"]["ranked"][0][0]
+    assert any(line.strip().startswith(f"{letter} at $") for line in bot.thoughts(verbose=True))
+
+
+def test_wedge_counts_read_in_wedges_with_the_millions_thirds():
+    from rstlne.players.bot.breakdown import wedges
+    assert wedges(12, 72) == "×4" and wedges(1, 72) == "×⅓" and wedges(8, 72) == "×2⅔" and wedges(3, 24) == "×3"

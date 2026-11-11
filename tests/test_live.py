@@ -273,7 +273,7 @@ def test_a_long_reasoning_is_cut_to_a_few_rows(rules, wheel_spec, players):
 
 def test_a_move_keeps_all_its_thought_lines(rules, wheel_spec, players):
     live = LiveShow(players, pause=0, console=console())
-    players[0].thoughts = lambda: ["reasoning: first", "content: second"]
+    players[0].thoughts = lambda verbose=False: ["reasoning: first", "content: second"]
     state = start(rules, wheel_spec)
     live.start(state)
     live.result(spin_to(state, 3))

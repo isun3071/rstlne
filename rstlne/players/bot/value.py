@@ -285,6 +285,47 @@ class Situation:
             miss = self.lose_wheel(bank, self.calibrate(after.miss), self.wild_held, self.million_held)
         return hit * stats.p_hit + miss * (1 - stats.p_hit)
 
+    # Breakdowns, for --verbose: the same numbers as the moves above, term by term. Nothing here feeds a choice.
+
+    def solve_parts(self) -> dict:
+        """solve = c × V(win the round) + (1 − c) × V(the wheel passes after a wrong solve)."""
+        wrong = self.calibrate(info.after_wrong_solve(self.belief))
+        win = self.goal.win_round(self.bank, self.wild_held, self.million_held)
+        after = self.lose_wheel(self.bank, wrong, self.wild_held, self.million_held)
+        return {"c": self.c, "bank": self.bank, "banked": max(self.bank, self.goal.minimum), "win": win.main, "wrong_c": wrong, "after_wrong": after.main,
+                "steal": self.odds.total, "stolen": self.stolen(self.wild_held).main,
+                "back": self.leaf(self.bank, wrong, self.wild_held, self.million_held).main,
+                "total": (win * self.c + after * (1 - self.c)).main}
+
+    def spin_parts(self) -> list[dict]:
+        """spin = the average of every wedge's landing, grouped by wedge, with the letter each one would call."""
+        groups: dict[tuple, dict] = {}
+        for wedge in self.wheel:
+            key = (wedge.kind, wedge.value, wedge.wild)
+            if key not in groups:
+                letter = None
+                if wedge.kind not in (Kind.BANKRUPT, Kind.LOSE_A_TURN) and self.consonants:
+                    letter = self.free_play()[0] if wedge.kind is Kind.FREE_PLAY else self.consonant(wedge)[0]
+                groups[key] = {"wedge": wedge, "n": 0, "value": self._landing(wedge).main, "letter": letter}
+            groups[key]["n"] += 1
+        return list(groups.values())
+
+    def letter_parts(self, letter: str, bank: float, money: float, *, miss_keeps: bool = False,
+                     claim_wild: bool = False, claim_million: bool = False, wild: bool | None = None) -> dict:
+        """A letter = p(hit) × V(hold the wheel with the copies banked) + (1 − p) × V(miss)."""
+        wild = self.wild_held if wild is None else wild
+        stats = self.belief.stats(letter)
+        after = info.after(self.belief, letter)
+        c_hit, c_miss = self.calibrate(after.hit), self.calibrate(after.miss)
+        hit = self.leaf(bank + money * stats.count, c_hit, wild or claim_wild, self.million_held or claim_million)
+        if miss_keeps:
+            miss = self.leaf(bank, c_miss, wild, self.million_held)
+        else:
+            miss = self.lose_wheel(bank, c_miss, wild, self.million_held)
+        return {"letter": letter, "p": stats.p_hit, "count": stats.count, "bank": bank, "money": money,
+                "c_hit": c_hit, "c_miss": c_miss, "hit": hit.main, "miss": miss.main, "miss_keeps": miss_keeps,
+                "steal": self.odds.total, "total": (hit * stats.p_hit + miss * (1 - stats.p_hit)).main}
+
     def _best(self, options: dict[str, Value]) -> tuple[str, Value]:
         self.letter_options = options
         best = self.goal.choose(options)

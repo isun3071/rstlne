@@ -140,3 +140,24 @@ def test_games_started_together_on_one_seed_get_their_own_logs(tmp_path):
     assert first.name == "20261106-151800-seed707.jsonl"
     assert second.name == "20261106-151800-seed707-2.jsonl"
     assert first.exists() and second.exists()  # each name is claimed as it's handed out
+
+
+def test_verbose_thinking_asks_each_seat_for_its_formulas(rules, wheel_spec):
+    from helpers import start
+    from rstlne.engine.rules import apply
+    from rstlne.engine.state import Spin
+    from rstlne.players.base import Player
+    from rstlne.show import Show
+
+    class Thinker(Player):
+        def thoughts(self, verbose=False):
+            return ["plain"] + (["formula"] if verbose else [])
+
+    state = apply(start(rules, wheel_spec), Spin())
+    for verbose, expected in ((False, ["plain"]), (True, ["plain", "formula"])):
+        out = []
+        show = Show([Thinker()] * 3, 0, thinking=True, verbose=verbose, write=out.append, sleep=lambda s: None)
+        show.names = ["a", "b", "c"]
+        show.result(state)
+        assert [line.split("] ", 1)[1] for line in out if line.startswith("    [")] == expected
+    assert cli._arguments(["--seats", "bot,bot,bot", "--verbose"]).verbose

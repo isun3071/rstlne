@@ -236,8 +236,8 @@ class HybridPlayer(BotPlayer):
             self._record["ask"] = self._ask
             self.last_call = CallRecord(raw=self._record, usage=self._ask_usage)
 
-    def thoughts(self) -> list[str]:
-        lines = super().thoughts()
+    def thoughts(self, verbose: bool = False) -> list[str]:
+        lines = super().thoughts(verbose)
         if self._ask:
             lines.append(ask_line(self.model, self._ask))
         return lines

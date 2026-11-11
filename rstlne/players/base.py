@@ -45,6 +45,6 @@ class Player:
         """Who plays this seat, for the screen."""
         return self.describe()["kind"]
 
-    def thoughts(self) -> list[str]:
-        """What the seat weighed for its latest move, for --show-thinking."""
+    def thoughts(self, verbose: bool = False) -> list[str]:
+        """What the seat weighed for its latest move, for --show-thinking; verbose (--verbose) adds the working."""
         return []

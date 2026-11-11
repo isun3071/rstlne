@@ -378,6 +378,6 @@ class LLMPlayer(Player):
         lines.append(f"Your move. Legal: {', '.join(view.legal_actions)}.")
         return "\n".join(lines)
 
-    def thoughts(self) -> list[str]:
+    def thoughts(self, verbose: bool = False) -> list[str]:
         raw = self.last_call.raw if self.last_call else {}
         return [f"{key}: {raw[key].strip()}" for key in ("reasoning", "content") if raw.get(key)]

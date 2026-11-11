@@ -49,6 +49,7 @@ Each seat is `human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slu
 |---|---|
 | `--seed N` | Plays seed N. The same seed and the same moves replay the same game. Without it, the game picks a seed and prints it. |
 | `--show-thinking` | Prints each model's reasoning and message before its move. For a decision seat, it prints P(solvable) and the probability of each pick. |
+| `--verbose` | `--show-thinking`, plus the bot's working: each move's worth as a formula with its numbers, and the planner's solve-now against spin-again once it knows the answer. |
 | `--live` | Model-only games: redraws one fixed screen after every move, with the board as tiles, the letters left, each seat's money, cards, and thinking, and the latest moves. |
 | `--show-puzzle` | Prints the board, letters, banks, cards, and wedge after every move, so you can follow a model-only game. |
 | `--pause S` | Pauses S seconds after each model move. The default is 1.5. |

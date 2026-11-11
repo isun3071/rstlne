@@ -155,6 +155,8 @@ def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))
     parser.add_argument("--pause", type=float, help="seconds to pause after each model move")
     parser.add_argument("--show-thinking", action="store_true", help="print each model's raw response")
+    parser.add_argument("--verbose", action="store_true",
+                        help="--show-thinking, plus the bot's working: each move's worth as a formula with its numbers")
     parser.add_argument("--show-puzzle", action="store_true", help="print the board, letters, and banks after every move")
     parser.add_argument("--live", action="store_true", help="redraw one fixed screen after every move, human seats too")
     parser.add_argument("--log-dir", default=str(settings.ROOT / "logs"))
@@ -198,14 +200,14 @@ def main(
     pause = args.pause if args.pause is not None else config["cli"]["model_pause"]
     show: Show | LiveShow
     if args.live and sys.stdout.isatty():
-        show = LiveShow(players, pause, solve_pause=config["cli"]["solve_pause"])
+        show = LiveShow(players, pause, solve_pause=config["cli"]["solve_pause"], verbose=args.verbose)
         for player in players:
             if isinstance(player, HumanPlayer):
                 player.use_screen(show)
     else:
         if args.live:
             print("--live needs a terminal; showing plain output instead.")
-        show = Show(players, pause, args.show_thinking, args.show_puzzle, config["cli"]["solve_pause"])
+        show = Show(players, pause, args.show_thinking, args.show_puzzle, config["cli"]["solve_pause"], verbose=args.verbose)
 
     state = new_game(seed, rules, spec, puzzles, bonus)
     show.start(state)

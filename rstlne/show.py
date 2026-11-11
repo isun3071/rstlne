@@ -42,10 +42,12 @@ class Show:
         solve_pause: float = 10,
         write: Callable[[str], None] = print,
         sleep: Callable[[float], None] = time.sleep,
+        verbose: bool = False,
     ):
         self.players = players
         self.pause = pause
-        self.thinking = thinking
+        self.thinking = thinking or verbose
+        self.verbose = verbose
         self.show_puzzle = show_puzzle
         self.solve_pause = solve_pause  # holds a solved board; --pause 0 skips it
         self.write = write
@@ -70,8 +72,8 @@ class Show:
         player = self.players[result.seat]
         model = not isinstance(player, HumanPlayer)
         if self.thinking:
-            for thought in player.thoughts():
-                body = thought.strip().replace("\n", "\n    ")
+            for thought in player.thoughts(verbose=self.verbose):
+                body = thought.rstrip().lstrip("\n").replace("\n", "\n    ")  # leading spaces nest --verbose working
                 self.write(f"    [{self.names[result.seat]}] {body}")
         self.write(describe(result, self.viewer))
         if "turn_cap" in result.events and self.puzzle:

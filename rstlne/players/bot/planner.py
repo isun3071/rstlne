@@ -8,6 +8,7 @@ first miss passes the wheel with the known answer refuted.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 
 from rstlne.engine.wheel import Kind
 from rstlne.players.bot.objective import ZERO, Value
@@ -39,8 +40,24 @@ def _landings(s: Situation) -> list[tuple[Kind, float, float]]:
     return [(kind, value, n / len(s.wheel)) for (kind, value), n in groups.items()]
 
 
+@dataclass
+class Plan:
+    """What the planner weighed: each option's worth, the consonants it would call in order with their copies,
+    the confidence after each hit, and how the first spin's worth splits over the wedges."""
+
+    options: dict[str, Value]
+    letters: list[tuple[str, int]] = field(default_factory=list)
+    confidence: list[float] = field(default_factory=list)
+    spin: list[dict] = field(default_factory=list)
+
+
 def decide(s: Situation, legal: Sequence[str]) -> str:
     """Spin or solve, looking ahead through the known answer's consonants."""
+    return s.goal.choose(plan(s, legal).options)
+
+
+def plan(s: Situation, legal: Sequence[str]) -> Plan:
+    """The look-ahead behind decide, with its numbers kept for the bot's thoughts."""
     letters = order(s)[:MAX_CALLS]
     answer = s.belief.best or ""
     counts = [answer.count(c) for c in letters]
@@ -55,11 +72,12 @@ def decide(s: Situation, legal: Sequence[str]) -> str:
     def solve_value(bank: float, c: float) -> Value:
         return s.goal.win_round(bank, wild, million) * c + s.lose_wheel(bank, 0.0, wild, million) * (1 - c)
 
-    def spin_value(bank: float, i: int) -> Value:
+    def spin_value(bank: float, i: int, parts: list | None = None) -> Value:
         c = confidence[i]
         hit_chance = c / confidence[i + 1] if confidence[i + 1] > 0 else 0.0
         total = ZERO
         for kind, value, share in landings:
+            detail: dict = {}
             if kind is Kind.BANKRUPT:
                 outcome = s.lose_wheel(0, c, False, False)
             elif kind is Kind.LOSE_A_TURN:
@@ -68,6 +86,9 @@ def decide(s: Situation, legal: Sequence[str]) -> str:
                 hit = best(bank + value * counts[i], i + 1)
                 miss = s.lose_wheel(bank, 0.0, wild, million)
                 outcome = hit * hit_chance + miss * (1 - hit_chance)
+                detail = {"hit_chance": hit_chance, "hit": hit.main, "miss": miss.main}
+            if parts is not None:  # the first spin's split, for the bot's thoughts
+                parts.append({"kind": kind, "money": value, "share": share, "value": outcome.main, **detail})
             total += outcome * share
         return total
 
@@ -81,6 +102,7 @@ def decide(s: Situation, legal: Sequence[str]) -> str:
         return memo[key]
 
     options = {"solve": solve_value(s.bank, s.c)}
+    first: list[dict] = []
     if letters and "spin" in legal:
-        options["spin"] = spin_value(s.bank, 0)
-    return s.goal.choose(options)
+        options["spin"] = spin_value(s.bank, 0, first)
+    return Plan(options, list(zip(letters, counts)), confidence, first)
