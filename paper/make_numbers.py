@@ -20,10 +20,10 @@ EMBER = "llm:meta/muse-ember"
 NOT_REFUSED = {"solve doesn't fit the board", "repeated letter"}  # logged, but played with their penalty
 GUESS = "fits, but wrong"  # the one kind of wrong solve that breaks nothing the board shows
 LUNA_H, HAIKU_H = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5"
-LUNA_D, D1 = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra"
+LUNA_D, D1, JEV = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra", "decision:typesafe/jev-1.14"
 ALONE = {"Sol": ("2", SOL), "Terra": ("2t", TERRA), "DeepSeek": ("3c", DEEPSEEK), "Qwen": ("3r", QWEN), "Ember": ("3m", EMBER),
          "Luna": ("3b", LUNA), "Haiku": ("3d", HAIKU), "LunaHybrid": ("3", LUNA_H), "HaikuHybrid": ("3f", HAIKU_H),
-         "LunaDec": ("d2", LUNA_D), "Done": ("d1", D1)}
+         "LunaDec": ("d2", LUNA_D), "Done": ("d1", D1), "Jev": ("dj", JEV)}
 
 
 def pct(x, places=1):
@@ -91,7 +91,7 @@ def macros(n: dict) -> dict[str, str | None]:
             m[f"{name}WrongBoardShare"] = pct(broke / total, 0) if total else None
     forfeits = [get(e, "play", "forfeits") for L in lineups.values() for e in L["entrants"].values()]
     m["NumForfeits"] = str(sum(f or 0 for f in forfeits)) if any(f is not None for f in forfeits) else None
-    for lid, mates in (("6a", "Lunas"), ("6b", "Haikus"), ("6d2", "LunaDecs"), ("6d1", "Dones")):
+    for lid, mates in (("6a", "Lunas"), ("6b", "Haikus"), ("6d2", "LunaDecs"), ("6d1", "Dones"), ("6dj", "Jevs")):
         m[f"BotVs{mates}"] = pct(get(lineups, lid, "entrants", "bot", "win_rate"))
     # Section 7: letters, judged by the bot's reader on the board before each call, and the reading gap
     models = ("Sol", "Terra", "DeepSeek", "Ember", "Qwen", "Luna", "Haiku")

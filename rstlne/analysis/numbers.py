@@ -39,7 +39,7 @@ SOL, TERRA, LUNA, HAIKU = "llm:openai/gpt-6.1-sol", "llm:openai/gpt-6.1-terra", 
 DEEPSEEK, QWEN = "llm:deepseek/deepseek-v4.1-flash-1017", "llm:qwen/qwen3.8-flash"
 EMBER = "llm:meta/muse-ember"
 LUNA_HYBRID, HAIKU_HYBRID = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5"
-LUNA_DEC, D1 = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra"
+LUNA_DEC, D1, JEV = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra", "decision:typesafe/jev-1.14"
 PAIRS = [
     ("Terra minus Sol", ("2t", TERRA), ("2", SOL)),
     ("Sol minus the Luna hybrid", ("2", SOL), ("3", LUNA_HYBRID)),
@@ -58,6 +58,9 @@ PAIRS = [
     ("Luna minus Haiku", ("3b", LUNA), ("3d", HAIKU)),
     ("Luna alone minus the Luna Decisions seat", ("3b", LUNA), ("d2", LUNA_DEC)),
     ("Luna Decisions seat minus d1-ultra seat", ("d2", LUNA_DEC), ("d1", D1)),
+    ("Luna alone minus the Jev seat", ("3b", LUNA), ("dj", JEV)),
+    ("Luna Decisions seat minus Jev seat", ("d2", LUNA_DEC), ("dj", JEV)),
+    ("Jev seat minus d1-ultra seat", ("dj", JEV), ("d1", D1)),
 ]
 
 

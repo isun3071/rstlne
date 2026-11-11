@@ -43,7 +43,7 @@ plt.rcParams.update({
 
 NAMES = {"openai/gpt-6.1-sol": "Sol", "openai/gpt-6-luna": "Luna", "anthropic/claude-haiku-5.5": "Haiku",
          "deepseek/deepseek-v4.1-flash-1017": "DeepSeek", "openai/gpt-6-luna-decisions": "Luna Decisions",
-         "liquid/d1-ultra": "d1-ultra", "openai/gpt-6.1-terra": "Terra", "qwen/qwen3.8-flash": "Qwen 3.8 Flash",
+         "liquid/d1-ultra": "d1-ultra", "typesafe/jev-1.14": "Jev", "openai/gpt-6.1-terra": "Terra", "qwen/qwen3.8-flash": "Qwen 3.8 Flash",
          "meta/muse-ember": "Ember"}
 
 
@@ -114,7 +114,8 @@ def check(fig, name):
 solo = [(F[k], key) for k, key in (("2", "openai/gpt-6.1-sol"), ("2t", "openai/gpt-6.1-terra"), ("3", "hybrid:openai/gpt-6-luna"),
                                      ("3f", "hybrid:anthropic/claude-haiku-5.5"), ("3c", "deepseek/deepseek-v4.1-flash-1017"),
                                      ("3r", "qwen/qwen3.8-flash"), ("3m", "meta/muse-ember"), ("3b", "llm:openai/gpt-6-luna"), ("3d", "anthropic/claude-haiku-5.5"),
-                                     ("d2", "decision:openai/gpt-6-luna-decisions"), ("d1", "decision:liquid/d1-ultra"))
+                                     ("d2", "decision:openai/gpt-6-luna-decisions"), ("d1", "decision:liquid/d1-ultra"),
+                                     ("dj", "decision:typesafe/jev-1.14"))
         if have(k)]
 rows = []
 for folder, key in solo:
@@ -253,7 +254,8 @@ groups = [(g, F[k], key, kind) for g, k, key, kind in (
     ("Ember vs bots", "3m", "meta/muse-ember", "LLM"),
     ("Luna vs bots", "3b", "openai/gpt-6-luna", "LLM"),
     ("Haiku vs bots", "3d", "anthropic/claude-haiku-5.5", "LLM"),
-    ("Luna Decisions seat vs bots", "d2", "openai/gpt-6-luna-decisions", "decision")) if have(k)]
+    ("Luna Decisions seat vs bots", "d2", "openai/gpt-6-luna-decisions", "decision"),
+    ("Jev seat vs bots", "dj", "typesafe/jev-1.14", "decision")) if have(k)]
 data = [(g, kind, per_round(f, key), per_round(f, "bot")) for g, f, key, kind in groups]
 fig, axes = plt.subplots(1, 2, figsize=(12, 0.62 * len(data) + 2.2))
 fig.subplots_adjust(left=0.19, right=0.95, top=0.84, bottom=0.12, wspace=0.62)
@@ -388,10 +390,12 @@ rows7 = [(name, k, pick, kind) for name, k, pick, kind in (
          ("Haiku", "3d", lambda s: s.get("model") == "anthropic/claude-haiku-5.5", "LLM"),
          ("Luna Decisions seat", "d2", lambda s: s["kind"] == "decision", "decision"),
          ("d1-ultra seat", "d1", lambda s: s["kind"] == "decision", "decision"),
+         ("Jev seat", "dj", lambda s: s["kind"] == "decision", "decision"),
          ("Bot, against two Lunas", "6a", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two Haikus", "6b", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two d1-ultras", "6d1", lambda s: s["kind"] == "bot", "bot"),
-         ("Bot, against two Luna Dec.", "6d2", lambda s: s["kind"] == "bot", "bot")) if have(k)]
+         ("Bot, against two Luna Dec.", "6d2", lambda s: s["kind"] == "bot", "bot"),
+         ("Bot, against two Jevs", "6dj", lambda s: s["kind"] == "bot", "bot")) if have(k)]
 rows7 = [(name, F[k], pick, kind) for name, k, pick, kind in rows7]  # (name, folder, pick, kind) from here on
 RAMP = ["#104281", "#2a78d6", "#86b6ef"]  # 1st, 2nd, 3rd: one hue, darkest first
 fig, ax = plt.subplots(figsize=(11, 0.6 * len(rows7) + 2.6))

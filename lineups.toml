@@ -22,6 +22,8 @@ default = "v6"
 "6d2" = { folder = "seed707-10d97f0a", label = "bot · Luna Dec. · Luna Dec." }
 "d1" = { folder = "seed707-f06fd2a1", label = "d1-ultra · bot · bot" }
 "d2" = { folder = "seed707-5a806f9e", label = "Luna Decisions · bot · bot" }
+"dj" = { folder = "seed707-d828a597", label = "Jev · bot · bot" }
+"6dj" = { folder = "seed707-2ffcafb8", label = "bot · Jev · Jev" }
 
 [v4]
 "1" = { folder = "seed707-d7589355", label = "Sol · DeepSeek · Haiku" }
