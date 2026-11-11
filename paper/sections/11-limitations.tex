@@ -1,2 +1,8 @@
 \section{Limitations}\label{sec:limitations}
-% To draft from paper/outline.md.
+% To draft from paper/outline.md. Model choice drafted first; the rest of the section to follow.
+
+\subsection{Which models we could afford}
+
+We tested each lab's cheaper current models. GPT-6.1 Sol is our budget frontier. It lists at \$2 per million input tokens and \$10 per million output tokens, and it played on OpenAI's flex tier at half that. Each lab's flagship lists at two to five times Sol's output price: Claude Opus 5.5 at \$4 and \$20, Claude Fable 5.2 at \$8 and \$40, and GPT-6 Astra at \$10 and \$50 (OpenRouter list prices per million input and output tokens, read 2026-11-11). Google's Gemini 4 Argon and Gemini 4 Carbon list at Sol's price, but list price is a poor guide to what a game costs (Section~\ref{sec:cost}). The whole study, \NumGames{} games over \NumLineups{} lineups, cost \TotalCost{}. A single lineup of Claude Opus 5.5 against two bots would cost about \missing{FlagshipLineupCost}.% TODO(Ian): from the 2026-11-02 trial games (Opus 5.5 about 13 cents a game, so about $47 for 360 games); needs a macro, or drop the sentence
+
+So the strongest model from each lab is missing. Sol and Terra already beat the bot alone (Section~\ref{sec:how-well}). We cannot say how far a flagship would beat it, or whether a flagship reader would still gain from a hybrid seat. Appendix~\ref{app:repro} lists what it takes to run these lineups with a larger budget.
