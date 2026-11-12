@@ -53,8 +53,10 @@ def short(entrant):
     if kind == "hybrid":
         name = f"Hybrid (bot + {NAMES.get(slug, slug)})"
     elif kind == "decision":
-        decider, _, writer = slug.partition("@")
-        name = f"{NAMES.get(decider, decider)} seat" + (f" ({NAMES.get(writer, writer)} writes)" if writer else "")
+        decider, _, writer = slug.partition("@")  # a seat naming its solver: "Luna Dec. + Haiku"
+        short_names = {"openai/gpt-6-luna-decisions": "Luna Dec."}
+        name = (f"{short_names.get(decider, NAMES.get(decider, decider))} + {NAMES.get(writer, writer)}" if writer
+                else f"{NAMES.get(slug, slug)} seat")
     elif kind == "llm":
         name = NAMES.get(slug, slug)
     else:
@@ -139,7 +141,7 @@ ax.set_xlim(0, 80)
 tidy(ax, "games won against two bots, with 95% interval (%)")
 handles = [plt.Rectangle((0, 0), 1, 1, color=KIND[k]) for k in ("LLM", "hybrid", "decision")]
 ax.legend(handles, ["LLM playing alone", "hybrid: the bot decides, the LLM reads",
-                    "decision seat: a decision model decides, Luna reads"], loc="lower right", frameon=False, fontsize=9.5)
+                    "decision seat: a decision model decides, an LLM writes its solves"], loc="lower right", frameon=False, fontsize=9.5)
 save(fig, "1-alone-against-two-bots.png", "Alone against two bots",
      f"One seat against two identical {PHASE} bots, 60 sets (360 games) each, same puzzles and spins")
 
@@ -150,6 +152,8 @@ NUMBERS = json.loads(Path("paper/numbers.json").read_text())["lineups"]
 LID = {folder: k for k, folder in F.items()}
 pts = []
 for folder, key in solo:
+    if key.endswith("@"):
+        continue  # the decision seats with Haiku solving belong to section 8, not this chart of the models
     full = next(n for n in NUMBERS[LID[folder]]["entrants"] if key in n)
     e = NUMBERS[LID[folder]]["entrants"][full]
     name, kind = short(full)
@@ -198,7 +202,7 @@ save(fig, "2-temperament.png", "Early and right wins",
 
 # 3. Every lineup: share of games won by each seat
 fig, ax = plt.subplots(figsize=(11, 0.62 * len(LINEUPS) + 2.6))
-fig.subplots_adjust(left=0.24, right=0.98, top=0.83, bottom=0.2)
+fig.subplots_adjust(left=0.26, right=0.98, top=0.83, bottom=0.2)
 segments = []
 for i, (label, folder) in enumerate(reversed(LINEUPS)):
     left = 0
@@ -259,9 +263,9 @@ groups = [(g, F[k], key, kind) for g, k, key, kind in (
     ("Haiku vs bots", "3d", "anthropic/claude-haiku-5.5", "LLM"),
     ("Luna Decisions seat vs bots", "d2", "openai/gpt-6-luna-decisions", "decision"),
     ("Jev seat vs bots", "dj", "typesafe/jev-1.14", "decision"),
-    ("Luna Dec. seat, Haiku writes, vs bots", "d2h", "luna-decisions", "decision"),
-    ("d1-ultra seat, Haiku writes, vs bots", "d1h", "d1-ultra", "decision"),
-    ("Jev seat, Haiku writes, vs bots", "djh", "jev-1.14", "decision")) if have(k)]
+    ("Luna Dec. + Haiku vs bots", "d2h", "luna-decisions", "decision"),
+    ("d1-ultra + Haiku vs bots", "d1h", "d1-ultra", "decision"),
+    ("Jev + Haiku vs bots", "djh", "jev-1.14", "decision")) if have(k)]
 data = [(g, kind, per_round(f, key), per_round(f, "bot")) for g, f, key, kind in groups]
 fig, axes = plt.subplots(1, 2, figsize=(12, 0.62 * len(data) + 2.2))
 fig.subplots_adjust(left=0.19, right=0.95, top=0.84, bottom=0.12, wspace=0.62)
@@ -397,9 +401,9 @@ rows7 = [(name, k, pick, kind) for name, k, pick, kind in (
          ("Luna Decisions seat", "d2", lambda s: s["kind"] == "decision", "decision"),
          ("d1-ultra seat", "d1", lambda s: s["kind"] == "decision", "decision"),
          ("Jev seat", "dj", lambda s: s["kind"] == "decision", "decision"),
-         ("Luna Dec. seat, Haiku writes", "d2h", lambda s: s["kind"] == "decision", "decision"),
-         ("d1-ultra seat, Haiku writes", "d1h", lambda s: s["kind"] == "decision", "decision"),
-         ("Jev seat, Haiku writes", "djh", lambda s: s["kind"] == "decision", "decision"),
+         ("Luna Dec. + Haiku", "d2h", lambda s: s["kind"] == "decision", "decision"),
+         ("d1-ultra + Haiku", "d1h", lambda s: s["kind"] == "decision", "decision"),
+         ("Jev + Haiku", "djh", lambda s: s["kind"] == "decision", "decision"),
          ("Bot, against two Lunas", "6a", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two Haikus", "6b", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two d1-ultras", "6d1", lambda s: s["kind"] == "bot", "bot"),
