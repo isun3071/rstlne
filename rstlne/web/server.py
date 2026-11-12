@@ -135,6 +135,7 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
             "models": models,
             "hybrid_models": [m for m in models if all(c is not None for c in curves_for(config, m))],
             "decision_models": list(config.get("web", {}).get("decision_models", [])),
+            "solver_model": config["decision"]["solver_model"],  # a decision seat's default; the page can name another
             "bot_version": versions.current(config),
             "bonus_solve_seconds": config["cli"]["bonus_solve_seconds"],
         }

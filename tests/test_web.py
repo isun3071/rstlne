@@ -155,6 +155,12 @@ def test_setup_lists_the_seat_kinds_and_the_models_from_config(client):
     assert isinstance(setup["models"], list) and setup["bot_version"] >= 1
 
 
+def test_setup_names_the_default_solver_so_a_decision_seat_can_pick_another(client):
+    from rstlne import settings
+    setup = client.get("/api/setup").json()
+    assert setup["solver_model"] == settings.load_config()["decision"]["solver_model"]
+
+
 def test_a_bad_seat_list_is_refused_with_the_reason(client):
     response = client.post("/api/games", json={"seats": ["human", "bot"]})
     assert response.status_code == 400 and "three seats" in response.json()["detail"]

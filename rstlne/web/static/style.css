@@ -78,7 +78,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 /* Setup */
 .presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; }
 .seat-pickers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.picker { background: var(--glass); border: 1px solid var(--edge); border-radius: var(--radius); padding: 0 14px 14px; display: grid; gap: 10px; overflow: hidden; }
+.picker { background: var(--glass); border: 1px solid var(--edge); border-radius: var(--radius); padding: 0 14px 14px; display: grid; gap: 10px; overflow: hidden;
+  align-content: start; }  /* a card with fewer fields, like a bot's, keeps them at the top instead of stretching them */
 .picker h3 { margin: 0 -14px; padding: 8px 14px; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: #170d33; }
 .picker:nth-child(1) h3 { background: var(--seat-0); }
 .picker:nth-child(2) h3 { background: var(--seat-1); }
