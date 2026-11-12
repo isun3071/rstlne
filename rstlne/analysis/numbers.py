@@ -41,7 +41,8 @@ EMBER = "llm:meta/muse-ember"
 LUNA_HYBRID, HAIKU_HYBRID = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5"
 LUNA_DEC, D1, JEV = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra", "decision:typesafe/jev-1.14"
 GEMINI_DEC = "decision:google/gemini-decision-1"
-HAIKU_WRITES = "@anthropic/claude-haiku-5.5"  # a decision seat whose answers Haiku writes, in place of Luna
+HAIKU_WRITES = "@anthropic/claude-haiku-5.5"
+TERRA_WRITES = "@openai/gpt-6.1-terra"  # a strong reader as the solver: can it rescue a weak decider?  # a decision seat whose answers Haiku writes, in place of Luna
 PAIRS = [
     ("Terra minus Sol", ("2t", TERRA), ("2", SOL)),
     ("Sol minus the Luna hybrid", ("2", SOL), ("3", LUNA_HYBRID)),
@@ -73,6 +74,14 @@ PAIRS = [
     ("Luna Decisions seat minus Gemini Decision seat", ("d2", LUNA_DEC), ("dg", GEMINI_DEC)),
     ("Gemini Decision seat with Haiku writing minus with Luna writing", ("dgh", GEMINI_DEC + HAIKU_WRITES), ("dg", GEMINI_DEC)),
     ("Haiku alone minus the Gemini Decision seat with Haiku writing", ("3d", HAIKU), ("dgh", GEMINI_DEC + HAIKU_WRITES)),
+    ("Luna Decisions seat with Terra writing minus with Luna writing", ("d2t", LUNA_DEC + TERRA_WRITES), ("d2", LUNA_DEC)),
+    ("d1-ultra seat with Terra writing minus with Luna writing", ("d1t", D1 + TERRA_WRITES), ("d1", D1)),
+    ("Jev seat with Terra writing minus with Luna writing", ("djt", JEV + TERRA_WRITES), ("dj", JEV)),
+    ("Gemini Decision seat with Terra writing minus with Luna writing", ("dgt", GEMINI_DEC + TERRA_WRITES), ("dg", GEMINI_DEC)),
+    ("Terra alone minus the Luna Decisions seat with Terra writing", ("2t", TERRA), ("d2t", LUNA_DEC + TERRA_WRITES)),
+    ("Terra alone minus the d1-ultra seat with Terra writing", ("2t", TERRA), ("d1t", D1 + TERRA_WRITES)),
+    ("Terra alone minus the Jev seat with Terra writing", ("2t", TERRA), ("djt", JEV + TERRA_WRITES)),
+    ("Terra alone minus the Gemini Decision seat with Terra writing", ("2t", TERRA), ("dgt", GEMINI_DEC + TERRA_WRITES)),
 ]
 
 

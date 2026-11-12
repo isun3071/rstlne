@@ -121,7 +121,11 @@ solo = [(F[k], key) for k, key in (("2", "openai/gpt-6.1-sol"), ("2t", "openai/g
                                      ("dj", "decision:typesafe/jev-1.14"),
                                      ("d2h", "decision:openai/gpt-6-luna-decisions@"), ("d1h", "decision:liquid/d1-ultra@"),
                                      ("djh", "decision:typesafe/jev-1.14@"), ("dg", "decision:google/gemini-decision-1"),
-                                     ("dgh", "decision:google/gemini-decision-1@"))
+                                     ("dgh", "decision:google/gemini-decision-1@anthropic"),
+                                     ("d2t", "decision:openai/gpt-6-luna-decisions@openai/gpt-6.1-terra"),
+                                     ("d1t", "decision:liquid/d1-ultra@openai/gpt-6.1-terra"),
+                                     ("djt", "decision:typesafe/jev-1.14@openai/gpt-6.1-terra"),
+                                     ("dgt", "decision:google/gemini-decision-1@openai/gpt-6.1-terra"))
         if have(k)]
 rows = []
 for folder, key in solo:
@@ -153,8 +157,8 @@ NUMBERS = json.loads(Path("paper/numbers.json").read_text())["lineups"]
 LID = {folder: k for k, folder in F.items()}
 pts = []
 for folder, key in solo:
-    if key.endswith("@"):
-        continue  # the decision seats with Haiku solving belong to section 8, not this chart of the models
+    if "@" in key:
+        continue  # decision seats that name their solver belong to section 8, not this chart of the models
     full = next(n for n in NUMBERS[LID[folder]]["entrants"] if key in n)
     e = NUMBERS[LID[folder]]["entrants"][full]
     name, kind = short(full)
@@ -268,7 +272,11 @@ groups = [(g, F[k], key, kind) for g, k, key, kind in (
     ("d1-ultra + Haiku vs bots", "d1h", "d1-ultra", "decision"),
     ("Jev + Haiku vs bots", "djh", "jev-1.14", "decision"),
     ("Gemini Decision seat vs bots", "dg", "gemini-decision-1", "decision"),
-    ("Gemini Dec. + Haiku vs bots", "dgh", "gemini-decision-1", "decision")) if have(k)]
+    ("Gemini Dec. + Haiku vs bots", "dgh", "gemini-decision-1", "decision"),
+    ("Luna Dec. + Terra vs bots", "d2t", "luna-decisions", "decision"),
+    ("d1-ultra + Terra vs bots", "d1t", "d1-ultra", "decision"),
+    ("Jev + Terra vs bots", "djt", "jev-1.14", "decision"),
+    ("Gemini Dec. + Terra vs bots", "dgt", "gemini-decision-1", "decision")) if have(k)]
 data = [(g, kind, per_round(f, key), per_round(f, "bot")) for g, f, key, kind in groups]
 fig, axes = plt.subplots(1, 2, figsize=(12, 0.62 * len(data) + 2.2))
 fig.subplots_adjust(left=0.19, right=0.95, top=0.84, bottom=0.12, wspace=0.62)
@@ -409,6 +417,10 @@ rows7 = [(name, k, pick, kind) for name, k, pick, kind in (
          ("Jev + Haiku", "djh", lambda s: s["kind"] == "decision", "decision"),
          ("Gemini Decision seat", "dg", lambda s: s["kind"] == "decision", "decision"),
          ("Gemini Dec. + Haiku", "dgh", lambda s: s["kind"] == "decision", "decision"),
+         ("Luna Dec. + Terra", "d2t", lambda s: s["kind"] == "decision", "decision"),
+         ("d1-ultra + Terra", "d1t", lambda s: s["kind"] == "decision", "decision"),
+         ("Jev + Terra", "djt", lambda s: s["kind"] == "decision", "decision"),
+         ("Gemini Dec. + Terra", "dgt", lambda s: s["kind"] == "decision", "decision"),
          ("Bot, against two Lunas", "6a", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two Haikus", "6b", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two d1-ultras", "6d1", lambda s: s["kind"] == "bot", "bot"),

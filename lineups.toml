@@ -30,6 +30,10 @@ default = "v6"
 "dg" = { folder = "seed707-8b8227f0", label = "Gemini Decision · bot · bot" }
 "dgh" = { folder = "seed707-0e1cba55", label = "Gemini Dec. + Haiku · bot · bot" }
 "6dg" = { folder = "seed707-08cc8254", label = "bot · Gemini Dec. · Gemini Dec." }
+"d2t" = { folder = "seed707-249be7a4", label = "Luna Dec. + Terra · bot · bot" }
+"d1t" = { folder = "seed707-1d42eba1", label = "d1-ultra + Terra · bot · bot" }
+"djt" = { folder = "seed707-dab7ed82", label = "Jev + Terra · bot · bot" }
+"dgt" = { folder = "seed707-4436e7e5", label = "Gemini Dec. + Terra · bot · bot" }
 
 [v4]
 "1" = { folder = "seed707-d7589355", label = "Sol · DeepSeek · Haiku" }

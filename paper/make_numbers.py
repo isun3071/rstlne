@@ -23,11 +23,14 @@ LUNA_H, HAIKU_H = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5
 LUNA_D, D1, JEV = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra", "decision:typesafe/jev-1.14"
 HAIKU_W = "@anthropic/claude-haiku-5.5"  # a decision seat whose answers Haiku writes
 GEMINI_D = "decision:google/gemini-decision-1"
+TERRA_W = "@openai/gpt-6.1-terra"  # a decision seat whose answers Terra writes
 ALONE = {"Sol": ("2", SOL), "Terra": ("2t", TERRA), "DeepSeek": ("3c", DEEPSEEK), "Qwen": ("3r", QWEN), "Ember": ("3m", EMBER),
          "Luna": ("3b", LUNA), "Haiku": ("3d", HAIKU), "LunaHybrid": ("3", LUNA_H), "HaikuHybrid": ("3f", HAIKU_H),
          "LunaDec": ("d2", LUNA_D), "Done": ("d1", D1), "Jev": ("dj", JEV),
          "LunaDecH": ("d2h", LUNA_D + HAIKU_W), "DoneH": ("d1h", D1 + HAIKU_W), "JevH": ("djh", JEV + HAIKU_W),
-         "GemDec": ("dg", GEMINI_D), "GemDecH": ("dgh", GEMINI_D + HAIKU_W)}
+         "GemDec": ("dg", GEMINI_D), "GemDecH": ("dgh", GEMINI_D + HAIKU_W),
+         "LunaDecT": ("d2t", LUNA_D + TERRA_W), "DoneT": ("d1t", D1 + TERRA_W), "JevT": ("djt", JEV + TERRA_W),
+         "GemDecT": ("dgt", GEMINI_D + TERRA_W)}
 
 
 def pct(x, places=1):
