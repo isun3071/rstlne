@@ -136,7 +136,8 @@ def macros(n: dict) -> dict[str, str | None]:
         m[f"Bot{k.capitalize()}Range"] = span(bots[k], lambda x: f"{100 * x:.0f}")
     # Section 9: the bonus test on our deck and on aired puzzles, the memory probe, Blatt's 15. Counts print as the
     # number right; a ...N macro holds the asks when they aren't the whole deck.
-    players = {name: key for name, (_, key) in ALONE.items()} | {"Bot": "bot"}
+    players = {name: key for name, (_, key) in ALONE.items()} | {"Bot": "bot",
+                                                                  "Hydrogen": "llm:google/gemini-4-hydrogen"}  # bonus tests only
     for prefix, test in (("Bonus", "bonus"), ("AiredBonus", "aired_bonus")):
         rows = {e["entrant"]: e for e in get(n, test, "entrants") or []}
         m[f"{prefix}Puzzles"] = str(max((e["puzzles"] for e in rows.values()), default=0)) if rows else None

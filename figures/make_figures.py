@@ -43,7 +43,7 @@ plt.rcParams.update({
 
 NAMES = {"openai/gpt-6.1-sol": "Sol", "openai/gpt-6-luna": "Luna", "anthropic/claude-haiku-5.5": "Haiku",
          "deepseek/deepseek-v4.1-flash-1017": "DeepSeek", "openai/gpt-6-luna-decisions": "Luna Decisions",
-         "liquid/d1-ultra": "d1-ultra", "typesafe/jev-1.14": "Jev", "google/gemini-decision-1": "Gemini Decision", "openai/gpt-6.1-terra": "Terra", "qwen/qwen3.8-flash": "Qwen 3.8 Flash",
+         "liquid/d1-ultra": "d1-ultra", "typesafe/jev-1.14": "Jev", "google/gemini-decision-1": "Gemini Decision", "google/gemini-4-hydrogen": "Gemini 4 Hydrogen", "openai/gpt-6.1-terra": "Terra", "qwen/qwen3.8-flash": "Qwen 3.8 Flash",
          "meta/muse-ember": "Ember"}
 
 
