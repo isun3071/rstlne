@@ -495,12 +495,17 @@ function drawAnswer() {
 
 const expandedThoughts = new Set();  // seats whose thinking the viewer opened in full
 
+function thoughtLine(line) {  // --verbose working arrives indented under its move: keep the nesting
+  const depth = line.length - line.trimStart().length;
+  return depth ? `<p class="work" style="padding-left:${depth * 0.45}em">${escapeHtml(line.trim())}</p>` : `<p>${escapeHtml(line)}</p>`;
+}
+
 function renderThoughts() {
   if (mode === "play" && humans.length) return;  // live, it would give a bot's best guess away; a replay shows it all
   const box = $("#thinking");
   box.innerHTML = Object.keys(thoughts).sort().map((s) =>
     `<div class="think s${s}"><b>Seat ${Number(s) + 1} · ${escapeHtml(short(seats[s] ? seats[s].label : ""))}</b>
-      <div class="think-body${expandedThoughts.has(s) ? " open" : ""}">${thoughts[s].map((l) => `<p>${escapeHtml(l)}</p>`).join("")}</div>
+      <div class="think-body${expandedThoughts.has(s) ? " open" : ""}">${thoughts[s].map(thoughtLine).join("")}</div>
       <button class="more" data-seat="${s}" hidden>${expandedThoughts.has(s) ? "Show less" : "Show all"}</button></div>`).join("");
   box.querySelectorAll(".think").forEach((t) => {  // a button only where six lines don't hold it all
     const body = t.querySelector(".think-body"), more = t.querySelector(".more");

@@ -90,7 +90,8 @@ def nicknames(names: list[str | None] | None, kinds: list[str]) -> list[str | No
 
 
 def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, log_dir: Path | None = None,
-               pause: float | None = None, solve_pause: float | None = None, replays: bool = True) -> FastAPI:
+               pause: float | None = None, solve_pause: float | None = None, replays: bool = True,
+               verbose: bool = False) -> FastAPI:
     """The app. `replays` serves the log folder's games for replay: right on this machine, never on a shared host."""
     config = config or settings.load_config()
     rules, spec = settings.load_rules(), settings.load_wheel()
@@ -105,6 +106,7 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
     app = FastAPI(title="rstlne", docs_url=None, redoc_url=None)
     app.state.idle_seconds = float(config.get("web", {}).get("idle_minutes", 5)) * 60
     app.state.sources, app.state.deck = sources, deck_path.name
+    app.state.verbose = verbose  # every game shows the bot's working in its thoughts
 
     def reaper() -> None:  # every 30 seconds, stop the games nobody has watched for the idle window
         while True:
@@ -169,7 +171,8 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
                    for i, ((kind, _), p) in enumerate(zip(seats, players))]
         game_sources = {"rounds": [sources.get((p.answer, False)) for p in main], "bonus": sources.get((bonus.answer, True))}
         game = WebGame(new_game(seed, rules, spec, main, bonus), players, path, pause=pause, solve_pause=solve_pause,
-                       sources=game_sources if any(game_sources["rounds"]) or game_sources["bonus"] else None)
+                       sources=game_sources if any(game_sources["rounds"]) or game_sources["bonus"] else None,
+                       verbose=verbose)
         game_id = uuid.uuid4().hex[:12]
         games[game_id] = game
         game.start()

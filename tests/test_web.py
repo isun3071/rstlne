@@ -378,6 +378,22 @@ def test_the_bonus_answer_fills_the_board_after_the_bonus_solve_right_or_wrong(r
     assert shown.index(reveal) < shown.index(next(e for e in shown if e["type"] == "over"))
 
 
+def test_a_verbose_game_streams_the_bots_working_and_a_plain_one_does_not(rules, wheel_spec, tmp_path):
+    def lines(verbose):
+        players = [bot(i, rules, wheel_spec) for i in range(3)]
+        game = WebGame(state(rules, wheel_spec), players, tmp_path / f"g{verbose}.jsonl", pause=0, solve_pause=0,
+                       verbose=verbose)
+        game.start()
+        return [l for e in collect(game, lambda e: e["type"] == "over") if e["type"] == "thoughts" for l in e["lines"]]
+    assert any(l.strip().startswith(("solve =", "spin =")) for l in lines(True))
+    assert not any(l.startswith("  ") for l in lines(False))
+
+
+def test_the_app_passes_verbose_to_its_games(tmp_path):
+    app = server.create_app(log_dir=tmp_path, pause=0, solve_pause=0, verbose=True)
+    assert app.state.verbose is True
+
+
 # Games nobody is watching
 
 def test_a_game_counts_its_watchers_and_notes_when_the_last_one_left(rules, wheel_spec, tmp_path):

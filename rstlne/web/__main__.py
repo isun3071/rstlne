@@ -17,8 +17,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--puzzles", help="the deck to play: puzzles/mega.json when it's been built, else puzzles/dev.json")
     parser.add_argument("--log-dir", default=str(settings.ROOT / "logs"))
+    parser.add_argument("--verbose", action="store_true",
+                        help="show the bot's working in its thinking: each move's worth as a formula with its numbers")
     args = parser.parse_args(argv)
-    app = create_app(puzzles_path=Path(args.puzzles) if args.puzzles else None, log_dir=Path(args.log_dir))
+    app = create_app(puzzles_path=Path(args.puzzles) if args.puzzles else None, log_dir=Path(args.log_dir),
+                     verbose=args.verbose)
     print(f"rstlne is at http://{args.host}:{args.port}, playing {app.state.deck}")
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
 

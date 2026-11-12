@@ -221,8 +221,9 @@ class WebGame:
 
     def __init__(self, state: GameState, players: Sequence[Player], log_path: Path, *, pause: float,
                  solve_pause: float, sleep: Callable[[float], None] = time.sleep,
-                 clock: Callable[[], float] = time.monotonic, sources: dict | None = None):
+                 clock: Callable[[], float] = time.monotonic, sources: dict | None = None, verbose: bool = False):
         self.state = state
+        self.verbose = verbose  # the bot's working in its thoughts, as --verbose in the CLI
         self.players = players
         self.log_path = Path(log_path)
         self.pause = pause
@@ -361,7 +362,7 @@ class WebGame:
         hold = self.solve_pause if self.pause else 0
         raw = player.last_call.raw if player.last_call and isinstance(player.last_call.raw, dict) else {}
         skipped = state.last.outcome == "forfeit" and bool(raw.get("skipped"))
-        for event in self.narrator.move(before, state, [] if skipped else player.thoughts(), hold, skipped=skipped):
+        for event in self.narrator.move(before, state, [] if skipped else player.thoughts(verbose=self.verbose), hold, skipped=skipped):
             self.emit(event)
             if event["type"] == "solved" and hold:
                 self.sleep(hold)

@@ -63,7 +63,7 @@ The grading runs used GPT-6.1 Sol, GPT-6 Luna, Claude Haiku 5.5, and DeepSeek V4
 ```
 uv run python -m rstlne.decks mega   # once: the mega deck, every aired and generated puzzle (stays out of git)
 uv run python -m rstlne.decks aired  # or the aired puzzles alone: puzzles/aired-all.json (stays out of git)
-uv run python -m rstlne.web          # then open http://127.0.0.1:8000
+uv run python -m rstlne.web          # then open http://127.0.0.1:8000; --verbose shows the bot's working in Thinking
 ```
 
 Pick the three seats on the page, then play or watch. Up to three humans can share the screen, taking turns with the same controls. Each can type a nickname. Model seats use the key in `.env`. `--port`, `--puzzles` and `--log-dir` work as in the CLI. Games log to `logs/` like CLI games. The Replays tab replays any game in the log folder, move by move, with breakpoints: stop at solves, Bankrupts, new rounds, a seat's moves, and more. The arrow keys step and the space bar plays.

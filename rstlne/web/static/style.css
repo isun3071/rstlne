@@ -272,6 +272,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .think p { margin: 2px 0; overflow-wrap: anywhere; }
 .think-body { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; line-clamp: 6; overflow: hidden; }
 .think-body.open { display: block; -webkit-line-clamp: unset; line-clamp: none; }
+.think-body p.work { color: var(--ink2); font-size: .92em; }  /* --verbose working, set under the line it explains */
 .think .more { margin-top: 4px; padding: 2px 10px; font-size: 12px; border-radius: 999px; }
 
 /* Result */
