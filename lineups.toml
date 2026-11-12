@@ -27,6 +27,9 @@ default = "v6"
 "d2h" = { folder = "seed707-b5528cba", label = "Luna Dec. + Haiku · bot · bot" }
 "d1h" = { folder = "seed707-fa7278d2", label = "d1-ultra + Haiku · bot · bot" }
 "djh" = { folder = "seed707-a999308a", label = "Jev + Haiku · bot · bot" }
+"dg" = { folder = "seed707-8b8227f0", label = "Gemini Decision · bot · bot" }
+"dgh" = { folder = "seed707-0e1cba55", label = "Gemini Dec. + Haiku · bot · bot" }
+"6dg" = { folder = "seed707-08cc8254", label = "bot · Gemini Dec. · Gemini Dec." }
 
 [v4]
 "1" = { folder = "seed707-d7589355", label = "Sol · DeepSeek · Haiku" }

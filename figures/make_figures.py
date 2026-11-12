@@ -43,7 +43,7 @@ plt.rcParams.update({
 
 NAMES = {"openai/gpt-6.1-sol": "Sol", "openai/gpt-6-luna": "Luna", "anthropic/claude-haiku-5.5": "Haiku",
          "deepseek/deepseek-v4.1-flash-1017": "DeepSeek", "openai/gpt-6-luna-decisions": "Luna Decisions",
-         "liquid/d1-ultra": "d1-ultra", "typesafe/jev-1.14": "Jev", "openai/gpt-6.1-terra": "Terra", "qwen/qwen3.8-flash": "Qwen 3.8 Flash",
+         "liquid/d1-ultra": "d1-ultra", "typesafe/jev-1.14": "Jev", "google/gemini-decision-1": "Gemini Decision", "openai/gpt-6.1-terra": "Terra", "qwen/qwen3.8-flash": "Qwen 3.8 Flash",
          "meta/muse-ember": "Ember"}
 
 
@@ -54,7 +54,7 @@ def short(entrant):
         name = f"Hybrid (bot + {NAMES.get(slug, slug)})"
     elif kind == "decision":
         decider, _, writer = slug.partition("@")  # a seat naming its solver: "Luna Dec. + Haiku"
-        short_names = {"openai/gpt-6-luna-decisions": "Luna Dec."}
+        short_names = {"openai/gpt-6-luna-decisions": "Luna Dec.", "google/gemini-decision-1": "Gemini Dec."}
         name = (f"{short_names.get(decider, NAMES.get(decider, decider))} + {NAMES.get(writer, writer)}" if writer
                 else f"{NAMES.get(slug, slug)} seat")
     elif kind == "llm":
@@ -120,7 +120,8 @@ solo = [(F[k], key) for k, key in (("2", "openai/gpt-6.1-sol"), ("2t", "openai/g
                                      ("d2", "decision:openai/gpt-6-luna-decisions"), ("d1", "decision:liquid/d1-ultra"),
                                      ("dj", "decision:typesafe/jev-1.14"),
                                      ("d2h", "decision:openai/gpt-6-luna-decisions@"), ("d1h", "decision:liquid/d1-ultra@"),
-                                     ("djh", "decision:typesafe/jev-1.14@"))
+                                     ("djh", "decision:typesafe/jev-1.14@"), ("dg", "decision:google/gemini-decision-1"),
+                                     ("dgh", "decision:google/gemini-decision-1@"))
         if have(k)]
 rows = []
 for folder, key in solo:
@@ -265,7 +266,9 @@ groups = [(g, F[k], key, kind) for g, k, key, kind in (
     ("Jev seat vs bots", "dj", "typesafe/jev-1.14", "decision"),
     ("Luna Dec. + Haiku vs bots", "d2h", "luna-decisions", "decision"),
     ("d1-ultra + Haiku vs bots", "d1h", "d1-ultra", "decision"),
-    ("Jev + Haiku vs bots", "djh", "jev-1.14", "decision")) if have(k)]
+    ("Jev + Haiku vs bots", "djh", "jev-1.14", "decision"),
+    ("Gemini Decision seat vs bots", "dg", "gemini-decision-1", "decision"),
+    ("Gemini Dec. + Haiku vs bots", "dgh", "gemini-decision-1", "decision")) if have(k)]
 data = [(g, kind, per_round(f, key), per_round(f, "bot")) for g, f, key, kind in groups]
 fig, axes = plt.subplots(1, 2, figsize=(12, 0.62 * len(data) + 2.2))
 fig.subplots_adjust(left=0.19, right=0.95, top=0.84, bottom=0.12, wspace=0.62)
@@ -404,11 +407,14 @@ rows7 = [(name, k, pick, kind) for name, k, pick, kind in (
          ("Luna Dec. + Haiku", "d2h", lambda s: s["kind"] == "decision", "decision"),
          ("d1-ultra + Haiku", "d1h", lambda s: s["kind"] == "decision", "decision"),
          ("Jev + Haiku", "djh", lambda s: s["kind"] == "decision", "decision"),
+         ("Gemini Decision seat", "dg", lambda s: s["kind"] == "decision", "decision"),
+         ("Gemini Dec. + Haiku", "dgh", lambda s: s["kind"] == "decision", "decision"),
          ("Bot, against two Lunas", "6a", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two Haikus", "6b", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two d1-ultras", "6d1", lambda s: s["kind"] == "bot", "bot"),
          ("Bot, against two Luna Dec.", "6d2", lambda s: s["kind"] == "bot", "bot"),
-         ("Bot, against two Jevs", "6dj", lambda s: s["kind"] == "bot", "bot")) if have(k)]
+         ("Bot, against two Jevs", "6dj", lambda s: s["kind"] == "bot", "bot"),
+         ("Bot, against two Gemini Dec.", "6dg", lambda s: s["kind"] == "bot", "bot")) if have(k)]
 rows7 = [(name, F[k], pick, kind) for name, k, pick, kind in rows7]  # (name, folder, pick, kind) from here on
 RAMP = ["#104281", "#2a78d6", "#86b6ef"]  # 1st, 2nd, 3rd: one hue, darkest first
 fig, ax = plt.subplots(figsize=(11, 0.6 * len(rows7) + 2.6))

@@ -158,7 +158,7 @@ models = [
     "anthropic/claude-haiku-5.5",
     "meta/muse-ember",
 ]
-decision_models = ["openai/gpt-6-luna-decisions", "liquid/d1-ultra", "typesafe/jev-1.14"]
+decision_models = ["openai/gpt-6-luna-decisions", "liquid/d1-ultra", "typesafe/jev-1.14", "google/gemini-decision-1"]
 idle_minutes = 5  # a game no page has watched this long is stopped, its log kept: models' games stop spending
 
 [providers]
@@ -199,6 +199,7 @@ slugs = [
     "z-ai/glm-5.3",
     "liquid/d1-ultra",  # a decision model, for decision seats
     "typesafe/jev-1.14",  # a decision model, for decision seats: back on 2026-11-11 for a third decision lab; snapshot jev-1.14-20261014
+    "google/gemini-decision-1",  # Google's first decision model (2026-11-11), served by Google AI Studio; snapshot gemini-decision-1-20261111
     # backups
     "qwen/qwen3.8-flash",
     "z-ai/glm-5.3-flash",
