@@ -179,6 +179,7 @@ idle_minutes = 5  # a game no page has watched this long is stopped, its log kep
 # steadier of its two AI Studio endpoints on 2026-10-31 (100% uptime against 73%).
 "google/gemini-4-argon" = "google-ai-studio/flex"
 "google/gemini-3.8-flash" = "google-ai-studio/flex"  # half price on flex, like Argon; under half of Argon's flex output price
+"google/gemini-4-hydrogen" = "google-ai-studio/flex"  # Gemini 4's Flash-tier model (2026-11-12): $0.75 / $3.75 on flex, half its list price
 # GLM 5.3 (2026-08-18), Z.ai's flagship: Morph's FP8 build is as cheap as the cheapest hosts ($0.07 in, $1.40 out)
 # without dropping to FP4. Z.ai also judges the puzzles (GLM 4.7), so a GLM player is a disclosed exception.
 "z-ai/glm-5.3" = "morph/fp8"
@@ -199,6 +200,7 @@ slugs = [
     "z-ai/glm-5.3",
     "liquid/d1-ultra",  # a decision model, for decision seats
     "typesafe/jev-1.14",  # a decision model, for decision seats: back on 2026-11-11 for a third decision lab; snapshot jev-1.14-20261014
+    "google/gemini-4-hydrogen",  # Google's cheapest Gemini 4 chat model (2026-11-12), $1.50 / $7.50 list; trial before a lineup
     "google/gemini-decision-1",  # Google's first decision model (2026-11-11), served by Google AI Studio; snapshot gemini-decision-1-20261111
     # backups
     "qwen/qwen3.8-flash",
