@@ -158,8 +158,8 @@ NUMBERS = json.loads(Path("paper/numbers.json").read_text())["lineups"]
 LID = {folder: k for k, folder in F.items()}
 pts = []
 for folder, key in solo:
-    if "@" in key:
-        continue  # decision seats that name their solver belong to section 8, not this chart of the models
+    if "@" in key or key.startswith(("hybrid:", "decision:")):
+        continue  # hybrids and decision seats belong to section 8: this chart is the models, with the bot for reference
     full = next(n for n in NUMBERS[LID[folder]]["entrants"] if key in n)
     e = NUMBERS[LID[folder]]["entrants"][full]
     name, kind = short(full)
@@ -201,10 +201,10 @@ ax.text(41, 98.6 if PHASE == "v4" else 101.6, "early and right", color=INK2, fon
 handles = [plt.Line2D([], [], marker="o", linestyle="", markersize=9, color=KIND[k]) for k in KIND]
 if PHASE == "v4":
     ax.legend(handles, ["LLM alone", "bot", "hybrid", "decision seat"], loc="center right", frameon=False, fontsize=9.5)
-else:
-    fig.legend(handles, ["LLM alone", "bot", "hybrid", "decision seat"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
+else:  # v6: the models and the bot only (hybrids and decision seats are section 8's)
+    fig.legend(handles[:2], ["LLM alone", "bot"], loc="lower center", ncol=2, frameon=False, fontsize=9.5)
 save(fig, "2-temperament.png", "Early and right wins",
-     "Each player alone against two bots (the bot's point is both bots against Sol); labels give games won")
+     "Each model alone against two bots (the bot's point is both bots against Sol); labels give games won")
 
 # 3. Every lineup: share of games won by each seat
 fig, ax = plt.subplots(figsize=(11, 0.62 * len(LINEUPS) + 2.6))

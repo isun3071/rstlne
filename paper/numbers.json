@@ -1,8 +1,8 @@
 {
  "meta": {
   "phase": "v6",
-  "made": "2026-11-13T04:10:53+00:00",
-  "commit": "8333c46",
+  "made": "2026-11-13T11:50:05+00:00",
+  "commit": "bd0fea7",
   "lineups": [
    "2",
    "2t",
@@ -13,6 +13,7 @@
    "3r",
    "3m",
    "3f",
+   "3t",
    "6a",
    "6b",
    "6d1",
@@ -8755,6 +8756,988 @@
      "ci95": [
       -0.0528,
       0.0194
+     ]
+    }
+   ]
+  },
+  "3t": {
+   "label": "Terra hybrid \u00b7 bot \u00b7 bot",
+   "note": null,
+   "folder": "seed707-cad8fccf",
+   "games": 360,
+   "sets": 60,
+   "puzzles": "grading-606b.json",
+   "cost": 3.183339,
+   "entrants": {
+    "hybrid:openai/gpt-6.1-terra": {
+     "kind": "hybrid",
+     "games": 360,
+     "win_rate": 0.4417,
+     "win_ci95": [
+      0.3833,
+      0.5
+     ],
+     "win_rate_by_seat": [
+      0.425,
+      0.4667,
+      0.4333
+     ],
+     "place": {
+      "n": 360,
+      "mean": 1.7819,
+      "sd": 0.7793,
+      "median": 2.0,
+      "p10": 1.0,
+      "p90": 3.0
+     },
+     "places": [
+      0.4417,
+      0.3347,
+      0.2236
+     ],
+     "rounds_won_per_game": 1.6667,
+     "solve_tries_per_game": 1.7111,
+     "solve_accuracy": 0.974,
+     "solve_accuracy_ci95": [
+      0.9551,
+      0.9905
+     ],
+     "wrong_solves_per_game": 0.0444,
+     "shown_at_correct_solve": {
+      "n": 600,
+      "mean": 0.5732,
+      "sd": 0.1804,
+      "median": 0.5714,
+      "p10": 0.3529,
+      "p90": 0.8421
+     },
+     "shown_at_wrong_solve": {
+      "n": 16,
+      "mean": 0.1926,
+      "sd": 0.1929,
+      "median": 0.1732,
+      "p10": 0.0,
+      "p90": 0.5
+     },
+     "money_per_round_won": {
+      "n": 600,
+      "mean": 5228.25,
+      "sd": 3934.5179,
+      "median": 4575.0,
+      "p10": 1000,
+      "p90": 10850
+     },
+     "money_per_round_won_by_round": {
+      "1": {
+       "n": 150,
+       "mean": 5283.3333,
+       "sd": 2856.2135,
+       "median": 4800.0,
+       "p10": 1400,
+       "p90": 9800
+      },
+      "2": {
+       "n": 131,
+       "mean": 6522.5191,
+       "sd": 4715.7411,
+       "median": 5200,
+       "p10": 1200,
+       "p90": 12750
+      },
+      "3": {
+       "n": 155,
+       "mean": 5422.5806,
+       "sd": 4273.8409,
+       "median": 4400,
+       "p10": 1000,
+       "p90": 11600
+      },
+      "4": {
+       "n": 164,
+       "mean": 3960.3659,
+       "sd": 3341.1581,
+       "median": 3225.0,
+       "p10": 1000,
+       "p90": 8000
+      }
+     },
+     "main_winnings": {
+      "n": 360,
+      "mean": 8713.75,
+      "sd": 7141.8941,
+      "median": 7975.0,
+      "p10": 0,
+      "p90": 17350
+     },
+     "main_winnings_ci95": [
+      7996.8056,
+      9450.4167
+     ],
+     "total_winnings": {
+      "n": 360,
+      "mean": 29199.8611,
+      "sd": 29786.4395,
+      "median": 10000.0,
+      "p10": 0,
+      "p90": 67950
+     },
+     "consonants": {
+      "per_game": 8.9,
+      "hit_rate": 0.9285,
+      "copies": {
+       "n": 3204,
+       "mean": 1.6195,
+       "sd": 0.9643,
+       "median": 1.0,
+       "p10": 1,
+       "p90": 3
+      },
+      "copies_when_hit": {
+       "n": 2975,
+       "mean": 1.7442,
+       "sd": 0.8854,
+       "median": 2,
+       "p10": 1,
+       "p90": 3
+      },
+      "board_when_called": {
+       "n": 3204,
+       "mean": 0.2819,
+       "sd": 0.2294,
+       "median": 0.25,
+       "p10": 0.0,
+       "p90": 0.5938
+      }
+     },
+     "vowels": {
+      "per_game": 0.9889,
+      "hit_rate": 0.9635,
+      "copies": {
+       "n": 356,
+       "mean": 2.1685,
+       "sd": 1.2177,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 4
+      },
+      "copies_when_hit": {
+       "n": 343,
+       "mean": 2.2507,
+       "sd": 1.1636,
+       "median": 2,
+       "p10": 1,
+       "p90": 4
+      },
+      "board_when_called": {
+       "n": 356,
+       "mean": 0.2944,
+       "sd": 0.1931,
+       "median": 0.2727,
+       "p10": 0.0588,
+       "p90": 0.5789
+      }
+     },
+     "spins_per_game": 9.9583,
+     "bankrupts_per_game": 1.0361,
+     "lose_a_turn_per_game": 0.4194,
+     "lost_to_bankrupt_per_game": 2083.4722,
+     "bonus_reached": 159,
+     "bonus_won": 153,
+     "invalid_per_game": 0.0,
+     "invalid": {},
+     "cost": {
+      "n": 360,
+      "mean": 0.0088,
+      "sd": 0.0047,
+      "median": 0.0086,
+      "p10": 0.0036,
+      "p90": 0.0144
+     },
+     "output_tokens_per_game": {
+      "n": 360,
+      "mean": 2556.2417,
+      "sd": 1538.2452,
+      "median": 2412.5,
+      "p10": 890,
+      "p90": 4471
+     },
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 16
+      },
+      "wrong_solves_total": 16,
+      "stages": {
+       "open": {
+        "consonants": 1536,
+        "hits": 1333,
+        "copies": 2795,
+        "vowels": 152,
+        "solve_tries": 25,
+        "solves_right": 17,
+        "hit_rate": 0.8678,
+        "copies_per_call": 1.8197,
+        "solve_accuracy": 0.68
+       },
+       "middle": {
+        "consonants": 1003,
+        "hits": 982,
+        "copies": 1635,
+        "vowels": 115,
+        "solve_tries": 195,
+        "solves_right": 189,
+        "hit_rate": 0.9791,
+        "copies_per_call": 1.6301,
+        "solve_accuracy": 0.9692
+       },
+       "late": {
+        "consonants": 665,
+        "hits": 660,
+        "copies": 759,
+        "vowels": 65,
+        "solve_tries": 396,
+        "solves_right": 394,
+        "hit_rate": 0.9925,
+        "copies_per_call": 1.1414,
+        "solve_accuracy": 0.9949
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 168,
+        "share": 0.4375,
+        "median_shown": 0.5882
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 250,
+        "share": 0.4433,
+        "median_shown": 0.5714
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 116,
+        "share": 0.3791,
+        "median_shown": 0.5301
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 66,
+        "share": 0.3548,
+        "median_shown": 0.5862
+       }
+      },
+      "specials": {
+       "mystery": {
+        "flip": 52,
+        "flipped_prize": 19,
+        "flipped_bankrupt": 33,
+        "keep": 15
+       },
+       "express": {
+        "play": 21,
+        "ride_solved": 21
+       },
+       "wild": {
+        "used": 48,
+        "kept": 108
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 1765442,
+       "cached_tokens": 0,
+       "cached_share": 0.0,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 2556.2417,
+        "median": 2412.5
+       },
+       "cost_cv": 0.526
+      },
+      "hybrid_asks": {
+       "asks": 4723,
+       "statuses": {
+        "not solvable": 1749,
+        "used": 2962,
+        "doesn't fit": 12
+       },
+       "fitting_share": 0.6271,
+       "first_fitting_answer_shown": {
+        "n": 865,
+        "mean": 0.3119,
+        "median": 0.2692
+       }
+      },
+      "milking": {
+       "rounds": 532,
+       "won": 0.6654135338345865,
+       "mean_gain": 2995.9039548022597,
+       "median_gain": 2475.0,
+       "bank_when_lost": 1551.4044943820224,
+       "lost_to": {
+        "bot": 178
+       },
+       "lost_wheel": {
+        "bankrupt": 119,
+        "lose_a_turn": 38,
+        "flipped_bankrupt": 15,
+        "missing": 6
+       },
+       "per_game": 1.4778
+      }
+     }
+    },
+    "bot #1": {
+     "kind": "bot",
+     "games": 360,
+     "win_rate": 0.2639,
+     "win_ci95": [
+      0.2361,
+      0.2917
+     ],
+     "win_rate_by_seat": [
+      0.2167,
+      0.3,
+      0.275
+     ],
+     "place": {
+      "n": 360,
+      "mean": 2.1403,
+      "sd": 0.7935,
+      "median": 2.0,
+      "p10": 1.0,
+      "p90": 3.0
+     },
+     "places": [
+      0.2639,
+      0.3319,
+      0.4042
+     ],
+     "rounds_won_per_game": 1.1333,
+     "solve_tries_per_game": 1.1639,
+     "solve_accuracy": 0.9737,
+     "solve_accuracy_ci95": [
+      0.9538,
+      0.9905
+     ],
+     "wrong_solves_per_game": 0.0306,
+     "shown_at_correct_solve": {
+      "n": 408,
+      "mean": 0.6259,
+      "sd": 0.1752,
+      "median": 0.625,
+      "p10": 0.4211,
+      "p90": 0.8571
+     },
+     "shown_at_wrong_solve": {
+      "n": 11,
+      "mean": 0.3483,
+      "sd": 0.3166,
+      "median": 0.3333,
+      "p10": 0.0,
+      "p90": 0.7368
+     },
+     "money_per_round_won": {
+      "n": 408,
+      "mean": 5852.3284,
+      "sd": 3979.0337,
+      "median": 5125.0,
+      "p10": 1050,
+      "p90": 11600
+     },
+     "money_per_round_won_by_round": {
+      "1": {
+       "n": 104,
+       "mean": 5579.8077,
+       "sd": 2824.1534,
+       "median": 4950.0,
+       "p10": 2300,
+       "p90": 10350
+      },
+      "2": {
+       "n": 115,
+       "mean": 6706.087,
+       "sd": 4297.8263,
+       "median": 5900,
+       "p10": 1000,
+       "p90": 12750
+      },
+      "3": {
+       "n": 98,
+       "mean": 5890.8163,
+       "sd": 4502.1443,
+       "median": 4400.0,
+       "p10": 1000,
+       "p90": 13300
+      },
+      "4": {
+       "n": 91,
+       "mean": 5043.4066,
+       "sd": 3877.8407,
+       "median": 4600,
+       "p10": 1050,
+       "p90": 10200
+      }
+     },
+     "main_winnings": {
+      "n": 360,
+      "mean": 6632.6389,
+      "sd": 6863.4416,
+      "median": 5575.0,
+      "p10": 0,
+      "p90": 15750
+     },
+     "main_winnings_ci95": [
+      5929.7222,
+      7350.1389
+     ],
+     "total_winnings": {
+      "n": 360,
+      "mean": 18090.9722,
+      "sd": 25701.522,
+      "median": 5725.0,
+      "p10": 0,
+      "p90": 61950
+     },
+     "consonants": {
+      "per_game": 8.6167,
+      "hit_rate": 0.8972,
+      "copies": {
+       "n": 3102,
+       "mean": 1.5458,
+       "sd": 0.9885,
+       "median": 1.0,
+       "p10": 0,
+       "p90": 3
+      },
+      "copies_when_hit": {
+       "n": 2783,
+       "mean": 1.723,
+       "sd": 0.8853,
+       "median": 1,
+       "p10": 1,
+       "p90": 3
+      },
+      "board_when_called": {
+       "n": 3102,
+       "mean": 0.2858,
+       "sd": 0.2298,
+       "median": 0.2632,
+       "p10": 0.0,
+       "p90": 0.6
+      }
+     },
+     "vowels": {
+      "per_game": 1.5778,
+      "hit_rate": 0.9683,
+      "copies": {
+       "n": 568,
+       "mean": 2.1426,
+       "sd": 1.22,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 4
+      },
+      "copies_when_hit": {
+       "n": 550,
+       "mean": 2.2127,
+       "sd": 1.1756,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 4
+      },
+      "board_when_called": {
+       "n": 568,
+       "mean": 0.396,
+       "sd": 0.2027,
+       "median": 0.3929,
+       "p10": 0.1176,
+       "p90": 0.6818
+      }
+     },
+     "spins_per_game": 9.7472,
+     "bankrupts_per_game": 1.0111,
+     "lose_a_turn_per_game": 0.4417,
+     "lost_to_bankrupt_per_game": 2095.9722,
+     "bonus_reached": 95,
+     "bonus_won": 88,
+     "invalid_per_game": 0.0,
+     "invalid": {},
+     "cost": null,
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 11
+      },
+      "wrong_solves_total": 11,
+      "stages": {
+       "open": {
+        "consonants": 1463,
+        "hits": 1250,
+        "copies": 2520,
+        "vowels": 135,
+        "solve_tries": 13,
+        "solves_right": 9,
+        "hit_rate": 0.8544,
+        "copies_per_call": 1.7225,
+        "solve_accuracy": 0.6923
+       },
+       "middle": {
+        "consonants": 986,
+        "hits": 915,
+        "copies": 1520,
+        "vowels": 237,
+        "solve_tries": 84,
+        "solves_right": 81,
+        "hit_rate": 0.928,
+        "copies_per_call": 1.5416,
+        "solve_accuracy": 0.9643
+       },
+       "late": {
+        "consonants": 653,
+        "hits": 618,
+        "copies": 755,
+        "vowels": 183,
+        "solve_tries": 322,
+        "solves_right": 318,
+        "hit_rate": 0.9464,
+        "copies_per_call": 1.1562,
+        "solve_accuracy": 0.9876
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 100,
+        "share": 0.2604,
+        "median_shown": 0.625
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 157,
+        "share": 0.2784,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 94,
+        "share": 0.3072,
+        "median_shown": 0.6087
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 57,
+        "share": 0.3065,
+        "median_shown": 0.6452
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 20,
+        "flip": 43,
+        "flipped_bankrupt": 25,
+        "flipped_prize": 18
+       },
+       "express": {
+        "play": 16,
+        "ride_solved": 15,
+        "pass": 2,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 47,
+        "kept": 109
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 289,
+       "won": 0.6332179930795848,
+       "mean_gain": 2690.9836065573772,
+       "median_gain": 1800,
+       "bank_when_lost": 1858.0188679245282,
+       "lost_to": {
+        "bot": 49,
+        "hybrid": 57
+       },
+       "lost_wheel": {
+        "missing": 5,
+        "bankrupt": 63,
+        "lose_a_turn": 31,
+        "wrong_solve": 1,
+        "flipped_bankrupt": 6
+       },
+       "per_game": 0.8028
+      }
+     }
+    },
+    "bot #2": {
+     "kind": "bot",
+     "games": 360,
+     "win_rate": 0.2944,
+     "win_ci95": [
+      0.2583,
+      0.3333
+     ],
+     "win_rate_by_seat": [
+      0.2417,
+      0.3083,
+      0.3333
+     ],
+     "place": {
+      "n": 360,
+      "mean": 2.0778,
+      "sd": 0.8016,
+      "median": 2.0,
+      "p10": 1.0,
+      "p90": 3.0
+     },
+     "places": [
+      0.2944,
+      0.3333,
+      0.3722
+     ],
+     "rounds_won_per_game": 1.2,
+     "solve_tries_per_game": 1.2278,
+     "solve_accuracy": 0.9774,
+     "solve_accuracy_ci95": [
+      0.9591,
+      0.9931
+     ],
+     "wrong_solves_per_game": 0.0278,
+     "shown_at_correct_solve": {
+      "n": 432,
+      "mean": 0.6212,
+      "sd": 0.1718,
+      "median": 0.619,
+      "p10": 0.4211,
+      "p90": 0.8462
+     },
+     "shown_at_wrong_solve": {
+      "n": 10,
+      "mean": 0.2786,
+      "sd": 0.2894,
+      "median": 0.3,
+      "p10": 0.0,
+      "p90": 0.9286
+     },
+     "money_per_round_won": {
+      "n": 432,
+      "mean": 5838.5417,
+      "sd": 3962.5535,
+      "median": 5225.0,
+      "p10": 1050,
+      "p90": 11550
+     },
+     "money_per_round_won_by_round": {
+      "1": {
+       "n": 106,
+       "mean": 5537.2642,
+       "sd": 2827.0514,
+       "median": 4950.0,
+       "p10": 2300,
+       "p90": 10350
+      },
+      "2": {
+       "n": 114,
+       "mean": 6810.0877,
+       "sd": 4305.0418,
+       "median": 5950.0,
+       "p10": 1000,
+       "p90": 12750
+      },
+      "3": {
+       "n": 107,
+       "mean": 5964.9533,
+       "sd": 4440.7849,
+       "median": 4600,
+       "p10": 1000,
+       "p90": 11600
+      },
+      "4": {
+       "n": 105,
+       "mean": 4959.0476,
+       "sd": 3795.93,
+       "median": 4450,
+       "p10": 1000,
+       "p90": 10200
+      }
+     },
+     "main_winnings": {
+      "n": 360,
+      "mean": 7006.25,
+      "sd": 6999.8429,
+      "median": 6100.0,
+      "p10": 0,
+      "p90": 16350
+     },
+     "main_winnings_ci95": [
+      6253.75,
+      7788.3333
+     ],
+     "total_winnings": {
+      "n": 360,
+      "mean": 19770.1389,
+      "sd": 26628.9421,
+      "median": 6250.0,
+      "p10": 0,
+      "p90": 63600
+     },
+     "consonants": {
+      "per_game": 8.8028,
+      "hit_rate": 0.9025,
+      "copies": {
+       "n": 3169,
+       "mean": 1.5611,
+       "sd": 0.9958,
+       "median": 1,
+       "p10": 1,
+       "p90": 3
+      },
+      "copies_when_hit": {
+       "n": 2860,
+       "mean": 1.7297,
+       "sd": 0.8983,
+       "median": 1.0,
+       "p10": 1,
+       "p90": 3
+      },
+      "board_when_called": {
+       "n": 3169,
+       "mean": 0.2871,
+       "sd": 0.2316,
+       "median": 0.2632,
+       "p10": 0.0,
+       "p90": 0.6087
+      }
+     },
+     "vowels": {
+      "per_game": 1.6528,
+      "hit_rate": 0.9714,
+      "copies": {
+       "n": 595,
+       "mean": 2.1294,
+       "sd": 1.2044,
+       "median": 2,
+       "p10": 1,
+       "p90": 4
+      },
+      "copies_when_hit": {
+       "n": 578,
+       "mean": 2.192,
+       "sd": 1.1644,
+       "median": 2.0,
+       "p10": 1,
+       "p90": 4
+      },
+      "board_when_called": {
+       "n": 595,
+       "mean": 0.3817,
+       "sd": 0.1995,
+       "median": 0.3684,
+       "p10": 0.1176,
+       "p90": 0.6471
+      }
+     },
+     "spins_per_game": 9.9139,
+     "bankrupts_per_game": 1.0083,
+     "lose_a_turn_per_game": 0.4556,
+     "lost_to_bankrupt_per_game": 2108.1944,
+     "bonus_reached": 106,
+     "bonus_won": 98,
+     "invalid_per_game": 0.0,
+     "invalid": {},
+     "cost": null,
+     "output_tokens_per_game": null,
+     "play": {
+      "forfeits": 0,
+      "wrong_solves": {
+       "fits, but wrong": 10
+      },
+      "wrong_solves_total": 10,
+      "stages": {
+       "open": {
+        "consonants": 1489,
+        "hits": 1278,
+        "copies": 2584,
+        "vowels": 153,
+        "solve_tries": 13,
+        "solves_right": 9,
+        "hit_rate": 0.8583,
+        "copies_per_call": 1.7354,
+        "solve_accuracy": 0.6923
+       },
+       "middle": {
+        "consonants": 1002,
+        "hits": 942,
+        "copies": 1574,
+        "vowels": 253,
+        "solve_tries": 89,
+        "solves_right": 85,
+        "hit_rate": 0.9401,
+        "copies_per_call": 1.5709,
+        "solve_accuracy": 0.9551
+       },
+       "late": {
+        "consonants": 678,
+        "hits": 640,
+        "copies": 789,
+        "vowels": 173,
+        "solve_tries": 340,
+        "solves_right": 338,
+        "hit_rate": 0.944,
+        "copies_per_call": 1.1637,
+        "solve_accuracy": 0.9941
+       }
+      },
+      "by_length": {
+       "17 letters or fewer": {
+        "rounds": 384,
+        "won": 116,
+        "share": 0.3021,
+        "median_shown": 0.625
+       },
+       "18 to 22": {
+        "rounds": 564,
+        "won": 157,
+        "share": 0.2784,
+        "median_shown": 0.6316
+       },
+       "23 to 26": {
+        "rounds": 306,
+        "won": 96,
+        "share": 0.3137,
+        "median_shown": 0.6087
+       },
+       "27 or more": {
+        "rounds": 186,
+        "won": 63,
+        "share": 0.3387,
+        "median_shown": 0.6452
+       }
+      },
+      "specials": {
+       "mystery": {
+        "keep": 18,
+        "flip": 43,
+        "flipped_bankrupt": 25,
+        "flipped_prize": 18
+       },
+       "express": {
+        "play": 19,
+        "ride_solved": 18,
+        "pass": 2,
+        "ride_bust": 1
+       },
+       "wild": {
+        "used": 47,
+        "kept": 108
+       },
+       "million": {}
+      },
+      "usage": {
+       "games": 360,
+       "prompt_tokens": 0,
+       "cached_tokens": 0,
+       "cached_share": null,
+       "output_tokens_per_game": {
+        "n": 360,
+        "mean": 0,
+        "median": 0.0
+       },
+       "cost_cv": null
+      },
+      "hybrid_asks": null,
+      "milking": {
+       "rounds": 290,
+       "won": 0.6620689655172414,
+       "mean_gain": 2730.7291666666665,
+       "median_gain": 1850.0,
+       "bank_when_lost": 1837.2448979591836,
+       "lost_to": {
+        "bot": 42,
+        "hybrid": 56
+       },
+       "lost_wheel": {
+        "bankrupt": 59,
+        "lose_a_turn": 31,
+        "flipped_bankrupt": 5,
+        "missing": 3
+       },
+       "per_game": 0.8056
+      }
+     }
+    }
+   },
+   "bots": {
+    "seats": 2,
+    "seat_games": 720,
+    "rounds_won_per_game": 1.1667,
+    "solve_accuracy": 0.9756,
+    "shown_at_correct_solve": {
+     "n": 840,
+     "mean": 0.6235,
+     "sd": 0.1735,
+     "median": 0.619,
+     "p10": 0.4211,
+     "p90": 0.8571
+    },
+    "money_per_round_won": {
+     "n": 840,
+     "mean": 5845.2381,
+     "sd": 3970.5727,
+     "median": 5200.0,
+     "p10": 1050,
+     "p90": 11550
+    }
+   },
+   "generated_by": {
+    "generator": "minimax/minimax-m3",
+    "judge": "z-ai/glm-5.3-flash"
+   },
+   "pairwise": [
+    {
+     "a": "hybrid:openai/gpt-6.1-terra",
+     "b": "bot #1",
+     "win_rate_gap": 0.1778,
+     "ci95": [
+      0.0944,
+      0.2611
+     ]
+    },
+    {
+     "a": "hybrid:openai/gpt-6.1-terra",
+     "b": "bot #2",
+     "win_rate_gap": 0.1472,
+     "ci95": [
+      0.0528,
+      0.2389
+     ]
+    },
+    {
+     "a": "bot #1",
+     "b": "bot #2",
+     "win_rate_gap": -0.0306,
+     "ci95": [
+      -0.0639,
+      -0.0028
      ]
     }
    ]
@@ -26163,6 +27146,57 @@
    ]
   },
   {
+   "label": "Terra hybrid minus Terra alone",
+   "a": [
+    "3t",
+    "hybrid:openai/gpt-6.1-terra"
+   ],
+   "b": [
+    "2t",
+    "llm:openai/gpt-6.1-terra"
+   ],
+   "sets": 60,
+   "diff": -0.0111,
+   "ci95": [
+    -0.0861,
+    0.0611
+   ]
+  },
+  {
+   "label": "Terra hybrid minus Sol",
+   "a": [
+    "3t",
+    "hybrid:openai/gpt-6.1-terra"
+   ],
+   "b": [
+    "2",
+    "llm:openai/gpt-6.1-sol"
+   ],
+   "sets": 60,
+   "diff": -0.0194,
+   "ci95": [
+    -0.0917,
+    0.0528
+   ]
+  },
+  {
+   "label": "Terra hybrid minus Luna hybrid",
+   "a": [
+    "3t",
+    "hybrid:openai/gpt-6.1-terra"
+   ],
+   "b": [
+    "3",
+    "hybrid:openai/gpt-6-luna"
+   ],
+   "sets": 60,
+   "diff": 0.0361,
+   "ci95": [
+    -0.0111,
+    0.0833
+   ]
+  },
+  {
    "label": "DeepSeek minus Luna",
    "a": [
     "3c",
@@ -26799,6 +27833,14 @@
     ]
    },
    {
+    "lineup": "3t",
+    "gap": -0.0306,
+    "ci95": [
+     -0.0639,
+     -0.0028
+    ]
+   },
+   {
     "lineup": "d1",
     "gap": 0.0028,
     "ci95": [
@@ -26896,122 +27938,122 @@
    }
   ],
   "largest": 0.0611,
-  "median": 0.0139
+  "median": 0.0146
  },
  "comebacks": {
   "3": {
    "held": {
     "under $2,500": {
-     "games": 2179,
-     "held": 0.4888
+     "games": 2266,
+     "held": 0.4854
     },
     "$2,500\u20135,000": {
-     "games": 2213,
-     "held": 0.5967
+     "games": 2258,
+     "held": 0.5932
     },
     "$5,000\u20137,500": {
-     "games": 2045,
-     "held": 0.6995
+     "games": 2137,
+     "held": 0.6965
     },
     "$7,500\u201310,000": {
-     "games": 1192,
-     "held": 0.8561
+     "games": 1244,
+     "held": 0.8525
     },
     "$10,000\u201315,000": {
-     "games": 1300,
-     "held": 0.9158
+     "games": 1364,
+     "held": 0.9124
     },
     "$15,000 or more": {
-     "games": 726,
-     "held": 0.9463
+     "games": 746,
+     "held": 0.945
     }
    },
    "came_back": {
     "under $2,500": {
-     "seats": 2606,
-     "came_back": 0.3216
+     "seats": 2697,
+     "came_back": 0.3252
     },
     "$2,500\u20135,000": {
-     "seats": 4025,
-     "came_back": 0.2267
+     "seats": 4109,
+     "came_back": 0.2282
     },
     "$5,000\u20137,500": {
-     "seats": 4605,
-     "came_back": 0.1685
+     "seats": 4789,
+     "came_back": 0.17
     },
     "$7,500\u201310,000": {
-     "seats": 2775,
-     "came_back": 0.078
+     "seats": 2881,
+     "came_back": 0.0804
     },
     "$10,000\u201315,000": {
-     "seats": 3736,
-     "came_back": 0.0423
+     "seats": 3940,
+     "came_back": 0.0444
     },
     "$15,000 or more": {
-     "seats": 1563,
-     "came_back": 0.0256
+     "seats": 1614,
+     "came_back": 0.026
     }
    }
   },
   "4": {
    "held": {
     "under $2,500": {
-     "games": 2185,
-     "held": 0.6149
+     "games": 2251,
+     "held": 0.6164
     },
     "$2,500\u20135,000": {
-     "games": 1784,
-     "held": 0.7108
+     "games": 1847,
+     "held": 0.7066
     },
     "$5,000\u20137,500": {
-     "games": 1519,
-     "held": 0.8581
+     "games": 1581,
+     "held": 0.8523
     },
     "$7,500\u201310,000": {
-     "games": 1328,
-     "held": 0.9375
+     "games": 1388,
+     "held": 0.9359
     },
     "$10,000\u201315,000": {
-     "games": 1758,
-     "held": 0.9878
+     "games": 1828,
+     "held": 0.9882
     },
     "$15,000 or more": {
-     "games": 1115,
-     "held": 0.9946
+     "games": 1154,
+     "held": 0.9948
     }
    },
    "came_back": {
     "under $2,500": {
-     "seats": 2445,
-     "came_back": 0.2738
+     "seats": 2522,
+     "came_back": 0.2726
     },
     "$2,500\u20135,000": {
-     "seats": 2829,
-     "came_back": 0.1978
+     "seats": 2904,
+     "came_back": 0.2016
     },
     "$5,000\u20137,500": {
-     "seats": 3242,
-     "came_back": 0.0864
+     "seats": 3347,
+     "came_back": 0.0896
     },
     "$7,500\u201310,000": {
-     "seats": 3120,
-     "came_back": 0.0369
+     "seats": 3243,
+     "came_back": 0.0373
     },
     "$10,000\u201315,000": {
-     "seats": 4762,
-     "came_back": 0.0098
+     "seats": 4987,
+     "came_back": 0.0093
     },
     "$15,000 or more": {
-     "seats": 2980,
-     "came_back": 0.0044
+     "seats": 3095,
+     "came_back": 0.0048
     }
    }
   },
   "round_4_by_kind": {
    "held": {
     "bot": {
-     "games": 7947,
-     "held": 0.8527
+     "games": 8167,
+     "held": 0.8501
     },
     "gpt-6.1-sol": {
      "games": 165,
@@ -27022,8 +28064,8 @@
      "held": 0.8693
     },
     "hybrid": {
-     "games": 242,
-     "held": 0.8347
+     "games": 382,
+     "held": 0.8482
     },
     "gpt-6-luna": {
      "games": 213,
@@ -27056,16 +28098,16 @@
      "came_back": 0.1487
     },
     "bot": {
-     "seats": 9280,
-     "came_back": 0.1422
+     "seats": 9780,
+     "came_back": 0.1385
     },
     "gpt-6.1-terra": {
      "seats": 206,
      "came_back": 0.1456
     },
     "hybrid": {
-     "seats": 478,
-     "came_back": 0.1548
+     "seats": 698,
+     "came_back": 0.159
     },
     "gpt-6-luna": {
      "seats": 864,
@@ -27835,6 +28877,41 @@
     "misfits": 1,
     "cost": 0.109724,
     "output_tokens_per_puzzle": 77
+   },
+   {
+    "entrant": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "solved": 98,
+    "rate": 0.98,
+    "ci95": [
+     0.93,
+     0.9945
+    ],
+    "shown_after_picks": 0.5529,
+    "consonants": {
+     "D": 74,
+     "H": 71,
+     "C": 57,
+     "P": 20,
+     "B": 17,
+     "M": 15,
+     "G": 14,
+     "F": 12,
+     "Y": 7,
+     "W": 7,
+     "K": 5,
+     "V": 1
+    },
+    "vowels": {
+     "A": 63,
+     "O": 24,
+     "I": 10,
+     "U": 3
+    },
+    "invalid": 0,
+    "misfits": 0,
+    "cost": 0.03911,
+    "output_tokens_per_puzzle": 86
    }
   ],
   "pairwise": [
@@ -28049,6 +29126,16 @@
     ]
    },
    {
+    "a": "llm:openai/gpt-6.1-sol",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.02,
+    "ci95": [
+     0.0,
+     0.05
+    ]
+   },
+   {
     "a": "llm:openai/gpt-6.1-terra",
     "b": "llm:deepseek/deepseek-v4.1-flash-1017",
     "puzzles": 100,
@@ -28249,6 +29336,16 @@
     ]
    },
    {
+    "a": "llm:openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.0,
+    "ci95": [
+     -0.04,
+     0.04
+    ]
+   },
+   {
     "a": "llm:deepseek/deepseek-v4.1-flash-1017",
     "b": "llm:meta/muse-ember",
     "puzzles": 100,
@@ -28439,6 +29536,16 @@
     ]
    },
    {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.06,
+    "ci95": [
+     -0.12,
+     -0.01
+    ]
+   },
+   {
     "a": "llm:meta/muse-ember",
     "b": "llm:qwen/qwen3.8-flash",
     "puzzles": 100,
@@ -28619,6 +29726,16 @@
     ]
    },
    {
+    "a": "llm:meta/muse-ember",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.04,
+    "ci95": [
+     -0.1,
+     0.01
+    ]
+   },
+   {
     "a": "llm:qwen/qwen3.8-flash",
     "b": "llm:openai/gpt-6-luna",
     "puzzles": 100,
@@ -28789,6 +29906,16 @@
     ]
    },
    {
+    "a": "llm:qwen/qwen3.8-flash",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.24,
+    "ci95": [
+     -0.33,
+     -0.15
+    ]
+   },
+   {
     "a": "llm:openai/gpt-6-luna",
     "b": "llm:anthropic/claude-haiku-5.5",
     "puzzles": 100,
@@ -28949,6 +30076,16 @@
     ]
    },
    {
+    "a": "llm:openai/gpt-6-luna",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.19,
+    "ci95": [
+     -0.27,
+     -0.11
+    ]
+   },
+   {
     "a": "llm:anthropic/claude-haiku-5.5",
     "b": "hybrid:openai/gpt-6-luna",
     "puzzles": 100,
@@ -29099,6 +30236,16 @@
     ]
    },
    {
+    "a": "llm:anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.41,
+    "ci95": [
+     -0.51,
+     -0.31
+    ]
+   },
+   {
     "a": "hybrid:openai/gpt-6-luna",
     "b": "hybrid:anthropic/claude-haiku-5.5",
     "puzzles": 100,
@@ -29239,6 +30386,16 @@
     ]
    },
    {
+    "a": "hybrid:openai/gpt-6-luna",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.01,
+    "ci95": [
+     -0.02,
+     0.04
+    ]
+   },
+   {
     "a": "hybrid:anthropic/claude-haiku-5.5",
     "b": "decision:openai/gpt-6-luna-decisions",
     "puzzles": 100,
@@ -29369,6 +30526,16 @@
     ]
    },
    {
+    "a": "hybrid:anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.01,
+    "ci95": [
+     -0.03,
+     0.0
+    ]
+   },
+   {
     "a": "decision:openai/gpt-6-luna-decisions",
     "b": "decision:liquid/d1-ultra",
     "puzzles": 100,
@@ -29489,6 +30656,16 @@
     ]
    },
    {
+    "a": "decision:openai/gpt-6-luna-decisions",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.17,
+    "ci95": [
+     -0.25,
+     -0.09
+    ]
+   },
+   {
     "a": "decision:liquid/d1-ultra",
     "b": "bot",
     "puzzles": 100,
@@ -29599,6 +30776,16 @@
     ]
    },
    {
+    "a": "decision:liquid/d1-ultra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.14,
+    "ci95": [
+     -0.22,
+     -0.06
+    ]
+   },
+   {
     "a": "bot",
     "b": "decision:typesafe/jev-1.14",
     "puzzles": 100,
@@ -29699,6 +30886,16 @@
     ]
    },
    {
+    "a": "bot",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.03,
+    "ci95": [
+     -0.07,
+     0.0
+    ]
+   },
+   {
     "a": "decision:typesafe/jev-1.14",
     "b": "decision:openai/gpt-6-luna-decisions@anthropic/claude-haiku-5.5",
     "puzzles": 100,
@@ -29789,6 +30986,16 @@
     ]
    },
    {
+    "a": "decision:typesafe/jev-1.14",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.18,
+    "ci95": [
+     -0.26,
+     -0.1
+    ]
+   },
+   {
     "a": "decision:openai/gpt-6-luna-decisions@anthropic/claude-haiku-5.5",
     "b": "decision:liquid/d1-ultra@anthropic/claude-haiku-5.5",
     "puzzles": 100,
@@ -29869,6 +31076,16 @@
     ]
    },
    {
+    "a": "decision:openai/gpt-6-luna-decisions@anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.37,
+    "ci95": [
+     -0.46,
+     -0.27
+    ]
+   },
+   {
     "a": "decision:liquid/d1-ultra@anthropic/claude-haiku-5.5",
     "b": "decision:typesafe/jev-1.14@anthropic/claude-haiku-5.5",
     "puzzles": 100,
@@ -29939,6 +31156,16 @@
     ]
    },
    {
+    "a": "decision:liquid/d1-ultra@anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.36,
+    "ci95": [
+     -0.46,
+     -0.27
+    ]
+   },
+   {
     "a": "decision:typesafe/jev-1.14@anthropic/claude-haiku-5.5",
     "b": "decision:google/gemini-decision-1",
     "puzzles": 100,
@@ -29999,6 +31226,16 @@
     ]
    },
    {
+    "a": "decision:typesafe/jev-1.14@anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.37,
+    "ci95": [
+     -0.47,
+     -0.27
+    ]
+   },
+   {
     "a": "decision:google/gemini-decision-1",
     "b": "decision:google/gemini-decision-1@anthropic/claude-haiku-5.5",
     "puzzles": 100,
@@ -30049,6 +31286,16 @@
     ]
    },
    {
+    "a": "decision:google/gemini-decision-1",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.23,
+    "ci95": [
+     -0.32,
+     -0.15
+    ]
+   },
+   {
     "a": "decision:google/gemini-decision-1@anthropic/claude-haiku-5.5",
     "b": "decision:openai/gpt-6-luna-decisions@openai/gpt-6.1-terra",
     "puzzles": 100,
@@ -30089,6 +31336,16 @@
     ]
    },
    {
+    "a": "decision:google/gemini-decision-1@anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.39,
+    "ci95": [
+     -0.49,
+     -0.29
+    ]
+   },
+   {
     "a": "decision:openai/gpt-6-luna-decisions@openai/gpt-6.1-terra",
     "b": "decision:liquid/d1-ultra@openai/gpt-6.1-terra",
     "puzzles": 100,
@@ -30119,6 +31376,16 @@
     ]
    },
    {
+    "a": "decision:openai/gpt-6-luna-decisions@openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.01,
+    "ci95": [
+     -0.02,
+     0.04
+    ]
+   },
+   {
     "a": "decision:liquid/d1-ultra@openai/gpt-6.1-terra",
     "b": "decision:typesafe/jev-1.14@openai/gpt-6.1-terra",
     "puzzles": 100,
@@ -30139,6 +31406,16 @@
     ]
    },
    {
+    "a": "decision:liquid/d1-ultra@openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.01,
+    "ci95": [
+     -0.05,
+     0.03
+    ]
+   },
+   {
     "a": "decision:typesafe/jev-1.14@openai/gpt-6.1-terra",
     "b": "decision:google/gemini-decision-1@openai/gpt-6.1-terra",
     "puzzles": 100,
@@ -30146,6 +31423,26 @@
     "ci95": [
      -0.03,
      0.03
+    ]
+   },
+   {
+    "a": "decision:typesafe/jev-1.14@openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.01,
+    "ci95": [
+     -0.02,
+     0.04
+    ]
+   },
+   {
+    "a": "decision:google/gemini-decision-1@openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.01,
+    "ci95": [
+     -0.02,
+     0.04
     ]
    }
   ],
@@ -30360,6 +31657,20 @@
      ],
      [
       43,
+      43
+     ],
+     [
+      32,
+      32
+     ]
+    ],
+    "hybrid:openai/gpt-6.1-terra": [
+     [
+      25,
+      25
+     ],
+     [
+      41,
       43
      ],
      [
@@ -30933,6 +32244,56 @@
       "copies": 2.1257,
       "rule_hit": 0.9065,
       "rule_copies": 2.0185
+     }
+    }
+   },
+   "3t": {
+    "bot": {
+     "consonant": {
+      "n": 6271,
+      "judge": 0.9156,
+      "hit": 0.8999,
+      "top": 0.719,
+      "top_early": 0.6588,
+      "n_early": 4223,
+      "copies": 1.5535,
+      "rule_hit": 0.6728,
+      "rule_copies": 1.1225
+     },
+     "vowel": {
+      "n": 1163,
+      "judge": 0.9675,
+      "hit": 0.9699,
+      "top": 0.8745,
+      "top_early": 0.8168,
+      "n_early": 606,
+      "copies": 2.1359,
+      "rule_hit": 0.9243,
+      "rule_copies": 2.049
+     }
+    },
+    "hybrid:openai/gpt-6.1-terra": {
+     "consonant": {
+      "n": 3204,
+      "judge": 0.8739,
+      "hit": 0.9285,
+      "top": 0.6529,
+      "top_early": 0.5989,
+      "n_early": 2184,
+      "copies": 1.6195,
+      "rule_hit": 0.6461,
+      "rule_copies": 1.0531
+     },
+     "vowel": {
+      "n": 356,
+      "judge": 0.9369,
+      "hit": 0.9635,
+      "top": 0.8006,
+      "top_early": 0.754,
+      "n_early": 252,
+      "copies": 2.1685,
+      "rule_hit": 0.941,
+      "rule_copies": 2.1545
      }
     }
    },
@@ -33897,6 +35258,80 @@
       186
      ]
     }
+   },
+   "3t": {
+    "players": {
+     "hybrid:openai/gpt-6.1-terra": {
+      "rounds": 600,
+      "categories": {
+       "the bot's reader had another answer": {
+        "share": 0.0467,
+        "rounds": 28,
+        "median_shown": 0.4286
+       },
+       "right, but the bot wasn't sure": {
+        "share": 0.2333,
+        "rounds": 140,
+        "median_shown": 0.5,
+        "median_calibrated": 0.6163
+       },
+       "the bot would have known it, but it was the other seat's turn": {
+        "share": 0.095,
+        "rounds": 57,
+        "median_shown": 0.5909
+       },
+       "a bot knew it first and lost the wheel": {
+        "share": 0.625,
+        "rounds": 375,
+        "median_shown": 0.6,
+        "how": {
+         "-": 285,
+         "wrong_solve": 7,
+         "bankrupt": 45,
+         "lose_a_turn": 32,
+         "flipped_bankrupt": 4,
+         "missing": 2
+        }
+       }
+      }
+     }
+    },
+    "by_round": {
+     "1": [
+      150,
+      360
+     ],
+     "2": [
+      131,
+      360
+     ],
+     "3": [
+      155,
+      360
+     ],
+     "4": [
+      164,
+      360
+     ]
+    },
+    "by_length": {
+     "17 letters or fewer": [
+      168,
+      384
+     ],
+     "18 to 22": [
+      250,
+      564
+     ],
+     "23 to 26": [
+      116,
+      306
+     ],
+     "27 or more": [
+      66,
+      186
+     ]
+    }
    }
   }
  },
@@ -34651,6 +36086,43 @@
     "output_tokens_per_puzzle": 97
    },
    {
+    "entrant": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "solved": 97,
+    "rate": 0.97,
+    "ci95": [
+     0.9155,
+     0.9897
+    ],
+    "shown_after_picks": 0.5195,
+    "consonants": {
+     "H": 71,
+     "D": 65,
+     "C": 56,
+     "M": 25,
+     "G": 18,
+     "P": 15,
+     "B": 13,
+     "F": 10,
+     "Y": 7,
+     "W": 6,
+     "V": 5,
+     "K": 5,
+     "J": 3,
+     "X": 1
+    },
+    "vowels": {
+     "A": 75,
+     "O": 16,
+     "U": 6,
+     "I": 3
+    },
+    "invalid": 0,
+    "misfits": 0,
+    "cost": 0.04202,
+    "output_tokens_per_puzzle": 98
+   },
+   {
     "entrant": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "solved": 100,
@@ -34899,6 +36371,16 @@
    },
    {
     "a": "llm:openai/gpt-6.1-sol",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.01,
+    "ci95": [
+     -0.02,
+     0.04
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-sol",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.02,
@@ -35109,6 +36591,16 @@
    },
    {
     "a": "llm:openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.01,
+    "ci95": [
+     -0.02,
+     0.04
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6.1-terra",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.02,
@@ -35309,6 +36801,16 @@
    },
    {
     "a": "llm:deepseek/deepseek-v4.1-flash-1017",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.09,
+    "ci95": [
+     -0.16,
+     -0.03
+    ]
+   },
+   {
+    "a": "llm:deepseek/deepseek-v4.1-flash-1017",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.12,
@@ -35499,6 +37001,16 @@
    },
    {
     "a": "llm:meta/muse-ember",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.07,
+    "ci95": [
+     -0.14,
+     0.0
+    ]
+   },
+   {
+    "a": "llm:meta/muse-ember",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.1,
@@ -35679,6 +37191,16 @@
    },
    {
     "a": "llm:qwen/qwen3.8-flash",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.32,
+    "ci95": [
+     -0.42,
+     -0.22
+    ]
+   },
+   {
+    "a": "llm:qwen/qwen3.8-flash",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.35,
@@ -35849,6 +37371,16 @@
    },
    {
     "a": "llm:openai/gpt-6-luna",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.31,
+    "ci95": [
+     -0.41,
+     -0.22
+    ]
+   },
+   {
+    "a": "llm:openai/gpt-6-luna",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.34,
@@ -36009,6 +37541,16 @@
    },
    {
     "a": "llm:anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.42,
+    "ci95": [
+     -0.52,
+     -0.32
+    ]
+   },
+   {
+    "a": "llm:anthropic/claude-haiku-5.5",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.45,
@@ -36159,6 +37701,16 @@
    },
    {
     "a": "hybrid:openai/gpt-6-luna",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.05,
+    "ci95": [
+     -0.1,
+     -0.01
+    ]
+   },
+   {
+    "a": "hybrid:openai/gpt-6-luna",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.08,
@@ -36299,6 +37851,16 @@
    },
    {
     "a": "hybrid:anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.04,
+    "ci95": [
+     -0.09,
+     0.0
+    ]
+   },
+   {
+    "a": "hybrid:anthropic/claude-haiku-5.5",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.07,
@@ -36429,6 +37991,16 @@
    },
    {
     "a": "decision:openai/gpt-6-luna-decisions",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.22,
+    "ci95": [
+     -0.31,
+     -0.13
+    ]
+   },
+   {
+    "a": "decision:openai/gpt-6-luna-decisions",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.25,
@@ -36549,6 +38121,16 @@
    },
    {
     "a": "decision:liquid/d1-ultra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.19,
+    "ci95": [
+     -0.28,
+     -0.1
+    ]
+   },
+   {
+    "a": "decision:liquid/d1-ultra",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.22,
@@ -36659,6 +38241,16 @@
    },
    {
     "a": "bot",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.07,
+    "ci95": [
+     -0.12,
+     -0.03
+    ]
+   },
+   {
+    "a": "bot",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.1,
@@ -36759,6 +38351,16 @@
    },
    {
     "a": "decision:typesafe/jev-1.14",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.29,
+    "ci95": [
+     -0.38,
+     -0.2
+    ]
+   },
+   {
+    "a": "decision:typesafe/jev-1.14",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.32,
@@ -36849,6 +38451,16 @@
    },
    {
     "a": "decision:openai/gpt-6-luna-decisions@anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.38,
+    "ci95": [
+     -0.48,
+     -0.28
+    ]
+   },
+   {
+    "a": "decision:openai/gpt-6-luna-decisions@anthropic/claude-haiku-5.5",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.41,
@@ -36929,6 +38541,16 @@
    },
    {
     "a": "decision:liquid/d1-ultra@anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.38,
+    "ci95": [
+     -0.48,
+     -0.28
+    ]
+   },
+   {
+    "a": "decision:liquid/d1-ultra@anthropic/claude-haiku-5.5",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.41,
@@ -36999,6 +38621,16 @@
    },
    {
     "a": "decision:typesafe/jev-1.14@anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.38,
+    "ci95": [
+     -0.48,
+     -0.29
+    ]
+   },
+   {
+    "a": "decision:typesafe/jev-1.14@anthropic/claude-haiku-5.5",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.41,
@@ -37059,6 +38691,16 @@
    },
    {
     "a": "decision:google/gemini-decision-1",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.25,
+    "ci95": [
+     -0.35,
+     -0.15
+    ]
+   },
+   {
+    "a": "decision:google/gemini-decision-1",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.28,
@@ -37109,6 +38751,16 @@
    },
    {
     "a": "decision:google/gemini-decision-1@anthropic/claude-haiku-5.5",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.3,
+    "ci95": [
+     -0.4,
+     -0.2
+    ]
+   },
+   {
+    "a": "decision:google/gemini-decision-1@anthropic/claude-haiku-5.5",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.33,
@@ -37149,6 +38801,16 @@
    },
    {
     "a": "decision:openai/gpt-6-luna-decisions@openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.0,
+    "ci95": [
+     -0.04,
+     0.04
+    ]
+   },
+   {
+    "a": "decision:openai/gpt-6-luna-decisions@openai/gpt-6.1-terra",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.03,
@@ -37179,6 +38841,16 @@
    },
    {
     "a": "decision:liquid/d1-ultra@openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.04,
+    "ci95": [
+     -0.1,
+     0.02
+    ]
+   },
+   {
+    "a": "decision:liquid/d1-ultra@openai/gpt-6.1-terra",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.07,
@@ -37199,6 +38871,16 @@
    },
    {
     "a": "decision:typesafe/jev-1.14@openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": -0.04,
+    "ci95": [
+     -0.1,
+     0.01
+    ]
+   },
+   {
+    "a": "decision:typesafe/jev-1.14@openai/gpt-6.1-terra",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.07,
@@ -37209,6 +38891,26 @@
    },
    {
     "a": "decision:google/gemini-decision-1@openai/gpt-6.1-terra",
+    "b": "hybrid:openai/gpt-6.1-terra",
+    "puzzles": 100,
+    "gap": 0.0,
+    "ci95": [
+     -0.05,
+     0.05
+    ]
+   },
+   {
+    "a": "decision:google/gemini-decision-1@openai/gpt-6.1-terra",
+    "b": "llm:google/gemini-4-hydrogen",
+    "puzzles": 100,
+    "gap": -0.03,
+    "ci95": [
+     -0.07,
+     0.0
+    ]
+   },
+   {
+    "a": "hybrid:openai/gpt-6.1-terra",
     "b": "llm:google/gemini-4-hydrogen",
     "puzzles": 100,
     "gap": -0.03,
@@ -37425,6 +39127,20 @@
     "hybrid:openai/gpt-6-luna": [
      [
       40,
+      48
+     ],
+     [
+      39,
+      39
+     ],
+     [
+      13,
+      13
+     ]
+    ],
+    "hybrid:openai/gpt-6.1-terra": [
+     [
+      45,
       48
      ],
      [
@@ -37990,6 +39706,10 @@
     "llm:google/gemini-4-hydrogen": [
      14,
      15
+    ],
+    "hybrid:openai/gpt-6.1-terra": [
+     13,
+     15
     ]
    },
    "own": {
@@ -38081,6 +39801,10 @@
      14,
      15
     ],
+    "hybrid:openai/gpt-6.1-terra": [
+     15,
+     15
+    ],
     "llm:google/gemini-4-hydrogen": [
      15,
      15
@@ -38110,13 +39834,14 @@
    "decision:liquid/d1-ultra@openai/gpt-6.1-terra": 0.4067,
    "decision:typesafe/jev-1.14@openai/gpt-6.1-terra": 0.3247,
    "decision:google/gemini-decision-1@openai/gpt-6.1-terra": 0.3374,
+   "hybrid:openai/gpt-6.1-terra": 0.3847,
    "llm:google/gemini-4-hydrogen": 0.5382
   },
   "cost": {
    "blank": 0.1469,
    "RSTLNE": 0.1737,
-   "contestant": 0.4918,
-   "own": 1.121
+   "contestant": 0.4993,
+   "own": 1.1281
   },
   "shown": {
    "RSTLNE": 0.179,

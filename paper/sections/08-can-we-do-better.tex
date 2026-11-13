@@ -25,6 +25,8 @@ The hybrid lifts both models it reads with. Luna wins \LunaWin{} of games alone 
 
 The bot fixes each model's habit. Luna alone guesses early, and only \LunaAcc{} of its solves are right. Inside the hybrid, \LunaHybridAcc{} are right, because the bot only solves with an answer that fits the board and that it trusts. Haiku alone waits until most of the board shows. Inside the hybrid, it gave a fitting answer on \HaikuHybridAskFit{} of the bot's asks, first at a median \HaikuHybridAskFirstShown{} of the board showing, and the bot acts on it. Luna gave one on \LunaHybridAskFit{} of asks, first at \LunaHybridAskFirstShown{}.
 
+A strong reader gains nothing from the bot. Terra alone wins \TerraWin{} of its games, and as a hybrid it wins \TerraHybridWin{}, a tie (\PairTerraHybridMinusTerraAlone{} points; \PairTerraHybridMinusTerraAloneCI). It reads earlier than the other two, with a fitting answer on \TerraHybridAskFit{} of asks, first at a median \TerraHybridAskFirstShown{} of the board showing. But the bot plays its own way. It waits until \TerraHybridShown{} of the board shows before solving, against \TerraShown{} for Terra alone, and spins for more consonants while it waits. The hybrid wins \TerraHybridRounds{} rounds a game against Terra's \TerraRounds{}, and banks a median \TerraHybridRoundMoney{} in each against Terra's \TerraRoundMoney. The rounds it gives up cost about what the extra money gains. Inside the hybrid, Terra is also no better than Luna. The Terra hybrid minus the Luna hybrid is \PairTerraHybridMinusLunaHybrid{} points (\PairTerraHybridMinusLunaHybridCI), although alone Terra wins three times as often as Luna. With the bot deciding, the reader matters little beyond Luna's level.
+
 \begin{table}[t]
 \centering
 \begin{tabular}{lccc}
@@ -33,6 +35,7 @@ The bot fixes each model's habit. Luna alone guesses early, and only \LunaAcc{} 
 \cmidrule(lr){2-4}
 Who reads & The model itself & The bot (hybrid) & A decision model \\
 \midrule
+Terra & \TerraWin & \TerraHybridWin & \JevTWin--\GemDecTWin \\
 Luna & \LunaWin & \LunaHybridWin & \DoneWin--\GemDecWin \\
 Haiku & \HaikuWin & \HaikuHybridWin & \JevHWin--\GemDecHWin \\
 \bottomrule
@@ -83,4 +86,4 @@ The bonus round tells a different story, because the writer reads the board ther
 
 \subsection{The answer}
 
-Yes, mostly. The bot alone beats five of the seven models, but not Sol or Terra. With a cheap model reading the board, it ties Sol, the strongest model in our games. Handing the choices to a decision model does the opposite: every decision model makes its seat worse than its writer alone, and a strong writer cannot rescue a seat that rarely asks it.
+Yes, mostly. The bot alone beats five of the seven models, but not Sol or Terra. With a cheap model reading the board, it ties Sol, the strongest model in our games. A stronger reader does not lift it further, so the bot's decisions set the ceiling. Handing the choices to a decision model does the opposite: every decision model makes its seat worse than its writer alone, and a strong writer cannot rescue a seat that rarely asks it.
