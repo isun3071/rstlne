@@ -423,7 +423,7 @@ Each seat is one of five kinds.
 | `llm:<slug>` | the model | the model |
 | `decision[:<model>[@<solver>]]` | a decision model | an LLM, the solver |
 | `bot` | the bot | the bot |
-| `hybrid:<slug>` | the bot, with the model's reading of the board | the bot, often with the model's answer |
+| `hybrid:<slug>[+trust_fit]` | the bot, with the model's reading of the board | the bot, often with the model's answer |
 
 - `llm:<slug>`: the model plays every move, as the LLM player section describes.
 - `bot`: the bot plays every move and solves as the Bot section describes, bonus round included.
@@ -467,6 +467,13 @@ In this section, "ask" means one request to the model. "Call" still means callin
 - reader_best and p_reader come from the bot's reader, so a curve fits only the reader it was measured on. Each table is named by the first bot version to read that way, `vN`: `v1` serves versions 1 to 4, whose readers are the same (2 to 4 changed only how the bot weighs money and timing), and `v5` serves version 5. A hybrid seat uses the table for `[bot] version`'s reader and refuses to sit without one, naming the command that measures it. A tournament folder's name covers only the curves its hybrid seats use.
 - A wrong solve refutes its answer, as for the bot. A refuted answer is listed in the next ask and never used again that round.
 - Bonus solve: the best answer of the merged candidates.
+
+### Full trust variant
+
+- `hybrid:<slug>+trust_fit` is the hybrid with one switch on, the `trust_fit` knob, off in every bot version. Before the model gives a fitting answer in a round, the seat plays exactly as the hybrid above. The first fitting answer that isn't refuted is taken as the answer: the bot drops its reader's candidates, holds that answer as certain (each of its unused letters hits, with its exact copies), and plays it with the known-answer planner, which weighs solving now against spinning for its consonants.
+- While the trusted answer still fits the board and isn't refuted, the seat keeps it and doesn't ask again. If a call or a wrong solve rules it out, the seat goes back to its reader and asks on its next board. A new round starts with nothing trusted.
+- Steal odds read the reader's own belief, as in the plain hybrid, and count the board as readable while an answer is trusted. The bonus round plays as the plain hybrid's.
+- The header records `"trust_fit": true`, and a trusted move logs its ask status as `trusted`. A tournament folder's name covers the variant, so its games never mix with the plain hybrid's.
 
 ### Logging
 

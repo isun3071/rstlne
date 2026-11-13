@@ -17,6 +17,8 @@ default = "v6"
 "3m" = { folder = "seed707-2d45bc0e", label = "Muse Ember · bot · bot" }
 "3f" = { folder = "seed707-d0d90cd5", label = "Haiku hybrid · bot · bot" }
 "3t" = { folder = "seed707-cad8fccf", label = "Terra hybrid · bot · bot" }
+"3tf" = { folder = "seed707-9c22ae06", label = "Terra hybrid, full trust · bot · bot" }
+"3lf" = { folder = "seed707-f3918d4e", label = "Luna hybrid, full trust · bot · bot" }
 "6a" = { folder = "seed707-0724ada8", label = "bot · Luna · Luna" }
 "6b" = { folder = "seed707-345192e8", label = "bot · Haiku · Haiku" }
 "6d1" = { folder = "seed707-3067b84e", label = "bot · d1-ultra · d1-ultra" }

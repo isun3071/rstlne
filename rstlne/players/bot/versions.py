@@ -79,6 +79,9 @@ class Knobs:
     # spin while spinning is legal, whatever the Bankrupt and steal risk, and solve only when no consonant is left.
     vowel_first: float | None = None
     milk_all: bool = False
+    # Hybrid variant, off in every version. trust_fit: the hybrid takes the model's first fitting answer of a round as
+    # the answer, drops its own reader for it while the board allows it, and plays it with the known-answer planner.
+    trust_fit: bool = False
 
 
 def _tuples(value):

@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import random
 import sys
+from dataclasses import replace
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
@@ -26,7 +27,7 @@ from rstlne.players.base import Player
 from rstlne.players.bot import versions
 from rstlne.players.bot.player import BotPlayer, make_reader
 from rstlne.players.decision import DecisionPlayer
-from rstlne.players.hybrid import HybridPlayer, curves_for, steal_table
+from rstlne.players.hybrid import HybridPlayer, curves_for, hybrid_parts, steal_table
 from rstlne.players.human_cli import HumanPlayer
 from rstlne.players.llm import LLMPlayer
 from rstlne.runner import GameLog, play_game
@@ -43,6 +44,8 @@ def parse_seat(part: str) -> tuple[str, str | None]:
         kind, _, slug = part.partition(":")
         if not slug.strip():
             raise ValueError(f"{kind} seats need a model slug, like {kind}:openai/gpt-4o")
+        if kind == "hybrid":
+            hybrid_parts(slug.strip())  # a known variant after any +, or an error naming it
         return kind, slug.strip()
     if part == "decision" or part.startswith("decision:"):
         model = part.removeprefix("decision").removeprefix(":").strip() or None
@@ -119,6 +122,8 @@ def build_players(
             return BotPlayer(i, rules, spec, make_reader(versions.knobs(version), version), version=version)
         if kind == "hybrid":
             version = versions.current(config)
+            model, variants = hybrid_parts(model)
+            knobs = replace(versions.knobs(version), **{v: True for v in variants}) if variants else None
             trust, steal = curves_for(config, model)
             if trust is None or steal is None:
                 table, kind = f"v{versions.reads_like(version)}", steal_table(version)
@@ -129,8 +134,8 @@ def build_players(
                                  f"{model} --version {version}")
             return HybridPlayer(
                 i, model, client, tuple(trust), tuple(steal), rules, spec, make_reader(versions.knobs(version), version),
-                version=version, temperature=temperature, session_id=session, reasoning_effort=effort_for(model),
-                provider=providers.get(model),
+                version=version, knobs=knobs, temperature=temperature, session_id=session,
+                reasoning_effort=effort_for(model), provider=providers.get(model),
             )
         if kind == "llm":
             return LLMPlayer(

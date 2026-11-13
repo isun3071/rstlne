@@ -18,7 +18,7 @@ from rstlne.engine.wheel import WheelSpec
 from rstlne.llm.openrouter import OpenRouter, Usage, check_temperature
 from rstlne.players.base import CallRecord, InvalidResponse
 from rstlne.players.bot import versions
-from rstlne.players.bot.belief import Belief
+from rstlne.players.bot.belief import Belief, LetterStats
 from rstlne.players.bot.player import BotPlayer, share_revealed
 from rstlne.players.bot.reader import Reader, board_text
 from rstlne.players.bot.steal import Steal
@@ -47,6 +47,23 @@ READ_BOARD = {
     },
 }
 ATTEMPTS = 3  # the first try and 2 reprompts; after that the ask counts as "not solvable"
+VARIANTS = ("trust_fit",)  # hybrid:<slug>+<variant>: a switch in versions.Knobs, off in every version
+
+
+def hybrid_parts(model: str) -> tuple[str, frozenset[str]]:
+    """A hybrid seat's model slug and its variants, from `<slug>+<variant>+...`."""
+    slug, *variants = model.split("+")
+    unknown = [v for v in variants if v not in VARIANTS]
+    if unknown:
+        raise ValueError(f"unknown hybrid variant {unknown[0]!r}; known: {', '.join(VARIANTS)}")
+    return slug, frozenset(variants)
+
+
+def certain(answer: str, used: frozenset[str]) -> Belief:
+    """A belief holding one answer for sure: each of its unused letters hits, with its exact copies."""
+    letters = {c: LetterStats(p_hit=1.0, count=float(answer.count(c)), entropy=0.0)
+               for c in set(answer) if c.isalpha() and c not in used}
+    return Belief(letters=letters, answers=((answer, 1.0),), oov=0.0, distinct=1)
 
 
 def steal_table(version: int) -> str:
@@ -214,12 +231,14 @@ class HybridPlayer(BotPlayer):
         self._asks: dict[tuple, dict] = {}  # one ask per board, with what came of it
         self._asked = 0  # asks this round
         self._alone: Belief | None = None  # the reader's own belief on the board being decided
+        self._trusted: str | None = None  # with trust_fit: the model's answer this round, taken as the answer
         self._ask: dict | None = None
         self._ask_usage = Usage()
 
     def describe(self) -> dict:
-        return {**super().describe(), "kind": "hybrid", "model": self.model, "temperature": self.temperature,
+        info = {**super().describe(), "kind": "hybrid", "model": self.model, "temperature": self.temperature,
                 "reasoning_effort": self.reasoning_effort, "provider": self.provider}
+        return {**info, "trust_fit": True} if self.knobs.trust_fit else info
 
     def label(self) -> str:
         return f"bot v{self.version} + {self.model}"
@@ -250,6 +269,13 @@ class HybridPlayer(BotPlayer):
         if view.phase is Phase.BONUS_PICKS:
             return alone  # the picks are the reader's
         refuted = self._refuted_in(view)
+        if self.knobs.trust_fit and view.round_number is not None and self._trusted is not None:
+            if self._trusted not in refuted and fits_shown(board_text(view.board), self._trusted,
+                                                           frozenset(view.used_letters)):
+                self.steal.readable = 1
+                self._ask = {"status": "trusted", "answer": self._trusted, "model": self.model}
+                return certain(self._trusted, frozenset(view.used_letters))
+            self._trusted = None  # the board or a wrong solve ruled it out: back to the reader, and asking
         key = (view.round_number, view.board, view.used_letters, refuted)
         entry = self._asks.get(key)
         if entry is None:
@@ -258,6 +284,9 @@ class HybridPlayer(BotPlayer):
         else:
             self._ask = {**entry["record"], "reused": True}
         self.steal.readable = int(entry["record"]["status"] == "used")
+        if self.knobs.trust_fit and view.round_number is not None and entry["record"]["status"] == "used":
+            self._trusted = entry["answer"]
+            return certain(self._trusted, frozenset(view.used_letters))
         return entry["belief"]
 
     def _steal_belief(self, view: PublicView, belief: Belief) -> Belief:
@@ -270,6 +299,7 @@ class HybridPlayer(BotPlayer):
             self._round = view.round_number
             self._asked = 0
             self.steal.readable = 0
+            self._trusted = None
 
     def _consult(self, view: PublicView, alone: Belief, refuted: frozenset[str]) -> dict:
         """Ask the model about this board, check its answer, and mix it in."""
@@ -299,7 +329,7 @@ class HybridPlayer(BotPlayer):
             "status": status, "trust": trust, "reader_confidence": alone.confidence,
             "merged_confidence": belief.confidence, "attempts": asked.attempts, "seconds": round(asked.seconds, 2),
         }
-        return {"record": record, "belief": belief}
+        return {"record": record, "belief": belief, "answer": answer}
 
 
 def ask_line(model: str, ask: dict) -> str:

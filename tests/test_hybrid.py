@@ -376,3 +376,78 @@ def test_a_hybrid_seat_on_version_6_needs_its_models_curve_per_turn(rules, wheel
     with pytest.raises(ValueError, match=r"\[hybrid.steal_turn.v5\].*calibrate trust --per-turn"):
         cli.build_players([("hybrid", MODEL), ("bot", None), ("bot", None)], rules, wheel_spec, config,
                           router([]), None, "game")
+
+
+# Full trust (trust_fit): a fitting answer is taken as the answer, and the bot plays it as known
+
+TRUSTING = replace(KNOBS, trust_fit=True)
+
+
+def trusting(rules, spec, replies):
+    client = router(replies)
+    player = HybridPlayer(0, MODEL, client, TRUST, STEAL, rules, spec, WordListReader(WORDS, KNOBS),
+                          knobs=TRUSTING, session_id="g-seat1")
+    return player, client.client.calls
+
+
+def test_full_trust_takes_a_fitting_answer_as_certain_and_hands_it_to_the_planner(rules, wheel_spec):
+    state = shown(start(rules, wheel_spec), "RLNEWH")
+    player, _ = trusting(rules, wheel_spec, [says(True, "WHEEL OF FORTUNE")])
+    player.decide(public_view(state, 0))
+    raw = player.last_call.raw
+    assert raw["ask"]["status"] == "used" and raw["best"] == "WHEEL OF FORTUNE" and raw["confidence"] == 1.0
+    assert raw.get("planner") in ("spin", "solve")  # the known-answer planner chose, not the turn's weighing
+
+
+def test_full_trust_keeps_the_answer_on_later_boards_without_asking_again(rules, wheel_spec):
+    player, calls = trusting(rules, wheel_spec, [says(True, "WHEEL OF FORTUNE")])
+    player.decide(public_view(shown(start(rules, wheel_spec), "RLNWH"), 0))
+    player.decide(public_view(shown(start(rules, wheel_spec), "RLNWHF"), 0))  # a new board the answer still fits
+    assert len(calls) == 1
+    raw = player.last_call.raw
+    assert raw["ask"]["status"] == "trusted" and raw["confidence"] == 1.0 and raw["best"] == "WHEEL OF FORTUNE"
+
+
+def test_full_trust_drops_an_answer_the_board_rules_out_and_asks_again(rules, wheel_spec):
+    player, calls = trusting(rules, wheel_spec, [says(True, "WHOOL OF FORTUNE"), says(False)])
+    player.decide(public_view(shown(start(rules, wheel_spec), "RLNWH"), 0))  # WH__L fits WHOOL
+    player.decide(public_view(shown(start(rules, wheel_spec), "RLNWHE"), 0))  # the E shows: WHEEL, not WHOOL
+    assert len(calls) == 2 and player.last_call.raw["ask"]["status"] == "not solvable"  # back to asking, and the reader
+
+
+def test_full_trust_is_off_by_default(rules, wheel_spec):
+    assert versions.knobs(6).trust_fit is False
+    player, _ = hybrid(rules, wheel_spec, [says(True, "WHEEL OF FORTUNE")])
+    player.decide(public_view(shown(start(rules, wheel_spec), "RLNWH"), 0))  # WHEEL and WHOOL both fit
+    assert player.last_call.raw["confidence"] < 1.0  # mixed in at the trust curve's share
+
+
+def test_a_full_trust_hybrid_seat_is_named_with_plus_trust_fit(rules, wheel_spec):
+    from rstlne import cli, settings, tournament
+    assert cli.parse_seat("hybrid:a/one+trust_fit") == ("hybrid", "a/one+trust_fit")
+    with pytest.raises(ValueError, match="nope"):
+        cli.parse_seat("hybrid:a/one+nope")
+    config = {**settings.load_config(), "bot": {"version": 4}, "hybrid": curves(), "providers": {MODEL: "deepinfra/fp8"}}
+    seat = cli.build_players([("hybrid", MODEL + "+trust_fit")], rules, wheel_spec, config, router([]), None, "g")[0]
+    assert seat.model == MODEL and seat.knobs.trust_fit and seat.provider == "deepinfra/fp8"
+    assert seat.describe()["trust_fit"] is True
+    plain = tournament.folder_name([f"hybrid:{MODEL}", "bot", "bot"], 707, "deck.json", config)
+    full = tournament.folder_name([f"hybrid:{MODEL}+trust_fit", "bot", "bot"], 707, "deck.json", config)
+    assert plain != full and tournament._seated_models([f"hybrid:{MODEL}+trust_fit"], config) == {MODEL}
+
+
+def test_a_full_trust_hybrid_plays_a_whole_game_and_its_bonus_solve_still_asks(rules, wheel_spec, tmp_path):
+    client = router(fake_model)
+    reader = WordListReader(WORDS, KNOBS)
+    players = [HybridPlayer(0, MODEL, client, TRUST, STEAL, rules, wheel_spec, reader, knobs=TRUSTING),
+               BotPlayer(1, rules, wheel_spec, reader, knobs=KNOBS), BotPlayer(2, rules, wheel_spec, reader, knobs=KNOBS)]
+    path = tmp_path / "game.jsonl"
+    with GameLog(path, start(rules, wheel_spec), players) as log:
+        final = play_game(start(rules, wheel_spec), players, log)
+    assert final.phase is Phase.GAME_OVER
+    lines = [json.loads(line) for line in path.read_text().splitlines()]
+    assert lines[0]["seats"][0]["trust_fit"] is True
+    statuses = {r["raw"]["ask"]["status"] for r in lines if r.get("type") == "action" and r["seat"] == 0
+                and (r.get("raw") or {}).get("ask")}
+    assert "trusted" in statuses or "used" in statuses
+    assert public_view(bonus_state(rules, wheel_spec), 0).round_number is None  # so the bonus round plays as before

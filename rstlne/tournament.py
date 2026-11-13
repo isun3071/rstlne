@@ -31,7 +31,7 @@ from rstlne.llm.decisions import DecisionClient
 from rstlne.llm.openrouter import OpenRouter
 from rstlne.narrate import duration, line_output, money
 from rstlne.players.bot import versions
-from rstlne.players.hybrid import curves_for
+from rstlne.players.hybrid import curves_for, hybrid_parts
 from rstlne.runner import GameLog, play_game
 
 SEATS = 3
@@ -146,7 +146,7 @@ def folder_name(entrants: Sequence[str], seed: int, puzzles_path: Path, config: 
         play["bot_version"] = config.get("bot", {}).get("version")
     hybrids = sorted({e.split(":", 1)[1] for e in entrants if e.startswith("hybrid:")})
     if hybrids:  # only the curves in use, so measuring another reader's or model's never renames this folder
-        play["hybrid"] = {m: curves_for(config, m) for m in hybrids}
+        play["hybrid"] = {m: curves_for(config, hybrid_parts(m)[0]) for m in hybrids}  # a variant keeps its own key
     models = _seated_models(entrants, config)
     if str(puzzles_path) == GENERATE:
         play["puzzlegen"] = config.get("puzzlegen")
@@ -163,7 +163,7 @@ def _seated_models(entrants: Sequence[str], config: dict) -> set[str]:
     for entrant in entrants:
         kind, _, slug = entrant.partition(":")
         if kind in ("llm", "hybrid") and slug:
-            models.add(slug)
+            models.add(hybrid_parts(slug)[0] if kind == "hybrid" else slug)
         elif kind == "decision":
             models |= set(decision_parts(slug or None, config))
     return models
