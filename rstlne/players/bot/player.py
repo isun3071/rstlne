@@ -59,6 +59,7 @@ def share_revealed(board: str) -> float:
 
 
 MOVES = {"spin": "spin", "buy_vowel": "buy a vowel", "solve": "solve"}
+FREE_PLAY_VOWEL_FLOOR = 0.10  # the free_play_vowel variant calls a vowel only if one hits at least this often
 
 
 def explain(record: dict) -> list[str]:
@@ -118,6 +119,12 @@ def weighing(record: dict) -> list[str]:
             line += " (" + ", ".join(f"{names.get(k, k)} {worth(v, win)}" for k, v in planned.items()) + ")"
         lines.append(line)
     return lines
+
+
+def covered(board: str) -> bool:
+    """Every word on the board shows a vowel (a word with no letter squares, like &, needs none)."""
+    words = [w for w in board_text(board).split() if any(c == "_" or c.isalpha() for c in w)]
+    return all(any(c in "AEIOU" for c in w) for w in words)
 
 
 def guess(belief: Belief, view: PublicView, refuted: frozenset[str] = frozenset()) -> str:
@@ -221,6 +228,8 @@ class BotPlayer(Player):
 
     def _decide(self, view: PublicView, belief: Belief) -> Action:
         legal = view.legal_actions
+        if self.knobs.never_vowel or (self.knobs.vowel_cover is not None and covered(view.board)):
+            legal = tuple(k for k in legal if k != "buy_vowel")  # vowel variants: buying one is off the table
         if view.phase is Phase.BONUS_PICKS:
             return bonus.picks(belief, view, self.rules)
         if view.phase is Phase.BONUS_SOLVE:
@@ -266,6 +275,11 @@ class BotPlayer(Player):
             case Phase.WILD_CONSONANT:
                 return CallConsonant(self._pick(s, "Calls", s.consonant(replace(view.wedge, wild=False), spend_wild=True)[0]))
             case Phase.FREE_PLAY:
+                if self.knobs.free_play_vowel and s.vowels and s.c < self.knobs.known_answer and not covered(view.board):
+                    # vowel variant: a vowel on Free Play while some word shows none and a vowel is still likely
+                    vowel = max(s.vowels, key=lambda v: (s.belief.stats(v).p_hit, s.belief.stats(v).count, v))
+                    if s.belief.stats(vowel).p_hit >= FREE_PLAY_VOWEL_FLOOR:
+                        return CallLetter(self._pick(s, "Free Play: calls", vowel))
                 return CallLetter(self._pick(s, "Free Play: calls", s.free_play()[0]))
             case Phase.MYSTERY_CHOICE:
                 return Choose(s.mystery(self._pending))
@@ -279,7 +293,7 @@ class BotPlayer(Player):
 
     def _vowel_first(self, s: Situation, legal) -> str | None:
         """With the vowel_first variant on, the likeliest open vowel when buying one is legal and it hits often enough."""
-        bar = self.knobs.vowel_first
+        bar = self.knobs.vowel_first if self.knobs.vowel_first is not None else self.knobs.vowel_cover
         if bar is None or "buy_vowel" not in legal or not s.vowels:
             return None
         best = max(s.vowels, key=lambda v: (s.belief.stats(v).p_hit, s.belief.stats(v).count, v))

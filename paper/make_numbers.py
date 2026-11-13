@@ -217,7 +217,8 @@ def macros(n: dict) -> dict[str, str | None]:
         m[f"Blatt{name}OwnShown"] = pct(get(n, "blatt", "own_shown", key), 0)
     # Appendix C: the bot's self-play variants, each minus the two copies of the bot it played
     for variant, (v, label) in {"milk_all": ("milk", "Milk"), "vowel_first": ("vowels", "Vowels"),
-                                "solve_on_sight": ("solve", "Solve")}.items():
+                                "solve_on_sight": ("solve", "Solve"), "vowels_affordable": ("afford", "Afford"),
+                                "vowel_cover": ("cover", "Cover"), "never_vowel": ("novowel", "NoVowel")}.items():
         for copy, c in (("v6a", "A"), ("v6b", "B")):
             gap = next((p for p in get(n, "variants", variant, "pairwise") or [] if {p["a"], p["b"]} == {v, copy}), None)
             sign = 1 if gap and gap["a"] == v else -1

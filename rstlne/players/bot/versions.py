@@ -82,6 +82,13 @@ class Knobs:
     # Hybrid variant, off in every version. trust_fit: the hybrid takes the model's first fitting answer of a round as
     # the answer, drops its own reader for it while the board allows it, and plays it with the known-answer planner.
     trust_fit: bool = False
+    # Vowel variants (2026-11-13), off in every version. free_play_vowel: before the answer is known, a Free Play calls
+    # the likeliest open vowel while some word shows none and that vowel hits at least 10% of the time. vowel_cover, a hit chance: before the answer is known, buy the likeliest open vowel that
+    # hits at least this often while any word on the board shows no vowel, and once every word shows one, buy none that
+    # round. never_vowel: never buy a vowel, on a turn or on the Express.
+    free_play_vowel: bool = False
+    vowel_cover: float | None = None
+    never_vowel: bool = False
 
 
 def _tuples(value):
