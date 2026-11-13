@@ -39,6 +39,7 @@ SOL, TERRA, LUNA, HAIKU = "llm:openai/gpt-6.1-sol", "llm:openai/gpt-6.1-terra", 
 DEEPSEEK, QWEN = "llm:deepseek/deepseek-v4.1-flash-1017", "llm:qwen/qwen3.8-flash"
 EMBER = "llm:meta/muse-ember"
 LUNA_HYBRID, HAIKU_HYBRID = "hybrid:openai/gpt-6-luna", "hybrid:anthropic/claude-haiku-5.5"
+TERRA_HYBRID = "hybrid:openai/gpt-6.1-terra"
 LUNA_DEC, D1, JEV = "decision:openai/gpt-6-luna-decisions", "decision:liquid/d1-ultra", "decision:typesafe/jev-1.14"
 GEMINI_DEC = "decision:google/gemini-decision-1"
 HAIKU_WRITES = "@anthropic/claude-haiku-5.5"
@@ -50,6 +51,9 @@ PAIRS = [
     ("Luna hybrid minus Luna alone", ("3", LUNA_HYBRID), ("3b", LUNA)),
     ("Haiku hybrid minus Haiku alone", ("3f", HAIKU_HYBRID), ("3d", HAIKU)),
     ("Luna hybrid minus Haiku hybrid", ("3", LUNA_HYBRID), ("3f", HAIKU_HYBRID)),
+    ("Terra hybrid minus Terra alone", ("3t", TERRA_HYBRID), ("2t", TERRA)),
+    ("Terra hybrid minus Sol", ("3t", TERRA_HYBRID), ("2", SOL)),
+    ("Terra hybrid minus Luna hybrid", ("3t", TERRA_HYBRID), ("3", LUNA_HYBRID)),
     ("DeepSeek minus Luna", ("3c", DEEPSEEK), ("3b", LUNA)),
     ("DeepSeek minus Qwen 3.8 Flash", ("3c", DEEPSEEK), ("3r", QWEN)),
     ("Qwen 3.8 Flash minus Luna", ("3r", QWEN), ("3b", LUNA)),

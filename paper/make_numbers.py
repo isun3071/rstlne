@@ -25,7 +25,7 @@ HAIKU_W = "@anthropic/claude-haiku-5.5"  # a decision seat whose answers Haiku w
 GEMINI_D = "decision:google/gemini-decision-1"
 TERRA_W = "@openai/gpt-6.1-terra"  # a decision seat whose answers Terra writes
 ALONE = {"Sol": ("2", SOL), "Terra": ("2t", TERRA), "DeepSeek": ("3c", DEEPSEEK), "Qwen": ("3r", QWEN), "Ember": ("3m", EMBER),
-         "Luna": ("3b", LUNA), "Haiku": ("3d", HAIKU), "LunaHybrid": ("3", LUNA_H), "HaikuHybrid": ("3f", HAIKU_H),
+         "Luna": ("3b", LUNA), "Haiku": ("3d", HAIKU), "LunaHybrid": ("3", LUNA_H), "HaikuHybrid": ("3f", HAIKU_H), "TerraHybrid": ("3t", "hybrid:openai/gpt-6.1-terra"),
          "LunaDec": ("d2", LUNA_D), "Done": ("d1", D1), "Jev": ("dj", JEV),
          "LunaDecH": ("d2h", LUNA_D + HAIKU_W), "DoneH": ("d1h", D1 + HAIKU_W), "JevH": ("djh", JEV + HAIKU_W),
          "GemDec": ("dg", GEMINI_D), "GemDecH": ("dgh", GEMINI_D + HAIKU_W),

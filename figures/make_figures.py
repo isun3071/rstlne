@@ -115,7 +115,8 @@ def check(fig, name):
 
 # 1. The yardstick: each player alone against two bots
 solo = [(F[k], key) for k, key in (("2", "openai/gpt-6.1-sol"), ("2t", "openai/gpt-6.1-terra"), ("3", "hybrid:openai/gpt-6-luna"),
-                                     ("3f", "hybrid:anthropic/claude-haiku-5.5"), ("3c", "deepseek/deepseek-v4.1-flash-1017"),
+                                     ("3f", "hybrid:anthropic/claude-haiku-5.5"), ("3t", "hybrid:openai/gpt-6.1-terra"),
+                                     ("3c", "deepseek/deepseek-v4.1-flash-1017"),
                                      ("3r", "qwen/qwen3.8-flash"), ("3m", "meta/muse-ember"), ("3b", "llm:openai/gpt-6-luna"), ("3d", "anthropic/claude-haiku-5.5"),
                                      ("d2", "decision:openai/gpt-6-luna-decisions"), ("d1", "decision:liquid/d1-ultra"),
                                      ("dj", "decision:typesafe/jev-1.14"),
@@ -261,6 +262,7 @@ groups = [(g, F[k], key, kind) for g, k, key, kind in (
     ("Terra vs bots", "2t", "openai/gpt-6.1-terra", "LLM"),
     ("Hybrid (Luna) vs bots", "3", "hybrid:openai/gpt-6-luna", "hybrid"),
     ("Hybrid (Haiku) vs bots", "3f", "hybrid:anthropic/claude-haiku-5.5", "hybrid"),
+    ("Hybrid (Terra) vs bots", "3t", "hybrid:openai/gpt-6.1-terra", "hybrid"),
     ("DeepSeek vs bots", "3c", "deepseek/deepseek-v4.1-flash-1017", "LLM"),
     ("Qwen 3.8 Flash vs bots", "3r", "qwen/qwen3.8-flash", "LLM"),
     ("Ember vs bots", "3m", "meta/muse-ember", "LLM"),
@@ -404,6 +406,7 @@ rows7 = [(name, k, pick, kind) for name, k, pick, kind in (
          ("Terra", "2t", lambda s: s.get("model") == "openai/gpt-6.1-terra", "LLM"),
          ("Hybrid (bot + Luna)", "3", lambda s: s["kind"] == "hybrid", "hybrid"),
          ("Hybrid (bot + Haiku)", "3f", lambda s: s["kind"] == "hybrid", "hybrid"),
+         ("Hybrid (bot + Terra)", "3t", lambda s: s["kind"] == "hybrid", "hybrid"),
          ("DeepSeek", "3c", lambda s: s.get("model") == "deepseek/deepseek-v4.1-flash-1017", "LLM"),
          ("Qwen 3.8 Flash", "3r", lambda s: s.get("model") == "qwen/qwen3.8-flash", "LLM"),
          ("Ember", "3m", lambda s: s.get("model") == "meta/muse-ember", "LLM"),

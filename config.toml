@@ -121,11 +121,15 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 "deepseek/deepseek-v4.1-flash-1017" = [1.064, -1.556, 0.652, 4.273, -1.022]
 "openai/gpt-6-luna" = [0.325, 0.926, -0.016, 5.120, -1.301]
 "anthropic/claude-haiku-5.5" = [0.046, 3.214, 0.211, 6.994, -2.420]
+# GPT-6.1 Terra, measured 2026-11-13 on version 6's reader (reads like v5), 2,000 prior-101 turns, new asks:
+# logs/calibration/trust-20261113-054941.json on the server. No misfits; fitting answers right 91-100% at every tenth.
+"openai/gpt-6.1-terra" = [2.535, -0.050, 3.864, 0.422, -1.984]
 
 [hybrid.steal.v5]
 "deepseek/deepseek-v4.1-flash-1017" = [-3.964, 1.880, 1.341, 1.395]
 "openai/gpt-6-luna" = [-3.598, 1.991, 1.446, 1.043]
 "anthropic/claude-haiku-5.5" = [-3.106, 1.755, 1.272, 1.037]
+"openai/gpt-6.1-terra" = [-3.511, 2.032, 1.056, 1.226]  # same run as its trust curve
 
 [hybrid.steal_turn.v5]
 # "<slug>" = [a, b, c, d]: an LLM opponent's chance to solve during the turn that starts at this board, on share
@@ -135,6 +139,9 @@ solve_threshold = 0.8                 # solve once P(solvable) reaches this
 # the per-decision curves predicted 10.6% and 11.9%. No DeepSeek hybrid (Ian).
 "openai/gpt-6-luna" = [-1.462, 1.962, 0.719, 0.832]
 "anthropic/claude-haiku-5.5" = [-1.395, 2.326, 0.728, 0.802]
+# Terra, 2026-11-13, the same 2,134 turns: logs/calibration/trust-turn-20261113-060728.json. Fit on even sets, odd
+# sets predicted 31.6% against 35.6% solved.
+"openai/gpt-6.1-terra" = [-1.339, 1.557, 0.515, 1.065]
 
 [tournament]
 # "all": a set is 6 games, every ordering of the 3 entrants across the seats.

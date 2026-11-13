@@ -16,6 +16,7 @@ default = "v6"
 "3r" = { folder = "seed707-a8527439", label = "Qwen 3.8 Flash · bot · bot" }
 "3m" = { folder = "seed707-2d45bc0e", label = "Muse Ember · bot · bot" }
 "3f" = { folder = "seed707-d0d90cd5", label = "Haiku hybrid · bot · bot" }
+"3t" = { folder = "seed707-cad8fccf", label = "Terra hybrid · bot · bot" }
 "6a" = { folder = "seed707-0724ada8", label = "bot · Luna · Luna" }
 "6b" = { folder = "seed707-345192e8", label = "bot · Haiku · Haiku" }
 "6d1" = { folder = "seed707-3067b84e", label = "bot · d1-ultra · d1-ultra" }
