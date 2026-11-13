@@ -86,3 +86,13 @@ def test_vowels_first_gives_way_to_the_planner_once_the_answer_is_known(rules, w
 def test_self_play_entrants_set_the_variant_knobs(pair, knob, value):
     assert knob in {f.name for f in fields(versions.Knobs)}
     assert getattr(selfplay.Entrant.parse(f"x:version=6+{pair}").knobs(V6), knob) == value
+
+
+def test_solving_on_sight_takes_the_round_the_moment_the_answer_is_known(rules, wheel_spec):
+    """eager_solve at the known-answer level: the self-play variant that never milks."""
+    plain, _ = decide(rules, wheel_spec, SURE, V6, bank=0)
+    assert plain == Spin()  # nothing banked yet: the planner spins for the consonants
+    action, bot = decide(rules, wheel_spec, SURE, replace(V6, eager_solve=V6.known_answer), bank=0)
+    assert action == Solve("WHEEL OF FORTUNE") and bot.experiment
+    lost, _ = decide(rules, wheel_spec, LOST, replace(V6, eager_solve=V6.known_answer), bank=0)
+    assert lost == decide(rules, wheel_spec, LOST, V6, bank=0)[0]  # not sure yet: plays as the plain bot

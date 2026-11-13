@@ -370,7 +370,8 @@ BLATT_DECK = settings.ROOT / "puzzles" / "aired-blatt-15.json"
 BLATT = {"blank": LOGS / "blatt-memory-blank.jsonl", "RSTLNE": LOGS / "blatt-memory-rstlne.jsonl",
          "contestant": LOGS / "blatt-picks.jsonl"}
 # Bot self-play variants, each against two copies of the bot (rstlne.selfplay play).
-VARIANTS = {"milk_all": LOGS / "selfplay" / "variant-milk", "vowel_first": LOGS / "selfplay" / "variant-vowels"}
+VARIANTS = {"milk_all": LOGS / "selfplay" / "variant-milk", "vowel_first": LOGS / "selfplay" / "variant-vowels",
+            "solve_on_sight": LOGS / "selfplay" / "variant-solve"}  # solve_on_sight: eager_solve at the known-answer level
 
 
 def _who(row: dict) -> str:
