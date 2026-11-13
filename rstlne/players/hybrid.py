@@ -241,7 +241,7 @@ class HybridPlayer(BotPlayer):
         return {**info, "trust_fit": True} if self.knobs.trust_fit else info
 
     def label(self) -> str:
-        return f"bot v{self.version} + {self.model}"
+        return f"bot v{self.version} + {self.model}" + (" (full trust)" if self.knobs.trust_fit else "")
 
     def observe(self, view: PublicView, result: Result) -> None:
         super().observe(view, result)
@@ -286,6 +286,7 @@ class HybridPlayer(BotPlayer):
         self.steal.readable = int(entry["record"]["status"] == "used")
         if self.knobs.trust_fit and view.round_number is not None and entry["record"]["status"] == "used":
             self._trusted = entry["answer"]
+            self._ask = {**self._ask, "full": True}
             return certain(self._trusted, frozenset(view.used_letters))
         return entry["belief"]
 
@@ -334,13 +335,18 @@ class HybridPlayer(BotPlayer):
 
 def ask_line(model: str, ask: dict) -> str:
     """What a hybrid's model said about the board, and what the bot made of it. Replays read it from the log."""
-    name, reply, status = model.split("/")[-1], ask["reply"], ask["status"]
+    name, status = model.split("/")[-1], ask["status"]
+    if status == "trusted":  # the full-trust variant, holding an answer the model gave earlier this round
+        return f"plays {ask['answer']} as the answer, which {name} gave and the board still allows"
+    reply = ask["reply"]
     if status == "failed":
         said = f"{name} gave no answer (the call failed)"
     elif not reply["solvable"]:
         said = f"{name} said: not solvable"
     elif not reply["answer"]:
         said = f"{name} said: solvable, but gave no answer"
+    elif status == "used" and ask.get("full"):
+        said = f"{name} said: solvable, {reply['answer']} · fits, taken as the answer"
     elif status == "used":
         said = (f"{name} said: solvable, {reply['answer']} · fits, trusted {ask['trust']:.0%} · the bot's read "
                 f"went from {ask['reader_confidence']:.0%} to {ask['merged_confidence']:.0%}")

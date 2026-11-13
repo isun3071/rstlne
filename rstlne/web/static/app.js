@@ -78,7 +78,8 @@ function drawPickers(chosen, names = []) {
 
 function picker(i, seat, name = "") {
   const [kind, ...rest] = seat.split(":");
-  const [model, solver = ""] = rest.join(":").split("@");  // a decision seat may name its solver: decision:<model>@<solver>
+  const [named, solver = ""] = rest.join(":").split("@");  // a decision seat may name its solver: decision:<model>@<solver>
+  const [model, variant = ""] = named.split("+");  // a hybrid seat may name a variant: hybrid:<model>+trust_fit
   const box = document.createElement("div");
   box.className = "picker";
   box.innerHTML = `<h3>Seat ${i + 1}</h3>
@@ -87,10 +88,15 @@ function picker(i, seat, name = "") {
     </select>
     <select class="model" aria-label="Seat ${i + 1} model"></select>
     <select class="solver" aria-label="Seat ${i + 1} solver" hidden></select>
+    <select class="trust" aria-label="Seat ${i + 1} trust" hidden>
+      <option value="">weighs the model's answer</option>
+      <option value="trust_fit">takes a fitting answer as the answer</option>
+    </select>
     <input class="other" placeholder="any OpenRouter slug, like openai/gpt-6-luna" hidden>
     <input class="nick" placeholder="Nickname (optional)" maxlength="20" autocomplete="off" aria-label="Seat ${i + 1} nickname" hidden>`;
   const kindSel = box.querySelector(".kind"), modelSel = box.querySelector(".model"), other = box.querySelector(".other");
-  const solverSel = box.querySelector(".solver");
+  const solverSel = box.querySelector(".solver"), trustSel = box.querySelector(".trust");
+  trustSel.value = variant === "trust_fit" ? "trust_fit" : "";
   const nick = box.querySelector(".nick");
   nick.value = name;
   kindSel.value = KIND_NAMES[kind] ? kind : "bot";
@@ -109,6 +115,7 @@ function picker(i, seat, name = "") {
     solverSel.innerHTML = `<option value="">${setupInfo.solver_model} solves (default)</option>` +
       solvers.map((m) => `<option value="${m}">${m} solves</option>`).join("");
     solverSel.value = solvers.includes(solver) ? solver : "";
+    trustSel.hidden = k !== "hybrid";  // the full-trust variant: a fitting answer is the answer until the board rules it out
   };
   kindSel.onchange = fill;
   modelSel.onchange = () => { other.hidden = modelSel.value !== "__other"; };
@@ -123,7 +130,8 @@ function chosenSeats() {
     if (kind === "human" || kind === "bot") return kind;
     const model = modelSel.value === "__other" ? box.querySelector(".other").value.trim() : modelSel.value;
     const solver = kind === "decision" ? box.querySelector(".solver").value : "";
-    return model ? `${kind}:${model}${solver ? "@" + solver : ""}` : kind;
+    const variant = kind === "hybrid" ? box.querySelector(".trust").value : "";
+    return model ? `${kind}:${model}${variant ? "+" + variant : ""}${solver ? "@" + solver : ""}` : kind;
   });
 }
 

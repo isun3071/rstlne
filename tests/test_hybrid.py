@@ -451,3 +451,12 @@ def test_a_full_trust_hybrid_plays_a_whole_game_and_its_bonus_solve_still_asks(r
                 and (r.get("raw") or {}).get("ask")}
     assert "trusted" in statuses or "used" in statuses
     assert public_view(bonus_state(rules, wheel_spec), 0).round_number is None  # so the bonus round plays as before
+
+
+def test_full_trust_says_in_its_thoughts_and_label_that_it_takes_the_answer(rules, wheel_spec):
+    player, _ = trusting(rules, wheel_spec, [says(True, "WHEEL OF FORTUNE")])
+    player.decide(public_view(shown(start(rules, wheel_spec), "RLNWH"), 0))
+    assert "taken as the answer" in player.thoughts()[-1]
+    player.decide(public_view(shown(start(rules, wheel_spec), "RLNWHF"), 0))
+    assert player.thoughts()[-1] == "plays WHEEL OF FORTUNE as the answer, which deepseek-v4.1-flash-1017 gave and the board still allows"
+    assert player.label().endswith("(full trust)")
