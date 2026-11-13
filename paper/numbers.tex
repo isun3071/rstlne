@@ -7,6 +7,7 @@
 \newcommand{\AiredBonusDone}{78}
 \newcommand{\AiredBonusDoneH}{59}
 \newcommand{\AiredBonusDoneHShown}{49\%}
+\newcommand{\AiredBonusDoneMinusBot}{$-$12 ($-$21 to $-$4)}
 \newcommand{\AiredBonusDoneShown}{49\%}
 \newcommand{\AiredBonusDoneT}{93}
 \newcommand{\AiredBonusDoneTShown}{50\%}
@@ -20,6 +21,7 @@
 \newcommand{\AiredBonusGemDecTShown}{48\%}
 \newcommand{\AiredBonusHaiku}{55}
 \newcommand{\AiredBonusHaikuHybrid}{93}
+\newcommand{\AiredBonusHaikuHybridMinusBot}{+3 ($-$1 to +7)}
 \newcommand{\AiredBonusHaikuHybridShown}{52\%}
 \newcommand{\AiredBonusHaikuShown}{52\%}
 \newcommand{\AiredBonusHydrogen}{100}
@@ -34,10 +36,12 @@
 \newcommand{\AiredBonusLunaDec}{75}
 \newcommand{\AiredBonusLunaDecH}{59}
 \newcommand{\AiredBonusLunaDecHShown}{48\%}
+\newcommand{\AiredBonusLunaDecMinusBot}{$-$15 ($-$24 to $-$6)}
 \newcommand{\AiredBonusLunaDecShown}{48\%}
 \newcommand{\AiredBonusLunaDecT}{97}
 \newcommand{\AiredBonusLunaDecTShown}{48\%}
 \newcommand{\AiredBonusLunaHybrid}{92}
+\newcommand{\AiredBonusLunaHybridMinusBot}{+2 ($-$2 to +6)}
 \newcommand{\AiredBonusLunaHybridShown}{52\%}
 \newcommand{\AiredBonusLunaShown}{57\%}
 \newcommand{\AiredBonusPuzzles}{100}
@@ -180,6 +184,12 @@
 \newcommand{\BonusTerraShown}{77\%}
 \newcommand{\BotHitRange}{89--91}
 \newcommand{\BotJudgeRange}{91--92}
+\newcommand{\BotOverDones}{+84 and +81}
+\newcommand{\BotOverGemDecs}{+57 and +59}
+\newcommand{\BotOverHaikus}{+47 and +51}
+\newcommand{\BotOverJevs}{+88 and +89}
+\newcommand{\BotOverLunaDecs}{+77 and +73}
+\newcommand{\BotOverLunas}{+38 and +38}
 \newcommand{\BotRoundMoneyRange}{\$4,650--\$5,400}
 \newcommand{\BotShownRange}{62--68}
 \newcommand{\BotTopRange}{72--74}
@@ -207,7 +217,10 @@
 \newcommand{\DeepSeekRoundMoney}{\$1,500}
 \newcommand{\DeepSeekRounds}{1.78}
 \newcommand{\DeepSeekShown}{45\%}
+\newcommand{\DeepSeekTries}{2.04}
 \newcommand{\DeepSeekVowels}{2.0}
+\newcommand{\DeepSeekVsBots}{$-$14 and $-$15}
+\newcommand{\DeepSeekVsBotsCI}{$-$22 to $-$6; $-$23 to $-$6}
 \newcommand{\DeepSeekWin}{23.6\%}
 \newcommand{\DeepSeekWinCI}{18.9--28.6}
 \newcommand{\DeepSeekWrong}{0.26}
@@ -215,21 +228,38 @@
 \newcommand{\DeepSeekWrongBoard}{45}
 \newcommand{\DeepSeekWrongBoardShare}{47\%}
 \newcommand{\DoneAcc}{85\%}
+\newcommand{\DoneConsHit}{71\%}
+\newcommand{\DoneConsRule}{74\%}
 \newcommand{\DoneCost}{0.1\textcent}
+\newcommand{\DoneExpressPass}{11}
+\newcommand{\DoneExpressPlay}{11}
 \newcommand{\DoneHAcc}{83\%}
+\newcommand{\DoneHConsHit}{71\%}
+\newcommand{\DoneHConsRule}{74\%}
 \newcommand{\DoneHCost}{0.1\textcent}
+\newcommand{\DoneHExpressPass}{11}
+\newcommand{\DoneHExpressPlay}{9}
+\newcommand{\DoneHMysteryBankrupt}{2}
+\newcommand{\DoneHMysteryFlip}{3}
+\newcommand{\DoneHMysteryKeep}{49}
 \newcommand{\DoneHPlace}{2.72}
 \newcommand{\DoneHRefusals}{0}
 \newcommand{\DoneHRefusalsPerGame}{0.00}
 \newcommand{\DoneHRoundMoney}{\$1,600}
 \newcommand{\DoneHRounds}{0.38}
 \newcommand{\DoneHShown}{79\%}
+\newcommand{\DoneHTries}{0.46}
+\newcommand{\DoneHVsBots}{$-$50 and $-$44}
+\newcommand{\DoneHVsBotsCI}{$-$54 to $-$46; $-$48 to $-$39}
 \newcommand{\DoneHWin}{2.2\%}
 \newcommand{\DoneHWinCI}{0.6--4.2}
 \newcommand{\DoneHWrong}{0.08}
 \newcommand{\DoneHWrongAll}{29}
 \newcommand{\DoneHWrongBoard}{19}
 \newcommand{\DoneHWrongBoardShare}{66\%}
+\newcommand{\DoneMysteryBankrupt}{20}
+\newcommand{\DoneMysteryFlip}{22}
+\newcommand{\DoneMysteryKeep}{22}
 \newcommand{\DonePlace}{2.70}
 \newcommand{\DoneRefusals}{0}
 \newcommand{\DoneRefusalsPerGame}{0.00}
@@ -237,19 +267,32 @@
 \newcommand{\DoneRounds}{0.43}
 \newcommand{\DoneShown}{76\%}
 \newcommand{\DoneTAcc}{98\%}
+\newcommand{\DoneTConsHit}{71\%}
+\newcommand{\DoneTConsRule}{75\%}
 \newcommand{\DoneTCost}{0.1\textcent}
+\newcommand{\DoneTExpressPass}{4}
+\newcommand{\DoneTExpressPlay}{10}
+\newcommand{\DoneTMysteryBankrupt}{4}
+\newcommand{\DoneTMysteryFlip}{6}
+\newcommand{\DoneTMysteryKeep}{53}
 \newcommand{\DoneTPlace}{2.67}
 \newcommand{\DoneTRefusals}{0}
 \newcommand{\DoneTRefusalsPerGame}{0.00}
 \newcommand{\DoneTRoundMoney}{\$2,150}
 \newcommand{\DoneTRounds}{0.46}
 \newcommand{\DoneTShown}{73\%}
+\newcommand{\DoneTTries}{0.47}
+\newcommand{\DoneTVsBots}{$-$44 and $-$48}
+\newcommand{\DoneTVsBotsCI}{$-$49 to $-$39; $-$52 to $-$44}
 \newcommand{\DoneTWin}{2.8\%}
 \newcommand{\DoneTWinCI}{1.1--5.0}
 \newcommand{\DoneTWrong}{0.01}
 \newcommand{\DoneTWrongAll}{3}
 \newcommand{\DoneTWrongBoard}{1}
 \newcommand{\DoneTWrongBoardShare}{33\%}
+\newcommand{\DoneTries}{0.51}
+\newcommand{\DoneVsBots}{$-$47 and $-$47}
+\newcommand{\DoneVsBotsCI}{$-$50 to $-$44; $-$49 to $-$44}
 \newcommand{\DoneWin}{1.9\%}
 \newcommand{\DoneWinCI}{0.3--4.2}
 \newcommand{\DoneWrong}{0.07}
@@ -274,7 +317,10 @@
 \newcommand{\EmberRoundMoney}{\$1,850}
 \newcommand{\EmberRounds}{1.51}
 \newcommand{\EmberShown}{64\%}
+\newcommand{\EmberTries}{1.54}
 \newcommand{\EmberVowels}{3.8}
+\newcommand{\EmberVsBots}{$-$12 and $-$15}
+\newcommand{\EmberVsBotsCI}{$-$20 to $-$2; $-$23 to $-$7}
 \newcommand{\EmberWin}{24.4\%}
 \newcommand{\EmberWinCI}{19.4--29.7}
 \newcommand{\EmberWrong}{0.03}
@@ -283,21 +329,38 @@
 \newcommand{\EmberWrongBoardShare}{18\%}
 \newcommand{\GamesPerLineup}{360}
 \newcommand{\GemDecAcc}{70\%}
+\newcommand{\GemDecConsHit}{75\%}
+\newcommand{\GemDecConsRule}{79\%}
 \newcommand{\GemDecCost}{0.2\textcent}
+\newcommand{\GemDecExpressPass}{10}
+\newcommand{\GemDecExpressPlay}{2}
 \newcommand{\GemDecHAcc}{48\%}
+\newcommand{\GemDecHConsHit}{76\%}
+\newcommand{\GemDecHConsRule}{79\%}
 \newcommand{\GemDecHCost}{0.4\textcent}
+\newcommand{\GemDecHExpressPass}{8}
+\newcommand{\GemDecHExpressPlay}{4}
+\newcommand{\GemDecHMysteryBankrupt}{0}
+\newcommand{\GemDecHMysteryFlip}{0}
+\newcommand{\GemDecHMysteryKeep}{45}
 \newcommand{\GemDecHPlace}{2.58}
 \newcommand{\GemDecHRefusals}{2}
 \newcommand{\GemDecHRefusalsPerGame}{0.01}
 \newcommand{\GemDecHRoundMoney}{\$1,400}
 \newcommand{\GemDecHRounds}{0.82}
 \newcommand{\GemDecHShown}{55\%}
+\newcommand{\GemDecHTries}{1.71}
+\newcommand{\GemDecHVsBots}{$-$43 and $-$46}
+\newcommand{\GemDecHVsBotsCI}{$-$47 to $-$39; $-$50 to $-$41}
 \newcommand{\GemDecHWin}{3.6\%}
 \newcommand{\GemDecHWinCI}{1.4--6.1}
 \newcommand{\GemDecHWrong}{0.89}
 \newcommand{\GemDecHWrongAll}{322}
 \newcommand{\GemDecHWrongBoard}{221}
 \newcommand{\GemDecHWrongBoardShare}{69\%}
+\newcommand{\GemDecMysteryBankrupt}{0}
+\newcommand{\GemDecMysteryFlip}{0}
+\newcommand{\GemDecMysteryKeep}{43}
 \newcommand{\GemDecPlace}{2.43}
 \newcommand{\GemDecRefusals}{0}
 \newcommand{\GemDecRefusalsPerGame}{0.00}
@@ -305,19 +368,32 @@
 \newcommand{\GemDecRounds}{1.11}
 \newcommand{\GemDecShown}{52\%}
 \newcommand{\GemDecTAcc}{93\%}
+\newcommand{\GemDecTConsHit}{75\%}
+\newcommand{\GemDecTConsRule}{78\%}
 \newcommand{\GemDecTCost}{0.3\textcent}
+\newcommand{\GemDecTExpressPass}{9}
+\newcommand{\GemDecTExpressPlay}{0}
+\newcommand{\GemDecTMysteryBankrupt}{0}
+\newcommand{\GemDecTMysteryFlip}{0}
+\newcommand{\GemDecTMysteryKeep}{42}
 \newcommand{\GemDecTPlace}{2.29}
 \newcommand{\GemDecTRefusals}{0}
 \newcommand{\GemDecTRefusalsPerGame}{0.00}
 \newcommand{\GemDecTRoundMoney}{\$1,950}
 \newcommand{\GemDecTRounds}{1.39}
 \newcommand{\GemDecTShown}{47\%}
+\newcommand{\GemDecTTries}{1.49}
+\newcommand{\GemDecTVsBots}{$-$31 and $-$33}
+\newcommand{\GemDecTVsBotsCI}{$-$38 to $-$24; $-$40 to $-$25}
 \newcommand{\GemDecTWin}{11.9\%}
 \newcommand{\GemDecTWinCI}{7.5--16.9}
 \newcommand{\GemDecTWrong}{0.10}
 \newcommand{\GemDecTWrongAll}{37}
 \newcommand{\GemDecTWrongBoard}{16}
 \newcommand{\GemDecTWrongBoardShare}{43\%}
+\newcommand{\GemDecTries}{1.59}
+\newcommand{\GemDecVsBots}{$-$41 and $-$39}
+\newcommand{\GemDecVsBotsCI}{$-$46 to $-$35; $-$44 to $-$33}
 \newcommand{\GemDecWin}{6.8\%}
 \newcommand{\GemDecWinCI}{3.5--10.6}
 \newcommand{\GemDecWrong}{0.48}
@@ -337,6 +413,8 @@
 \newcommand{\HaikuGapTurn}{39\%}
 \newcommand{\HaikuGapUnsure}{26\%}
 \newcommand{\HaikuHybridAcc}{97\%}
+\newcommand{\HaikuHybridAskFirstShown}{50\%}
+\newcommand{\HaikuHybridAskFit}{29\%}
 \newcommand{\HaikuHybridCost}{1.1\textcent}
 \newcommand{\HaikuHybridPlace}{1.94}
 \newcommand{\HaikuHybridRefusals}{0}
@@ -344,6 +422,9 @@
 \newcommand{\HaikuHybridRoundMoney}{\$4,575}
 \newcommand{\HaikuHybridRounds}{1.42}
 \newcommand{\HaikuHybridShown}{62\%}
+\newcommand{\HaikuHybridTries}{1.46}
+\newcommand{\HaikuHybridVsBots}{+5 and +3}
+\newcommand{\HaikuHybridVsBotsCI}{$-$2 to +12; $-$4 to +11}
 \newcommand{\HaikuHybridWin}{36.1\%}
 \newcommand{\HaikuHybridWinCI}{31.7--40.8}
 \newcommand{\HaikuHybridWrong}{0.04}
@@ -356,7 +437,10 @@
 \newcommand{\HaikuRoundMoney}{\$2,300}
 \newcommand{\HaikuRounds}{0.87}
 \newcommand{\HaikuShown}{70\%}
+\newcommand{\HaikuTries}{0.94}
 \newcommand{\HaikuVowels}{2.8}
+\newcommand{\HaikuVsBots}{$-$36 and $-$42}
+\newcommand{\HaikuVsBotsCI}{$-$41 to $-$31; $-$46 to $-$37}
 \newcommand{\HaikuWin}{7.5\%}
 \newcommand{\HaikuWinCI}{5.0--10.3}
 \newcommand{\HaikuWrong}{0.07}
@@ -364,21 +448,38 @@
 \newcommand{\HaikuWrongBoard}{15}
 \newcommand{\HaikuWrongBoardShare}{60\%}
 \newcommand{\JevAcc}{82\%}
+\newcommand{\JevConsHit}{68\%}
+\newcommand{\JevConsRule}{74\%}
 \newcommand{\JevCost}{0.1\textcent}
+\newcommand{\JevExpressPass}{14}
+\newcommand{\JevExpressPlay}{0}
 \newcommand{\JevHAcc}{82\%}
+\newcommand{\JevHConsHit}{68\%}
+\newcommand{\JevHConsRule}{75\%}
 \newcommand{\JevHCost}{0.1\textcent}
+\newcommand{\JevHExpressPass}{10}
+\newcommand{\JevHExpressPlay}{0}
+\newcommand{\JevHMysteryBankrupt}{0}
+\newcommand{\JevHMysteryFlip}{0}
+\newcommand{\JevHMysteryKeep}{46}
 \newcommand{\JevHPlace}{2.75}
 \newcommand{\JevHRefusals}{0}
 \newcommand{\JevHRefusalsPerGame}{0.00}
 \newcommand{\JevHRoundMoney}{\$1,100}
 \newcommand{\JevHRounds}{0.38}
 \newcommand{\JevHShown}{71\%}
+\newcommand{\JevHTries}{0.46}
+\newcommand{\JevHVsBots}{$-$47 and $-$47}
+\newcommand{\JevHVsBotsCI}{$-$51 to $-$43; $-$51 to $-$43}
 \newcommand{\JevHWin}{1.9\%}
 \newcommand{\JevHWinCI}{0.6--3.6}
 \newcommand{\JevHWrong}{0.08}
 \newcommand{\JevHWrongAll}{30}
 \newcommand{\JevHWrongBoard}{15}
 \newcommand{\JevHWrongBoardShare}{50\%}
+\newcommand{\JevMysteryBankrupt}{0}
+\newcommand{\JevMysteryFlip}{0}
+\newcommand{\JevMysteryKeep}{48}
 \newcommand{\JevPlace}{2.73}
 \newcommand{\JevRefusals}{0}
 \newcommand{\JevRefusalsPerGame}{0.00}
@@ -386,19 +487,32 @@
 \newcommand{\JevRounds}{0.36}
 \newcommand{\JevShown}{65\%}
 \newcommand{\JevTAcc}{95\%}
+\newcommand{\JevTConsHit}{68\%}
+\newcommand{\JevTConsRule}{75\%}
 \newcommand{\JevTCost}{0.1\textcent}
+\newcommand{\JevTExpressPass}{12}
+\newcommand{\JevTExpressPlay}{0}
+\newcommand{\JevTMysteryBankrupt}{0}
+\newcommand{\JevTMysteryFlip}{0}
+\newcommand{\JevTMysteryKeep}{49}
 \newcommand{\JevTPlace}{2.75}
 \newcommand{\JevTRefusals}{0}
 \newcommand{\JevTRefusalsPerGame}{0.00}
 \newcommand{\JevTRoundMoney}{\$1,000}
 \newcommand{\JevTRounds}{0.41}
 \newcommand{\JevTShown}{67\%}
+\newcommand{\JevTTries}{0.44}
+\newcommand{\JevTVsBots}{$-$48 and $-$48}
+\newcommand{\JevTVsBotsCI}{$-$51 to $-$45; $-$52 to $-$44}
 \newcommand{\JevTWin}{1.4\%}
 \newcommand{\JevTWinCI}{0.3--2.8}
 \newcommand{\JevTWrong}{0.02}
 \newcommand{\JevTWrongAll}{8}
 \newcommand{\JevTWrongBoard}{1}
 \newcommand{\JevTWrongBoardShare}{12\%}
+\newcommand{\JevTries}{0.44}
+\newcommand{\JevVsBots}{$-$46 and $-$48}
+\newcommand{\JevVsBotsCI}{$-$51 to $-$42; $-$51 to $-$44}
 \newcommand{\JevWin}{1.9\%}
 \newcommand{\JevWinCI}{0.6--3.9}
 \newcommand{\JevWrong}{0.08}
@@ -413,21 +527,38 @@
 \newcommand{\LunaConsTop}{46\%}
 \newcommand{\LunaCost}{0.3\textcent}
 \newcommand{\LunaDecAcc}{58\%}
+\newcommand{\LunaDecConsHit}{68\%}
+\newcommand{\LunaDecConsRule}{79\%}
 \newcommand{\LunaDecCost}{0.2\textcent}
+\newcommand{\LunaDecExpressPass}{10}
+\newcommand{\LunaDecExpressPlay}{0}
 \newcommand{\LunaDecHAcc}{43\%}
+\newcommand{\LunaDecHConsHit}{68\%}
+\newcommand{\LunaDecHConsRule}{79\%}
 \newcommand{\LunaDecHCost}{0.3\textcent}
+\newcommand{\LunaDecHExpressPass}{8}
+\newcommand{\LunaDecHExpressPlay}{0}
+\newcommand{\LunaDecHMysteryBankrupt}{15}
+\newcommand{\LunaDecHMysteryFlip}{19}
+\newcommand{\LunaDecHMysteryKeep}{19}
 \newcommand{\LunaDecHPlace}{2.66}
 \newcommand{\LunaDecHRefusals}{0}
 \newcommand{\LunaDecHRefusalsPerGame}{0.00}
 \newcommand{\LunaDecHRoundMoney}{\$1,000}
 \newcommand{\LunaDecHRounds}{0.62}
 \newcommand{\LunaDecHShown}{55\%}
+\newcommand{\LunaDecHTries}{1.46}
+\newcommand{\LunaDecHVsBots}{$-$46 and $-$44}
+\newcommand{\LunaDecHVsBotsCI}{$-$50 to $-$42; $-$48 to $-$41}
 \newcommand{\LunaDecHWin}{3.1\%}
 \newcommand{\LunaDecHWinCI}{0.8--5.6}
 \newcommand{\LunaDecHWrong}{0.83}
 \newcommand{\LunaDecHWrongAll}{300}
 \newcommand{\LunaDecHWrongBoard}{221}
 \newcommand{\LunaDecHWrongBoardShare}{74\%}
+\newcommand{\LunaDecMysteryBankrupt}{13}
+\newcommand{\LunaDecMysteryFlip}{15}
+\newcommand{\LunaDecMysteryKeep}{20}
 \newcommand{\LunaDecPlace}{2.57}
 \newcommand{\LunaDecRefusals}{0}
 \newcommand{\LunaDecRefusalsPerGame}{0.00}
@@ -435,19 +566,32 @@
 \newcommand{\LunaDecRounds}{0.84}
 \newcommand{\LunaDecShown}{47\%}
 \newcommand{\LunaDecTAcc}{88\%}
+\newcommand{\LunaDecTConsHit}{69\%}
+\newcommand{\LunaDecTConsRule}{80\%}
 \newcommand{\LunaDecTCost}{0.3\textcent}
+\newcommand{\LunaDecTExpressPass}{10}
+\newcommand{\LunaDecTExpressPlay}{0}
+\newcommand{\LunaDecTMysteryBankrupt}{10}
+\newcommand{\LunaDecTMysteryFlip}{12}
+\newcommand{\LunaDecTMysteryKeep}{22}
 \newcommand{\LunaDecTPlace}{2.44}
 \newcommand{\LunaDecTRefusals}{0}
 \newcommand{\LunaDecTRefusalsPerGame}{0.00}
 \newcommand{\LunaDecTRoundMoney}{\$1,300}
 \newcommand{\LunaDecTRounds}{1.16}
 \newcommand{\LunaDecTShown}{43\%}
+\newcommand{\LunaDecTTries}{1.32}
+\newcommand{\LunaDecTVsBots}{$-$36 and $-$36}
+\newcommand{\LunaDecTVsBotsCI}{$-$42 to $-$29; $-$42 to $-$29}
 \newcommand{\LunaDecTWin}{9.4\%}
 \newcommand{\LunaDecTWinCI}{5.6--14.2}
 \newcommand{\LunaDecTWrong}{0.16}
 \newcommand{\LunaDecTWrongAll}{57}
 \newcommand{\LunaDecTWrongBoard}{21}
 \newcommand{\LunaDecTWrongBoardShare}{37\%}
+\newcommand{\LunaDecTries}{1.46}
+\newcommand{\LunaDecVsBots}{$-$44 and $-$45}
+\newcommand{\LunaDecVsBotsCI}{$-$48 to $-$39; $-$49 to $-$41}
 \newcommand{\LunaDecWin}{3.9\%}
 \newcommand{\LunaDecWinCI}{1.7--6.4}
 \newcommand{\LunaDecWrong}{0.62}
@@ -460,6 +604,8 @@
 \newcommand{\LunaGapTurn}{17\%}
 \newcommand{\LunaGapUnsure}{32\%}
 \newcommand{\LunaHybridAcc}{98\%}
+\newcommand{\LunaHybridAskFirstShown}{36\%}
+\newcommand{\LunaHybridAskFit}{49\%}
 \newcommand{\LunaHybridCost}{0.5\textcent}
 \newcommand{\LunaHybridPlace}{1.83}
 \newcommand{\LunaHybridRefusals}{0}
@@ -467,6 +613,9 @@
 \newcommand{\LunaHybridRoundMoney}{\$4,500}
 \newcommand{\LunaHybridRounds}{1.57}
 \newcommand{\LunaHybridShown}{60\%}
+\newcommand{\LunaHybridTries}{1.61}
+\newcommand{\LunaHybridVsBots}{+10 and +12}
+\newcommand{\LunaHybridVsBotsCI}{+2 to +18; +4 to +20}
 \newcommand{\LunaHybridWin}{40.6\%}
 \newcommand{\LunaHybridWinCI}{35.3--45.8}
 \newcommand{\LunaHybridWrong}{0.04}
@@ -479,7 +628,10 @@
 \newcommand{\LunaRoundMoney}{\$1,350}
 \newcommand{\LunaRounds}{1.54}
 \newcommand{\LunaShown}{48\%}
+\newcommand{\LunaTries}{2.18}
 \newcommand{\LunaVowels}{2.5}
+\newcommand{\LunaVsBots}{$-$26 and $-$31}
+\newcommand{\LunaVsBotsCI}{$-$33 to $-$19; $-$39 to $-$22}
 \newcommand{\LunaWin}{14.4\%}
 \newcommand{\LunaWinCI}{10.0--19.2}
 \newcommand{\LunaWrong}{0.64}
@@ -606,6 +758,8 @@
 \newcommand{\PairEmberMinusQwenFlashCI}{+1.7 to +14.7}
 \newcommand{\PairGeminiDecisionSeatWithHaikuWritingMinusWithLunaWriting}{$-$3.2}
 \newcommand{\PairGeminiDecisionSeatWithHaikuWritingMinusWithLunaWritingCI}{$-$5.8 to $-$0.8}
+\newcommand{\PairGeminiDecisionSeatWithTerraWritingMinusLunaAlone}{$-$2.5}
+\newcommand{\PairGeminiDecisionSeatWithTerraWritingMinusLunaAloneCI}{$-$8.3 to +3.1}
 \newcommand{\PairGeminiDecisionSeatWithTerraWritingMinusWithLunaWriting}{+5.1}
 \newcommand{\PairGeminiDecisionSeatWithTerraWritingMinusWithLunaWritingCI}{+2.6 to +7.8}
 \newcommand{\PairHaikuAloneMinusTheDUltraSeatWithHaikuWriting}{+5.3}
@@ -682,7 +836,10 @@
 \newcommand{\QwenRoundMoney}{\$2,400}
 \newcommand{\QwenRounds}{1.11}
 \newcommand{\QwenShown}{65\%}
+\newcommand{\QwenTries}{1.31}
 \newcommand{\QwenVowels}{3.5}
+\newcommand{\QwenVsBots}{$-$26 and $-$25}
+\newcommand{\QwenVsBotsCI}{$-$32 to $-$19; $-$32 to $-$18}
 \newcommand{\QwenWin}{16.4\%}
 \newcommand{\QwenWinCI}{12.5--20.3}
 \newcommand{\QwenWrong}{0.19}
@@ -712,7 +869,10 @@
 \newcommand{\SolRoundMoney}{\$3,350}
 \newcommand{\SolRounds}{1.94}
 \newcommand{\SolShown}{50\%}
+\newcommand{\SolTries}{2.01}
 \newcommand{\SolVowels}{2.0}
+\newcommand{\SolVsBots}{+19 and +19}
+\newcommand{\SolVsBotsCI}{+10 to +28; +10 to +28}
 \newcommand{\SolWin}{46.1\%}
 \newcommand{\SolWinCI}{40.3--51.9}
 \newcommand{\SolWrong}{0.07}
@@ -737,7 +897,10 @@
 \newcommand{\TerraRoundMoney}{\$3,100}
 \newcommand{\TerraRounds}{2.05}
 \newcommand{\TerraShown}{48\%}
+\newcommand{\TerraTries}{2.18}
 \newcommand{\TerraVowels}{2.3}
+\newcommand{\TerraVsBots}{+18 and +18}
+\newcommand{\TerraVsBotsCI}{+8 to +28; +8 to +28}
 \newcommand{\TerraWin}{45.3\%}
 \newcommand{\TerraWinCI}{38.9--51.9}
 \newcommand{\TerraWrong}{0.13}

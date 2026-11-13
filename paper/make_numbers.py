@@ -134,6 +134,38 @@ def macros(n: dict) -> dict[str, str | None]:
     m["BotRoundMoneyRange"] = span(bots["money"], lambda x: f"\\${x:,.0f}")
     for k in ("shown", "hit", "judge", "top"):
         m[f"Bot{k.capitalize()}Range"] = span(bots[k], lambda x: f"{100 * x:.0f}")
+    # Section 8: each seat against each bot in its lineup, how often it tries to solve, the hybrids' asks, the decision
+    # seats' wedges and letters, and the bot against two copies of a seat
+    for name, (lid, key) in ALONE.items():
+        e = get(lineups, lid, "entrants", key)
+        gaps = [p for p in get(lineups, lid, "pairwise") or [] if p["a"] == key and p["b"].startswith("bot")]
+        if len(gaps) == 2:
+            m[f"{name}VsBots"] = f"{pts(gaps[0]['win_rate_gap'], 0)} and {pts(gaps[1]['win_rate_gap'], 0)}"
+            m[f"{name}VsBotsCI"] = "; ".join(f"{pts(g['ci95'][0], 0)} to {pts(g['ci95'][1], 0)}" for g in gaps)
+        tries = get(e, "solve_tries_per_game")
+        m[f"{name}Tries"] = None if tries is None else f"{tries:.2f}"
+        asks = get(e, "play", "hybrid_asks")
+        if asks:
+            m[f"{name}AskFit"] = pct(asks.get("fitting_share"), 0)
+            m[f"{name}AskFirstShown"] = pct(get(asks, "first_fitting_answer_shown", "median"), 0)
+        if key.startswith("decision"):
+            sp = get(e, "play", "specials") or {}
+            mystery, express = sp.get("mystery") or {}, sp.get("express") or {}
+            m[f"{name}MysteryKeep"] = str(mystery.get("keep", 0))
+            m[f"{name}MysteryFlip"] = str(mystery.get("flip", 0))
+            m[f"{name}MysteryBankrupt"] = str(mystery.get("flipped_bankrupt", 0))
+            m[f"{name}ExpressPass"] = str(express.get("pass", 0))
+            m[f"{name}ExpressPlay"] = str(express.get("play", 0))
+            c = get(n, "letters", "rows", lid, key, "consonant")
+            m[f"{name}ConsHit"] = pct(get(c, "hit"), 0)
+            m[f"{name}ConsRule"] = pct(get(c, "rule_hit"), 0)
+    for lid, mates in (("6a", "Lunas"), ("6b", "Haikus"), ("6d2", "LunaDecs"), ("6d1", "Dones"), ("6dj", "Jevs"), ("6dg", "GemDecs")):
+        gaps = [p for p in get(lineups, lid, "pairwise") or [] if p["a"] == "bot"]
+        m[f"BotOver{mates}"] = " and ".join(pts(g["win_rate_gap"], 0) for g in gaps) if len(gaps) == 2 else None
+    aired_pairs = {(p["a"], p["b"]): p for p in get(n, "aired_bonus", "pairwise") or []}
+    for name, key in (("LunaHybrid", LUNA_H), ("HaikuHybrid", HAIKU_H), ("Done", D1), ("LunaDec", LUNA_D)):
+        p = aired_pairs.get((key, "bot"))
+        m[f"AiredBonus{name}MinusBot"] = None if p is None else f"{pts(p['gap'], 0)} ({pts(p['ci95'][0], 0)} to {pts(p['ci95'][1], 0)})"
     # Section 9: the bonus test on our deck and on aired puzzles, the memory probe, Blatt's 15. Counts print as the
     # number right; a ...N macro holds the asks when they aren't the whole deck.
     players = {name: key for name, (_, key) in ALONE.items()} | {"Bot": "bot",

@@ -1,8 +1,8 @@
 {
  "meta": {
   "phase": "v6",
-  "made": "2026-11-12T23:56:24+00:00",
-  "commit": "de7d5f6",
+  "made": "2026-11-13T04:10:53+00:00",
+  "commit": "8333c46",
   "lineups": [
    "2",
    "2t",
@@ -26704,6 +26704,23 @@
    "ci95": [
     0.2556,
     0.4111
+   ]
+  },
+  {
+   "label": "Gemini Decision seat with Terra writing minus Luna alone",
+   "a": [
+    "dgt",
+    "decision:google/gemini-decision-1@openai/gpt-6.1-terra"
+   ],
+   "b": [
+    "3b",
+    "llm:openai/gpt-6-luna"
+   ],
+   "sets": 60,
+   "diff": -0.025,
+   "ci95": [
+    -0.0833,
+    0.0306
    ]
   }
  ],

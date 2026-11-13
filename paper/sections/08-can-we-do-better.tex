@@ -1,2 +1,86 @@
 \section{Can we do better?}\label{sec:can-we-do-better}
-% To draft from paper/outline.md.
+
+Our third question asks whether a player of our own can beat the language models. We tried three players in turn. The first is the bot alone. The second is a hybrid, where a model reads the board and the bot makes every choice. The third is a decision seat, where a decision model makes every choice and a language model writes its answers. Figure~\ref{fig:alone} shows how each did alone against two bots.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\linewidth]{1-alone-against-two-bots.png}
+\caption{Games won by each player alone against two bots, with 95\% intervals. A seat with no edge wins a third. A decision seat named with ``+'' names the model that writes its answers; the others use Luna.}
+\label{fig:alone}
+\end{figure}
+
+\subsection{The bot alone}
+
+The bot beats five of the seven models. Each lineup in Section~\ref{sec:how-well} puts one model against two bots, and we compare the model with each bot set by set. DeepSeek minus each bot is \DeepSeekVsBots{} points, Ember's is \EmberVsBots{}, and Qwen 3.8 Flash's is \QwenVsBots{}. Luna's is \LunaVsBots{}, and Haiku's is \HaikuVsBots{}. Every one of these intervals excludes zero. Only Sol and Terra beat the bot, at \SolVsBots{} and \TerraVsBots{} points.
+
+The bot also wins one against two. Against two Luna seats it wins \BotVsLunas{} of games, and against two Haiku seats it wins \BotVsHaikus{}.
+
+The bot falls short where Sol and Terra are strongest. In Section~\ref{sec:how-well}, \SolGapHard{} of Sol's winning rounds came on boards the bot's reader got wrong or was unsure of. So our next player keeps the bot's choices and borrows a model's reading.
+
+\subsection{Hybrids}
+
+A hybrid seat asks its model on every one of the bot's turns whether the board is solvable, and for the answer if it is. The bot blends a fitting answer into its own reading, weighted by how much it trusts that model, and makes every choice itself.
+
+The hybrid lifts both models it reads with. Luna wins \LunaWin{} of games alone and \LunaHybridWin{} as a hybrid, a gain of \PairLunaHybridMinusLunaAlone{} points (\PairLunaHybridMinusLunaAloneCI). Haiku goes from \HaikuWin{} to \HaikuHybridWin{}, a gain of \PairHaikuHybridMinusHaikuAlone{} (\PairHaikuHybridMinusHaikuAloneCI). The Luna hybrid beats both bots in its lineup, by \LunaHybridVsBots{} points (\LunaHybridVsBotsCI). The Haiku hybrid ties them, at \HaikuHybridVsBots{} points (\HaikuHybridVsBotsCI). Against the best models, the Luna hybrid holds its own. Sol minus the Luna hybrid is \PairSolMinusTheLunaHybrid{} points (\PairSolMinusTheLunaHybridCI), and Terra minus it is \PairTerraMinusTheLunaHybrid{} (\PairTerraMinusTheLunaHybridCI).
+
+The bot fixes each model's habit. Luna alone guesses early, and only \LunaAcc{} of its solves are right. Inside the hybrid, \LunaHybridAcc{} are right, because the bot only solves with an answer that fits the board and that it trusts. Haiku alone waits until most of the board shows. Inside the hybrid, it gave a fitting answer on \HaikuHybridAskFit{} of the bot's asks, first at a median \HaikuHybridAskFirstShown{} of the board showing, and the bot acts on it. Luna gave one on \LunaHybridAskFit{} of asks, first at \LunaHybridAskFirstShown{}.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lccc}
+\toprule
+ & \multicolumn{3}{c}{Who decides} \\
+\cmidrule(lr){2-4}
+Who reads & The model itself & The bot (hybrid) & A decision model \\
+\midrule
+Luna & \LunaWin & \LunaHybridWin & \DoneWin--\GemDecWin \\
+Haiku & \HaikuWin & \HaikuHybridWin & \JevHWin--\GemDecHWin \\
+\bottomrule
+\end{tabular}
+\caption{Games won against two bots by the same reader with three different deciders. The last column spans the four decision models.}
+\label{tab:deciders}
+\end{table}
+
+\subsection{Decision seats}
+
+We tested four decision models from four labs: d1-ultra (Liquid AI), GPT-6 Luna Decisions (OpenAI), Jev 1.14 (TypeSafe) and Gemini Decision 1 (Google). Each one makes every choice in its seat. A language model writes the answer only when the decision model chooses to solve.
+
+Every decision seat loses badly. With Luna writing, the four seats win \DoneWin{} to \GemDecWin{} of their games against two bots (Table~\ref{tab:decision}). Against each bot in its lineup, the gaps run from \GemDecVsBots{} points for the Gemini Decision seat to \JevVsBots{} for the Jev seat. The bot wins \BotVsGemDecs{} to \BotVsJevs{} of games against two decision seats.
+
+A decision model also makes its writer worse. Luna alone beats the Luna Decisions seat by \PairLunaAloneMinusTheLunaDecisionsSeat{} points (\PairLunaAloneMinusTheLunaDecisionsSeatCI), the Jev seat by \PairLunaAloneMinusTheJevSeat{} (\PairLunaAloneMinusTheJevSeatCI) and the Gemini Decision seat by \PairLunaAloneMinusTheGeminiDecisionSeat{} (\PairLunaAloneMinusTheGeminiDecisionSeatCI). Haiku alone beats every decision seat that Haiku writes for, by \PairHaikuAloneMinusTheGeminiDecisionSeatWithHaikuWriting{} to \PairHaikuAloneMinusTheJevSeatWithHaikuWriting{} points. Table~\ref{tab:deciders} puts the two readers side by side.
+
+The decision models fail in two opposite ways. Luna Decisions is reckless. It solves with \LunaDecShown{} of the board showing, and only \LunaDecAcc{} of those solves are right. It flipped \LunaDecMysteryFlip{} Mystery wedges, and \LunaDecMysteryBankrupt{} of them turned out to be Bankrupt. d1-ultra and Jev are passive. They try to solve \DoneTries{} and \JevTries{} times a game, against Luna's \LunaTries{}. Jev kept all \JevMysteryKeep{} Mystery wedges it landed on and passed all \JevExpressPass{} chances to ride the Express. Gemini Decision also never flipped a Mystery wedge. None of the four chooses letters well. Each one's consonants hit less often than calling in plain frequency order would have on the same boards: \LunaDecConsHit{} against \LunaDecConsRule{} for Luna Decisions, \DoneConsHit{} against \DoneConsRule{} for d1-ultra, \JevConsHit{} against \JevConsRule{} for Jev and \GemDecConsHit{} against \GemDecConsRule{} for Gemini Decision.
+
+\subsection{A stronger writer}
+
+Luna and Haiku are weak readers, so the decision seats might lose because of their writers. We gave each decision model Terra as its writer. Terra alone wins \TerraWin{} of its games, and \TerraAcc{} of its solves are right.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lccc}
+\toprule
+ & \multicolumn{3}{c}{Who writes the answers} \\
+\cmidrule(lr){2-4}
+Decision model & Luna & Haiku & Terra \\
+\midrule
+d1-ultra & \DoneWin & \DoneHWin & \DoneTWin \\
+Luna Decisions & \LunaDecWin & \LunaDecHWin & \LunaDecTWin \\
+Jev & \JevWin & \JevHWin & \JevTWin \\
+Gemini Decision & \GemDecWin & \GemDecHWin & \GemDecTWin \\
+\bottomrule
+\end{tabular}
+\caption{Games won by each decision seat against two bots, by the model that writes its answers. Alone, Luna wins \LunaWin, Haiku \HaikuWin{} and Terra \TerraWin.}
+\label{tab:decision}
+\end{table}
+
+Terra helps only the decision models that call solves. With Terra writing, Luna Decisions gains \PairLunaDecisionsSeatWithTerraWritingMinusWithLunaWriting{} points (\PairLunaDecisionsSeatWithTerraWritingMinusWithLunaWritingCI) and Gemini Decision gains \PairGeminiDecisionSeatWithTerraWritingMinusWithLunaWriting{} (\PairGeminiDecisionSeatWithTerraWritingMinusWithLunaWritingCI). d1-ultra and Jev do not move. A decision seat calls its writer only when the decision model chooses to solve. d1-ultra makes that choice \DoneTTries{} times a game with Terra writing, and Terra alone tries \TerraTries{} times. Most of the boards Terra could read never reach it.
+
+Even the best pairing only matches a weak model deciding for itself. Gemini Decision with Terra writing wins \GemDecTWin{} of its games. Against Luna alone, that is \PairGeminiDecisionSeatWithTerraWritingMinusLunaAlone{} points (\PairGeminiDecisionSeatWithTerraWritingMinusLunaAloneCI), a tie. Terra alone beats its own decision seats by \PairTerraAloneMinusTheGeminiDecisionSeatWithTerraWriting{} to \PairTerraAloneMinusTheJevSeatWithTerraWriting{} points.
+
+\subsection{The bonus round}
+
+The bonus round tells a different story, because the writer reads the board there. On 100 aired bonus puzzles, the bot solves \AiredBonusBot, and the hybrids solve \AiredBonusLunaHybrid{} and \AiredBonusHaikuHybrid. That is a tie: the Luna hybrid minus the bot is \AiredBonusLunaHybridMinusBot. The decision seats' letter picks are good enough for a strong reader. With Terra writing, the four seats solve \AiredBonusDoneT{} to \AiredBonusLunaDecT{}, close to Terra alone at \AiredBonusTerra. Section~\ref{sec:contestants} compares these with contestants.
+
+\subsection{The answer}
+
+Yes, mostly. The bot alone beats five of the seven models, but not Sol or Terra. With a cheap model reading the board, it ties Sol, the strongest model in our games. Handing the choices to a decision model does the opposite: every decision model makes its seat worse than its writer alone, and a strong writer cannot rescue a seat that rarely asks it.

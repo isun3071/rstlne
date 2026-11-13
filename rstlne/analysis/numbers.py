@@ -82,6 +82,7 @@ PAIRS = [
     ("Terra alone minus the d1-ultra seat with Terra writing", ("2t", TERRA), ("d1t", D1 + TERRA_WRITES)),
     ("Terra alone minus the Jev seat with Terra writing", ("2t", TERRA), ("djt", JEV + TERRA_WRITES)),
     ("Terra alone minus the Gemini Decision seat with Terra writing", ("2t", TERRA), ("dgt", GEMINI_DEC + TERRA_WRITES)),
+    ("Gemini Decision seat with Terra writing minus Luna alone", ("dgt", GEMINI_DEC + TERRA_WRITES), ("3b", LUNA)),
 ]
 
 
