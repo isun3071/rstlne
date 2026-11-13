@@ -173,7 +173,7 @@ if PHASE == "v4":
     OFFSETS = {"Hybrid (bot + Luna)": (9, 12), "Hybrid (bot + Haiku)": (-9, -22)}  # the two hybrids sit together
 else:  # v6: Sol and Terra sit together, and the hybrids beside the bot
     OFFSETS = {"Sol": (-9, 4), "Terra": (-9, -18), "Hybrid (bot + Luna)": (-9, 14), "Hybrid (bot + Haiku)": (-9, -20),
-               "Bot": (6, -22), "Haiku": (9, -18), "Qwen 3.8 Flash": (-9, -4), "d1-ultra seat": (0, -24),
+               "Bot": (6, -22), "Haiku": (9, -18), "Luna": (-9, -4), "Qwen 3.8 Flash": (-9, -4), "d1-ultra seat": (0, -24),
                "Ember": (9, 16)}  # four players sit within four points of each other at the top: leader lines
 for name, kind, x, y, w in pts:
     ax.scatter(x, y, s=110, color=KIND[kind], edgecolor=SURFACE, linewidth=2, zorder=3)

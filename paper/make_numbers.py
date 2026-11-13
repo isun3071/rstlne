@@ -143,6 +143,8 @@ def macros(n: dict) -> dict[str, str | None]:
         m[f"{prefix}Puzzles"] = str(max((e["puzzles"] for e in rows.values()), default=0)) if rows else None
         for name, key in players.items():
             e = rows.get(key)
+            if e is None and name == "Hydrogen":
+                continue  # Hydrogen played the aired puzzles only, by choice
             m[f"{prefix}{name}"] = str(e["solved"]) if e else None
             m[f"{prefix}{name}Shown"] = pct(e.get("shown_after_picks"), 0) if e else None
     boards = {"blank": "Blank", "RSTLNE": "Rstlne"}
