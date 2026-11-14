@@ -205,3 +205,68 @@ def test_hit_first_leaves_known_answers_and_free_play_alone(rules, wheel_spec):
 def test_no_frozen_version_calls_hit_first_and_a_self_play_entrant_can():
     assert all(versions.knobs(n).hit_first is False for n in versions.VERSIONS)
     assert selfplay.Entrant.parse("hit:version=6+hit_first=true").knobs(V6).hit_first is True
+
+
+# Thinking lines name the strategy behind a move, in the words the web menu uses
+
+from rstlne.players.bot.player import explain
+
+
+def said(bot):
+    return "\n".join(bot.thoughts())
+
+
+def test_a_plain_bot_names_no_strategy(rules, wheel_spec):
+    _, bot = decide(rules, wheel_spec, LOST, V6, bank=1000)
+    assert "strategy" not in said(bot)
+
+
+def test_closing_out_says_so_and_drops_the_last_turns_weighing(rules, wheel_spec):
+    view, state = view_at(rules, wheel_spec, round_number=1, bank=0)
+    bot = BotPlayer(0, rules, wheel_spec, Fixed(LOST), version=6, knobs=replace(V6, eager_solve=V6.known_answer))
+    bot.decide(view)  # an unsure turn first: it weighs its moves
+    bot.reader = Fixed(SURE)  # then a board it reads for sure (a new board, since readings are kept per board)
+    later = _public_view(replace(state, round=replace(state.round, used=frozenset("T"))), 0)
+    assert bot.decide(later) == Solve("WHEEL OF FORTUNE")
+    text = said(bot)
+    assert "Endgame strategy, closes out when sure: solves now" in text
+    assert "Worth:" not in text  # the unsure turn's weighing is not this move's reason
+
+
+def test_milking_every_answer_says_so_in_place_of_the_planner(rules, wheel_spec):
+    _, bot = decide(rules, wheel_spec, SURE, replace(V6, milk_all=True), bank=20_000)
+    text = said(bot)
+    assert "Endgame strategy, milks every answer: spins for another consonant" in text
+    assert "spins to build its bank first" not in text
+    _, bot = decide(rules, wheel_spec, SURE, replace(V6, milk_all=True), bank=20_000, legal=("buy_vowel", "solve"))
+    assert "Endgame strategy, milks every answer: no consonant left to call, so it solves" in said(bot)
+
+
+def test_vowel_strategies_say_why_they_buy_or_dont(rules, wheel_spec):
+    _, bot = decide(rules, wheel_spec, LOST, replace(V6, vowel_first=0.1), bank=1000)
+    assert "Vowel strategy, buys a vowel whenever it can: buys E, 60% likely" in said(bot)
+    _, bot = decide(rules, wheel_spec, LOST, replace(V6, vowel_cover=0.1), bank=1000)
+    assert "Vowel strategy, buys vowels until every word shows one: buys E, 60% likely, since a word shows none yet" in said(bot)
+    _, bot = decide(rules, wheel_spec, LOST, replace(V6, never_vowel=True), bank=1000)
+    assert "Vowel strategy, never buys a vowel" in said(bot)
+
+
+def test_a_free_play_vowel_says_why(rules, wheel_spec):
+    view, _ = view_at(rules, wheel_spec, round_number=1, bank=0)
+    view = replace(view, phase=Phase.FREE_PLAY, legal_actions=("call_letter",))
+    bot = BotPlayer(0, rules, wheel_spec, Fixed(LOST), version=6, knobs=replace(V6, free_play_vowel=True))
+    assert bot.decide(view) == CallLetter("E")
+    assert "Vowel strategy, buys a vowel whenever it can: calls E on Free Play, since a word shows none yet" in said(bot)
+
+
+def test_hit_first_names_the_letter_its_weighing_preferred(rules, wheel_spec):
+    _, bot = on_wedge(rules, wheel_spec, TRADE, replace(V6, hit_first=True))
+    assert "Consonant strategy, calls the likeliest consonant: T, 90% likely, over R, which its weighing preferred" in said(bot)
+    tie = _belief([], oov=1.0, T=(0.8, 1.0), R=(0.8, 2.0), E=(0.6, 1.5))
+    _, bot = on_wedge(rules, wheel_spec, tie, replace(V6, hit_first=True))
+    assert "Consonant strategy, calls the likeliest consonant: R, 80% likely, its weighing's pick too" in said(bot)
+
+
+def test_a_replay_rebuilds_the_strategy_line_from_the_log(rules, wheel_spec):
+    _, bot = on_wedge(rules, wheel_spec, TRADE, replace(V6, hit_first=True))
+    assert any("Consonant strategy" in line for line in explain(bot.last_call.raw))

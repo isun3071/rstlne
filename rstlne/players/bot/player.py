@@ -101,8 +101,50 @@ def picked(record: dict) -> list[str]:
     return [head + (f". Next best: {', '.join(nexts)}" if nexts else "")]
 
 
+# A strategy the bot plays (versions.STRATEGIES, or a self-play variant) and the words its line uses: the part of
+# play it changes, then the web menu's words. TURN_RULES decide a turn; the rest pick a letter.
+RULES = {"solve_on_sight": ("Endgame", "closes out when sure"), "milk_all": ("Endgame", "milks every answer"),
+         "vowel_first": ("Vowel", "buys a vowel whenever it can"), "free_play_vowel": ("Vowel", "buys a vowel whenever it can"),
+         "vowel_cover": ("Vowel", "buys vowels until every word shows one"), "never_vowel": ("Vowel", "never buys a vowel"),
+         "hit_first": ("Consonant", "calls the likeliest consonant")}
+TURN_RULES = {"solve_on_sight", "milk_all", "vowel_first", "vowel_cover", "never_vowel"}
+
+
+def strategy(record: dict) -> list[str]:
+    """The strategy behind this move, when one decided it, as one line."""
+    v = record.get("variant")
+    if not v or v.get("rule") not in RULES:
+        return []
+    part, words = RULES[v["rule"]]
+    match v["rule"]:
+        case "solve_on_sight":
+            what = "solves now instead of spinning for more"
+        case "milk_all":
+            what = "spins for another consonant" if v.get("move") == "spin" else "no consonant left to call, so it solves"
+        case "vowel_first":
+            what = f"buys {v['letter']}, {v['p']:.0%} likely, before weighing its moves"
+        case "vowel_cover" if v.get("done"):
+            what = "every word shows a vowel, so it buys no more"
+        case "vowel_cover":
+            what = f"buys {v['letter']}, {v['p']:.0%} likely, since a word shows none yet"
+        case "free_play_vowel":
+            what = f"calls {v['letter']} on Free Play, since a word shows none yet"
+        case "never_vowel":
+            what = "buying one is off the table"
+        case _:  # hit_first
+            what = f"{v['letter']}, {v['p']:.0%} likely, " + (
+                f"over {v['over']}, which its weighing preferred" if v.get("over") else "its weighing's pick too")
+    return [f"{part} strategy, {words}: {what}"]
+
+
+def turn_record(record: dict) -> bool:
+    """A record that decided a turn: it weighed moves, planned a known answer, or a strategy chose for it."""
+    return bool(record.get("values") or record.get("planner") or (record.get("variant") or {}).get("rule") in TURN_RULES)
+
+
 def weighing(record: dict) -> list[str]:
-    """How a turn choice weighed its moves, or what the bot does once it knows the answer."""
+    """How a turn choice weighed its moves, or what the bot does once it knows the answer, and any strategy that
+    decided instead."""
     lines = []
     values = record.get("values") or {}
     if values:
@@ -110,7 +152,7 @@ def weighing(record: dict) -> list[str]:
         listed = ", ".join(f"{MOVES.get(k, k)} {worth(v, bool(win))}" for k, v in values.items())
         chose = record.get("chose") or max(values, key=values.get)
         lines.append(f"{'Chance to win' if win else 'Worth'}: {listed} → {MOVES.get(chose, chose)}")
-    if record.get("planner"):
+    if record.get("planner") and (record.get("variant") or {}).get("rule") != "milk_all":  # milking says it below
         line = "Knows the answer: " + ("solves now" if record["planner"] == "solve" else "spins to build its bank first")
         planned = record.get("planner_values") or {}
         if planned:
@@ -118,7 +160,7 @@ def weighing(record: dict) -> list[str]:
             names = {"solve": "solve", "spin": "spin again"}
             line += " (" + ", ".join(f"{names.get(k, k)} {worth(v, win)}" for k, v in planned.items()) + ")"
         lines.append(line)
-    return lines
+    return lines + strategy(record)
 
 
 def covered(board: str) -> bool:
@@ -204,7 +246,7 @@ class BotPlayer(Player):
             if self._goal is not None and self._goal.last_flat:
                 self._record["flat"] = True
             self.last_call = CallRecord(raw=self._record, usage=Usage())
-            if self._record["values"] or self._record.get("planner"):
+            if turn_record(self._record):
                 self._weighed = (view.round_number, self._record, self._context)
             elif self._weighed and self._weighed[0] != view.round_number:
                 self._weighed = None
@@ -218,8 +260,8 @@ class BotPlayer(Player):
         lines = explain(self._record)
         letter = picked(self._record)
         turn = (self._record, self._context)
-        if self._weighed and not (self._record["values"] or self._record.get("planner")):
-            at = len(lines) - len(letter)  # the turn's weighing goes before the letter it led to
+        if self._weighed and not turn_record(self._record):
+            at = len(lines) - len(letter) - len(strategy(self._record))  # the turn's weighing goes before the letter it led to
             lines[at:at] = weighing(self._weighed[1])
             turn = (self._weighed[1], self._weighed[2])
         if verbose:
@@ -242,11 +284,13 @@ class BotPlayer(Player):
             case Phase.TURN:
                 eager = self.knobs.eager_solve
                 if eager is not None and belief.best and "solve" in legal and s.c >= eager:
+                    self._record["variant"] = {"rule": "solve_on_sight"}
                     return Solve(guess(belief, view, self._refuted_in(view)))
                 vowel = None
                 if s.c >= self.knobs.known_answer:
                     if self.knobs.milk_all:  # self-play variant: milk whatever the risk, then solve
                         kind = "spin" if "spin" in legal else "solve"
+                        self._record["variant"] = {"rule": "milk_all", "move": kind}
                     else:
                         plan = planner.plan(s, legal)
                         kind = s.goal.choose(plan.options)
@@ -257,7 +301,12 @@ class BotPlayer(Player):
                 elif (vowel := self._vowel_first(s, legal)) is not None:  # self-play variant: vowels before anything
                     kind = self._record["chose"] = "buy_vowel"
                     self._record["vowel_first"] = True
+                    rule = "vowel_first" if self.knobs.vowel_first is not None else "vowel_cover"
+                    self._record["variant"] = {"rule": rule, "letter": vowel, "p": s.belief.stats(vowel).p_hit}
                 else:
+                    if "buy_vowel" in view.legal_actions and "buy_vowel" not in legal:  # a vowel strategy took it away
+                        self._record["variant"] = ({"rule": "never_vowel"} if self.knobs.never_vowel
+                                                   else {"rule": "vowel_cover", "done": True})
                     options = s.turn_options(legal)
                     self._note(options)
                     kind = self._record["chose"] = s.goal.choose(options)
@@ -283,6 +332,7 @@ class BotPlayer(Player):
                     # vowel variant: a vowel on Free Play while some word shows none and a vowel is still likely
                     vowel = max(s.vowels, key=lambda v: (s.belief.stats(v).p_hit, s.belief.stats(v).count, v))
                     if s.belief.stats(vowel).p_hit >= FREE_PLAY_VOWEL_FLOOR:
+                        self._record["variant"] = {"rule": "free_play_vowel", "letter": vowel}
                         return CallLetter(self._pick(s, "Free Play: calls", vowel))
                 return CallLetter(self._pick(s, "Free Play: calls", s.free_play()[0]))
             case Phase.MYSTERY_CHOICE:
@@ -301,7 +351,10 @@ class BotPlayer(Player):
         if not self.knobs.hit_first or s.c >= self.knobs.known_answer or not s.consonants:
             return letter
         self._record["hit_first"] = True
-        return max(s.consonants, key=lambda c: (s.belief.stats(c).p_hit, s.belief.stats(c).count, c))
+        best = max(s.consonants, key=lambda c: (s.belief.stats(c).p_hit, s.belief.stats(c).count, c))
+        self._record["variant"] = {"rule": "hit_first", "letter": best, "p": s.belief.stats(best).p_hit,
+                                   "over": letter if letter != best else None}
+        return best
 
     def _vowel_first(self, s: Situation, legal) -> str | None:
         """With the vowel_first variant on, the likeliest open vowel when buying one is legal and it hits often enough."""
