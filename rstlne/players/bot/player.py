@@ -141,8 +141,9 @@ class BotPlayer(Player):
     max_attempts = 3
 
     def __init__(self, seat: int, rules: Rules, spec: WheelSpec, reader: Reader, version: int = 1,
-                 knobs: versions.Knobs | None = None):
+                 knobs: versions.Knobs | None = None, strategy: str | None = None):
         self.seat = seat
+        self.strategy = strategy  # a name from versions.STRATEGIES, for the label and the log; knobs carry it
         self.rules = rules
         self.spec = spec
         self.reader = reader
@@ -163,10 +164,12 @@ class BotPlayer(Player):
         info = {"kind": "bot", "version": self.version, "reader": self.reader.name}
         if getattr(self.reader, "fingerprint", None):
             info["data"] = self.reader.fingerprint  # which fetched data the reader read
+        if self.strategy:
+            info["strategy"] = self.strategy
         return {**info, "experiment": True} if self.experiment else info
 
     def label(self) -> str:
-        return f"bot v{self.version}"
+        return f"bot v{self.version}" + (f" ({versions.STRATEGIES[self.strategy]})" if self.strategy else "")
 
     def observe(self, view: PublicView, result: Result) -> None:
         if result.seat == self.seat and result.outcome == "correct" and result.wedge and result.wedge.kind is Kind.MYSTERY:

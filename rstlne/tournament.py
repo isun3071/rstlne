@@ -170,8 +170,8 @@ def _seated_models(entrants: Sequence[str], config: dict) -> set[str]:
 
 
 def _plays_bot(entrant: str) -> bool:
-    """The bot plays in `bot` seats and in `hybrid:<slug>` seats."""
-    return entrant == "bot" or entrant.startswith("hybrid:")
+    """The bot plays in `bot` and `bot:<strategy>` seats and in `hybrid:<slug>` seats."""
+    return entrant == "bot" or entrant.startswith(("bot:", "hybrid:"))
 
 
 def run_tournament(

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 
@@ -162,3 +162,28 @@ def reads_like(version: int) -> int:
     if version not in READS_LIKE:
         raise ValueError(f"bot version {version} doesn't exist. Known versions: {', '.join(map(str, VERSIONS))}")
     return READS_LIKE[version]
+
+
+# Strategies a plain bot seat can play in the CLI and on the web page (`bot:<name>`), each one of the self-play
+# variants the paper tests, on top of the version's own knobs. Off in every version; plain `bot` plays the version
+# as frozen, and a hybrid always does. Names and the words the page shows, in the page's order.
+STRATEGIES = {
+    "solve_on_sight": "closes out when sure",
+    "milk_all": "milks every answer",
+    "vowels_affordable": "buys a vowel whenever it can",
+    "vowel_cover": "buys vowels until every word shows one",
+    "never_vowel": "never buys a vowel",
+}
+
+
+def strategy_knobs(version: int, name: str) -> Knobs:
+    """The version's knobs with one strategy switched on, as its self-play run played it."""
+    if name not in STRATEGIES:
+        raise ValueError(f"unknown bot strategy {name!r}; known: {', '.join(STRATEGIES)}")
+    base = knobs(version)
+    changes = {"solve_on_sight": {"eager_solve": base.known_answer},  # takes the round the moment it's sure
+               "milk_all": {"milk_all": True},
+               "vowels_affordable": {"vowel_first": 0.1, "free_play_vowel": True},
+               "vowel_cover": {"vowel_cover": 0.1},
+               "never_vowel": {"never_vowel": True}}[name]
+    return replace(base, **changes)

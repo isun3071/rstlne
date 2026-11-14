@@ -139,6 +139,7 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
             "decision_models": list(config.get("web", {}).get("decision_models", [])),
             "solver_model": config["decision"]["solver_model"],  # a decision seat's default; the page can name another
             "bot_version": versions.current(config),
+            "bot_strategies": versions.STRATEGIES,  # a plain bot seat may play one; the page's words for each, in order
             "bonus_solve_seconds": config["cli"]["bonus_solve_seconds"],
         }
 

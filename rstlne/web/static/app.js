@@ -88,6 +88,10 @@ function picker(i, seat, name = "") {
     </select>
     <select class="model" aria-label="Seat ${i + 1} model"></select>
     <select class="solver" aria-label="Seat ${i + 1} solver" hidden></select>
+    <select class="strategy" aria-label="Seat ${i + 1} strategy" hidden>
+      <option value="">plays its standard strategy</option>
+      ${Object.entries(setupInfo.bot_strategies || {}).map(([k, words]) => `<option value="${k}">${words}</option>`).join("")}
+    </select>
     <select class="trust" aria-label="Seat ${i + 1} trust" hidden>
       <option value="">weighs the model's answer</option>
       <option value="trust_fit">takes a fitting answer as the answer</option>
@@ -97,6 +101,8 @@ function picker(i, seat, name = "") {
   const kindSel = box.querySelector(".kind"), modelSel = box.querySelector(".model"), other = box.querySelector(".other");
   const solverSel = box.querySelector(".solver"), trustSel = box.querySelector(".trust");
   trustSel.value = variant === "trust_fit" ? "trust_fit" : "";
+  const strategySel = box.querySelector(".strategy");  // a bot seat may play a strategy: bot:<strategy>
+  strategySel.value = kind === "bot" && (setupInfo.bot_strategies || {})[named] ? named : "";
   const nick = box.querySelector(".nick");
   nick.value = name;
   kindSel.value = KIND_NAMES[kind] ? kind : "bot";
@@ -116,6 +122,7 @@ function picker(i, seat, name = "") {
       solvers.map((m) => `<option value="${m}">${m} solves</option>`).join("");
     solverSel.value = solvers.includes(solver) ? solver : "";
     trustSel.hidden = k !== "hybrid";  // the full-trust variant: a fitting answer is the answer until the board rules it out
+    strategySel.hidden = k !== "bot";  // a hybrid always plays the standard strategy
   };
   kindSel.onchange = fill;
   modelSel.onchange = () => { other.hidden = modelSel.value !== "__other"; };
@@ -127,7 +134,11 @@ function chosenSeats() {
   return [...document.querySelectorAll(".picker")].map((box) => {
     const kind = box.querySelector(".kind").value;
     const modelSel = box.querySelector(".model");
-    if (kind === "human" || kind === "bot") return kind;
+    if (kind === "human") return kind;
+    if (kind === "bot") {
+      const strategy = box.querySelector(".strategy").value;
+      return strategy ? `bot:${strategy}` : "bot";
+    }
     const model = modelSel.value === "__other" ? box.querySelector(".other").value.trim() : modelSel.value;
     const solver = kind === "decision" ? box.querySelector(".solver").value : "";
     const variant = kind === "hybrid" ? box.querySelector(".trust").value : "";

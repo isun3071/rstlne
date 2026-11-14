@@ -155,6 +155,20 @@ def test_setup_lists_the_seat_kinds_and_the_models_from_config(client):
     assert isinstance(setup["models"], list) and setup["bot_version"] >= 1
 
 
+def test_setup_lists_the_bot_strategies_and_a_bot_seat_can_play_one(client):
+    from rstlne.players.bot import versions
+    setup = client.get("/api/setup").json()
+    assert setup["bot_strategies"] == versions.STRATEGIES  # names and words, in the page's order
+    assert list(setup["bot_strategies"]) == list(versions.STRATEGIES)
+    game_id = client.post("/api/games", json={"seats": ["human", "bot:solve_on_sight", "bot"], "seed": 5}).json()["id"]
+    with client.websocket_connect(f"/api/games/{game_id}") as ws:
+        first = ws.receive_json()
+        assert "(closes out when sure)" in json.dumps(first["seats"][1])
+        assert "(" not in json.dumps(first["seats"][2])  # plain bot: the version as frozen
+    client.delete(f"/api/games/{game_id}")
+    assert client.post("/api/games", json={"seats": ["human", "bot:greedy", "bot"]}).status_code == 400
+
+
 def test_setup_names_the_default_solver_so_a_decision_seat_can_pick_another(client):
     from rstlne import settings
     setup = client.get("/api/setup").json()

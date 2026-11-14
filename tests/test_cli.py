@@ -184,3 +184,44 @@ def test_verbose_thinking_asks_each_seat_for_its_formulas(rules, wheel_spec):
         show.result(state)
         assert [line.split("] ", 1)[1] for line in out if line.startswith("    [")] == expected
     assert cli._arguments(["--seats", "bot,bot,bot", "--verbose"]).verbose
+
+
+# A bot seat may name a strategy: one of the self-play variants, for play; plain `bot` stays the version's own
+
+def test_a_bot_seat_may_name_a_strategy(rules, wheel_spec):
+    from rstlne.players.bot import versions
+    assert cli.parse_seat("bot") == ("bot", None)
+    assert cli.parse_seat("bot:solve_on_sight") == ("bot", "solve_on_sight")
+    with pytest.raises(ValueError, match="never_vowel"):  # the error lists the strategies
+        cli.parse_seat("bot:greedy")
+    with pytest.raises(ValueError, match="hybrid"):  # a hybrid keeps the standard strategy
+        cli.parse_seat("hybrid:a/one+solve_on_sight")
+    config = settings.load_config()
+    version = versions.current(config)
+    plain, sight, milk, afford, cover, never = cli.build_players(
+        [("bot", None), ("bot", "solve_on_sight"), ("bot", "milk_all"), ("bot", "vowels_affordable"),
+         ("bot", "vowel_cover"), ("bot", "never_vowel")], rules, wheel_spec, config, None, None, "g")
+    assert plain.knobs == versions.knobs(version) and plain.label() == f"bot v{version}"
+    assert "strategy" not in plain.describe()
+    assert sight.knobs.eager_solve == versions.knobs(version).known_answer  # solves the moment it's sure
+    assert milk.knobs.milk_all and never.knobs.never_vowel
+    assert (afford.knobs.vowel_first, afford.knobs.free_play_vowel) == (0.1, True) and cover.knobs.vowel_cover == 0.1
+    assert sight.label() == f"bot v{version} (closes out when sure)"
+    assert sight.describe()["strategy"] == "solve_on_sight"
+    for player in (sight, milk, afford, cover, never):  # everything but the strategy is the version's own
+        assert player.knobs.known_answer == versions.knobs(version).known_answer and player.version == version
+
+
+def test_a_bot_strategy_counts_as_a_bot_in_tournaments_and_names_its_own_folder():
+    from rstlne import tournament
+    config = settings.load_config()
+    assert tournament._plays_bot("bot:milk_all")
+    plain = tournament.folder_name(["llm:a/one", "bot", "bot"], 707, "deck.json", config)
+    milk = tournament.folder_name(["llm:a/one", "bot:milk_all", "bot"], 707, "deck.json", config)
+    assert plain != milk
+
+
+def test_a_replayed_bot_with_a_strategy_keeps_its_label():
+    from rstlne.web.replay import label_of
+    assert label_of({"kind": "bot", "version": 6}) == "bot v6"
+    assert label_of({"kind": "bot", "version": 6, "strategy": "never_vowel"}) == "bot v6 (never buys a vowel)"

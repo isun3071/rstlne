@@ -29,6 +29,7 @@ from rstlne.engine.state import (
     UseWild,
 )
 from rstlne.engine.wheel import Overlay, WheelSpec
+from rstlne.players.bot import versions
 from rstlne.players.bot.player import explain
 from rstlne.players.decision import decision_lines
 from rstlne.players.hybrid import ask_line
@@ -39,7 +40,8 @@ def label_of(seat: dict) -> str:
     """A seat's name on the page, from its logged description, as its player's label() gives it in play."""
     kind = seat.get("kind")
     if kind == "bot":
-        return f"bot v{seat.get('version', '?')}"
+        strategy = versions.STRATEGIES.get(seat.get("strategy"))
+        return f"bot v{seat.get('version', '?')}" + (f" ({strategy})" if strategy else "")
     if kind == "hybrid":
         return f"bot v{seat.get('version', '?')} + {seat.get('model')}"
     if kind == "decision":

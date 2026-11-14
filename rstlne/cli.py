@@ -35,11 +35,17 @@ from rstlne.show import Show
 
 
 def parse_seat(part: str) -> tuple[str, str | None]:
-    """`human`, `llm:<slug>`, `decision[:<model>[@<solver>]]`, `bot`, or `hybrid:<slug>` as a (kind, model) pair.
-    A decision seat's model keeps its `@<solver>`; decision_parts splits it."""
+    """`human`, `llm:<slug>`, `decision[:<model>[@<solver>]]`, `bot[:<strategy>]`, or `hybrid:<slug>` as a (kind, model)
+    pair. A decision seat's model keeps its `@<solver>`; decision_parts splits it. A bot's strategy rides in the model
+    slot: one of versions.STRATEGIES, or None for the version as frozen."""
     part = part.strip()
     if part in ("human", "bot"):
         return part, None
+    if part.startswith("bot:"):
+        strategy = part.removeprefix("bot:").strip()
+        if strategy not in versions.STRATEGIES:
+            raise ValueError(f"unknown bot strategy {strategy!r} in {part!r}; known: {', '.join(versions.STRATEGIES)}")
+        return "bot", strategy
     if part.startswith(("llm:", "hybrid:")):
         kind, _, slug = part.partition(":")
         if not slug.strip():
@@ -57,7 +63,7 @@ def parse_seat(part: str) -> tuple[str, str | None]:
                 raise ValueError(f"{part!r} has an @ but no solver slug after it")
             model = f"{decider}@{solver}"
         return "decision", model
-    raise ValueError(f"unknown seat {part!r}. Use human, llm:<slug>, decision, bot, or hybrid:<slug>.")
+    raise ValueError(f"unknown seat {part!r}. Use human, llm:<slug>, decision, bot[:<strategy>], or hybrid:<slug>.")
 
 
 def decision_parts(model: str | None, config: dict) -> tuple[str, str]:
@@ -119,7 +125,9 @@ def build_players(
             return HumanPlayer(i, seconds=config["cli"]["bonus_solve_seconds"])
         if kind == "bot":
             version = versions.current(config)
-            return BotPlayer(i, rules, spec, make_reader(versions.knobs(version), version), version=version)
+            knobs = versions.strategy_knobs(version, model) if model else None  # model holds the strategy, if any
+            return BotPlayer(i, rules, spec, make_reader(versions.knobs(version), version), version=version,
+                             knobs=knobs, strategy=model)
         if kind == "hybrid":
             version = versions.current(config)
             model, variants = hybrid_parts(model)
@@ -170,7 +178,8 @@ def pick_puzzles(puzzles: Sequence[Puzzle], rounds: int, seed: int) -> tuple[lis
 
 def _arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="python -m rstlne.cli", description="Play Wheel of Fortune in the terminal.")
-    parser.add_argument("--seats", required=True, help="three seats: human, llm:<slug>, decision, bot, or hybrid:<slug>, comma separated")
+    parser.add_argument("--seats", required=True, help="three seats: human, llm:<slug>, decision, bot[:<strategy>], or hybrid:<slug>, comma separated. "
+                        "Bot strategies: " + ", ".join(versions.STRATEGIES))
     parser.add_argument("--seed", type=int, help="game seed; replaying a seed with the same moves replays the game")
     parser.add_argument("--puzzles", default=str(settings.ROOT / "puzzles" / "dev.json"))
     parser.add_argument("--pause", type=float, help="seconds to pause after each model move")
