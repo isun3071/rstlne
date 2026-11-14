@@ -274,9 +274,10 @@ class BotPlayer(Player):
                     return BuyVowel(self._pick(s, "Buys", letter))
                 return Solve(guess(belief, view, self._refuted_in(view)))
             case Phase.CALL_CONSONANT:
-                return CallConsonant(self._pick(s, "Calls", s.consonant(view.wedge)[0]))
+                return CallConsonant(self._pick(s, "Calls", self._hit_first(s, s.consonant(view.wedge)[0])))
             case Phase.WILD_CONSONANT:
-                return CallConsonant(self._pick(s, "Calls", s.consonant(replace(view.wedge, wild=False), spend_wild=True)[0]))
+                letter = s.consonant(replace(view.wedge, wild=False), spend_wild=True)[0]
+                return CallConsonant(self._pick(s, "Calls", self._hit_first(s, letter)))
             case Phase.FREE_PLAY:
                 if self.knobs.free_play_vowel and s.vowels and s.c < self.knobs.known_answer and not covered(view.board):
                     # vowel variant: a vowel on Free Play while some word shows none and a vowel is still likely
@@ -293,6 +294,14 @@ class BotPlayer(Player):
             case Phase.WILD_CHOICE:
                 return UseWild(s.wild(view.wedge))
         raise ValueError(f"the bot has no move for {view.phase}")
+
+    def _hit_first(self, s: Situation, letter: str) -> str:
+        """With the hit_first variant on and the answer not yet known, the likeliest consonant in place of `letter`,
+        more expected copies breaking a tie. s.consonant still ran, so the letters it weighed are recorded."""
+        if not self.knobs.hit_first or s.c >= self.knobs.known_answer or not s.consonants:
+            return letter
+        self._record["hit_first"] = True
+        return max(s.consonants, key=lambda c: (s.belief.stats(c).p_hit, s.belief.stats(c).count, c))
 
     def _vowel_first(self, s: Situation, legal) -> str | None:
         """With the vowel_first variant on, the likeliest open vowel when buying one is legal and it hits often enough."""

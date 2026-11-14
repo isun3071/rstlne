@@ -102,7 +102,7 @@ V5_KNOBS = {"cased_lexicon": False, "one_letter": (), "ngrams": False, "triple_w
             "express_vowels": False, "express_calibration": ()}  # added after version 4's freeze, at these values in 1 to 4
 V6_KNOBS = {"steal_turn": (), "steal_turn_bot": ()}  # added after version 5's freeze, at these values in 1 to 5
 VARIANT_KNOBS = {"vowel_first": None, "milk_all": False, "trust_fit": False, "free_play_vowel": False,
-                 "vowel_cover": None, "never_vowel": False}  # variants added after version 6's freeze, off in every version
+                 "vowel_cover": None, "never_vowel": False, "hit_first": False}  # variants added after version 6's freeze, off in every version
 LATER_KNOBS = {"stealer_gain", "flat_dollars", "stealer_gain_llm", "stealer_gain_bot", "steal_bot", *V5_KNOBS,
                *V6_KNOBS, *VARIANT_KNOBS}  # off in 1 and 2
 V4_KNOBS = {"stealer_gain_llm", "stealer_gain_bot", "steal_bot"}  # added after version 3's freeze, off in it

@@ -157,3 +157,51 @@ def test_free_play_goes_back_to_consonants_once_every_word_shows_a_vowel(rules, 
     fp = dict(phase=Phase.FREE_PLAY, legal=("call_letter",))
     covered = turn(rules, wheel_spec, LOST, knobs, used="EO", **fp)
     assert covered == turn(rules, wheel_spec, LOST, V6, used="EO", **fp)
+
+
+# Hit first (Ian, 2026-11-14): on a consonant call after a spin, the likeliest consonant, before the answer is known
+
+from bot_fixtures import belief as _belief
+
+from rstlne.engine.state import CallConsonant
+from rstlne.engine.wheel import Kind, Wedge
+
+# T is likelier, R promises more copies: the plain bot's value function takes R
+TRADE = _belief([], oov=1.0, T=(0.9, 1.0), R=(0.5, 3.0), N=(0.3, 1.0), E=(0.6, 1.5))
+
+
+def on_wedge(rules, spec, belief, knobs, wedge=Wedge(5, Kind.CASH, 900), phase=Phase.CALL_CONSONANT):
+    view, _ = view_at(rules, spec, round_number=1, bank=0)
+    view = replace(view, phase=phase, wedge=wedge, legal_actions=("call_consonant",))
+    bot = BotPlayer(0, rules, spec, Fixed(belief), version=6, knobs=knobs)
+    return bot.decide(view), bot
+
+
+def test_hit_first_calls_the_likeliest_consonant_where_the_bot_would_chase_copies(rules, wheel_spec):
+    plain, _ = on_wedge(rules, wheel_spec, TRADE, V6)
+    assert plain == CallConsonant("R")  # the trade the variant tests
+    action, bot = on_wedge(rules, wheel_spec, TRADE, replace(V6, hit_first=True))
+    assert action == CallConsonant("T") and bot.last_call.raw.get("hit_first") is True and bot.experiment
+
+
+def test_hit_first_breaks_a_tie_in_hit_chance_by_expected_copies(rules, wheel_spec):
+    tie = _belief([], oov=1.0, T=(0.8, 1.0), R=(0.8, 2.0), E=(0.6, 1.5))
+    action, _ = on_wedge(rules, wheel_spec, tie, replace(V6, hit_first=True))
+    assert action == CallConsonant("R")
+
+
+def test_hit_first_covers_the_wild_cards_extra_consonant(rules, wheel_spec):
+    action, _ = on_wedge(rules, wheel_spec, TRADE, replace(V6, hit_first=True), phase=Phase.WILD_CONSONANT)
+    assert action == CallConsonant("T")
+
+
+def test_hit_first_leaves_known_answers_and_free_play_alone(rules, wheel_spec):
+    knobs = replace(V6, hit_first=True)
+    assert on_wedge(rules, wheel_spec, SURE, knobs)[0] == on_wedge(rules, wheel_spec, SURE, V6)[0]  # the answer is known
+    fp = dict(phase=Phase.FREE_PLAY, legal=("call_letter",))
+    assert turn(rules, wheel_spec, TRADE, knobs, **fp) == turn(rules, wheel_spec, TRADE, V6, **fp)  # a miss keeps the wheel
+
+
+def test_no_frozen_version_calls_hit_first_and_a_self_play_entrant_can():
+    assert all(versions.knobs(n).hit_first is False for n in versions.VERSIONS)
+    assert selfplay.Entrant.parse("hit:version=6+hit_first=true").knobs(V6).hit_first is True

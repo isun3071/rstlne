@@ -89,6 +89,9 @@ class Knobs:
     free_play_vowel: bool = False
     vowel_cover: float | None = None
     never_vowel: bool = False
+    # Hit first (2026-11-14), off in every version: on a consonant call after a spin, before the answer is known, call the
+    # likeliest consonant, more expected copies breaking a tie, in place of the value function's pick.
+    hit_first: bool = False
 
 
 def _tuples(value):
@@ -173,6 +176,7 @@ STRATEGIES = {
     "vowels_affordable": "buys a vowel whenever it can",
     "vowel_cover": "buys vowels until every word shows one",
     "never_vowel": "never buys a vowel",
+    "hit_first": "calls the likeliest consonant",
 }
 
 
@@ -185,5 +189,6 @@ def strategy_knobs(version: int, name: str) -> Knobs:
                "milk_all": {"milk_all": True},
                "vowels_affordable": {"vowel_first": 0.1, "free_play_vowel": True},
                "vowel_cover": {"vowel_cover": 0.1},
-               "never_vowel": {"never_vowel": True}}[name]
+               "never_vowel": {"never_vowel": True},
+               "hit_first": {"hit_first": True}}[name]
     return replace(base, **changes)

@@ -208,7 +208,9 @@ def test_a_bot_seat_may_name_a_strategy(rules, wheel_spec):
     assert (afford.knobs.vowel_first, afford.knobs.free_play_vowel) == (0.1, True) and cover.knobs.vowel_cover == 0.1
     assert sight.label() == f"bot v{version} (closes out when sure)"
     assert sight.describe()["strategy"] == "solve_on_sight"
-    for player in (sight, milk, afford, cover, never):  # everything but the strategy is the version's own
+    hit = cli.build_players([("bot", "hit_first")], rules, wheel_spec, config, None, None, "g")[0]
+    assert hit.knobs.hit_first and hit.label() == f"bot v{version} (calls the likeliest consonant)"
+    for player in (sight, milk, afford, cover, never, hit):  # everything but the strategy is the version's own
         assert player.knobs.known_answer == versions.knobs(version).known_answer and player.version == version
 
 

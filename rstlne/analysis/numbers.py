@@ -374,7 +374,7 @@ BLATT = {"blank": LOGS / "blatt-memory-blank.jsonl", "RSTLNE": LOGS / "blatt-mem
 VARIANTS = {"milk_all": LOGS / "selfplay" / "variant-milk", "vowel_first": LOGS / "selfplay" / "variant-vowels",
             "solve_on_sight": LOGS / "selfplay" / "variant-solve",  # solve_on_sight: eager_solve at the known-answer level
             "vowels_affordable": LOGS / "selfplay" / "variant-afford", "vowel_cover": LOGS / "selfplay" / "variant-cover",
-            "never_vowel": LOGS / "selfplay" / "variant-novowel"}
+            "never_vowel": LOGS / "selfplay" / "variant-novowel", "hit_first": LOGS / "selfplay" / "variant-hitfirst"}
 VARIANT_GAMES = 1002  # every variant run: 334 sets in cyclic seating, three games a set
 
 
