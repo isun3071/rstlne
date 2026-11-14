@@ -396,3 +396,40 @@ def test_each_entrant_gets_its_gap_to_the_average_of_the_others(tmp_path):
     assert lo <= e["a"]["field_gap"] <= hi
     lo, hi = e["a"]["field_main_ci95"]
     assert lo <= e["a"]["field_main_gap"] <= hi
+
+
+# Version 7's letter fits: bot games on tuning puzzles that record each consonant call, and the fits read from them
+
+def test_letter_call_games_record_each_consonant_call_and_refuse_grading(tmp_path, rules, wheel_spec):
+    puzzles = tmp_path / "tuning-test.json"
+    puzzles.write_text(json.dumps([{"category": p.category, "answer": p.answer, "bonus": p.bonus} for p in POOL]))
+    path = selfplay.letter_calls(puzzles, 1, 7, tmp_path / "lc", rules, wheel_spec, KNOBS, reader)
+    games = [json.loads(line) for line in path.read_text().splitlines()]
+    assert len(games) == 1  # three identical bots: one game a set
+    calls = [c for g in games for c in g["calls"]]
+    assert calls
+    for c in calls:
+        assert {"round", "p", "count", "after_hit", "confidence", "copies", "right_after"} <= set(c)
+        assert 0 <= c["p"] <= 1 and 0 <= c["after_hit"] <= 1
+        if c["copies"] == 0:
+            assert c["right_after"] is None  # a miss passes the wheel: no next decision of its own to read
+    assert any(c["copies"] > 0 for c in calls)
+    grading = tmp_path / "grading-9.json"
+    grading.write_text(puzzles.read_text())
+    with pytest.raises(ValueError, match="grading"):
+        selfplay.letter_calls(grading, 1, 7, tmp_path / "no", rules, wheel_spec, KNOBS, reader)
+
+
+def test_the_letter_fit_shrinks_copies_beyond_the_first_and_fits_the_reveal_curve(tmp_path):
+    def call(p, count, after, copies, right, confidence=0.3):
+        return {"round": 1, "p": p, "count": count, "after_hit": after, "confidence": confidence, "copies": copies,
+                "right_after": right}
+    calls = [call(0.6, 2.0, 0.4, 1, True), call(0.6, 2.0, 0.4, 2, False),  # expected 1 extra copy each, got 0 and 1
+             call(0.9, 1.5, 0.8, 1, True), call(0.5, 1.5, 0.2, 0, None),  # a miss counts toward neither fit
+             call(0.9, 3.0, 0.9, 3, True, confidence=0.99)]  # the bot knew the answer: left out
+    (tmp_path / "games-shard1of1.jsonl").write_text(json.dumps({"set": 0, "calls": calls}) + "\n")
+    out = selfplay.fit_letters([tmp_path], tmp_path / "fit", KNOBS, say=lambda line: None)
+    assert out["hits"] == 3 and out["copy_shrink"] == pytest.approx((0 + 1 + 0) / (1 + 1 + 0.5))
+    assert out["reveal_fit"] and all(0 <= y <= 1 for _, y in out["reveal_fit"])
+    assert out["knobs"] == [f"copy_shrink={out['copy_shrink']:.4g}", "reveal_fit=@letter-fit.json"]
+    assert json.loads((tmp_path / "fit" / "letter-fit.json").read_text())["knob"] == out["reveal_fit"]

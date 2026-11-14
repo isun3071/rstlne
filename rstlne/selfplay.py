@@ -45,7 +45,7 @@ from rstlne import settings
 from rstlne.engine.puzzle import LETTERS, Puzzle, normalize
 from rstlne.engine.rules import new_game, public_view
 from rstlne.engine.state import Phase, PublicView, Rules
-from rstlne.engine.wheel import WheelSpec
+from rstlne.engine.wheel import Kind, WheelSpec
 from rstlne.narrate import duration, line_output
 from rstlne.players.bot import bonus, calibration, versions
 from rstlne.players.bot.reader import Reader
@@ -730,8 +730,9 @@ def _shown(puzzle_answer: str, used) -> float:
 
 
 def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus_puzzle: Puzzle, reader_for,
-             rules: Rules, spec: WheelSpec, base: versions.Knobs, gains: bool = False) -> dict:
-    """One bot-only game, summed up in one record. With `gains`, it also holds the stealer's gain points."""
+             rules: Rules, spec: WheelSpec, base: versions.Knobs, gains: bool = False, calls: bool = False) -> dict:
+    """One bot-only game, summed up in one record. With `gains`, it also holds the stealer's gain points; with
+    `calls`, every consonant call on a cash wedge, for version 7's letter fits."""
     from rstlne.players.bot.player import BotPlayer
     from rstlne.runner import play_turn
 
@@ -744,6 +745,7 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
               "flat": 0, "llm_like": {}, "express_passes": 0} for _ in seats]
     round_totals, moves, steps, chances = [], 0, [], []
     riding, rides = {}, []  # Express rides under way, by seat, and finished ones
+    called, waiting = [], {}  # consonant calls, and hits waiting on the caller's next decision, by seat
     while state.phase is not Phase.GAME_OVER:
         before = state
         state = play_turn(state, players)
@@ -751,6 +753,8 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
         r = state.last
         if before.round is None:
             continue
+        if calls:
+            _note_call(called, waiting, before, state, r, players[r.seat].last_call)
         if gains:
             steps.append(Step(before.round.number, before.phase.value, r.seat, tuple(s.bank for s in before.seats),
                               _hidden(before.round.puzzle.answer, before.round.used), r.action.kind, r.outcome))
@@ -788,7 +792,33 @@ def play_one(game, entrants: Sequence[Entrant], puzzles: Sequence[Puzzle], bonus
         "bonus": None if b is None else {"seat": b.seat, "solved": b.solved, "envelope": b.envelope},
         "moves": moves, "seconds": round(time.monotonic() - started, 2), "seat_stats": stats, "rides": rides,
         **({"gains": gain_points(steps), "chances": chances} if gains else {}),
+        **({"calls": called + list(waiting.values())} if calls else {}),
     }
+
+
+def _note_call(called: list, waiting: dict, before, state, r, last_call) -> None:
+    """A consonant call on a cash wedge: what the bot predicted (hit chance, expected copies, the raw confidence a hit
+    should leave) and what happened (copies, and after a hit, whether its best answer at its next decision was right)."""
+    raw = last_call.raw if last_call else {}
+    answer = before.round.puzzle.answer
+    hit = waiting.get(r.seat)
+    if hit is not None and hit["round"] == before.round.number:  # the caller's next decision, on the board its hit left
+        hit["right_after"] = (raw or {}).get("best") == answer
+        called.append(waiting.pop(r.seat))
+    pick = (raw or {}).get("letter_pick") or {}
+    if (r.action.kind == "call_consonant" and before.phase is Phase.CALL_CONSONANT and r.wedge is not None
+            and r.wedge.kind is Kind.CASH and pick.get("after_hit") is not None):
+        _, p, count, *_ = pick["ranked"][0]
+        record = {"round": before.round.number, "p": round(p, 4), "count": round(count, 4),
+                  "after_hit": round(pick["after_hit"], 4), "confidence": round(raw["confidence"], 4),
+                  "copies": r.count if r.outcome == "correct" else 0, "right_after": None}
+        if r.outcome == "correct":
+            waiting[r.seat] = record
+        else:
+            called.append(record)
+    if state.round is None or state.round.number != before.round.number:  # the round ended: no next decision comes
+        called.extend(waiting.values())
+        waiting.clear()
 
 
 def _follow_ride(riding: dict, rides: list, stat: dict, name: str, before, state, raw: dict | None) -> None:
@@ -812,13 +842,15 @@ def _follow_ride(riding: dict, rides: list, stat: dict, name: str, before, state
 
 
 def _play_in_worker(job) -> dict:
-    game, entrants, puzzles, bonus_puzzle, base, gains = job
-    return play_one(game, entrants, puzzles, bonus_puzzle, _reader_for, _worker["rules"], _worker["spec"], base, gains)
+    game, entrants, puzzles, bonus_puzzle, base, gains, calls = job
+    return play_one(game, entrants, puzzles, bonus_puzzle, _reader_for, _worker["rules"], _worker["spec"], base, gains,
+                    calls)
 
 
 def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, seed: int, out: Path, rules: Rules,
                spec: WheelSpec, base: versions.Knobs, make_reader, shard: tuple[int, int] = (1, 1), workers: int = 1,
-               say=print, heartbeat: float = HEARTBEAT, gains: bool = False, orders: str = "all") -> Path:
+               say=print, heartbeat: float = HEARTBEAT, gains: bool = False, orders: str = "all",
+               calls: bool = False) -> Path:
     """Bot-only games with duplicate scoring: each set's games share its seed and puzzles, one game per
     ordering of the three entrants. Writes games-shard{i}of{n}.jsonl and skips games already played. `orders`
     "all" plays all six orderings; "cyclic" the three rotations, for one entrant against two identical ones, where
@@ -844,7 +876,7 @@ def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, s
     names = ", ".join(str(e) for e in entrants)
     say(f"Playing {len(todo)} games ({sets} sets, shard {i}/{n}) between {names}; {workers} "
         f"worker{'s' if workers != 1 else ''}; a status line every 2 minutes")
-    jobs = [(g, tuple(entrants), tuple(main_hands[g.set]), bonus_hands[g.set][0], base, gains) for g in todo]
+    jobs = [(g, tuple(entrants), tuple(main_hands[g.set]), bonus_hands[g.set][0], base, gains, calls) for g in todo]
     if workers > 1:
         pool_ = ProcessPoolExecutor(workers, initializer=_start_worker, initargs=(make_reader, base, rules, spec))
         results = pool_.map(_play_in_worker, jobs)
@@ -1185,10 +1217,10 @@ def gain_points(steps: Sequence[Step]) -> list[tuple[int, int, float]]:
 
 
 def check_fit_puzzles(name: str) -> None:
-    """The gain is fit on tuning puzzles only: never grading, dev, or private puzzles."""
+    """Fits use tuning puzzles only: never grading, dev, or private puzzles."""
     name = Path(name).name
     if name.startswith("grading") or name in ("dev.json", "private.json"):
-        raise ValueError(f"{name} is a grading, dev, or private puzzle file; the stealer's gain never fits on those")
+        raise ValueError(f"{name} is a grading, dev, or private puzzle file; no fit uses those")
 
 
 def tournament_gain_points(folders: Sequence[Path]) -> list[tuple[int, int, float]]:
@@ -1466,6 +1498,60 @@ def round_banks(puzzles_path: Path, sets: int, seed: int, out: Path, rules: Rule
                       shard, workers, say=say, gains=True, orders=orders)
 
 
+def letter_calls(puzzles_path: Path, sets: int, seed: int, out: Path, rules: Rules, spec: WheelSpec,
+                 base: versions.Knobs, make_reader, shard: tuple[int, int] = (1, 1), workers: int = 1,
+                 say=print) -> Path:
+    """Bot games on tuning puzzles that record every consonant call on a cash wedge, for `letter-fit`. Three
+    identical bots replay one game in every order, so each set plays one game."""
+    check_fit_puzzles(puzzles_path.name)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "letter-calls.json").write_text(json.dumps({"puzzles": str(puzzles_path)}))
+    entrants = [Entrant(name) for name in ("a", "b", "c")]
+    return play_games(entrants, settings.load_puzzles(puzzles_path), sets, seed, out, rules, spec, base, make_reader,
+                      shard, workers, say=say, orders="one", calls=True)
+
+
+def fit_letters(folders: Sequence[Path], out: Path, knobs: versions.Knobs, say=print) -> dict:
+    """Version 7's copy_shrink and reveal_fit, from letter-calls games, over calls made before the bot knew the
+    answer. copy_shrink: copies beyond the first that hits found, over those expected. reveal_fit: the predicted raw
+    confidence after a hit against whether the bot's best answer was then right, fit like the confidence curve and
+    checked on held out sets against version 6's reading of the same prediction through the confidence curve."""
+    rows = [(g.get("set", 0), c) for folder in folders for path in sorted(Path(folder).glob("games-shard*.jsonl"))
+            for g in _rows(path) for c in g.get("calls", ())]
+    sure = calibration.curve(knobs.calibration)
+    rows = [(s, c) for s, c in rows if sure(c["confidence"]) < knobs.known_answer]
+    hits = [(s, c) for s, c in rows if c["copies"] > 0]
+    if not hits:
+        raise ValueError("no consonant hits in these games")
+    expected = sum(c["count"] - 1 for _, c in hits)
+    shrink = sum(c["copies"] - 1 for _, c in hits) / expected if expected > 0 else 1.0
+    pairs = [(s, (c["after_hit"], bool(c["right_after"]))) for s, c in hits if c["right_after"] is not None]
+    points = [list(p) for p in calibration.fit([p for _, p in pairs])]
+    fit_on = [p for s, p in pairs if s % 2 == 0]
+    check = [p for s, p in pairs if s % 2 == 1]
+    held_out = None
+    if fit_on and check:
+        v6_way = [(sure(x), y) for x, y in check]  # version 6: the prediction through the confidence curve
+        held_out = {"pairs": len(check), "before": _honesty(v6_way, calibration.curve(())),
+                    "after": _honesty(check, calibration.curve(calibration.fit(fit_on)))}
+    result = {
+        "calls": len(rows), "hits": len(hits),
+        "expected_extra_copies": expected / len(hits), "found_extra_copies": sum(c["copies"] - 1 for _, c in hits) / len(hits),
+        "copy_shrink": shrink, "reveal_pairs": len(pairs), "reveal_fit": points, "held_out": held_out,
+        "knob": points,  # for reveal_fit=@letter-fit.json
+        "knobs": [f"copy_shrink={shrink:.4g}", "reveal_fit=@letter-fit.json"],
+    }
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "letter-fit.json").write_text(json.dumps(result, indent=2) + "\n")
+    say(f"{len(hits)} hits in {len(rows)} calls before the answer was known: {result['expected_extra_copies']:.2f} extra "
+        f"copies expected a hit, {result['found_extra_copies']:.2f} found; copy_shrink {shrink:.3f}")
+    if held_out:
+        b, a = held_out["before"], held_out["after"]
+        say(f"after a hit, on held out sets: calibration error {b['error']:.3f} -> {a['error']:.3f}, "
+            f"Brier {b['brier']:.3f} -> {a['brier']:.3f} ({held_out['pairs']} hits)")
+    return result
+
+
 # Knobs
 
 
@@ -1500,7 +1586,7 @@ def override(knobs: versions.Knobs, pairs: Sequence[str]) -> versions.Knobs:
             kind = float
         if name == "one_letter":  # letters, not numbers
             changes[name] = tuple(x.strip().upper() for x in value.split(",") if x.strip())
-        elif name in ("calibration", "express_calibration"):  # points as raw:actual pairs
+        elif name in ("calibration", "express_calibration", "reveal_fit"):  # points as raw:actual pairs
             changes[name] = tuple(tuple(float(v) for v in pair.split(":")) for pair in value.split(","))
         else:
             changes[name] = tuple(float(x) for x in value.split(",")) if kind is tuple else kind(value)
@@ -1547,6 +1633,18 @@ def main(argv: Sequence[str] | None = None) -> None:
     games.add_argument("--orders", choices=("all", "cyclic", "one"), default="all",
                        help="seat orders per set: all six; the three rotations, for one entrant against two identical "
                             "ones; or one, for three identical entrants")
+    lc = jobs.add_parser("letter-calls", help="bot games on tuning puzzles that record every consonant call, for letter-fit")
+    lc.add_argument("--puzzles", required=True, help="the tuning batch; grading, dev, and private files are refused")
+    lc.add_argument("--sets", type=int, required=True, help="one game a set: three identical bots")
+    lc.add_argument("--seed", type=int, required=True)
+    lc.add_argument("--out", required=True, help="the folder for games-shard*.jsonl")
+    lc.add_argument("--shard", default="1/1", help="i/n: this machine's share of the games")
+    lc.add_argument("--workers", type=int, default=4, help="processes, one per core")
+    lc.add_argument("--knob", action="append", default=[], help="name=value, for the bots' knobs")
+    lf = jobs.add_parser("letter-fit", help="version 7's copy_shrink and reveal_fit from letter-calls games")
+    lf.add_argument("--games", nargs="+", required=True, help="letter-calls folders")
+    lf.add_argument("--out", required=True, help="the folder for letter-fit.json")
+    lf.add_argument("--knob", action="append", default=[], help="name=value, for the knobs the calls were made with")
     td = jobs.add_parser("tune-decisions", help="test decision knob values against the current bot in bot games")
     td.add_argument("--puzzles", required=True, help="the tuning batch")
     td.add_argument("--out", required=True, help="the folder for each comparison and tune-decisions.json")
@@ -1662,6 +1760,20 @@ def main(argv: Sequence[str] | None = None) -> None:
                           rules, spec, knobs, _make_reader, shard_spec, args.workers, say=print, orders=args.orders)
         for line in summary_lines(games_summary(path.parent)):
             print(line)
+        return
+    if args.job == "letter-calls":
+        try:
+            path = letter_calls(Path(args.puzzles), args.sets, args.seed, Path(args.out), rules, spec, knobs,
+                                _make_reader, parse_shard(args.shard), args.workers, say=print)
+        except ValueError as err:
+            sys.exit(str(err))
+        print(f"{sum(len(g.get('calls', [])) for g in _rows(path))} consonant calls in {path}")
+        return
+    if args.job == "letter-fit":
+        try:
+            fit_letters([Path(f) for f in args.games], Path(args.out), knobs, say=print)
+        except ValueError as err:
+            sys.exit(str(err))
         return
     if args.job == "round-banks":
         try:

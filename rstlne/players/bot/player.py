@@ -323,9 +323,9 @@ class BotPlayer(Player):
                     return BuyVowel(self._pick(s, "Buys", letter))
                 return Solve(guess(belief, view, self._refuted_in(view)))
             case Phase.CALL_CONSONANT:
-                return CallConsonant(self._pick(s, "Calls", self._hit_first(s, s.consonant(view.wedge)[0])))
+                return CallConsonant(self._pick(s, "Calls", self._hit_first(s, s.consonant(view.wedge, fixes=True)[0])))
             case Phase.WILD_CONSONANT:
-                letter = s.consonant(replace(view.wedge, wild=False), spend_wild=True)[0]
+                letter = s.consonant(replace(view.wedge, wild=False), spend_wild=True, fixes=True)[0]
                 return CallConsonant(self._pick(s, "Calls", self._hit_first(s, letter)))
             case Phase.FREE_PLAY:
                 if self.knobs.free_play_vowel and s.vowels and s.c < self.knobs.known_answer and not covered(view.board):
@@ -405,7 +405,8 @@ class BotPlayer(Player):
         ranked = [letter] + sorted((k for k in weighed if k != letter), key=lambda k: -weighed[k].main)[:2]
         self._record["letter_pick"] = {"verb": verb, "win_mode": s.goal.win_mode, "ranked": [
             [k, s.belief.stats(k).p_hit, s.belief.stats(k).count, weighed[k].main if weighed[k] else None]
-            for k in ranked]}
+            for k in ranked],
+            "after_hit": info.after(s.belief, letter).hit}  # the raw confidence a hit should leave, for version 7's fit
         return letter
 
     def _note(self, options: dict) -> None:

@@ -92,6 +92,15 @@ class Knobs:
     # Hit first (2026-11-14), off in every version: on a consonant call after a spin, before the answer is known, call the
     # likeliest consonant, more expected copies breaking a tie, in place of the value function's pick.
     hit_first: bool = False
+    # Version 7's letter fixes (2026-11-14), off in versions 1 to 6. Each changes only which consonant the bot calls
+    # after a spin, not whether it spins. wheel_credit: a hit's value counts what the bot adds before it solves (the bot
+    # table of stealer_gain_bot), so a miss risks those spins too. copy_shrink: expected copies beyond the first are
+    # scaled by this, fit from bot games, since a chosen letter's estimate runs high. reveal_fit: points mapping the
+    # predicted confidence after a hit to how often the bot's best answer was then right, fit from bot games, since the
+    # prediction ignores how a reveal rules out answers outside the reader's list.
+    wheel_credit: bool = False
+    copy_shrink: float | None = None
+    reveal_fit: tuple[tuple[float, float], ...] = ()
 
 
 def _tuples(value):

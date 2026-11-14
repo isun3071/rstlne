@@ -68,6 +68,7 @@ class Situation:
         a, b = odds.seats
         self.stealers = {a: odds.next, b: (1 - odds.next) * odds.after}
         self.letter_options: dict[str, Value] = {}  # the letters the latest letter choice weighed, for thoughts
+        self.revealed = calibration.curve(knobs.reveal_fit)  # version 7: confidence after a hit, fit from bot games
         self.last_ride: dict | None = None  # the latest ride estimate, for the record
 
     # The race and the two ways a turn ends
@@ -79,18 +80,26 @@ class Situation:
         denominator = t + (1 - t) * steal
         return 1.0 if denominator == 0 else t / denominator
 
-    def leaf(self, bank: float, c: float, wild: bool, million: bool) -> Value:
-        """V(continue): the bot holds the wheel at this board."""
+    def leaf(self, bank: float, c: float, wild: bool, million: bool, credit: bool = False) -> Value:
+        """V(continue): the bot holds the wheel at this board. With `credit` (version 7's wheel_credit), the round it
+        takes banks what it adds before solving too, not only its bank as it stands."""
         win = self.race(c)
-        return self.goal.win_round(bank, wild, million) * win + self.stolen(wild) * (1 - win)
+        return self.goal.win_round(bank + (self.own_gain() if credit else 0.0), wild, million) * win + self.stolen(wild) * (1 - win)
+
+    def own_gain(self) -> float:
+        """What a bot adds before it solves, at this round and board: the mean of the bot stealer-gain table."""
+        if not hasattr(self, "_own_gain"):
+            gains = self.goal.gains_for(self.goal.hidden, self.knobs.stealer_gain_bot) if self.knobs.stealer_gain_bot else None
+            self._own_gain = sum(gains) / len(gains) if gains else 0.0
+        return self._own_gain
 
     def stolen(self, wild: bool) -> Value:
         return self.goal.lose_round(wild, self.stealers)
 
-    def lose_wheel(self, bank: float, c: float, wild: bool, million: bool) -> Value:
+    def lose_wheel(self, bank: float, c: float, wild: bool, million: bool, credit: bool = False) -> Value:
         """The wheel passes: an opponent may steal, or it comes back to the bot at this board."""
         steal = self.odds.total
-        return self.stolen(wild) * steal + self.leaf(bank, c, wild, million) * (1 - steal)
+        return self.stolen(wild) * steal + self.leaf(bank, c, wild, million, credit) * (1 - steal)
 
     # Turn actions
 
@@ -128,21 +137,30 @@ class Situation:
     # Letters
 
     def call(self, letter: str, value: float, *, claim_wild: bool = False, claim_million: bool = False,
-             wild: bool | None = None) -> Value:
-        """Call `letter` at `value` per copy: a hit keeps the wheel, a miss passes it."""
+             wild: bool | None = None, fixes: bool = False) -> Value:
+        """Call `letter` at `value` per copy: a hit keeps the wheel, a miss passes it. With `fixes`, version 7's
+        letter knobs that are on: copies shrunk, the confidence after a hit read off the fit curve, and the wheel's
+        further spins credited."""
         wild = self.wild_held if wild is None else wild
         stats = self.belief.stats(letter)
         after = info.after(self.belief, letter)
-        hit = self.leaf(self.bank + value * stats.count, self.calibrate(after.hit), wild or claim_wild,
-                        self.million_held or claim_million)
-        miss = self.lose_wheel(self.bank, self.calibrate(after.miss), wild, self.million_held)
+        count, c_hit, credit = stats.count, self.calibrate(after.hit), False
+        if fixes:
+            if self.knobs.copy_shrink is not None and count > 1:
+                count = 1 + self.knobs.copy_shrink * (count - 1)
+            if self.knobs.reveal_fit:
+                c_hit = self.revealed(after.hit)
+            credit = self.knobs.wheel_credit
+        hit = self.leaf(self.bank + value * count, c_hit, wild or claim_wild, self.million_held or claim_million, credit)
+        miss = self.lose_wheel(self.bank, self.calibrate(after.miss), wild, self.million_held, credit)
         return hit * stats.p_hit + miss * (1 - stats.p_hit)
 
-    def consonant(self, wedge: Wedge, *, spend_wild: bool = False) -> tuple[str, Value]:
-        """The best consonant for the wedge the bot landed on."""
+    def consonant(self, wedge: Wedge, *, spend_wild: bool = False, fixes: bool = False) -> tuple[str, Value]:
+        """The best consonant for the wedge the bot landed on. `fixes` turns on version 7's letter knobs, for the
+        call itself; the spin's own worth, weighed before it, never uses them."""
         if not self.consonants:  # every consonant called: any call is a repeat
             return min(CONSONANTS), self.lose_wheel(self.bank, self.c, self.wild_held, self.million_held)
-        options = {c: self._on_wedge(c, wedge, spend_wild) for c in self.consonants}
+        options = {c: self._on_wedge(c, wedge, spend_wild, fixes) for c in self.consonants}
         return self._best(options)
 
     def free_play(self) -> tuple[str, Value]:
@@ -250,7 +268,7 @@ class Situation:
             return self.leaf(self.bank, self.c, self.wild_held, self.million_held)
         return self.consonant(wedge)[1]
 
-    def _on_wedge(self, letter: str, wedge: Wedge, spend_wild: bool) -> Value:
+    def _on_wedge(self, letter: str, wedge: Wedge, spend_wild: bool, fixes: bool = False) -> Value:
         wild = False if spend_wild else None
         if wedge.kind is Kind.MYSTERY:
             return self._special_hit(letter, lambda bank, n: self.goal.choose_value(self._mystery_options(bank, n)))
@@ -259,7 +277,8 @@ class Situation:
                 "pass": self.leaf(bank + wedge.value * n, self.c, self.wild_held, self.million_held),
                 "play": self.ride(bank + wedge.value * n),
             }))
-        return self.call(letter, wedge.value, claim_wild=wedge.wild, claim_million=wedge.kind is Kind.MILLION, wild=wild)
+        return self.call(letter, wedge.value, claim_wild=wedge.wild, claim_million=wedge.kind is Kind.MILLION, wild=wild,
+                         fixes=fixes)
 
     def _special_hit(self, letter: str, on_hit: Callable[[float, float], Value]) -> Value:
         stats = self.belief.stats(letter)
