@@ -6,7 +6,7 @@ Section~\ref{sec:can-we-do-better} found that the bot's decisions set the ceilin
 
 Each variant played \VariantMilkGames{} games, three to a set. The three games of a set share their puzzles and spins and rotate the seats. The bot is deterministic, so three games cover every distinct seating. The puzzles come from a generated tuning deck that the results in Sections~\ref{sec:can-they-play} to~\ref{sec:can-we-do-better} never use. A variant with no edge wins a third of its games. Money is what a seat banks in the four main rounds, before the bonus round. Intervals are 95\%, from resampling whole sets.
 
-The two copies are the same bot, but they sit in different seats. In every game, the first copy sits right after the variant and takes the wheel whenever the variant loses it. A variant's play can help or hurt that seat more than the seat before it. So we compare each variant with the average of the two copies, and the first copy minus the second measures what the variant's play does to the seat after it. Table~\ref{tab:strategy} gives the results.
+The two copies are the same bot, but they sit in different seats. In every game, the first copy sits right after the variant and takes the wheel whenever the variant loses it. A variant's play can help or hurt that seat more than the seat before it. So we compare each variant with the average of the two copies, and the first copy minus the second measures what the variant's play does to the seat after it. In no run does that gap clear zero. The largest is \VariantVowelsAfterMinusBefore{} points (\VariantVowelsAfterMinusBeforeCI), next to the variant that buys a likely vowel first. Table~\ref{tab:strategy} gives the results.
 
 \begin{table}[t]
 \centering
@@ -44,7 +44,7 @@ Solving on sight loses less, \VariantSolveVsBoth{} points. It gives up \VariantS
 
 The bot buys a vowel only when its reveal is worth more than \$250, which usually happens late in a round. Three variants buy earlier, before the bot knows the answer. The first buys the likeliest open vowel whenever that vowel hits at least half the time. The second buys one whenever it can afford one, and also calls a vowel on Free Play while a word on the board shows none. The third buys until every word on the board shows a vowel, then stops.
 
-All three tie the bot, at \VariantVowelsVsBoth, \VariantAffordVsBoth{} and \VariantCoverVsBoth{} points, and every interval includes zero. They solve with more of the board showing, \VariantAffordShown{} for the second against \VariantAffordBaseShown{} for the bot, and they bank about the same money. Buying until every word has a vowel earns the most, \VariantCoverMainVsBoth{} a game (\VariantCoverMainVsBothCI).
+All three tie the bot, at \VariantVowelsVsBoth, \VariantAffordVsBoth{} and \VariantCoverVsBoth{} points, and every interval includes zero. They solve with more of the board showing, \VariantAffordShown{} for the second against \VariantAffordBaseShown{} for the bot, and they bank about the same money. Of the three, buying until every word has a vowel earns the most, \VariantCoverMainVsBoth{} a game (\VariantCoverMainVsBothCI).
 
 Never buying a vowel loses \VariantNoVowelVsBoth{} points and \VariantNoVowelMainVsBoth{} a game. Without vowels the board fills more slowly. The variant solves at \VariantNoVowelShown{} of the board showing against \VariantNoVowelBaseShown{} for the bot, and only \VariantNoVowelAcc{} of its solves are right, against \VariantNoVowelBaseAcc. A vowel earns no money, but the reveal is worth more than its \$250.
 
@@ -52,9 +52,8 @@ Never buying a vowel loses \VariantNoVowelVsBoth{} points and \VariantNoVowelMai
 
 The bot scores each consonant by its chance to hit, the money its copies would earn, and what a hit or a miss would reveal. It sometimes calls a less likely letter for more copies or a sharper reveal. A last variant calls the likeliest consonant instead, with more expected copies breaking a tie, until the bot knows the answer.
 
-% Results: after variant-hitfirst finishes. Its wins and money against the bot, its solve accuracy and board shown, and what it does to the seat after it (\VariantHitFirstAfterMinusBefore, \VariantHitFirstAfterMinusBeforeCI).
+Calling the likeliest consonant ties the bot in wins, at \VariantHitFirstVsBoth{} points (\VariantHitFirstVsBothCI). It is the only variant that banks clearly more money, \VariantHitFirstMainVsBoth{} a game (\VariantHitFirstMainVsBothCI). It goes Bankrupt \VariantHitFirstBankrupts{} times a game against \VariantHitFirstBaseBankrupts{} for the bot, which fits a seat that misses less and so spins more. It also reads the board more slowly. It solves at \VariantHitFirstShown{} of the board showing against \VariantHitFirstBaseShown{} for the bot, and \VariantHitFirstAcc{} of its solves are right against \VariantHitFirstBaseAcc. The extra money does not turn into more wins.
 
 \subsection{What the tests show}
 
-% Check once hit first is in: whether any variant beats the bot.
-No variant beats the bot. On a known answer, the bot's planner beats both extremes. On vowels, when the bot buys them hardly matters, as long as it buys them. All seven variants played against bots. Against models, which solve earlier than bots, the planner already solves sooner, because it prices each opponent's steal odds.
+No variant wins more games than the bot. On a known answer, the bot's planner beats both extremes. On vowels, when the bot buys them hardly matters, as long as it buys them. On consonants, calling the likeliest letter banks more money but wins no more games. All seven variants played against bots. Against models, which solve earlier than bots, the planner already solves sooner, because it prices each opponent's steal odds.
