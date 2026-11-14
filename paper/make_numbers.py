@@ -233,6 +233,16 @@ def macros(n: dict) -> dict[str, str | None]:
             mci = sorted(sign * x for x in gap["main_ci95"]) if gap and gap.get("main_ci95") else None
             m[f"Variant{label}MainVs{c}CI"] = f"{signed_money(mci[0])} to {signed_money(mci[1])}" if mci else None
         m[f"Variant{label}Games"] = f"{get(n, 'variants', variant, 'games'):,}" if get(n, "variants", variant) else None
+        seats = {e["entrant"]: e for e in get(n, "variants", variant, "entrants") or []}
+        me, copies = seats.get(v), [seats[c] for c in ("v6a", "v6b") if c in seats]
+        both = lambda key: sum(e[key] for e in copies) / len(copies) if len(copies) == 2 else None  # noqa: E731
+        m[f"Variant{label}Win"] = pct(me["win_rate"]) if me else None
+        m[f"Variant{label}Acc"] = pct(me["solve_accuracy"]) if me else None
+        m[f"Variant{label}BaseAcc"] = pct(both("solve_accuracy"))  # the two copies of the bot in the same run
+        m[f"Variant{label}Shown"] = pct(me["shown_median"], 0) if me else None
+        m[f"Variant{label}BaseShown"] = pct(both("shown_median"), 0)
+        m[f"Variant{label}Bankrupts"] = f"{me['bankrupts_per_game']:.2f}" if me else None
+        m[f"Variant{label}BaseBankrupts"] = f"{both('bankrupts_per_game'):.2f}" if copies else None
     for p in n["pairs"]:
         words = p["label"].replace("-", " ").split()
         key = "Pair" + "".join("".join(c for c in w if c.isalpha()).capitalize() for w in words)  # TeX macro names are letters only

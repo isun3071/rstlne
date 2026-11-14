@@ -1,0 +1,48 @@
+\section{Testing the bot's strategy}\label{sec:strategy}
+
+Section~\ref{sec:can-we-do-better} found that the bot's decisions set the ceiling for a hybrid. So we tested those decisions. Each variant below changes one habit of the bot and plays against two copies of the unchanged bot. Every seat reads the board with the same reader, so a gap between seats comes from strategy alone.
+
+\subsection{Self-play}
+
+Each variant played \VariantMilkGames{} games, three to a set. The three games of a set share their puzzles and spins and rotate the seats. The bot is deterministic, so three games cover every distinct seating. The puzzles come from a generated tuning deck that the results in Sections~\ref{sec:can-they-play} to~\ref{sec:can-we-do-better} never use. A variant with no edge wins a third of its games. We report each variant minus each copy of the bot, set by set, with 95\% intervals from resampling whole sets. Money is what a seat banks in the four main rounds, before the bonus round. Table~\ref{tab:strategy} gives the results.
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lccc}
+\toprule
+ & & \multicolumn{2}{c}{Variant minus each copy of the bot} \\
+\cmidrule(lr){3-4}
+Variant & Wins & Points & Main money a game \\
+\midrule
+Milk every known answer & \VariantMilkWin & \VariantMilkVsA, \VariantMilkVsB & \VariantMilkMainVsA, \VariantMilkMainVsB \\
+Solve on sight & \VariantSolveWin & \VariantSolveVsA, \VariantSolveVsB & \VariantSolveMainVsA, \VariantSolveMainVsB \\
+\midrule
+Buy a likely vowel first & \VariantVowelsWin & \VariantVowelsVsA, \VariantVowelsVsB & \VariantVowelsMainVsA, \VariantVowelsMainVsB \\
+Buy a vowel whenever affordable & \VariantAffordWin & \VariantAffordVsA, \VariantAffordVsB & \VariantAffordMainVsA, \VariantAffordMainVsB \\
+Buy until every word has a vowel & \VariantCoverWin & \VariantCoverVsA, \VariantCoverVsB & \VariantCoverMainVsA, \VariantCoverMainVsB \\
+Never buy a vowel & \VariantNoVowelWin & \VariantNoVowelVsA, \VariantNoVowelVsB & \VariantNoVowelMainVsA, \VariantNoVowelMainVsB \\
+\bottomrule
+\end{tabular}
+\caption{Each strategy variant against two copies of the bot, \VariantMilkGames{} games each. A variant with no edge wins a third. The gaps are the variant minus the first copy, then minus the second.}
+\label{tab:strategy}
+\end{table}
+
+\subsection{What to do with a known answer}
+
+Once the bot is 95\% sure of the answer, its planner weighs each further spin against Bankrupt, Lose a Turn and the steal odds. Two variants drop that weighing. One milks every known answer, spinning until no consonant is left to call. The other solves on sight, the moment the bot is sure.
+
+Both lose. Milking every answer wins \VariantMilkWin{} of games, \VariantMilkVsA{} points against the first copy (\VariantMilkVsACI) and \VariantMilkVsB{} against the second (\VariantMilkVsBCI). It also banks less money, \VariantMilkMainVsA{} and \VariantMilkMainVsB{} a game. It goes Bankrupt \VariantMilkBankrupts{} times a game, against \VariantMilkBaseBankrupts{} for the bot.
+
+Solving on sight loses less, \VariantSolveVsA{} (\VariantSolveVsACI) and \VariantSolveVsB{} points (\VariantSolveVsBCI). It gives up money, \VariantSolveMainVsA{} and \VariantSolveMainVsB{} a game, and it is also wrong more often. Only \VariantSolveAcc{} of its solves are right, against \VariantSolveBaseAcc{} for the bot. The planner's spins test the answer as well as earn money. Each hit makes the bot surer, and a miss rules the answer out before the bot solves with it.
+
+\subsection{When to buy vowels}
+
+The bot buys a vowel only when its reveal is worth more than \$250, which usually happens late in a round. Three variants buy earlier, before the bot knows the answer. The first buys the likeliest open vowel whenever that vowel hits at least half the time. The second buys one whenever it can afford one, and also calls a vowel on Free Play while a word on the board shows none. The third buys until every word on the board shows a vowel, then stops.
+
+All three tie the bot. Their gaps run from \VariantVowelsVsA{} to \VariantAffordVsB{} points, and every interval includes zero. They solve with more of the board showing, \VariantAffordShown{} for the second against \VariantAffordBaseShown{} for the bot, and they bank about the same money. Buying until every word has a vowel earns the most, \VariantCoverMainVsA{} and \VariantCoverMainVsB{} a game, but both money intervals include zero (\VariantCoverMainVsACI; \VariantCoverMainVsBCI).
+
+Never buying a vowel loses \VariantNoVowelVsA{} (\VariantNoVowelVsACI) and \VariantNoVowelVsB{} points (\VariantNoVowelVsBCI), and \VariantNoVowelMainVsA{} and \VariantNoVowelMainVsB{} a game. Without vowels the board fills more slowly. The variant solves at \VariantNoVowelShown{} of the board showing against \VariantNoVowelBaseShown{} for the bot, and only \VariantNoVowelAcc{} of its solves are right, against \VariantNoVowelBaseAcc. A vowel earns no money, but the reveal is worth more than its \$250.
+
+\subsection{What the tests show}
+
+No variant beats the bot. On a known answer, the bot's planner beats both extremes. On vowels, when the bot buys them hardly matters, as long as it buys them. All six variants played against bots. Against models, which solve earlier than bots, the planner already solves sooner, because it prices each opponent's steal odds.
