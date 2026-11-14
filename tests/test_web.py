@@ -158,8 +158,11 @@ def test_setup_lists_the_seat_kinds_and_the_models_from_config(client):
 def test_setup_lists_the_bot_strategies_and_a_bot_seat_can_play_one(client):
     from rstlne.players.bot import versions
     setup = client.get("/api/setup").json()
-    assert setup["bot_strategies"] == versions.STRATEGIES  # names and words, in the page's order
-    assert list(setup["bot_strategies"]) == list(versions.STRATEGIES)
+    assert list(setup["bot_strategies"]) == list(versions.STRATEGIES)  # in the page's order
+    menu = setup["bot_strategies"]  # each named for what it changes, then its words
+    assert menu["solve_on_sight"] == "endgame: closes out when sure" and menu["milk_all"] == "endgame: milks every answer"
+    assert menu["never_vowel"] == "vowel: never buys a vowel" and menu["hit_first"] == "consonant: calls the likeliest consonant"
+    assert all(menu[k].endswith(": " + words) for k, words in versions.STRATEGIES.items())
     game_id = client.post("/api/games", json={"seats": ["human", "bot:solve_on_sight", "bot"], "seed": 5}).json()["id"]
     with client.websocket_connect(f"/api/games/{game_id}") as ws:
         first = ws.receive_json()

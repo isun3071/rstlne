@@ -139,7 +139,8 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
             "decision_models": list(config.get("web", {}).get("decision_models", [])),
             "solver_model": config["decision"]["solver_model"],  # a decision seat's default; the page can name another
             "bot_version": versions.current(config),
-            "bot_strategies": versions.STRATEGIES,  # a plain bot seat may play one; the page's words for each, in order
+            # a plain bot seat may play one; the menu names the part of play each changes, then its words, in order
+            "bot_strategies": {k: f"{versions.STRATEGY_PARTS[k]}: {words}" for k, words in versions.STRATEGIES.items()},
             "bonus_solve_seconds": config["cli"]["bonus_solve_seconds"],
         }
 

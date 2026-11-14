@@ -178,6 +178,8 @@ STRATEGIES = {
     "never_vowel": "never buys a vowel",
     "hit_first": "calls the likeliest consonant",
 }
+STRATEGY_PARTS = {"solve_on_sight": "endgame", "milk_all": "endgame", "vowels_affordable": "vowel", "vowel_cover": "vowel",
+                  "never_vowel": "vowel", "hit_first": "consonant"}  # the part of play each changes, for the page's menu
 
 
 def strategy_knobs(version: int, name: str) -> Knobs:
