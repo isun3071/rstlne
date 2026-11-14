@@ -238,6 +238,19 @@ def macros(n: dict) -> dict[str, str | None]:
         me, copies = seats.get(v), [seats[c] for c in ("v6a", "v6b") if c in seats]
         both = lambda key: sum(e[key] for e in copies) / len(copies) if len(copies) == 2 else None  # noqa: E731
         m[f"Variant{label}Win"] = pct(me["win_rate"]) if me else None
+        # the variant minus the average of the two copies: the seat after it and the seat before it, weighted alike
+        m[f"Variant{label}VsBoth"] = pts(me["field_gap"]) if me and me.get("field_gap") is not None else None
+        m[f"Variant{label}VsBothCI"] = f"{pts(me['field_ci95'][0])} to {pts(me['field_ci95'][1])}" if me and me.get("field_ci95") else None
+        m[f"Variant{label}MainVsBoth"] = signed_money(me["field_main_gap"]) if me and me.get("field_main_gap") is not None else None
+        fm = me.get("field_main_ci95") if me else None
+        m[f"Variant{label}MainVsBothCI"] = f"{signed_money(fm[0])} to {signed_money(fm[1])}" if fm else None
+        # v6a always sits right after the variant (every game of every run), so v6a minus v6b is what the variant's
+        # play does to the seat after it, against the seat before it
+        after = next((p for p in get(n, "variants", variant, "pairwise") or [] if {p["a"], p["b"]} == {"v6a", "v6b"}), None)
+        sign = 1 if after and after["a"] == "v6a" else -1
+        m[f"Variant{label}AfterMinusBefore"] = pts(sign * after["gap"]) if after else None
+        aci = sorted(sign * x for x in after["ci95"]) if after and after.get("ci95") else None
+        m[f"Variant{label}AfterMinusBeforeCI"] = f"{pts(aci[0])} to {pts(aci[1])}" if aci else None
         m[f"Variant{label}Acc"] = pct(me["solve_accuracy"]) if me else None
         m[f"Variant{label}BaseAcc"] = pct(both("solve_accuracy"))  # the two copies of the bot in the same run
         m[f"Variant{label}Shown"] = pct(me["shown_median"], 0) if me else None

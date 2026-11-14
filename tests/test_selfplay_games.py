@@ -380,3 +380,19 @@ def test_self_play_deals_by_round_tag_like_tournaments(tmp_path, rules, wheel_sp
     monkeypatch.setattr(tournament, "deal_main", lambda *a, **k: calls.append(a) or real(*a, **k))
     play(tmp_path, rules, wheel_spec)
     assert len(calls) == 1 and calls[0][1] == rules.main_rounds
+
+
+def test_each_entrant_gets_its_gap_to_the_average_of_the_others(tmp_path):
+    stats = [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0}] * 3
+    games = [{"set": 0, "seats": ["a", "b", "c"], "totals": [5, 0, 0], "round_totals": [[4000, 1000, 0]],
+              "bonus": None, "seat_stats": stats},
+             {"set": 1, "seats": ["b", "c", "a"], "totals": [5, 0, 0], "round_totals": [[3000, 0, 2000]],
+              "bonus": None, "seat_stats": stats}]
+    (tmp_path / "games-shard1of1.jsonl").write_text("".join(json.dumps(g) + "\n" for g in games))
+    e = {r["entrant"]: r for r in selfplay.games_summary(tmp_path, resamples=50)["entrants"]}
+    assert e["a"]["field_gap"] == 0.5 - (0.5 + 0) / 2  # a won one of two, b one, c none
+    assert e["a"]["field_main_gap"] == 3000 - (2000 + 0) / 2  # main money a game: a 3000, b 2000, c 0
+    lo, hi = e["a"]["field_ci95"]
+    assert lo <= e["a"]["field_gap"] <= hi
+    lo, hi = e["a"]["field_main_ci95"]
+    assert lo <= e["a"]["field_main_gap"] <= hi

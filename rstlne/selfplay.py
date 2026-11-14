@@ -925,13 +925,23 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
     def rate(name):
         return lambda sample: (sum(sum(r.get(name, [])) for r in sample) / n if (n := sum(len(r.get(name, [])) for r in sample)) else None)
 
+    def field(name):  # an entrant minus the average of the others, so a seat effect on one neighbour washes out
+        def gap(sample):
+            mine, others = rate(name)(sample), [rate(o)(sample) for o in names if o != name]
+            return None if mine is None or not others or None in others else mine - sum(others) / len(others)
+        return gap
+
     entrants = []
     for name in names:
         a = acc[name]
         ci = tournament.bootstrap(rows, rate(name), resamples=resamples) if rows else None
+        fci = tournament.bootstrap(rows, field(name), resamples=resamples) if rows else None
+        fmci = tournament.bootstrap(money_rows, field(name), resamples=resamples) if money_rows else None
         entrants.append({
             "entrant": name, "games": a["games"], "wins": a["wins"], "win_rate": a["wins"] / a["games"],
             "ci95": list(ci) if ci else None,
+            "field_gap": field(name)(rows), "field_ci95": list(fci) if fci else None,
+            "field_main_gap": field(name)(money_rows), "field_main_ci95": list(fmci) if fmci else None,
             "by_seat": [w / g if g else None for w, g in zip(a["seat_wins"], a["seat_games"])],
             "avg_total": a["total"] / a["games"], "avg_main": a["main"] / a["games"],
             "bonus": f"{a['bonus_won']}/{a['bonus_played']}",
