@@ -876,7 +876,7 @@ def play_games(entrants: Sequence[Entrant], pool: Sequence[Puzzle], sets: int, s
 
 def games_summary(out: Path, resamples: int = 2000) -> dict:
     """Every shard's games together: each entrant's win rate with 95% intervals from resampling whole sets,
-    by seat, money, bonus, and solving; and the win rate gap between each pair."""
+    by seat, money, bonus, and solving; and the win rate gap and main money gap between each pair."""
     from statistics import median
 
     from rstlne import tournament
@@ -884,6 +884,7 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
     games = [g for path in sorted(Path(out).glob("games-shard*.jsonl")) for g in _rows(path)]
     names = sorted({name for g in games for name in g["seats"]})
     per_set: dict[int, dict[str, list[float]]] = {}
+    money: dict[int, dict[str, list[float]]] = {}  # main money per set, the same way
     acc = {name: {"games": 0, "wins": 0.0, "seat_games": [0, 0, 0], "seat_wins": [0.0, 0.0, 0.0], "total": 0,
                   "main": 0, "bonus_played": 0, "bonus_won": 0, "attempts": 0, "right": 0, "shown": [], "bankrupts": 0,
                   "certain_win": 0, "certain_win_lost": 0, "certain_loss": 0, "certain_loss_won": 0, "flat": 0,
@@ -917,7 +918,9 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
             for other, like in st.get("llm_like", {}).items():  # keyed by seat number
                 a["llm_like"].setdefault(g["seats"][int(other) - 1], []).append(like)
             per_set.setdefault(g["set"], {}).setdefault(name, []).append(w)
+            money.setdefault(g["set"], {}).setdefault(name, []).append(g["round_totals"][-1][seat] if g["round_totals"] else 0)
     rows = list(per_set.values())
+    money_rows = [money[s] for s in per_set]
 
     def rate(name):
         return lambda sample: (sum(sum(r.get(name, [])) for r in sample) / n if (n := sum(len(r.get(name, [])) for r in sample)) else None)
@@ -946,7 +949,9 @@ def games_summary(out: Path, resamples: int = 2000) -> dict:
             a, b = names[x], names[y]
             gap = lambda sample, a=a, b=b: (None if (ra := rate(a)(sample)) is None or (rb := rate(b)(sample)) is None else ra - rb)
             ci = tournament.bootstrap(rows, gap, resamples=resamples) if rows else None
-            pairwise.append({"a": a, "b": b, "gap": gap(rows), "ci95": list(ci) if ci else None})
+            mci = tournament.bootstrap(money_rows, gap, resamples=resamples) if money_rows else None  # the same gap, in dollars
+            pairwise.append({"a": a, "b": b, "gap": gap(rows), "ci95": list(ci) if ci else None,
+                             "main_gap": gap(money_rows), "main_ci95": list(mci) if mci else None})
     return {"games": len(games), "sets": len(rows), "entrants": entrants, "pairwise": pairwise}
 
 

@@ -46,6 +46,10 @@ def money(x):
     return None if x is None else f"\\${x:,.0f}"
 
 
+def signed_money(x):
+    return None if x is None else f"{'+' if x >= 0 else '$-$'}\\${abs(x):,.0f}"
+
+
 def get(d, *path):
     for p in path:
         if d is None:
@@ -225,6 +229,9 @@ def macros(n: dict) -> dict[str, str | None]:
             m[f"Variant{label}Vs{c}"] = pts(sign * gap["gap"]) if gap else None  # one place, as for pairs: a bound near zero reads −0.5, not −0
             ci = sorted(sign * x for x in gap["ci95"]) if gap and gap.get("ci95") else None
             m[f"Variant{label}Vs{c}CI"] = f"{pts(ci[0])} to {pts(ci[1])}" if ci else None
+            m[f"Variant{label}MainVs{c}"] = signed_money(sign * gap["main_gap"]) if gap and gap.get("main_gap") is not None else None
+            mci = sorted(sign * x for x in gap["main_ci95"]) if gap and gap.get("main_ci95") else None
+            m[f"Variant{label}MainVs{c}CI"] = f"{signed_money(mci[0])} to {signed_money(mci[1])}" if mci else None
         m[f"Variant{label}Games"] = f"{get(n, 'variants', variant, 'games'):,}" if get(n, "variants", variant) else None
     for p in n["pairs"]:
         words = p["label"].replace("-", " ").split()

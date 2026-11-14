@@ -261,6 +261,20 @@ def test_the_llm_likeness_a_v4_seat_records_never_stands_in_for_its_wins(tmp_pat
     assert gap["gap"] == (1 if gap["a"] == "v3" else -1)
 
 
+def test_each_pair_gets_a_main_money_gap_with_an_interval_over_sets(tmp_path):
+    stats = [{"attempts": 0, "right": 0, "shown": [], "bankrupts": 0}] * 3
+    games = [{"set": 0, "seats": ["a", "b", "c"], "totals": [0, 0, 0], "round_totals": [[1000, 0, 0], [4000, 1000, 0]],
+              "bonus": None, "seat_stats": stats},
+             {"set": 1, "seats": ["b", "c", "a"], "totals": [0, 0, 0], "round_totals": [[3000, 0, 2000]],
+              "bonus": None, "seat_stats": stats}]
+    (tmp_path / "games-shard1of1.jsonl").write_text("".join(json.dumps(g) + "\n" for g in games))
+    s = selfplay.games_summary(tmp_path, resamples=50)
+    ab = next(p for p in s["pairwise"] if (p["a"], p["b"]) == ("a", "b"))
+    assert ab["main_gap"] == (4000 + 2000) / 2 - (1000 + 3000) / 2  # main money is the last round's running total
+    lo, hi = ab["main_ci95"]
+    assert lo <= ab["main_gap"] <= hi and lo >= -1000 and hi <= 3000  # set 0 gives +3000, set 1 gives -1000
+
+
 # Version 5 against version 4: each reading setup gets its own reader
 
 def test_entrants_that_read_differently_each_get_their_own_reader(tmp_path, rules, wheel_spec):
