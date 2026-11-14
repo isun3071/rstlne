@@ -191,6 +191,17 @@ def macros(n: dict) -> dict[str, str | None]:
                 m[f"{prefix}{name}Picks"] = ", ".join(k for k, _ in cons[:2]) + f" and {cons[2][0]}"
                 m[f"{prefix}{name}Vowel"] = sorted(e["vowels"].items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
                 m[f"{prefix}{name}Favourites"] = pct(sum(e["consonants"].get(c, 0) for c in "CMD") / sum(e["consonants"].values()), 0)
+    # the bots' consonant calls in the alone lineups: likelier letters passed over, and what each would have done
+    t = get(n, "letter_trade") or {}
+    m["LetterTradeCalls"] = f"{t['calls']:,}" if t.get("calls") else None
+    m["LetterTradePassed"] = f"{t['passed_over']:,}" if t.get("passed_over") else None
+    m["LetterTradeShare"] = pct(t["passed_over"] / t["calls"], 0) if t.get("calls") else None
+    m["LetterTradeGaveUp"] = f"{100 * t['gave_up']:.1f}" if t.get("gave_up") is not None else None  # points of hit chance
+    m["LetterTradeCopies"] = f"{t['more_copies']:.2f}" if t.get("more_copies") is not None else None
+    m["LetterTradeHitChosen"] = pct(t.get("hit_chosen"))
+    m["LetterTradeHitLikelier"] = pct(t.get("hit_likelier"))
+    m["LetterTradeMoneyChosen"] = money(t.get("money_chosen"))
+    m["LetterTradeMoneyLikelier"] = money(t.get("money_likelier"))
     # solves on our deck by how much of the board R S T L N E fills, and how aired bonus puzzles split across those bands
     bands = get(n, "bonus", "by_rstlne_share", "entrants") or {}
     for name, key in players.items():

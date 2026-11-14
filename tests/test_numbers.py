@@ -248,3 +248,21 @@ def test_pooled_seats_merge_every_game_round_and_solve_of_the_named_seats():
     assert out["shown_at_correct_solve"]["median"] == pytest.approx(0.65)  # of 0.5, 0.6, 0.7, 0.8
     assert out["money_per_round_won"]["median"] == pytest.approx(2500)  # of 1000, 2000, 3000, 5000
     assert numbers.pool_seats(raw, []) is None
+
+
+def test_the_letter_trade_counts_likelier_letters_passed_over_and_what_each_would_have_done():
+    calls = [
+        # passed over T (0.9) for R (0.5, 3 copies): R misses, T would have hit once at $500
+        {"ranked": [["R", 0.5, 3.0, 9.0], ["T", 0.9, 1.0, 8.0]], "chosen": "R", "answer": "THE CAB", "value": 500},
+        # took the likeliest: not a trade
+        {"ranked": [["T", 0.9, 1.0, 9.0], ["R", 0.5, 3.0, 8.0]], "chosen": "T", "answer": "THE CAT", "value": 500},
+        # passed over N (0.8) for S (0.6, 2 copies): S hits twice at $1,000, N would have missed
+        {"ranked": [["S", 0.6, 2.0, 9.0], ["N", 0.8, 1.0, 8.0]], "chosen": "S", "answer": "SEAS", "value": 1000},
+    ]
+    out = numbers.letter_trade(calls)
+    assert out["calls"] == 3 and out["passed_over"] == 2
+    assert out["gave_up"] == pytest.approx(((0.9 - 0.5) + (0.8 - 0.6)) / 2)
+    assert out["more_copies"] == pytest.approx(((3 - 1) + (2 - 1)) / 2)
+    assert out["hit_chosen"] == 0.5 and out["hit_likelier"] == 0.5
+    assert out["money_chosen"] == (0 + 2000) / 2 and out["money_likelier"] == (500 + 0) / 2
+    assert numbers.letter_trade([]) is None

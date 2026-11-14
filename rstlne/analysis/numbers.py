@@ -494,6 +494,49 @@ def variants(folders: dict = VARIANTS, full: int = VARIANT_GAMES) -> dict:
     return out
 
 
+# The lineups with one model alone against two bots: the bots' consonant calls there show the letter trade.
+TRADE_LINEUPS = ("2", "2t", "3b", "3c", "3d", "3m", "3r")
+
+
+def letter_trade(calls: Sequence[dict]) -> dict | None:
+    """The bot's consonant calls, each {"ranked": the letters it weighed as [letter, p_hit, copies, ...] with its pick
+    first, "chosen", "answer", "value" a copy}: how often it passed over a likelier letter among those it weighed,
+    the hit chance and copies it traded, and on the answer, how often each letter hit and what it earned a call."""
+    calls = list(calls)
+    if not calls:
+        return None
+    trades = []
+    for c in calls:
+        mine = next(r for r in c["ranked"] if r[0] == c["chosen"])
+        likelier = max(c["ranked"], key=lambda r: r[1])
+        if likelier[0] != c["chosen"] and likelier[1] > mine[1]:
+            trades.append((c, mine, likelier))
+    k = len(trades)
+    if not k:
+        return {"calls": len(calls), "passed_over": 0}
+    avg = lambda f: sum(f(*t) for t in trades) / k  # noqa: E731
+    return {"calls": len(calls), "passed_over": k,
+            "gave_up": avg(lambda c, m, l: l[1] - m[1]), "more_copies": avg(lambda c, m, l: m[2] - l[2]),
+            "hit_chosen": avg(lambda c, m, l: m[0] in c["answer"]), "hit_likelier": avg(lambda c, m, l: l[0] in c["answer"]),
+            "money_chosen": avg(lambda c, m, l: c["value"] * c["answer"].count(m[0])),
+            "money_likelier": avg(lambda c, m, l: c["value"] * c["answer"].count(l[0]))}
+
+
+def trade_calls(folders: Sequence[Path]):
+    """Every bot consonant call on a cash wedge before the bot knew the answer, as letter_trade reads them."""
+    for folder in folders:
+        for g in common.games(folder):
+            for rnd in g.rounds().values():
+                answer = rnd[0]["state"]["round"]["puzzle"]["answer"]
+                for a in rnd:
+                    if g.kind(a["seat"]) != "bot" or a["action"]["kind"] != "call_consonant" or g.planner_on(a):
+                        continue
+                    ranked = ((a.get("raw") or {}).get("letter_pick") or {}).get("ranked")
+                    wedge = a["state"]["round"]["wedge"] or {}
+                    if ranked and wedge.get("kind") == "cash":
+                        yield {"ranked": ranked, "chosen": a["action"]["letter"], "answer": answer, "value": wedge.get("value") or 0}
+
+
 def _commit() -> str | None:
     try:
         return subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=settings.ROOT, capture_output=True,
@@ -565,9 +608,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     own = _latest_bonus(str(BLATT_DECK.relative_to(settings.ROOT)), seed)
     out["blatt"] = blatt(BLATT_DECK, {**BLATT, **({"own": own} if own else {})})
     out["variants"] = variants() or None
+    alone = [m["folder"] for lid, m in common.lineups(phase).items() if lid in TRADE_LINEUPS]
+    out["letter_trade"] = letter_trade(trade_calls(alone))
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(out, indent=1))
-    missing = [k for k in ("bonus", "letters", "reading_gap", "aired_bonus", "memory", "blatt", "variants") if out[k] is None]
+    missing = [k for k in ("bonus", "letters", "reading_gap", "aired_bonus", "memory", "blatt", "variants", "letter_trade")
+               if out[k] is None]
     if out["letters"] and out["letters"]["lineups_missing"]:
         missing.append("letters for " + " ".join(out["letters"]["lineups_missing"]))
     print(f"wrote {args.out}: {len(out['lineups'])} lineups, {len(out['pairs'])} pairs"
