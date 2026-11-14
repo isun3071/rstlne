@@ -2,6 +2,7 @@
 
 The lineups come from lineups.toml: its default phase, or the one named (v6, v4). A lineup a phase doesn't list,
 or that has no finished games yet, is left out of every chart."""
+import math
 import json
 import glob
 import statistics as st
@@ -136,8 +137,9 @@ for folder, key in solo:
     name, kind = short(e["entrant"])
     rows.append((name, kind, e["win_rate"], e["ci95"]["win_rate"]))
 rows.sort(key=lambda r: r[2])
-fig, ax = plt.subplots(figsize=(9, 0.62 * len(rows) + 2.2))
-fig.subplots_adjust(left=0.27, right=0.95, top=0.8, bottom=0.17)
+height = 0.4 * len(rows) + 2.9  # inches: 0.4 a row, 1.0 above the bars for the titles, 1.9 below for the axis and legend
+fig, ax = plt.subplots(figsize=(9, height))
+fig.subplots_adjust(left=0.27, right=0.95, top=1 - 1.0 / height, bottom=1.9 / height)
 for i, (name, kind, rate, ci) in enumerate(rows):
     ax.barh(i, rate * 100, height=0.56, color=KIND[kind], zorder=2)
     ax.plot([ci[0] * 100, ci[1] * 100], [i, i], color=INK, linewidth=1.4, zorder=3)
@@ -148,8 +150,9 @@ ax.set_yticks(range(len(rows)), [r[0] for r in rows])
 ax.set_xlim(0, 80)
 tidy(ax, "games won against two bots, with 95% interval (%)")
 handles = [plt.Rectangle((0, 0), 1, 1, color=KIND[k]) for k in ("LLM", "hybrid", "decision")]
-ax.legend(handles, ["LLM playing alone", "hybrid: the bot decides, the LLM reads",
-                    "decision seat: a decision model decides, an LLM writes its solves"], loc="lower right", frameon=False, fontsize=9.5)
+fig.legend(handles, ["LLM playing alone", "hybrid: the bot decides, the LLM reads",
+                     "decision seat: a decision model decides, an LLM writes its solves"],
+           loc="lower left", bbox_to_anchor=(0.27, 0.15 / height), frameon=False, fontsize=9.5)  # under the axis, off the bars
 save(fig, "1-alone-against-two-bots.png", "Alone against two bots",
      f"One seat against two identical {PHASE} bots, 60 sets (360 games) each, same puzzles and spins")
 
@@ -411,8 +414,8 @@ rows7 = [(name, k, pick, kind) for name, k, pick, kind in (
          ("Hybrid (bot + Luna)", "3", lambda s: s["kind"] == "hybrid", "hybrid"),
          ("Hybrid (bot + Haiku)", "3f", lambda s: s["kind"] == "hybrid", "hybrid"),
          ("Hybrid (bot + Terra)", "3t", lambda s: s["kind"] == "hybrid", "hybrid"),
-         ("Terra hybrid, full trust", "3tf", lambda s: s["kind"] == "hybrid", "hybrid"),
-         ("Luna hybrid, full trust", "3lf", lambda s: s["kind"] == "hybrid", "hybrid"),
+         ("Hybrid (bot + Terra), full trust", "3tf", lambda s: s["kind"] == "hybrid", "hybrid"),
+         ("Hybrid (bot + Luna), full trust", "3lf", lambda s: s["kind"] == "hybrid", "hybrid"),
          ("DeepSeek", "3c", lambda s: s.get("model") == "deepseek/deepseek-v4.1-flash-1017", "LLM"),
          ("Qwen 3.8 Flash", "3r", lambda s: s.get("model") == "qwen/qwen3.8-flash", "LLM"),
          ("Ember", "3m", lambda s: s.get("model") == "meta/muse-ember", "LLM"),
@@ -629,9 +632,12 @@ for name, folder, pick, kind in solo12:
     keys = sorted(sets)
     boots = sorted(long_minus_short([r for k in rng.choices(keys, k=len(keys)) for r in sets[k]]) for _ in range(2000))
     gaps12.append((name, kind, long_minus_short(R[name]), boots[50], boots[1949]))
+    print(f"  12  {name:36} long minus short {100 * gaps12[-1][2]:+.1f} ({100 * boots[50]:+.1f} to {100 * boots[1949]:+.1f})")
+clear12 = [g for g in gaps12 if g[3] > 0 or g[4] < 0]  # intervals that exclude zero
 llm_names = [name for name, _, _, kind in solo12 if kind == "LLM"]
-fig, axes = plt.subplots(1, 2, figsize=(13, 5.6), gridspec_kw={"width_ratios": [1, 1.25]})
-fig.subplots_adjust(left=0.07, right=0.97, top=0.78, bottom=0.2, wspace=0.55)
+height12 = max(5.6, 0.3 * len(gaps12) + 2.6)  # inches: 0.3 a row on the right, 1.2 above for the titles, 1.4 below
+fig, axes = plt.subplots(1, 2, figsize=(13, height12), gridspec_kw={"width_ratios": [1, 1.25]})
+fig.subplots_adjust(left=0.07, right=0.97, top=1 - 1.2 / height12, bottom=1.4 / height12, wspace=0.55)
 ax = axes[0]
 for label, rows, colour in (("bots", [r for rs in R.values() for r in rs if not r["mine"]], KIND["bot"]),
                             ("LLMs alone", [r for n in llm_names for r in R[n] if r["mine"]], KIND["LLM"])):
@@ -652,17 +658,20 @@ ax = axes[1]
 for i, (name, kind, g, lo, hi) in enumerate(reversed(gaps12)):
     ax.plot([lo * 100, hi * 100], [i, i], color=INK2, linewidth=1.4, zorder=2)
     ax.scatter([g * 100], [i], s=70, color=KIND[kind], edgecolor=SURFACE, linewidth=1.5, zorder=3)
-    ax.text(hi * 100 + 1, i, f"{g * 100:+.0f}", va="center", fontsize=9.5, color=INK)
+    label = f"{round(g * 100):+d}".replace("-", "\u2212") if round(g * 100) else "0"  # a true minus, as on the axis
+    ax.text(max(hi * 100, 0) + 1, i, label, va="center", fontsize=9.5, color=INK)  # right of the zero line
 ax.axvline(0, color=INK2, linewidth=1, linestyle=(0, (4, 3)))
 ax.set_yticks(range(len(gaps12)), [g[0] for g in reversed(gaps12)])
-ax.set_xlim(-12, 32)
-ax.set_xticks(range(-10, 31, 10))
+lo12, hi12 = 10 * math.floor(min(g[3] for g in gaps12) * 10 - 0.2), 10 * math.ceil(max(g[4] for g in gaps12) * 10 + 0.4)
+ax.set_xlim(lo12 - 2, hi12 + 2)
+ax.set_xticks(range(lo12, hi12 + 1, 10))
 tidy(ax, "rounds won on 27+ letters minus on 16–19 (points, 95%)")
 ax.set_title("Each player against two bots", loc="left", fontsize=11.5, color=INK)
 handles = [plt.Line2D([], [], marker="o", linestyle="", color=KIND[k], markersize=8) for k in KIND]
 fig.legend(handles, ["LLM", "bot", "hybrid", "decision seat"], loc="lower center", ncol=4, frameon=False, fontsize=9.5)
-save(fig, "12-puzzle-length.png", "Puzzle length doesn't change who wins a round",
-     "Every main round solved in the lineups against two bots; every interval includes zero")
+save(fig, "12-puzzle-length.png", "Puzzle length and who wins a round" if clear12 else "Puzzle length doesn't change who wins a round",
+     "Every main round solved in the lineups against two bots; " + (
+         f"{len(clear12)} of {len(gaps12)} intervals exclude zero" if clear12 else "every interval includes zero"))
 # 13. The reading gap: what the bots lacked on each round a model won
 GAP = json.loads(Path("paper/numbers.json").read_text())["reading_gap"]["lineups"]
 CATS = [("the bot's reader had another answer", "out-read the bot: its reader had another answer"),

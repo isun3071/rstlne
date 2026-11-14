@@ -225,8 +225,16 @@ def test_variants_summarize_each_self_play_folder_that_exists(tmp_path, monkeypa
     from rstlne import selfplay
     (tmp_path / "milk").mkdir()
     monkeypatch.setattr(selfplay, "games_summary", lambda folder: {"games": 3, "folder": Path(folder).name})
-    out = numbers.variants({"milk_all": tmp_path / "milk", "vowel_first": tmp_path / "none"})
+    out = numbers.variants({"milk_all": tmp_path / "milk", "vowel_first": tmp_path / "none"}, full=3)
     assert out == {"milk_all": {"games": 3, "folder": "milk"}}
+
+
+def test_a_self_play_run_still_playing_is_left_out(tmp_path, monkeypatch):
+    from rstlne import selfplay
+    (tmp_path / "milk").mkdir()
+    monkeypatch.setattr(selfplay, "games_summary", lambda folder: {"games": 96})
+    assert numbers.variants({"milk_all": tmp_path / "milk"}, full=1002) == {}
+    assert numbers.VARIANT_GAMES == 1002  # 334 sets in cyclic seating, three games a set
 
 
 def test_pooled_seats_merge_every_game_round_and_solve_of_the_named_seats():

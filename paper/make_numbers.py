@@ -222,9 +222,9 @@ def macros(n: dict) -> dict[str, str | None]:
         for copy, c in (("v6a", "A"), ("v6b", "B")):
             gap = next((p for p in get(n, "variants", variant, "pairwise") or [] if {p["a"], p["b"]} == {v, copy}), None)
             sign = 1 if gap and gap["a"] == v else -1
-            m[f"Variant{label}Vs{c}"] = pts(sign * gap["gap"], 0) if gap else None
+            m[f"Variant{label}Vs{c}"] = pts(sign * gap["gap"]) if gap else None  # one place, as for pairs: a bound near zero reads −0.5, not −0
             ci = sorted(sign * x for x in gap["ci95"]) if gap and gap.get("ci95") else None
-            m[f"Variant{label}Vs{c}CI"] = f"{pts(ci[0], 0)} to {pts(ci[1], 0)}" if ci else None
+            m[f"Variant{label}Vs{c}CI"] = f"{pts(ci[0])} to {pts(ci[1])}" if ci else None
         m[f"Variant{label}Games"] = f"{get(n, 'variants', variant, 'games'):,}" if get(n, "variants", variant) else None
     for p in n["pairs"]:
         words = p["label"].replace("-", " ").split()

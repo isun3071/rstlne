@@ -59,6 +59,7 @@ PAIRS = [
     ("Terra full trust minus Terra alone", ("3tf", TERRA_HYBRID + FULL_TRUST), ("2t", TERRA)),
     ("Luna full trust minus Luna hybrid", ("3lf", LUNA_HYBRID + FULL_TRUST), ("3", LUNA_HYBRID)),
     ("Luna full trust minus Luna alone", ("3lf", LUNA_HYBRID + FULL_TRUST), ("3b", LUNA)),
+    ("Terra full trust minus Luna full trust", ("3tf", TERRA_HYBRID + FULL_TRUST), ("3lf", LUNA_HYBRID + FULL_TRUST)),
     ("DeepSeek minus Luna", ("3c", DEEPSEEK), ("3b", LUNA)),
     ("DeepSeek minus Qwen 3.8 Flash", ("3c", DEEPSEEK), ("3r", QWEN)),
     ("Qwen 3.8 Flash minus Luna", ("3r", QWEN), ("3b", LUNA)),
@@ -374,6 +375,7 @@ VARIANTS = {"milk_all": LOGS / "selfplay" / "variant-milk", "vowel_first": LOGS 
             "solve_on_sight": LOGS / "selfplay" / "variant-solve",  # solve_on_sight: eager_solve at the known-answer level
             "vowels_affordable": LOGS / "selfplay" / "variant-afford", "vowel_cover": LOGS / "selfplay" / "variant-cover",
             "never_vowel": LOGS / "selfplay" / "variant-novowel"}
+VARIANT_GAMES = 1002  # every variant run: 334 sets in cyclic seating, three games a set
 
 
 def _who(row: dict) -> str:
@@ -481,10 +483,15 @@ def blatt(deck: Path = BLATT_DECK, boards: dict | None = None) -> dict | None:
             "shown": {"RSTLNE": fill(lambda p: RSTLNE), "contestant": fill(lambda p: RSTLNE | set(p["contestant_picks"]))}}
 
 
-def variants(folders: dict = VARIANTS) -> dict:
-    """Each bot self-play variant's games against two copies of the bot, summarized as rstlne.selfplay does."""
+def variants(folders: dict = VARIANTS, full: int = VARIANT_GAMES) -> dict:
+    """Each bot self-play variant's games against two copies of the bot, summarized as rstlne.selfplay does.
+    A run with fewer than `full` games is still playing, and is left out."""
     from rstlne import selfplay
-    return {name: selfplay.games_summary(folder) for name, folder in folders.items() if Path(folder).exists()}
+    out = {}
+    for name, folder in folders.items():
+        if Path(folder).exists() and (summary := selfplay.games_summary(folder))["games"] >= full:
+            out[name] = summary
+    return out
 
 
 def _commit() -> str | None:
