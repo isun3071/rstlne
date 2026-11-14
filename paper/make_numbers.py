@@ -74,7 +74,7 @@ def macros(n: dict) -> dict[str, str | None]:
     m["RstlneDeck"] = pct(get(n, "bonus", "rstlne_share", "deck", "mean"), 0)  # R S T L N E's fill on our bonus boards
     m["RstlneAired"] = pct(get(n, "bonus", "rstlne_share", "aired", "mean"), 0)  # and on aired bonus puzzles
     aired = get(n, "bonus", "rstlne_share", "aired", "puzzles")
-    m["AiredBonusPuzzles"] = f"{aired:,}" if aired else None
+    m["RstlneAiredPuzzles"] = f"{aired:,}" if aired else None  # aired bonus puzzles the fill is measured on
     for name, (lid, key) in ALONE.items():
         e = get(lineups, lid, "entrants", key)
         m[f"{name}Win"] = pct(get(e, "win_rate"))
@@ -184,6 +184,20 @@ def macros(n: dict) -> dict[str, str | None]:
                 continue  # Hydrogen played the aired puzzles only, by choice
             m[f"{prefix}{name}"] = str(e["solved"]) if e else None
             m[f"{prefix}{name}Shown"] = pct(e.get("shown_after_picks"), 0) if e else None
+            if e and e.get("consonants") and e.get("vowels"):
+                # its picks: its three commonest consonants and commonest vowel, and the share of its consonant picks
+                # that are the contestants' favourites C, M and D (Spaniel 2013)
+                cons = sorted(e["consonants"].items(), key=lambda kv: (-kv[1], kv[0]))
+                m[f"{prefix}{name}Picks"] = ", ".join(k for k, _ in cons[:2]) + f" and {cons[2][0]}"
+                m[f"{prefix}{name}Vowel"] = sorted(e["vowels"].items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
+                m[f"{prefix}{name}Favourites"] = pct(sum(e["consonants"].get(c, 0) for c in "CMD") / sum(e["consonants"].values()), 0)
+    # solves on our deck by how much of the board R S T L N E fills, and how aired bonus puzzles split across those bands
+    bands = get(n, "bonus", "by_rstlne_share", "entrants") or {}
+    for name, key in players.items():
+        for (k, right_of) in zip(("Low", "Mid", "High"), bands.get(key) or []):
+            m[f"Bonus{name}Band{k}"] = pct(right_of[0] / right_of[1], 0) if right_of[1] else None
+    for k, share in zip(("Low", "Mid", "High"), get(n, "bonus", "rstlne_share", "aired", "bands") or []):
+        m[f"RstlneAiredBand{k}"] = pct(share, 0)
     boards = {"blank": "Blank", "RSTLNE": "Rstlne"}
     probed = get(n, "memory", "players") or {}
     for name, key in players.items():

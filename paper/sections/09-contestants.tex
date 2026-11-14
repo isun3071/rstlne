@@ -1,5 +1,51 @@
 \section{How would contestants fare?}\label{sec:contestants}
-% To draft from paper/outline.md.
 
-% Moved from section 5. Goes with the bonus test against the contestants' 38%; add the table of solve rates by R S T L N E share.
-Our bonus puzzles give away more than the show's. R S T L N E fills \RstlneDeck{} of the letters on our 100 bonus boards, against \RstlneAired{} on \AiredBonusPuzzles{} aired bonus puzzles. The generator wasn't asked to avoid those letters.
+Our fourth question asks how the models compare with the show's contestants. We have no record of what contestants chose in the main rounds. The bonus round's results are public, so we compare there.
+
+\subsection{The bonus test}
+
+Each player solved every bonus puzzle alone, with no opponents. The board starts with R S T L N E, as on the show. The player picks three more consonants and a vowel, sees the board those letters leave, and gives one answer. We ran the test on two sets of puzzles. The first is the \BonusPuzzles{} bonus puzzles of our deck. The second is \AiredBonusPuzzles{} bonus puzzles that aired from 2013 to 2024, held out from all tuning. The models solve aired puzzles by reading the board, not by remembering them (Appendix~\ref{app:puzzles}).
+
+Contestants solve far fewer. From 2007 to January 2014, 37.76\% of contestants solved their bonus puzzle \citep{spaniel2014}. On aired puzzles, the weakest model, Haiku, solves \AiredBonusHaiku{} of \AiredBonusPuzzles. Sol and Terra each solve \AiredBonusSol, and the bot solves \AiredBonusBot{} (Table~\ref{tab:bonus}).
+
+\begin{table}[t]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{Solved} & \multicolumn{2}{c}{Aired puzzles} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Player & Our deck & Aired & Board showing & Picks from C, M, D \\
+\midrule
+Sol & \BonusSol & \AiredBonusSol & \AiredBonusSolShown & \AiredBonusSolFavourites \\
+Terra & \BonusTerra & \AiredBonusTerra & \AiredBonusTerraShown & \AiredBonusTerraFavourites \\
+Ember & \BonusEmber & \AiredBonusEmber & \AiredBonusEmberShown & \AiredBonusEmberFavourites \\
+DeepSeek & \BonusDeepSeek & \AiredBonusDeepSeek & \AiredBonusDeepSeekShown & \AiredBonusDeepSeekFavourites \\
+Qwen 3.8 Flash & \BonusQwen & \AiredBonusQwen & \AiredBonusQwenShown & \AiredBonusQwenFavourites \\
+Luna & \BonusLuna & \AiredBonusLuna & \AiredBonusLunaShown & \AiredBonusLunaFavourites \\
+Haiku & \BonusHaiku & \AiredBonusHaiku & \AiredBonusHaikuShown & \AiredBonusHaikuFavourites \\
+Bot & \BonusBot & \AiredBonusBot & \AiredBonusBotShown & \AiredBonusBotFavourites \\
+\bottomrule
+\end{tabular}
+\caption{Bonus puzzles solved out of \BonusPuzzles{} on each set, with one answer and no clock. Contestants solved 37.76\% from 2007 to January 2014 \citep{spaniel2014}. On aired puzzles, the board showing is the share of letters visible after R S T L N E and the player's picks, and the last column is the share of its consonant picks that are C, M or D, the contestants' favourites.}
+\label{tab:bonus}
+\end{table}
+
+The comparison is not like for like. A contestant has ten seconds and may call out several guesses in that time. Our players have no clock and give one answer. Our deck's boards also start fuller. R S T L N E fills \RstlneDeck{} of the letters on our bonus boards, against \RstlneAired{} on \RstlneAiredPuzzles{} aired bonus puzzles. The generator wasn't asked to avoid those letters. The fill matters for the weaker readers. On our deck, Haiku solves \BonusHaikuBandLow{} of the boards that R S T L N E fills under 30\%, and \BonusHaikuBandHigh{} of those it fills 40\% or more. Luna goes from \BonusLunaBandLow{} to \BonusLunaBandHigh. Sol solves every board in every band. The aired puzzles have the show's own fill, and every model still solves well over the contestants' rate there.
+
+\subsection{The hardest solves}
+
+\citet{blatt2014} collected the \BlattPuzzles{} bonus puzzles that contestants solved with the fewest letters showing, along with each contestant's picks. We gave every player the contestant's own board, R S T L N E plus the contestant's four letters. These boards show \BlattShownContestant{} of their letters on average. The contestants solved all of them, since the list is made of their solves.
+
+The strongest models come close. On the contestants' boards, Terra solves \BlattTerraContestant{} of \BlattPuzzles{} and Sol \BlattSolContestant. Qwen 3.8 Flash solves \BlattQwenContestant, Ember \BlattEmberContestant, Luna \BlattLunaContestant{} and DeepSeek \BlattDeepSeekContestant. Haiku solves \BlattHaikuContestant{} and the bot \BlattBotContestant. With R S T L N E alone, which shows \BlattShownRstlne{} of the letters, Sol still solves \BlattSolRstlne. With their own picks, Sol and Terra solve all \BlattPuzzles. These puzzles were published, so a model might remember them. From a blank board showing only the category and word lengths, no player we tried that way solves more than one.
+
+\subsection{Letter picks}
+
+Contestants favour C, M, D and A. Over about 1,166 bonus rounds, contestants called C in 64.6\% of them, M in 59.9\%, D in 57.9\% and A in 48.3\% \citep{spaniel2013}. So about 61\% of their consonant picks are C, M or D.
+
+Haiku picks most like a contestant. On aired puzzles, \AiredBonusHaikuFavourites{} of its consonant picks are C, M or D. Its commonest consonants are \AiredBonusHaikuPicks, and its commonest vowel is \AiredBonusHaikuVowel. Sol and Terra pick differently. Sol's commonest consonants are \AiredBonusSolPicks, and Terra's are \AiredBonusTerraPicks. Both favour \AiredBonusSolVowel{} among the vowels. Only \AiredBonusSolFavourites{} of Sol's consonant picks and \AiredBonusTerraFavourites{} of Terra's are C, M or D. Sol's board shows \AiredBonusSolShown{} after its picks and Terra's \AiredBonusTerraShown, against \AiredBonusHaikuShown{} for Haiku.
+
+The bot picks \AiredBonusBotPicks{} with A on most aired puzzles. Its board shows \AiredBonusBotShown, as little as Haiku's, yet it solves \AiredBonusBot{} against Haiku's \AiredBonusHaiku. The bot picks the letters that give its best guess the highest chance of being right after the reveal, not the letters that fill the most squares (Appendix~\ref{app:bot}).
+
+\subsection{The answer}
+
+Every model we tested would beat the average contestant in the bonus round, on the show's own puzzles and with one answer. Sol and Terra nearly match the best bonus solves on record, on the same boards those contestants saw.
