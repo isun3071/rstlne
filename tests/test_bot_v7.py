@@ -79,6 +79,8 @@ def test_the_reveal_fit_reads_the_confidence_after_a_hit_off_its_curve(rules, wh
     sure, lost = situation(rules, wheel_spec, TRADE, certain), situation(rules, wheel_spec, TRADE, hopeless)
     assert sure.call("T", 900, fixes=True).main > lost.call("T", 900, fixes=True).main
     assert sure.call("T", 900).main == lost.call("T", 900).main  # off the letter call, the curve is not read
+    # a letter that can't hit is worth only its miss: the curve reads that side too, or it would tilt toward risky letters
+    assert sure.call("Z", 900, fixes=True).main > lost.call("Z", 900, fixes=True).main
 
 
 def test_no_version_before_7_turns_a_letter_fix_on():

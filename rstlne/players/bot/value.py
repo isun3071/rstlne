@@ -144,15 +144,15 @@ class Situation:
         wild = self.wild_held if wild is None else wild
         stats = self.belief.stats(letter)
         after = info.after(self.belief, letter)
-        count, c_hit, credit = stats.count, self.calibrate(after.hit), False
+        count, c_hit, c_miss, credit = stats.count, self.calibrate(after.hit), self.calibrate(after.miss), False
         if fixes:
             if self.knobs.copy_shrink is not None and count > 1:
                 count = 1 + self.knobs.copy_shrink * (count - 1)
-            if self.knobs.reveal_fit:
-                c_hit = self.revealed(after.hit)
+            if self.knobs.reveal_fit:  # both forecasts come from one formula, so one curve reads both
+                c_hit, c_miss = self.revealed(after.hit), self.revealed(after.miss)
             credit = self.knobs.wheel_credit
         hit = self.leaf(self.bank + value * count, c_hit, wild or claim_wild, self.million_held or claim_million, credit)
-        miss = self.lose_wheel(self.bank, self.calibrate(after.miss), wild, self.million_held, credit)
+        miss = self.lose_wheel(self.bank, c_miss, wild, self.million_held, credit)
         return hit * stats.p_hit + miss * (1 - stats.p_hit)
 
     def consonant(self, wedge: Wedge, *, spend_wild: bool = False, fixes: bool = False) -> tuple[str, Value]:
