@@ -27,7 +27,7 @@ from pathlib import Path
 from statistics import mean, median, pstdev
 
 from rstlne import settings, tournament
-from rstlne.analysis import common, letters as letters_mod, play
+from rstlne.analysis import common, letters as letters_mod, milking, play
 from rstlne.engine.puzzle import LETTERS
 
 VOWELS = set("AEIOU")
@@ -498,6 +498,16 @@ def variants(folders: dict = VARIANTS, full: int = VARIANT_GAMES) -> dict:
 TRADE_LINEUPS = ("2", "2t", "3b", "3c", "3d", "3m", "3r")
 
 
+def sure_points(folders: dict[str, Path]) -> dict | None:
+    """When the bots were first sure of the answer against when they solved, per lineup and pooled over them."""
+    by = {lid: [p for g in common.games(folder) for p in milking.sure_points(g)] for lid, folder in folders.items()}
+    by = {lid: points for lid, points in by.items() if points}
+    if not by:
+        return None
+    return {"lineups": {lid: milking.sure_summary(points) for lid, points in by.items()},
+            "pooled": milking.sure_summary([p for points in by.values() for p in points])}
+
+
 def letter_trade(calls: Sequence[dict]) -> dict | None:
     """The bot's consonant calls, each {"ranked": the letters it weighed as [letter, p_hit, copies, ...] with its pick
     first, "chosen", "answer", "value" a copy}: how often it passed over a likelier letter among those it weighed,
@@ -610,9 +620,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     out["variants"] = variants() or None
     alone = [m["folder"] for lid, m in common.lineups(phase).items() if lid in TRADE_LINEUPS]
     out["letter_trade"] = letter_trade(trade_calls(alone))
+    out["sure_points"] = sure_points({lid: m["folder"] for lid, m in common.lineups(phase).items() if lid in TRADE_LINEUPS})
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(out, indent=1))
-    missing = [k for k in ("bonus", "letters", "reading_gap", "aired_bonus", "memory", "blatt", "variants", "letter_trade")
+    missing = [k for k in ("bonus", "letters", "reading_gap", "aired_bonus", "memory", "blatt", "variants", "letter_trade", "sure_points")
                if out[k] is None]
     if out["letters"] and out["letters"]["lineups_missing"]:
         missing.append("letters for " + " ".join(out["letters"]["lineups_missing"]))

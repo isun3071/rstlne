@@ -1,4 +1,5 @@
-"""Milking: every round a bot or hybrid seat knew the answer and spun on, and what came of it.
+"""Milking: every round a bot or hybrid seat knew the answer and spun on, and what came of it; and the sure point,
+the board showing when a seat first treated the answer as known against when it solved.
 
 A seat milks once its known-answer planner chooses to spin (`planner` in the move's log; for logs from before
 2026-11-01, a spin at a calibrated confidence at the version's known-answer threshold). From that move the
@@ -43,6 +44,53 @@ def milked_rounds(game: common.Game) -> list[dict]:
                              taker_kind=game.kind(solved[0]) if solved else None)
             out.append(entry)
     return out
+
+
+def sure_points(game: common.Game) -> list[dict]:
+    """One entry per round and bot or hybrid seat that treated the answer as known: the board showing at its first
+    move made that way and whether its best answer was right, then who took the round; when the seat did, the board
+    showing at its solve and the letters called in between. The gap between the two is what milking added."""
+    out = []
+    for number, actions in sorted(game.rounds().items()):
+        solved = common.solved_by(actions)
+        seen: set[int] = set()
+        for a in actions:
+            seat = a["seat"]
+            if seat in seen or not game.planner_on(a):
+                continue
+            seen.add(seat)
+            rnd = a["state"]["round"]
+            answer, used = rnd["puzzle"]["answer"], rnd["used"]
+            raw = a.get("raw") if isinstance(a.get("raw"), dict) else {}
+            entry = {"round": number, "seat": seat, "name": game.names[seat], "right": raw.get("best") == answer,
+                     "shown": common.shown(answer, used)}
+            if solved and solved[0] == seat:
+                at_solve = solved[1]["state"]["round"]["used"]
+                entry.update(taker="self", shown_solve=common.shown(answer, at_solve), letters=len(at_solve) - len(used))
+            else:
+                kind = game.kind(solved[0]) if solved else None
+                entry["taker"] = "nobody" if kind is None else "bot" if kind in ("bot", "hybrid") else "model"
+            out.append(entry)
+    return out
+
+
+def sure_summary(points: Sequence[dict]) -> dict | None:
+    """Sure points summed up: who took the rounds, and in the rounds the seat solved, the board showing when it was
+    sure and when it solved, and the letters it milked in between."""
+    if not points:
+        return None
+    won = [p for p in points if p["taker"] == "self"]
+    right = [p for p in points if p["right"]]
+    takers = Counter(p["taker"] for p in points)
+    r4 = lambda x: None if x is None else round(x, 4)  # noqa: E731
+    return {"rounds": len(points), "won": len(won) / len(points), "wrong": len(points) - len(right),
+            "taker": {k: v / len(points) for k, v in takers.most_common()},
+            "shown_sure_median": r4(median(p["shown"] for p in right)) if right else None,
+            "shown_sure_won_median": r4(median(p["shown"] for p in won)) if won else None,
+            "shown_solve_median": r4(median(p["shown_solve"] for p in won)) if won else None,
+            "milked_mean": r4(mean(p["shown_solve"] - p["shown"] for p in won)) if won else None,
+            "on_the_spot": sum(p["letters"] == 0 for p in won) / len(won) if won else None,
+            "letters_mean": r4(mean(p["letters"] for p in won)) if won else None}
 
 
 def summarize(rounds: Sequence[dict]) -> dict:

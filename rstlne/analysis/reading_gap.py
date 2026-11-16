@@ -7,9 +7,12 @@ For every round the focal seat (an LLM, hybrid, or decision seat) solved:
       - the reader's best answer is wrong
       - right but unsure: below the known-answer threshold
       - sure, but not its turn: the bot would have known it, and the turn was the focal seat's
+With --walk, each board the bot wasn't ready for is played on: the bot calls the likeliest open consonant (a vowel
+once no consonant can hit), the answer reveals it, and the reader reads again, until the bot is sure of the right
+answer or eight letters are called. That counts how many letters short the bot was.
 A board's read needs the bot's word data, so run it where the data is (the server).
 
-    uv run python -m rstlne.analysis.reading_gap 2 3 --version 6
+    uv run python -m rstlne.analysis.reading_gap 2 3 --version 6 --walk 2
 """
 
 from __future__ import annotations
@@ -22,7 +25,7 @@ from pathlib import Path
 from statistics import median
 
 from rstlne.analysis import common
-from rstlne.engine.puzzle import normalize
+from rstlne.engine.puzzle import LETTERS, normalize
 from rstlne.players.bot import calibration, versions
 
 KNEW = "a bot knew it first and lost the wheel"
@@ -31,6 +34,8 @@ UNSURE = "right, but the bot wasn't sure"
 SURE = "the bot would have known it, but it was the other seat's turn"
 CATEGORIES = (WRONG, UNSURE, SURE, KNEW)
 FOCAL_KINDS = ("llm", "hybrid", "decision")
+WALK_CAP = 8
+VOWELS = frozenset("AEIOU")
 
 
 def cases(game: common.Game, focal: Callable[[str, str], bool]) -> list[dict]:
@@ -92,6 +97,62 @@ def category(answer: str, read: dict, calibrate: Callable[[float], float], known
     return SURE if calibrate(read["confidence"]) >= known else UNSURE
 
 
+def walk(board: tuple, read: Callable, calibrate: Callable[[float], float], known: float, cap: int = WALK_CAP) -> dict:
+    """Play on from `board` (answer, category, used letters, refuted answers): call the likeliest open consonant, a
+    vowel once no consonant can hit, reveal it from the answer, and read again, until the bot is sure of the right
+    answer or `cap` letters are called. `read(used)` is the reader's Belief with those letters called."""
+    answer, used = board[0], set(board[2])
+    letters = misses = 0
+    start = None
+    while True:
+        b = read(frozenset(used))
+        right = b.best == answer
+        sure = right and calibrate(b.confidence) >= known
+        start = start or (SURE if sure else UNSURE if right else WRONG)
+        if sure:
+            return {"start": start, "reached": True, "letters": letters, "misses": misses,
+                    "shown_sure": common.shown(answer, used)}
+        hidden = sorted({c for c in answer if c in LETTERS and c not in used})
+        if letters >= cap or not hidden:
+            return {"start": start, "reached": False, "letters": letters, "misses": misses, "shown_sure": None}
+        live = [c for c in b.letters if c not in used and b.stats(c).p_hit > 0]
+        pool = [c for c in live if c not in VOWELS] or live or hidden
+        pick = max(pool, key=lambda c: (b.stats(c).p_hit, b.stats(c).count, c))
+        used.add(pick)
+        letters += 1
+        misses += pick not in answer
+
+
+def walk_summary(walks: Sequence[dict]) -> dict:
+    """Walks summed up: the share of boards the bot was sure on within one, two and three letters, and by how it
+    started (wrong answer, or right but unsure), how often it got there and with how many letters."""
+    n = len(walks)
+    starts = {}
+    for start in (WRONG, UNSURE):
+        mine = [w for w in walks if w["start"] == start]
+        if not mine:
+            continue
+        reached = [w for w in mine if w["reached"]]
+        starts[start] = {"boards": len(mine), "reached": len(reached) / len(mine),
+                         "letters_median": median(w["letters"] for w in reached) if reached else None,
+                         "misses_mean": sum(w["misses"] for w in reached) / len(reached) if reached else None,
+                         "shown_sure_median": median(w["shown_sure"] for w in reached) if reached else None}
+    return {"boards": n, "cap": WALK_CAP, "starts": starts,
+            "within": {str(k): sum(w["reached"] and w["letters"] <= k for w in walks) / n for k in (1, 2, 3)}}
+
+
+def _walk_in_worker(job) -> dict:
+    from rstlne import selfplay
+    from rstlne.engine.puzzle import Puzzle
+
+    board, version = job
+    w, knobs = selfplay._worker, versions.knobs(version)
+    answer, category, _, refuted = board
+    read = lambda used: w["reader"].read(selfplay.view_of(Puzzle(category, answer), used, w["rules"], w["spec"]),  # noqa: E731
+                                         frozenset(refuted))
+    return walk(board, read, calibration.curve(knobs.calibration), knobs.known_answer)
+
+
 def summarize(found: Sequence[dict], split: dict[str, dict]) -> dict:
     """Per focal player: rounds won, and per category its share, median board showing, and its detail."""
     players = {}
@@ -111,9 +172,22 @@ def summarize(found: Sequence[dict], split: dict[str, dict]) -> dict:
                 row["how"] = dict(Counter(c["how"] or "-" for c in inside))
             cats[cat] = row
         players[who] = {"rounds": len(mine), "categories": cats}
+        walks = [c["walk"] for c in mine if c.get("walk")]
+        if walks:
+            players[who]["walk"] = walk_summary(walks)
     return {"players": players,
             "by_round": {str(r): v for r, v in sorted(split["round"].items())},
             "by_length": {label: split["length"][label] for _, _, label in LENGTHS if split["length"].get(label, [0, 0])[1]}}
+
+
+def _walk_all(boards: Sequence[tuple], version: int, knobs, rules, spec, workers: int) -> list[dict]:
+    from concurrent.futures import ProcessPoolExecutor
+
+    from rstlne import selfplay
+
+    with ProcessPoolExecutor(workers, initializer=selfplay._start_worker,
+                             initargs=(selfplay._make_reader, knobs, rules, spec)) as pool:
+        return list(pool.map(_walk_in_worker, [(b, version) for b in boards], chunksize=4))
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -123,6 +197,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     parser.add_argument("--version", type=int, help="the bot version whose reader reads the boards; config.toml's by default")
     parser.add_argument("--workers", type=int, default=4, help="processes reading boards")
     parser.add_argument("--out", help="also save the results as JSON here, for analysis.numbers")
+    parser.add_argument("--walk", nargs="*", metavar="ID", help="play on from each board the bot wasn't ready for, to count "
+                        "the letters it was short: in these lineups, or every target when none are named")
     args = parser.parse_args(argv)
 
     from rstlne import settings, trust
@@ -132,7 +208,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     rules, spec = trust.rules_and_spec()
     focal = lambda n, kind: kind in FOCAL_KINDS  # noqa: E731
     saved = {}
-    for name, folder in common.resolve(args.targets, args.phase):
+    for target, (name, folder) in zip(args.targets, common.resolve(args.targets, args.phase)):
         played = list(common.games(folder))
         found = [c for g in played for c in cases(g, focal)]
         boards = sorted({c["board"] for c in found if c["board"]})
@@ -141,6 +217,11 @@ def main(argv: Sequence[str] | None = None) -> None:
             if c["category"] is None:
                 c["category"] = category(c["answer"], reads[c["board"]], calibrate, knobs.known_answer)
                 c["calibrated"] = calibrate(reads[c["board"]]["confidence"])
+        if args.walk is not None and (not args.walk or target in args.walk):
+            short = [c for c in found if c["category"] in (WRONG, UNSURE)]
+            print(f"{name}: walking {len(short)} boards", flush=True)
+            for c, w in zip(short, _walk_all([c["board"] for c in short], version, knobs, rules, spec, args.workers)):
+                c["walk"] = w
         result = summarize(found, shares(played, focal))
         saved[name] = result
         print(f"{name}: read with bot v{version}'s reader")
@@ -150,6 +231,12 @@ def main(argv: Sequence[str] | None = None) -> None:
                 extra = (f", median calibrated confidence {c['median_calibrated']:.2f}" if "median_calibrated" in c
                          else f", lost the wheel by {c['how']}" if "how" in c else "")
                 print(f"    {c['share']:4.0%}  {cat} (median {c['median_shown']:.0%} showing{extra})")
+            if "walk" in r:
+                wk = r["walk"]
+                for start, row in wk["starts"].items():
+                    print(f"    walk from '{start}': {row['boards']} boards, sure within {wk['cap']} letters on "
+                          f"{row['reached']:.0%}, median {row['letters_median']} letters")
+                print(f"    sure after 1, 2, 3 letters: " + ", ".join(f"{v:.0%}" for v in wk["within"].values()))
         print("  share of solved rounds by round: " + ", ".join(
             f"round {r} {won / n:.0%} of {n}" for r, (won, n) in result["by_round"].items()))
         print("  by puzzle length: " + ", ".join(

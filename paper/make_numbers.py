@@ -135,7 +135,35 @@ def macros(n: dict) -> dict[str, str | None]:
         bots["hit"].append(get(bc, "hit"))
         bots["judge"].append(get(bc, "judge"))
         bots["top"].append(get(bc, "top"))
+        # when the bots in this lineup were first sure of the answer, against when they solved, in rounds they solved
+        sp = get(n, "sure_points", "lineups", lid)
+        m[f"{name}BotSureShown"] = pct(get(sp, "shown_sure_won_median"), 0)
+        m[f"{name}BotSolveShown"] = pct(get(sp, "shown_solve_median"), 0)
+        # how many letters short the bot was on the boards it wasn't ready for: the walk from each winning board
+        wk = get(n, "reading_gap", "lineups", lid, "players", key, "walk")
+        starts = get(wk, "starts") or {}
+        unsure, wrong = starts.get(gap_kinds["Unsure"]), starts.get(gap_kinds["Other"])
+        letters = lambda x: None if x is None else f"{x:g}"  # noqa: E731
+        m[f"{name}WalkUnsure"] = letters(get(unsure, "letters_median"))
+        m[f"{name}WalkOther"] = letters(get(wrong, "letters_median"))
+        m[f"{name}WalkOtherNever"] = pct(1 - wrong["reached"], 0) if wrong else None
+        m[f"{name}WalkUnsureShown"] = pct(get(unsure, "shown_sure_median"), 0)
+        m[f"{name}WalkOtherShown"] = pct(get(wrong, "shown_sure_median"), 0)
+        for k, word in (("1", "One"), ("2", "Two"), ("3", "Three")):
+            m[f"{name}Walk{word}"] = pct(get(wk, "within", k), 0)
+        m["WalkCap"] = str(wk["cap"]) if wk else m.get("WalkCap")
     span = lambda xs, f: None if None in xs else f"{f(min(xs))}--{f(max(xs))}"  # noqa: E731
+    sure = get(n, "sure_points", "pooled")
+    m["BotSureRounds"] = f"{sure['rounds']:,}" if sure else None
+    m["BotSureWon"] = pct(get(sure, "won"), 0)
+    m["BotSureLostModel"] = pct(get(sure, "taker", "model"), 0)
+    m["BotSureLostBot"] = pct(get(sure, "taker", "bot"), 0)
+    m["BotSureWrong"] = f"{sure['wrong']:,}" if sure else None
+    m["BotSureShown"] = pct(get(sure, "shown_sure_won_median"), 0)
+    m["BotSureSolveShown"] = pct(get(sure, "shown_solve_median"), 0)
+    m["BotSureMilked"] = None if get(sure, "milked_mean") is None else f"{100 * sure['milked_mean']:.0f}"  # points of board
+    m["BotSureOnSpot"] = pct(get(sure, "on_the_spot"), 0)
+    m["BotSureLetters"] = None if get(sure, "letters_mean") is None else f"{sure['letters_mean']:.1f}"
     m["BotRoundMoneyRange"] = span(bots["money"], lambda x: f"\\${x:,.0f}")
     for k in ("shown", "hit", "judge", "top"):
         m[f"Bot{k.capitalize()}Range"] = span(bots[k], lambda x: f"{100 * x:.0f}")

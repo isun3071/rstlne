@@ -110,6 +110,19 @@ def test_milking_follows_each_round_a_bot_spun_on_a_known_answer(folder):
     assert summary["rounds"] == 2 and summary["won"] == 0.5
 
 
+def test_the_sure_point_is_the_first_move_made_with_the_answer_known(folder):
+    game = next(common.games(folder))
+    points = milking.sure_points(game)
+    assert [(p["round"], p["name"], p["right"], p["shown"], p["taker"]) for p in points] == [
+        (1, "bot #1", True, 0.0, "model"), (3, "bot #2", True, 0.0, "self")]
+    assert points[1]["shown_solve"] == pytest.approx(2 / 8) and points[1]["letters"] == 1  # it called C, then solved
+    assert "shown_solve" not in points[0]  # Sol took the round
+    s = milking.sure_summary(points)
+    assert s["rounds"] == 2 and s["won"] == 0.5 and s["on_the_spot"] == 0.0 and s["letters_mean"] == 1.0
+    assert s["taker"] == {"self": 0.5, "model": 0.5} and s["wrong"] == 0
+    assert s["shown_sure_won_median"] == 0.0 and s["shown_solve_median"] == pytest.approx(0.25)
+
+
 # Why the LLM wins its rounds
 
 
@@ -129,6 +142,40 @@ def test_rounds_the_focal_seat_won_are_sorted_by_what_the_bots_lacked(folder):
 def test_a_read_of_the_winning_board_names_the_gap(best, confidence, expected):
     calibrate = lambda c: c  # noqa: E731
     assert reading_gap.category("SPARE TIRE", {"best": best, "confidence": confidence}, calibrate, 0.95) == expected
+
+
+def _belief(best, confidence, **letters):
+    from rstlne.players.bot.belief import Belief, LetterStats
+    return Belief(letters={k: LetterStats(p, 1.0, 0.0) for k, p in letters.items()}, answers=((best, confidence),), oov=0.0)
+
+
+def test_the_walk_calls_the_likeliest_letter_until_the_bot_is_sure():
+    def read(used):  # W looks likelier than T until W misses; T then settles it
+        if "T" in used:
+            return _belief("SPARE TIRE", 0.99, I=0.9)
+        if "W" in used:
+            return _belief("SPARE TIRE", 0.5, T=0.9)
+        return _belief("SPARE WIRE", 0.9, W=0.7, T=0.6, A=0.95)  # a vowel waits while a consonant can hit
+    w = reading_gap.walk(("SPARE TIRE", "Thing", "R", ()), read, lambda c: c, 0.95)
+    assert w == {"start": reading_gap.WRONG, "reached": True, "letters": 2, "misses": 1,
+                 "shown_sure": pytest.approx(3 / 9)}  # the two Rs and the T of nine letters
+
+
+def test_the_walk_stops_at_its_cap():
+    w = reading_gap.walk(("SPARE TIRE", "Thing", "R", ()), lambda used: _belief("SPARE TIRE", 0.5, T=0.9, P=0.8, S=0.7),
+                         lambda c: c, 0.95, cap=2)
+    assert w["start"] == reading_gap.UNSURE and not w["reached"] and w["letters"] == 2 and w["shown_sure"] is None
+
+
+def test_the_walk_sums_up_by_how_the_bot_started():
+    walks = [{"start": reading_gap.UNSURE, "reached": True, "letters": 1, "misses": 0, "shown_sure": 0.6},
+             {"start": reading_gap.UNSURE, "reached": True, "letters": 3, "misses": 1, "shown_sure": 0.7},
+             {"start": reading_gap.WRONG, "reached": False, "letters": 8, "misses": 2, "shown_sure": None}]
+    s = reading_gap.walk_summary(walks)
+    assert s["boards"] == 3 and s["within"] == {"1": pytest.approx(1 / 3), "2": pytest.approx(1 / 3), "3": pytest.approx(2 / 3)}
+    assert s["starts"][reading_gap.UNSURE] == {"boards": 2, "reached": 1.0, "letters_median": 2.0, "misses_mean": 0.5,
+                                               "shown_sure_median": pytest.approx(0.65)}
+    assert s["starts"][reading_gap.WRONG]["reached"] == 0.0 and s["starts"][reading_gap.WRONG]["letters_median"] is None
 
 
 # Letter choice

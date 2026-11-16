@@ -266,3 +266,13 @@ def test_the_letter_trade_counts_likelier_letters_passed_over_and_what_each_woul
     assert out["hit_chosen"] == 0.5 and out["hit_likelier"] == 0.5
     assert out["money_chosen"] == (0 + 2000) / 2 and out["money_likelier"] == (500 + 0) / 2
     assert numbers.letter_trade([]) is None
+
+
+def test_sure_points_sum_up_per_lineup_and_pooled(tmp_path):
+    for lid in ("2", "2t"):
+        (tmp_path / lid).mkdir()
+        write_game(tmp_path / lid)
+    out = numbers.sure_points({lid: tmp_path / lid for lid in ("2", "2t")})
+    assert out["lineups"]["2"]["rounds"] == 2 and out["lineups"]["2"]["won"] == 0.5
+    assert out["pooled"]["rounds"] == 4 and out["pooled"]["shown_solve_median"] == pytest.approx(0.25)
+    assert numbers.sure_points({}) is None
