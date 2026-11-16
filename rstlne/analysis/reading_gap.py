@@ -212,6 +212,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         played = list(common.games(folder))
         found = [c for g in played for c in cases(g, focal)]
         boards = sorted({c["board"] for c in found if c["board"]})
+        print(f"{name}: {len(played)} games, reading {len(boards)} boards", flush=True)
         reads = trust.read_boards(boards, None, knobs, rules, spec, args.workers) if boards else {}
         for c in found:
             if c["category"] is None:
@@ -241,7 +242,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             f"round {r} {won / n:.0%} of {n}" for r, (won, n) in result["by_round"].items()))
         print("  by puzzle length: " + ", ".join(
             f"{label} {won / n:.0%} of {n}" for label, (won, n) in result["by_length"].items()))
-        print()
+        print(flush=True)
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).write_text(json.dumps({"version": version, "lineups": saved}, indent=1))
