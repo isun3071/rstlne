@@ -343,3 +343,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   border-radius: 6px; background: var(--glass-2); color: var(--ink); font: 600 12px/1.5 ui-monospace, Menlo, monospace; text-align: center;
 }
 @media (max-width: 560px) { .rules-head, #rules-body { padding-left: 16px; padding-right: 16px; } }
+/* where a spin landed: the wedge's value in its own colours, big */
+.call.wedge .call-answer { font-size: clamp(30px, 6.5vw, 72px); letter-spacing: .04em; padding: 12px 40px; border: 3px solid var(--gold-2); }
+.call.wedge.bust .call-answer { border-color: var(--red); box-shadow: 0 0 0 3px rgba(255, 77, 94, .35), 0 0 46px rgba(255, 77, 94, .6); }

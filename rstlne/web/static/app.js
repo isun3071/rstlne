@@ -10,7 +10,7 @@ const CONSONANTS = [...ALPHABET].filter((c) => !VOWELS.has(c)).join("");
 const KIND_NAMES = { human: "Human", bot: "Bot", llm: "Model", hybrid: "Hybrid (bot + model)", decision: "Decision seat" };
 const SAVED = "rstlne.setup", NAMES_SAVED = "rstlne.names", STOPS_SAVED = "rstlne.stops";
 const SPIN_MS = 1700;
-const LANDED_MS = 1200;
+const LANDED_MS = 1200;  // where a spin landed shows big over the board this long, for every seat
 const CALL_MS = 1100;  // a bot's or model's letter shows big over the board this long before the tiles turn
 const LETTER_KINDS = new Set(["call_consonant", "call_letter", "buy_vowel"]);
 const SOLVE_LEAD_MS = 1000;  // the board as it stands, before a bot's or model's answer covers it
@@ -375,7 +375,13 @@ function handle(ev) {
     case "landed":
       addMove(ev.move);
       $("#wedge-line").innerHTML = `Wedge: <b>${escapeHtml(ev.move.wedge.text)}</b>`;
-      return ev.move.seat === me ? 0 : LANDED_MS;
+      if (replaying) break;
+      landedOverlay(ev.move);  // the wedge, big over the board, before the letter it pays for
+      pending.unshift({ type: "unland" });
+      return LANDED_MS;
+    case "unland":
+      hideOverlay();
+      break;
     case "thoughts":
       thoughts[ev.seat] = ev.lines;
       renderThoughts();
@@ -590,11 +596,24 @@ function overlay({ who = "", big = null, text = null, tone = "" }) {
   if (big !== null) { letter.textContent = big; letter.classList.toggle("vowel", VOWELS.has(big)); }
   answer.hidden = text === null;
   if (text !== null) answer.textContent = text;
+  answer.style.background = answer.style.color = "";  // a wedge's colours belong to its own overlay only
   box.className = `call ${tone}`.trim();
   box.hidden = false;
   $("#banner").hidden = true;  // the banner sits on the board's edge, under the overlay's reach
   void box.offsetWidth;
   box.classList.add("pop");  // restart the pop each time
+}
+
+// Where a spin landed, big over the board in the wedge's own colours: its value, or Bankrupt, Lose a Turn, Free Play.
+function landedOverlay(ev) {
+  const w = ev.wedge, [bg, fg] = wedgeStyle(w);
+  const name = { million: "the Million wedge", mystery: "a Mystery wedge", express: "the Express" }[w.kind] || (w.wild ? "the Wild Card" : "");
+  const big = { bankrupt: "BANKRUPT", lose_a_turn: "LOSE A TURN", free_play: "FREE PLAY" }[w.kind] || money(w.value);
+  const bust = w.kind === "bankrupt" || w.kind === "lose_a_turn";
+  overlay({ who: `${seatName(ev.seat)} spun${name ? ` · ${name}` : ""}`, text: big, tone: `wedge${bust ? " bust" : ""}` });
+  const pill = $("#call-answer");
+  pill.style.background = bg;
+  pill.style.color = fg;
 }
 
 function hideOverlay() {
