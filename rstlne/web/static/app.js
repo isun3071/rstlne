@@ -211,6 +211,7 @@ function leave() {
 }
 
 function send(command) {
+  earlyKey = null;
   const seat = prompt ? prompt.seat : me;
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ command, seat }));
   prompt = null;
@@ -395,6 +396,7 @@ function handle(ev) {
     case "prompt":
       prompt = ev;
       renderControls();
+      playEarlyKey();
       break;
     case "over":
       if (!replaying && !ev.held && !bonusRevealed) {  // let the result land on the stage before the final scores
@@ -799,7 +801,7 @@ function renderControls() {
     case "express":
       html += `<div class="actions">
         ${legal.has("spin") ? `<button class="spin-btn" data-cmd="s">Spin</button>` : ""}
-        ${p.phase === "express" ? `<span class="label">Riding the Express: call a consonant, buy a vowel, or solve.</span>` : `<span class="label">Spin, buy a vowel, or solve. Press S to spin.</span>`}
+        ${p.phase === "express" ? `<span class="label">Riding the Express: call a consonant, buy a vowel, or solve.</span>` : `<span class="label">Spin, buy a vowel, or solve. Press S to spin, or type a vowel to buy it.</span>`}
       </div>`;
       if (p.phase === "express" && legal.has("call_consonant")) html += keys(CONSONANTS, (c) => c);
       if (legal.has("buy_vowel")) html += `<div class="actions"><span class="label">Buy a vowel ($250):</span>${keys("AEIOU", (c) => `v ${c}`)}</div>`;
@@ -1025,7 +1027,7 @@ function renderTransport() {
   box.querySelector('[data-t="fwd"]').onclick = () => { rp.playing = false; stepForward(); };
   box.querySelector('[data-t="end"]').onclick = () => seek(last);
   box.querySelector('[data-t="play"]').onclick = play;
-  box.querySelector('[data-t="speed"]').onchange = (e) => { rp.speed = Number(e.target.value); };
+  box.querySelector('[data-t="speed"]').onchange = (e) => { rp.speed = Number(e.target.value); e.target.blur(); };
   box.querySelector('[data-t="reveal"]').onchange = (e) => { rp.reveal = e.target.checked; drawAnswer(); };
   box.querySelector('[data-t="scrub"]').oninput = (e) => seek(Number(e.target.value));
   box.querySelectorAll("[data-stop]").forEach((b) => {
@@ -1041,28 +1043,187 @@ function renderTransport() {
   if (now) now.classList.add("now");
 }
 
+// ---------- How to play ----------
+
+// "rounds 1 to 3", "round 2", "rounds 2 and 3"
+function roundsText(list) {
+  if (!list.length) return "";
+  if (list.length === 1) return `round ${list[0]}`;
+  const run = list.every((r, i) => i === 0 || r === list[i - 1] + 1);
+  if (run) return list.length === 2 ? `rounds ${list[0]} and ${list[1]}` : `rounds ${list[0]} to ${list[list.length - 1]}`;
+  return `rounds ${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
+}
+
+// The top wedge's value by round, runs of equal values joined: "$2,500 in round 1, $3,500 in rounds 2 and 3, ..."
+function topsText(tops) {
+  const runs = [];
+  tops.forEach((v, i) => {
+    const last = runs[runs.length - 1];
+    if (last && last.value === v) last.rounds.push(i + 1); else runs.push({ value: v, rounds: [i + 1] });
+  });
+  return runs.map((r) => `${money(r.value)} in ${roundsText(r.rounds)}`).join(", ");
+}
+
+function rulesHtml(r) {
+  const env = r.envelopes, top = env[env.length - 1], rest = env.slice(0, -1);
+  const envelopes = env.reduce((n, e) => n + e.count, 0);
+  const envText = rest.length
+    ? `${envelopes} sealed envelopes, from ${money(rest[0].value)} to ${money(rest[rest.length - 1].value)}, and ${top.count === 1 ? "one" : top.count} with ${money(top.value)}`
+    : `${envelopes} sealed envelopes`;
+  const v = money(r.vowel_cost);
+  const special = (rounds) => (rounds.length ? ` (${roundsText(rounds)})` : "");
+  return `
+    <p>Three players take turns guessing a hidden phrase, one letter at a time. Whoever has the most money after
+      ${r.main_rounds} rounds plays a bonus puzzle alone for a big prize.</p>
+
+    <h3>The board</h3>
+    <p>Each round hides a phrase behind tiles. The category under the board is your clue. Calling a letter turns
+      every tile that holds it.</p>
+
+    <h3>On your turn, do one of three things</h3>
+    <ol>
+      <li><b>Spin, then call a consonant.</b> If it's in the phrase, you win the wedge's amount for every tile it fills,
+        and you go again. If it isn't, or someone already called it, your turn ends.</li>
+      <li><b>Buy a vowel</b> (A, E, I, O, U) for ${v} out of your money this round. You pay even if it isn't there.
+        If it's there you go again; if not, your turn ends. You need ${v} this round to buy one.</li>
+      <li><b>Solve.</b> Type the whole phrase, spelled exactly, punctuation included. If you're right, you keep your
+        money from this round (at least ${money(r.solve_minimum)}) and the round ends. If you're wrong, your turn ends.</li>
+    </ol>
+    <p>Only the player who solves keeps the round's money. The others lose what they made this round, but money from
+      earlier rounds is safe. Once every consonant is showing, nobody can spin: buy a vowel or solve.</p>
+
+    <h3>Wedges to watch</h3>
+    <ul>
+      <li><b>Bankrupt</b> takes all your money from this round, and any card you hold, and ends your turn.</li>
+      <li><b>Lose a Turn</b> ends your turn.</li>
+      <li><b>The top wedge</b> pays the most: ${topsText(r.tops)}.</li>
+      <li><b>Free Play</b>: call any letter. A consonant wins ${money(r.free_play)} a tile, a vowel is free, and a
+        miss doesn't end your turn. You can't solve on that spin.</li>
+      ${r.wild_rounds.length ? `<li><b>Wild Card</b>${special(r.wild_rounds)}: call a right consonant on it to take the card.
+        It stays with you from round to round. After a right consonant on a money wedge, you may spend it to call one
+        more consonant at the same amount. Still holding it at the bonus round? It gives you an extra consonant there.</li>` : ""}
+      ${r.million_rounds.length ? `<li><b>The Million wedge</b>${special(r.million_rounds)}: a thin ${money(r.million_center)}
+        slice between two Bankrupt slices. A right consonant on the middle wins the Million card, but you keep it only
+        if you solve that round. In the bonus round it turns the ${money(r.million_swap[0])} envelope into
+        ${money(r.million_swap[1])}.</li>` : ""}
+      ${r.mystery_rounds.length ? `<li><b>Mystery</b>${special(r.mystery_rounds)}: ${money(r.mystery_face)} a tile. After a
+        right consonant, keep the money or flip the wedge over: one Mystery wedge hides ${money(r.mystery_prize)},
+        the other hides Bankrupt.</li>` : ""}
+      ${r.express_rounds.length ? `<li><b>Express</b>${special(r.express_rounds)}: ${money(r.express)} a tile. After a
+        right consonant you may ride the Express: call consonants at ${money(r.express)} and buy vowels at
+        ${money(r.express_vowel_cost)} with no more spinning, until you solve. One miss or one wrong answer counts as
+        Bankrupt.</li>` : ""}
+    </ul>
+
+    <h3>The bonus round</h3>
+    <p>The player with the most money plays alone (a tie is settled by a random draw). They spin for one of
+      ${envText}, and nobody sees which until the end. ${r.bonus_letters.join(" ")} are shown for free. Pick
+      ${r.bonus_consonants} more consonants and 1 vowel (one more consonant with a Wild Card), see the board, then make
+      one guess within ${r.bonus_seconds} seconds. Solve it and the envelope is yours.</p>
+
+    <h3>One change from TV</h3>
+    <p>There are no toss-up puzzles. Every round is played on the wheel.</p>
+
+    <h3>Keys</h3>
+    <ul>
+      <li><kbd>S</kbd> spins. After the wheel stops, type the consonant you want. A key pressed while it's still turning counts once it stops.</li>
+      <li>Type <kbd>A</kbd> <kbd>E</kbd> <kbd>I</kbd> <kbd>O</kbd> <kbd>U</kbd> on your turn to buy that vowel.</li>
+      <li>To solve, click the answer box, type the phrase, and press <kbd>Enter</kbd>.</li>
+      <li>In the bonus round, type your picks, then press <kbd>Enter</kbd> to reveal them.</li>
+      <li>In a replay: <kbd>Space</kbd> plays or pauses, <kbd>←</kbd> <kbd>→</kbd> step, <kbd>Home</kbd> <kbd>End</kbd> jump.</li>
+      <li><kbd>?</kbd> opens and closes this page.</li>
+    </ul>`;
+}
+
+async function toggleRules() {
+  const box = $("#rules");
+  if (box.open) { box.close(); return; }
+  if (!setupInfo) setupInfo = await (await fetch("/api/setup")).json();
+  $("#rules-body").innerHTML = setupInfo.rules ? rulesHtml(setupInfo.rules) : "<p>The rules couldn't load.</p>";
+  box.showModal();
+  $("#rules-close").focus();
+}
+
+$("#nav-rules").onclick = toggleRules;
+$("#setup-rules").onclick = toggleRules;
+$("#rules-close").onclick = () => $("#rules").close();
+$("#rules").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });  // the backdrop
+
 // ---------- Keys ----------
 
+// Keys typed into a text box stay there; a checkbox, a slider, or a button left focused by a click doesn't take
+// the key from the game.
+const TYPING = 'input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea';
+const EARLY_MS = 4000;  // a key pressed while the human's controls are on their way counts when they arrive
+let earlyKey = null;
+
 document.addEventListener("keydown", (e) => {
-  if (e.target.closest("input, select, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if ($("#rules").open) {
+    if (e.key === "?") { e.preventDefault(); toggleRules(); }
+    return;  // Escape closes the sheet by itself
+  }
+  if (e.target.closest(TYPING)) return;
+  if (e.key === "?") { e.preventDefault(); toggleRules(); return; }
   if (mode === "replay" && rp && !$("#game").hidden) {
     const acts = { ArrowRight: () => { rp.playing = false; stepForward(); }, ArrowLeft: () => seek(rp.pos - 1), " ": play, Home: () => seek(0), End: () => seek(rp.groups.length - 1) };
-    if (acts[e.key]) { e.preventDefault(); acts[e.key](); }
+    if (acts[e.key]) {
+      e.preventDefault();
+      if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();  // or a focused button clicks too
+      acts[e.key]();
+    }
     return;
   }
-  if (!prompt || !humans.includes(prompt.seat)) return;
-  const c = e.key.toUpperCase();
-  if (c.length !== 1 || !ALPHABET.includes(c) || (table && table.used.includes(c))) return;
-  const phase = prompt.phase;
-  if (((phase === "call_consonant" || phase === "wild_consonant") && !VOWELS.has(c)) || phase === "free_play"
-      || (phase === "express" && !VOWELS.has(c) && prompt.legal.includes("call_consonant"))) {
+  if (mode !== "play" || over) return;
+  if (prompt && humans.includes(prompt.seat)) {
+    if (playKey(e.key)) { e.preventDefault(); if (e.target.matches("button")) e.target.blur(); }
+    return;
+  }
+  // The wheel is still turning, or a letter is still landing, on a human's turn: keep the key for their controls.
+  if (table && humans.includes(table.turn) && e.key.length === 1 && ALPHABET.includes(e.key.toUpperCase())) {
+    earlyKey = { key: e.key, at: Date.now() };
     e.preventDefault();
-    send(c);
-  } else if (phase === "turn" && c === "S" && prompt.legal.includes("spin")) {
-    e.preventDefault();
-    send("s");
   }
 });
+
+// A key on the human's controls: what it does in this phase, or false when it does nothing.
+function playKey(key) {
+  const p = prompt, legal = new Set(p.legal), c = key.toUpperCase();
+  if (p.phase === "bonus_picks") {
+    if (key === "Enter") { const go = $("[data-picks-go]"); if (go && !go.disabled) { go.click(); return true; } return false; }
+    const b = c.length === 1 && document.querySelector(`[data-pick="${c}"]`);
+    if (b) { b.click(); return true; }
+    return false;
+  }
+  if (c.length !== 1 || !ALPHABET.includes(c) || (table && table.used.includes(c))) return false;
+  const vowel = VOWELS.has(c);
+  switch (p.phase) {
+    case "call_consonant":
+    case "wild_consonant":
+      if (vowel) return false;
+      send(c);
+      return true;
+    case "free_play":
+      send(c);
+      return true;
+    case "express":
+      if (!vowel && legal.has("call_consonant")) { send(c); return true; }
+      if (vowel && legal.has("buy_vowel")) { send(`v ${c}`); return true; }
+      return false;
+    case "turn":
+      if (c === "S" && legal.has("spin")) { send("s"); return true; }
+      if (vowel && legal.has("buy_vowel")) { send(`v ${c}`); return true; }
+      return false;
+  }
+  return false;
+}
+
+// The human's controls are up: a key pressed while they were on their way plays now, if it's still fresh.
+function playEarlyKey() {
+  const k = earlyKey;
+  earlyKey = null;
+  if (k && Date.now() - k.at < EARLY_MS && prompt && humans.includes(prompt.seat)) playKey(k.key);
+}
 
 // ---------- The result ----------
 

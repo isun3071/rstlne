@@ -317,3 +317,29 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .solve { min-width: 0; }
   .transport .toggle { margin-left: 0; }
 }
+
+/* How to play: a sheet over the page, open from the nav, the setup screen, or the ? key */
+.linkish { background: none; border: none; padding: 0; color: var(--gold-2); text-decoration: underline; cursor: pointer; font: inherit; }
+.linkish:hover:not(:disabled) { background: none; color: var(--gold); }
+.rules {
+  width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; overflow: auto;
+  background: var(--stage-2); color: var(--ink); border: 1px solid var(--gold-deep); border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+}
+.rules::backdrop { background: rgba(5, 2, 15, .7); }
+.rules-head {
+  position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 20px; background: var(--stage-2); border-bottom: 1px solid var(--edge);
+}
+.rules-head h2 { margin: 0; color: var(--gold-2); font-size: 20px; }
+#rules-body { padding: 4px 20px 20px; }
+#rules-body h3 { margin: 18px 0 6px; font-size: 15px; color: var(--gold-2); letter-spacing: .02em; }
+#rules-body p, #rules-body li { color: var(--ink2); max-width: 66ch; }
+#rules-body b { color: var(--ink); }
+#rules-body ol, #rules-body ul { padding-left: 22px; margin: 6px 0; }
+#rules-body li { margin: 4px 0; }
+#rules-body kbd {
+  display: inline-block; min-width: 1.6em; padding: 1px 6px; border: 1px solid var(--edge); border-bottom-width: 2px;
+  border-radius: 6px; background: var(--glass-2); color: var(--ink); font: 600 12px/1.5 ui-monospace, Menlo, monospace; text-align: center;
+}
+@media (max-width: 560px) { .rules-head, #rules-body { padding-left: 16px; padding-right: 16px; } }

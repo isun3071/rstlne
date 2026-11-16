@@ -89,6 +89,27 @@ def nicknames(names: list[str | None] | None, kinds: list[str]) -> list[str | No
     return out
 
 
+def rules_card(rules, spec, bonus_seconds: int) -> dict:
+    """The values the page's rules sheet quotes, from config.toml and wheel.toml, so the sheet never drifts from them."""
+    rounds = range(1, rules.main_rounds + 1)
+    on = lambda field: [r for r in rounds if getattr(spec.overlay(r), field)]  # noqa: E731
+    counts: dict[int, int] = {}
+    for value in spec.envelopes:
+        counts[value] = counts.get(value, 0) + 1
+    return {
+        "main_rounds": rules.main_rounds, "vowel_cost": rules.vowel_cost, "express_vowel_cost": rules.express_vowel_cost,
+        "solve_minimum": rules.solve_minimum, "bonus_letters": list(rules.bonus_letters),
+        "bonus_consonants": rules.bonus_consonants, "bonus_seconds": bonus_seconds,
+        "free_play": spec.free_play, "million_center": spec.million_center, "mystery_face": spec.mystery_face,
+        "mystery_prize": spec.mystery_prize, "express": spec.express,
+        "tops": [spec.overlay(r).top for r in rounds],
+        "wild_rounds": on("wild"), "million_rounds": on("million"), "mystery_rounds": on("mystery"),
+        "express_rounds": on("express"),
+        "envelopes": [{"value": v, "count": n} for v, n in sorted(counts.items())],
+        "million_swap": list(spec.million_swap),
+    }
+
+
 def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, log_dir: Path | None = None,
                pause: float | None = None, solve_pause: float | None = None, replays: bool = True,
                verbose: bool = False) -> FastAPI:
@@ -142,6 +163,7 @@ def create_app(*, config: dict | None = None, puzzles_path: Path | None = None, 
             # a plain bot seat may play one; the menu names the part of play each changes, then its words, in order
             "bot_strategies": {k: f"{versions.STRATEGY_PARTS[k]}: {words}" for k, words in versions.STRATEGIES.items()},
             "bonus_solve_seconds": config["cli"]["bonus_solve_seconds"],
+            "rules": rules_card(rules, spec, config["cli"]["bonus_solve_seconds"]),
         }
 
     @app.post("/api/games")

@@ -172,6 +172,19 @@ def test_setup_lists_the_bot_strategies_and_a_bot_seat_can_play_one(client):
     assert client.post("/api/games", json={"seats": ["human", "bot:greedy", "bot"]}).status_code == 400
 
 
+def test_setup_carries_the_rules_page_values_from_the_config_and_the_wheel(client):
+    from rstlne import settings
+    rules, spec = settings.load_rules(), settings.load_wheel()
+    card = client.get("/api/setup").json()["rules"]
+    assert card["vowel_cost"] == rules.vowel_cost and card["solve_minimum"] == rules.solve_minimum
+    assert card["main_rounds"] == rules.main_rounds and card["bonus_letters"] == list(rules.bonus_letters)
+    assert card["mystery_prize"] == spec.mystery_prize and card["free_play"] == spec.free_play
+    assert len(card["tops"]) == rules.main_rounds  # the top wedge's value in each main round
+    assert card["mystery_rounds"] == [2] and card["express_rounds"] == [3] and card["wild_rounds"] == [1, 2, 3]
+    assert card["envelopes"][-1] == {"value": 100000, "count": 1} and card["million_swap"] == [100000, 1000000]
+    assert card["bonus_seconds"] == settings.load_config()["cli"]["bonus_solve_seconds"]
+
+
 def test_setup_names_the_default_solver_so_a_decision_seat_can_pick_another(client):
     from rstlne import settings
     setup = client.get("/api/setup").json()
