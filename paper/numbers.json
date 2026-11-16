@@ -1,8 +1,8 @@
 {
  "meta": {
   "phase": "v6",
-  "made": "2026-11-14T22:53:54+00:00",
-  "commit": "6e3ea59",
+  "made": "2026-11-16T15:46:57+00:00",
+  "commit": "6558d33",
   "lineups": [
    "2",
    "2t",
@@ -35405,6 +35405,31 @@
          "missing": 4
         }
        }
+      },
+      "walk": {
+       "boards": 419,
+       "cap": 8,
+       "starts": {
+        "the bot's reader had another answer": {
+         "boards": 205,
+         "reached": 0.7560975609756098,
+         "letters_median": 5,
+         "misses_mean": 0.3935483870967742,
+         "shown_sure_median": 0.7142857142857143
+        },
+        "right, but the bot wasn't sure": {
+         "boards": 214,
+         "reached": 0.9766355140186916,
+         "letters_median": 3,
+         "misses_mean": 0.28708133971291866,
+         "shown_sure_median": 0.7058823529411765
+        }
+       },
+       "within": {
+        "1": 0.1575178997613365,
+        "2": 0.26014319809069214,
+        "3": 0.3723150357995227
+       }
       }
      }
     },
@@ -35477,6 +35502,31 @@
          "missing": 5,
          "flipped_bankrupt": 3
         }
+       }
+      },
+      "walk": {
+       "boards": 445,
+       "cap": 8,
+       "starts": {
+        "the bot's reader had another answer": {
+         "boards": 231,
+         "reached": 0.7835497835497836,
+         "letters_median": 6,
+         "misses_mean": 0.5193370165745856,
+         "shown_sure_median": 0.7391304347826086
+        },
+        "right, but the bot wasn't sure": {
+         "boards": 214,
+         "reached": 0.9672897196261683,
+         "letters_median": 3,
+         "misses_mean": 0.178743961352657,
+         "shown_sure_median": 0.6923076923076923
+        }
+       },
+       "within": {
+        "1": 0.12134831460674157,
+        "2": 0.21123595505617979,
+        "3": 0.34606741573033706
        }
       }
      }
@@ -35625,6 +35675,31 @@
          "missing": 3
         }
        }
+      },
+      "walk": {
+       "boards": 363,
+       "cap": 8,
+       "starts": {
+        "the bot's reader had another answer": {
+         "boards": 185,
+         "reached": 0.8648648648648649,
+         "letters_median": 5.0,
+         "misses_mean": 0.58125,
+         "shown_sure_median": 0.7399355877616747
+        },
+        "right, but the bot wasn't sure": {
+         "boards": 178,
+         "reached": 0.9775280898876404,
+         "letters_median": 3.0,
+         "misses_mean": 0.04597701149425287,
+         "shown_sure_median": 0.7058823529411765
+        }
+       },
+       "within": {
+        "1": 0.14049586776859505,
+        "2": 0.2534435261707989,
+        "3": 0.3939393939393939
+       }
       }
      }
     },
@@ -35697,6 +35772,31 @@
          "missing": 4,
          "flipped_bankrupt": 7
         }
+       }
+      },
+      "walk": {
+       "boards": 413,
+       "cap": 8,
+       "starts": {
+        "the bot's reader had another answer": {
+         "boards": 217,
+         "reached": 0.7649769585253456,
+         "letters_median": 5.0,
+         "misses_mean": 0.45180722891566266,
+         "shown_sure_median": 0.7058823529411765
+        },
+        "right, but the bot wasn't sure": {
+         "boards": 196,
+         "reached": 0.9795918367346939,
+         "letters_median": 3.0,
+         "misses_mean": 0.06770833333333333,
+         "shown_sure_median": 0.6485294117647059
+        }
+       },
+       "within": {
+        "1": 0.14043583535108958,
+        "2": 0.26150121065375304,
+        "3": 0.39951573849878935
        }
       }
      }
@@ -35771,6 +35871,31 @@
          "lose_a_turn": 21
         }
        }
+      },
+      "walk": {
+       "boards": 114,
+       "cap": 8,
+       "starts": {
+        "the bot's reader had another answer": {
+         "boards": 32,
+         "reached": 0.875,
+         "letters_median": 3.0,
+         "misses_mean": 0.5714285714285714,
+         "shown_sure_median": 0.834096109839817
+        },
+        "right, but the bot wasn't sure": {
+         "boards": 82,
+         "reached": 1.0,
+         "letters_median": 2.0,
+         "misses_mean": 0.12195121951219512,
+         "shown_sure_median": 0.822884012539185
+        }
+       },
+       "within": {
+        "1": 0.2543859649122807,
+        "2": 0.4473684210526316,
+        "3": 0.6491228070175439
+       }
       }
      }
     },
@@ -35842,6 +35967,31 @@
          "bankrupt": 37,
          "flipped_bankrupt": 3
         }
+       }
+      },
+      "walk": {
+       "boards": 165,
+       "cap": 8,
+       "starts": {
+        "the bot's reader had another answer": {
+         "boards": 55,
+         "reached": 0.7818181818181819,
+         "letters_median": 4,
+         "misses_mean": 0.6744186046511628,
+         "shown_sure_median": 0.75
+        },
+        "right, but the bot wasn't sure": {
+         "boards": 110,
+         "reached": 1.0,
+         "letters_median": 3.0,
+         "misses_mean": 0.21818181818181817,
+         "shown_sure_median": 0.8038461538461539
+        }
+       },
+       "within": {
+        "1": 0.21212121212121213,
+        "2": 0.3515151515151515,
+        "3": 0.5212121212121212
        }
       }
      }
@@ -36554,6 +36704,31 @@
          "flipped_bankrupt": 4,
          "missing": 1
         }
+       }
+      },
+      "walk": {
+       "boards": 247,
+       "cap": 8,
+       "starts": {
+        "the bot's reader had another answer": {
+         "boards": 86,
+         "reached": 0.9069767441860465,
+         "letters_median": 5.0,
+         "misses_mean": 0.6923076923076923,
+         "shown_sure_median": 0.8153409090909092
+        },
+        "right, but the bot wasn't sure": {
+         "boards": 161,
+         "reached": 0.9813664596273292,
+         "letters_median": 3.0,
+         "misses_mean": 0.0759493670886076,
+         "shown_sure_median": 0.7965517241379311
+        }
+       },
+       "within": {
+        "1": 0.1700404858299595,
+        "2": 0.3562753036437247,
+        "3": 0.5101214574898786
        }
       }
      }
@@ -43367,5 +43542,137 @@
   "hit_likelier": 0.9057905245961154,
   "money_chosen": 1173.9381012888002,
   "money_likelier": 1193.0205118896351
+ },
+ "sure_points": {
+  "lineups": {
+   "2": {
+    "rounds": 820,
+    "won": 0.8048780487804879,
+    "wrong": 44,
+    "taker": {
+     "self": 0.8048780487804879,
+     "model": 0.1024390243902439,
+     "bot": 0.09268292682926829
+    },
+    "shown_sure_median": 0.5,
+    "shown_sure_won_median": 0.5294,
+    "shown_solve_median": 0.6154,
+    "milked_mean": 0.0857,
+    "on_the_spot": 0.503030303030303,
+    "letters_mean": 1.2424
+   },
+   "2t": {
+    "rounds": 807,
+    "won": 0.7744733581164808,
+    "wrong": 43,
+    "taker": {
+     "self": 0.7744733581164808,
+     "model": 0.1524163568773234,
+     "bot": 0.07311028500619579
+    },
+    "shown_sure_median": 0.5263,
+    "shown_sure_won_median": 0.5385,
+    "shown_solve_median": 0.6154,
+    "milked_mean": 0.0863,
+    "on_the_spot": 0.5168,
+    "letters_mean": 1.2272
+   },
+   "3b": {
+    "rounds": 1017,
+    "won": 0.7777777777777778,
+    "wrong": 44,
+    "taker": {
+     "self": 0.7777777777777778,
+     "model": 0.13667649950835792,
+     "bot": 0.0855457227138643
+    },
+    "shown_sure_median": 0.5294,
+    "shown_sure_won_median": 0.55,
+    "shown_solve_median": 0.625,
+    "milked_mean": 0.0779,
+    "on_the_spot": 0.5309734513274337,
+    "letters_mean": 1.1416
+   },
+   "3c": {
+    "rounds": 908,
+    "won": 0.7687224669603524,
+    "wrong": 49,
+    "taker": {
+     "self": 0.7687224669603524,
+     "model": 0.1486784140969163,
+     "bot": 0.08259911894273128
+    },
+    "shown_sure_median": 0.5263,
+    "shown_sure_won_median": 0.5385,
+    "shown_solve_median": 0.6111,
+    "milked_mean": 0.0849,
+    "on_the_spot": 0.5128939828080229,
+    "letters_mean": 1.2149
+   },
+   "3d": {
+    "rounds": 1265,
+    "won": 0.7936758893280632,
+    "wrong": 51,
+    "taker": {
+     "self": 0.7936758893280632,
+     "bot": 0.11778656126482213,
+     "model": 0.08853754940711463
+    },
+    "shown_sure_median": 0.5385,
+    "shown_sure_won_median": 0.55,
+    "shown_solve_median": 0.6429,
+    "milked_mean": 0.0902,
+    "on_the_spot": 0.48406374501992033,
+    "letters_mean": 1.3785
+   },
+   "3r": {
+    "rounds": 1173,
+    "won": 0.7928388746803069,
+    "wrong": 39,
+    "taker": {
+     "self": 0.7928388746803069,
+     "bot": 0.13213981244671782,
+     "model": 0.07502131287297528
+    },
+    "shown_sure_median": 0.5714,
+    "shown_sure_won_median": 0.5789,
+    "shown_solve_median": 0.6667,
+    "milked_mean": 0.0911,
+    "on_the_spot": 0.4956989247311828,
+    "letters_mean": 1.4022
+   },
+   "3m": {
+    "rounds": 1014,
+    "won": 0.7909270216962525,
+    "wrong": 39,
+    "taker": {
+     "self": 0.7909270216962525,
+     "model": 0.11932938856015779,
+     "bot": 0.08974358974358974
+    },
+    "shown_sure_median": 0.5263,
+    "shown_sure_won_median": 0.5333,
+    "shown_solve_median": 0.6154,
+    "milked_mean": 0.0888,
+    "on_the_spot": 0.46758104738154616,
+    "letters_mean": 1.2419
+   }
+  },
+  "pooled": {
+   "rounds": 7004,
+   "won": 0.7866933181039406,
+   "wrong": 309,
+   "taker": {
+    "self": 0.7866933181039406,
+    "model": 0.11450599657338664,
+    "bot": 0.09880068532267276
+   },
+   "shown_sure_median": 0.5294,
+   "shown_sure_won_median": 0.55,
+   "shown_solve_median": 0.625,
+   "milked_mean": 0.0867,
+   "on_the_spot": 0.5,
+   "letters_mean": 1.2744
+  }
  }
 }

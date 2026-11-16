@@ -36,6 +36,8 @@ Figure~\ref{fig:temperament} plots how early each player solves against how ofte
 
 Ember is the most careful. It is right on \EmberAcc{} of its solves and makes \EmberWrong{} wrong solves a game. It waits until \EmberShown{} of the board shows, about when the bots solve (\BotShownRange\%). It also buys the most vowels of any model, \EmberVowels{} a game against Sol's \SolVowels{}. Ember pays for certainty, in vowels and in thinking tokens (Section~\ref{sec:cost}).
 
+Part of the bots' wait is milking, not reading. Across the seven lineups with one model against two bots, a bot that won a round after it was sure of the answer was sure with a median \BotSureShown{} of the board showing. It solved at \BotSureSolveShown. It solved at once in \BotSureOnSpot{} of those rounds. In the rest, its planner spun on to bank the leftover consonants (Section~\ref{sec:players}). A sure bot usually keeps the round. It won \BotSureWon{} of the \BotSureRounds{} rounds it was sure in, and a model took \BotSureLostModel.
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\linewidth]{2-temperament.png}
@@ -100,5 +102,7 @@ In the first two groups, the bot was not ready to solve the board the model solv
 \caption{Each round a model won against two bots, sorted by what the bot's reader made of the board the model solved.}
 \label{fig:reading-gap}
 \end{figure}
+
+The bot was several letters short on those boards. From each board in the first two groups, we let the bot play on alone. It calls the open consonant its reader thinks likeliest, the letter shows from the answer, and it reads the board again. It stops once it is sure of the right answer, or after \WalkCap{} letters. On Sol's boards where the bot was right but unsure, it needed a median of \SolWalkUnsure{} more letters called. Where its answer was wrong, it needed \SolWalkOther, and on \SolWalkOtherNever{} of those boards it was still not sure after \WalkCap. Only \SolWalkOne{} of Sol's boards in the two groups were one letter from the bot being sure, and \SolWalkThree{} were within three. Terra's boards were as far off, at \TerraWalkUnsure{} and \TerraWalkOther{} letters. Haiku's were closer, at \HaikuWalkUnsure{} and \HaikuWalkOther, with \HaikuWalkThree{} within three.
 
 Sol and Terra win because they read boards the bot cannot, and they are right when they do. They lose money by solving early on boards the bot would have milked. Section~\ref{sec:can-we-do-better} asks whether a player of our own can keep the first and fix the second.
