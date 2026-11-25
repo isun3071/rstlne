@@ -2,27 +2,21 @@
 
 Named after R, S, T, L, N, and E, the letters the bonus round hands every player.
 
-Wheel of Fortune in the terminal, with language models at the table. Each of the three seats is you or a model called through [OpenRouter](https://openrouter.ai). The game follows the current show's rules, including the Mystery and Express wedges, the Wild Card, the Million wedge, and the bonus round.
+Wheel of Fortune with language models at the table, in the terminal or in a browser. Each of the three seats is you, a model called through [OpenRouter](https://openrouter.ai), the project's own bot, a hybrid of the bot and a model, or a decision model. The game follows the current show's rules, including the Mystery and Express wedges, the Wild Card, the Million wedge, and the bonus round. Toss-ups are left out on purpose.
 
-The same engine runs seeded, model-only tournaments that compare how well models pick letters, take risks, and time their solves.
-
-[FINDINGS.md](FINDINGS.md) covers what about 4,000 scored games showed: the best model beats our bot, most don't, models have distinct temperaments, and letting a model read while the bot decides lifts weak models by about 28 points.
+The same engine runs seeded tournaments that compare how well players pick letters, take risks, and time their solves. Seven models from five labs played 30 lineups, 10,800 games in all, against the bot and each other. [FINDINGS.md](FINDINGS.md) has the short version: GPT-6.1 Sol and Terra beat the bot, the other five models don't, a weak model wins 26 to 29 points more often reading the board for the bot than playing alone, and every model would beat the average contestant in the bonus round. The paper in [paper/](paper/) has the full method and results.
 
 ## Status
 
 | Part | State |
 |---|---|
 | Game engine, covering every rule in `documentation.md` | Done |
-| Model seats, which move by tool calls | Done |
-| Decision model seats | Done |
-| Hybrid seats: the bot decides, a model reads the board | Done |
-| Your seat in the terminal | Done |
-| Game logs | Done |
-| Bot | Version 5 (2026-11-02): v4 with better reading and Express play. Version 4 is the checkpoint version |
-| Tournament runner, bonus test, puzzle generator | Done |
-| The v4 checkpoint: the grading runs in `FINDINGS.md`, all against bot v4 | Done (2026-11-01) |
-| The v5 phase: a stronger bot (Express play, word-pair reading), checked against v4 | v5 adopted (+12.6 points over v4 in self-play); Sol against two v5 bots next |
-| Local web page, starting with a solver | Planned for phase 2 |
+| Seats: you, models by tool calls, decision models, hybrids, the bot | Done |
+| Bot | Version 6 (2026-11-05), the only bot in the results. Version 7's letter knobs tied it and are parked |
+| Terminal game and browser game, with replays | Done |
+| Tournament runner, bonus test, puzzle generator, self-play | Done |
+| The v6 lineups: 30 lineups, 10,800 games | Done |
+| The paper | Being written in `paper/` |
 
 ## Setup
 
@@ -37,89 +31,107 @@ cp .env.example .env
 
 Put your key in `.env` as `OPENROUTER_API_KEY=...`. Git ignores `.env`.
 
-## Play
+The bot plays at full strength only with its word data (see [The bot's word data](#the-bots-word-data)). Without it, the bot reads by letter frequency alone.
+
+## Play in the terminal
 
 ```
-uv run python -m rstlne.cli --seats human,llm:anthropic/claude-haiku-5.5,llm:openai/gpt-6-luna
+uv run python -m rstlne.cli --seats human,bot,llm:openai/gpt-6.1-sol
 ```
 
-Each seat is `human`, `llm:<slug>`, `decision[:<model>]`, `bot`, or `hybrid:<slug>`. Three seats without a human play a model-only game. In a `decision` seat, a decision model, GPT-6 Luna Decisions by default, makes every choice through OpenRouter's Decisions API, including when to solve, and an LLM writes the answer. `[decision]` in `config.toml` names both models, and `decision:<model>` overrides the decision model for one seat, and `decision:<model>@<solver>` its solver too. In a `hybrid` seat the bot makes every move and asks the model to read the board on its turns. A `bot` seat is the project's own versioned player: it reads the board with word and phrase lists and scores every move with one value function, as `documentation.md` describes. It reads with its full reader once `python -m rstlne.data fetch` has run (see below). Without the data, it reads by letter frequency alone and solves only once the board gives the answer away. A model needs tool calling: check that its `supported_parameters` on OpenRouter include `tools`. [HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands and rules.
+Each seat is `human`, `llm:<slug>`, `bot`, `hybrid:<slug>`, or `decision[:<model>[@<solver>]]`:
+
+- `llm:<slug>` is a chat model making every move by tool calls. Any OpenRouter model whose `supported_parameters` include `tools` can sit.
+- `bot` is the project's own player. It reads the board with word and phrase lists and scores every move with one value function, as `documentation.md` describes. No API calls.
+- `hybrid:<slug>` is the bot making every move and asking the model to read the board on its turns. Only models with trust curves in `config.toml` can sit: Terra, Luna, Haiku and DeepSeek. `hybrid:<slug>+trust_fit` takes the model's first fitting answer at its word.
+- `decision` is a decision model, GPT-6 Luna Decisions by default, making every choice through OpenRouter's Decisions API, including when to solve, with an LLM writing the answer. `[decision]` in `config.toml` names both; `decision:<model>@<solver>` overrides them for one seat.
+
+[HOW_TO_PLAY.md](HOW_TO_PLAY.md) covers the commands, the rules, and tables to try.
 
 | Option | Effect |
 |---|---|
 | `--seed N` | Plays seed N. The same seed and the same moves replay the same game. Without it, the game picks a seed and prints it. |
-| `--show-thinking` | Prints each model's reasoning and message before its move. For a decision seat, it prints P(solvable) and the probability of each pick. |
-| `--verbose` | `--show-thinking`, plus the bot's working: each move's worth as a formula with its numbers, and the planner's solve-now against spin-again once it knows the answer. |
-| `--live` | Model-only games: redraws one fixed screen after every move, with the board as tiles, the letters left, each seat's money, cards, and thinking, and the latest moves. |
-| `--show-puzzle` | Prints the board, letters, banks, cards, and wedge after every move, so you can follow a model-only game. |
-| `--pause S` | Pauses S seconds after each model move. The default is 1.5. |
+| `--live` | Redraws one fixed screen after every move: the board as tiles, the letters left, each seat's money, cards, and thinking, and the latest moves. |
+| `--show-thinking` | Prints each seat's reasoning before its move: a model's reasoning, a decision seat's probabilities, the bot's likeliest answers and move values. |
+| `--verbose` | `--show-thinking`, plus the bot's working: each move's worth as a formula with its numbers. |
+| `--show-puzzle` | Prints the board, letters, banks, cards, and wedge after every move. |
+| `--pause S` | Pauses S seconds after each move. The default is 1.5. |
 | `--puzzles PATH` | Reads puzzles from PATH. The default is `puzzles/dev.json`. |
 | `--log-dir PATH` | Writes game logs to PATH. The default is `logs/`. |
-
-The grading runs used GPT-6.1 Sol, GPT-6 Luna, Claude Haiku 5.5, and DeepSeek V4.1 Flash (its October 17, 2026 snapshot). Any OpenRouter model with tool calling can sit.
 
 ## Play in a browser
 
 ```
 uv run python -m rstlne.decks mega   # once: the mega deck, every aired and generated puzzle (stays out of git)
-uv run python -m rstlne.decks aired  # or the aired puzzles alone: puzzles/aired-all.json (stays out of git)
-uv run python -m rstlne.web          # then open http://127.0.0.1:8000; --verbose shows the bot's working in Thinking
+uv run python -m rstlne.web          # then open http://127.0.0.1:8000
 ```
 
-Pick the three seats on the page, then play or watch. Up to three humans can share the screen, taking turns with the same controls. Each can type a nickname. Model seats use the key in `.env`. `--port`, `--puzzles` and `--log-dir` work as in the CLI. Games log to `logs/` like CLI games. The Replays tab replays any game in the log folder, move by move, with breakpoints: stop at solves, Bankrupts, new rounds, a seat's moves, and more. The arrow keys step and the space bar plays.
+Pick the three seats on the page, then play or watch. Up to three people can share the screen, each with a nickname. You play with the mouse or the keyboard: `s` spins, a typed vowel buys it, a typed consonant calls it, and `?` opens a How to play sheet in plain words. The landed wedge shows over the board for a moment after every spin. The Replays tab replays any game in the log folder move by move, with breakpoints at solves, Bankrupts, new rounds, or a seat's moves.
+
+`--host`, `--port`, `--puzzles`, `--log-dir`, and `--verbose` (the bot's working in the Thinking panel) are the options. Without the mega deck, the page plays `puzzles/dev.json`. `python -m rstlne.decks aired` builds the aired puzzles alone, `puzzles/aired-all.json`.
+
+To keep the page running on a home server, install [deploy/rstlne-web.service](deploy/rstlne-web.service) as a systemd user service. Its header has the commands. Keep it on the home network or a VPN into it: model seats spend the key in `.env`.
 
 ## Tournaments
 
-Add `--puzzles generate` to play on fresh puzzles made for the tournament: a generator model writes them, code checks them, and a judge model from another lab confirms each one. `documentation.md` has the details. A 50-set pool costs about a cent. `python -m rstlne.puzzlegen --main 40 --bonus 10 --seed 7 --out puzzles/generated/batch.json` makes a batch on its own.
-
 ```
-uv run python -m rstlne.tournament --seats llm:openai/gpt-6.1-sol,bot,bot --sets 60 --seed 707 --puzzles puzzles/generated/grading-505.json
+uv run python -m rstlne.tournament --seats llm:openai/gpt-6.1-sol,bot,bot --sets 60 --seed 707 --puzzles puzzles/generated/grading-606b.json
 ```
 
 `--seats` takes any three seats, as in the CLI, and `--models a,b,c` is short for three `llm:` seats.
 
-A tournament plays `--sets` puzzle sets with duplicate scoring. A set is 6 games, one for every ordering of the 3 entrants across the seats, all with the set's seed and puzzles. So within a set, each entrant sits in each seat twice and plays right after each other entrant 3 times, against the same spins. `--sets 60` is 360 games, and `--sets 1` is a 6 game trial for checking cost. Setting `set_permutations = "cyclic"` in `config.toml` plays the old 3 seat rotations instead.
+A tournament plays `--sets` puzzle sets with duplicate scoring. A set is 6 games, one for every ordering of the 3 entrants across the seats, all with the set's seed and puzzles. So within a set, each entrant sits in each seat twice and plays against the same spins. `--sets 60` is 360 games, and `--sets 1` is a 6-game trial for checking cost; trial at least 3 sets before trusting a cost estimate, since a few long-thinking moves can dominate it.
 
-Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, and reshuffled when the pool runs out, so no set repeats a puzzle. A deck that tags its main puzzles by round (grading-606b, or `private.json` by the round each puzzle aired in) deals each round from its own puzzles.
+Puzzles are dealt across sets without replacement, 4 main and 1 bonus per set, and reshuffled when the pool runs out. A deck that tags its main puzzles by round, as grading-606b does, deals each round from its own puzzles. `--puzzles generate` plays on fresh puzzles made for the tournament: a generator model writes them, code checks them, and a judge model from another lab confirms each one. `python -m rstlne.puzzlegen` makes a batch on its own.
 
 | Option | Effect |
 |---|---|
 | `--parallel N` | Plays N games at once. The default is 6, a whole set. |
 | `--max-cost D` | Stops starting new games once spending reaches D dollars. |
-| `--puzzles PATH` | The default is `puzzles/dev.json`, which marks the run as development. Scored runs use a generated deck, as the grading runs did, or `puzzles/private.json`. |
-| `--out PATH` | The tournament folder. The default covers the entrants, seed, puzzles, and every setting that changes play, so rerunning the same command resumes it, and changing a setting starts a fresh folder. |
+| `--puzzles PATH` | The default is `puzzles/dev.json`, which marks the run as development. Scored runs use a generated deck or `puzzles/private.json`. |
+| `--out PATH` | The tournament folder. The default covers the entrants, seed, puzzles, and every setting that changes play, so rerunning the same command resumes it. |
 
-Each game writes its usual log into the tournament folder, and rerunning skips finished games and replays unfinished ones. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, average final total and main round winnings, bonus rounds reached and won, solve accuracy, how much of the board showed at a correct solve, money left on the table, invalid moves, and cost. The report also lists each set's results and how many sets used each puzzle.
+Each game writes its log into the tournament folder, and rerunning skips finished games. At the end, `report.json` and a printed table give each entrant's win rate overall and by seat, totals and main-round winnings, bonus rounds reached and won, solve accuracy, board showing at a correct solve, invalid moves, and cost. Intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins. Tied leaders split a win.
 
-Confidence intervals come from resampling whole sets, since the 6 games in a set share puzzles and spins and aren't independent. The table shows a 95% interval on each win rate and on the win rate gap between each pair of entrants; `report.json` also has intervals on average totals, main round winnings, and solve accuracy. A game's winner is the highest final total, and tied leaders split the win. The table also shows each entrant's main-round money, its total minus any bonus envelope. Cost per game runs from under 1 cent (Luna, Haiku) to about 2 cents (Sol), with bot seats free. A 60-set lineup took 1 to 5 hours on 4 cores.
+## Self-play
 
-## Analyses
+```
+uv run python -m rstlne.selfplay --help
+```
 
-`lineups.toml` maps each lineup to its tournament folder, by phase: `v6` for the reruns on bot v6 and grading-606b, `v4` for the earlier grid. The analyses and the charts read it, so they take lineup ids, and they count finished games only, so they can run while a lineup plays. Add `--phase v4` for the earlier grid.
+Bot against bot, with no API calls: strategy variants against two copies of the unchanged bot, and the tuning runs behind each bot version. Runs shard across processes and resume where they stopped. Fits and tuning use tuning decks only, never the grading, dev or private decks.
+
+## Analyses and the paper
+
+`lineups.toml` maps each lineup id to its tournament folder, by phase: `v6` for the results, `v4` for the earlier grid. The analyses read it, so they take lineup ids, and they count finished games only.
 
 ```
 uv run python -m rstlne.analysis.progress 2 3            # win rates so far, with intervals
-uv run python -m rstlne.analysis.detail 2 3              # rounds won, bank and board showing at a winning solve, wrong solves
+uv run python -m rstlne.analysis.detail 2 3              # rounds won, banks, board showing at a winning solve, wrong solves
 uv run python -m rstlne.analysis.milking 2 3             # rounds a bot milked, and what came of them
 uv run python -m rstlne.analysis.odds 2 3                # the bot's logged steal odds and win chances against what happened
-uv run python -m rstlne.analysis.reading_gap 2 3         # what the bots lacked on the rounds an LLM won (reads boards: needs the word data)
+uv run python -m rstlne.analysis.reading_gap 2 3 --walk  # what the bot's reader made of the boards a model won on, and the letters it was short (word data)
 uv run python -m rstlne.analysis.letters read 2 3 --out logs/analysis/letters.json   # judge every letter choice (word data)
-uv run python -m rstlne.analysis.letters report logs/analysis/letters.json
-uv run --with matplotlib python figures/make_figures.py figures            # the charts, for lineups.toml's default phase
+uv run --with matplotlib python figures/make_figures.py figures                     # the charts
 ```
 
-The paper's numbers all come from one file. Run the two word-data analyses with `--out` first, so it can fold them in:
+The paper's numbers all come from one file, `paper/numbers.json`. Run the two word-data analyses with `--out` first, over every lineup, so it can fold them in. They take a while, so run them on a server:
 
 ```
-uv run python -m rstlne.analysis.letters read 2 2t 3 3b 3c 3d 3r 3f 6a 6b 6d1 6d2 d1 d2 --out logs/analysis/letters-v6.json
-uv run python -m rstlne.analysis.reading_gap 2 2t 3 3b 3c 3d 3r 3f 6a 6b 6d1 6d2 d1 d2 --out logs/analysis/reading-gap-v6.json
-uv run python -m rstlne.analysis.numbers --out paper/numbers.json   # every lineup, the set-by-set pairs, the bonus test
+L="2 2t 3 3b 3c 3d 3r 3m 3f 3t 3tf 3lf 6a 6b 6d1 6d2 d1 d2 dj 6dj d2h d1h djh dg dgh 6dg d2t d1t djt dgt"
+uv run python -m rstlne.analysis.letters read $L --out logs/analysis/letters-v6.json
+uv run python -m rstlne.analysis.reading_gap $L --version 6 --walk 2 2t 3b 3c 3d 3m 3r --out logs/analysis/reading-gap-v6.json
+uv run python -m rstlne.analysis.numbers --out paper/numbers.json
+uv run python paper/make_numbers.py                      # numbers.json -> numbers.tex, one LaTeX macro per number
+cd paper && latexmk -pdf main.tex                        # builds paper/build/main.pdf
 ```
+
+The paper's text never types a result. It uses the macros, and a number `numbers.json` doesn't hold yet prints as a red placeholder.
 
 ## The bonus test
 
 ```
-uv run python -m rstlne.bonustest --players llm:openai/gpt-6.1-sol,bot --puzzles puzzles/generated/grading-505.json --seed 707
+uv run python -m rstlne.bonustest --players llm:openai/gpt-6.1-sol,bot --puzzles puzzles/generated/grading-606b.json --seed 707
 ```
 
 Plays the bonus round alone: every player meets every bonus puzzle in the file, with no wheel and no opponents, for a pure bonus solve rate on the same puzzles.
@@ -132,9 +144,7 @@ uv run python -m rstlne.data fetch enwiki
 uv run python -m rstlne.data status
 ```
 
-Bot version 5, the default, also reads word pair and triple counts from all of English Wikipedia (`enwiki`). That fetch streams the whole dump: about 2 CPU-hours, up to 50 GB of temporary files, and 0.85 GB kept. It's best run on a server, then copied: the `enwiki-*` files, plus the `enwiki` entry in `data/manifest.json`. Without them, a version 5 bot refuses the data it finds. Set `[bot] version = 4` to play the older bot on the other sources alone.
-
-`fetch` streams each source and keeps only pruned tables in `data/`, which git ignores, under a 2.5 GB cap. It took about 8 minutes and keeps about 0.2 GB. `status` lists what's fetched, its size, and its license. `data/manifest.json` records each file's hash, so a bot version can pin its data. Sources, with thanks:
+`fetch` streams each source and keeps only pruned tables in `data/`, which git ignores: about 8 minutes and 0.2 GB. Bots from version 5 on also read word pair and triple counts from all of English Wikipedia (`enwiki`). That fetch streams the whole dump: about 2 CPU-hours, up to 50 GB of temporary files, and 0.85 GB kept. It's best run on a server, then copied: the `enwiki-*` files, plus the `enwiki` entry in `data/manifest.json`. Without them, the bot refuses the data it finds. `data/manifest.json` records each file's hash, so a bot version pins its data. `status` lists what's fetched, its size, and its license. Sources, with thanks:
 
 | source | used for | license |
 |---|---|---|
@@ -144,23 +154,22 @@ Bot version 5, the default, also reads word pair and triple counts from all of E
 | [CMU Pronouncing Dictionary](https://github.com/cmusphinx/cmudict) | rhymes for Rhyme Time | BSD 2-clause |
 | [Tatoeba](https://tatoeba.org) | word pair counts from everyday sentences | CC BY 2.0 FR |
 | [Simple English Wikipedia](https://simple.wikipedia.org) | word pair counts from encyclopedia text | CC BY-SA 4.0 |
-| [English Wikipedia](https://en.wikipedia.org) | word pair and triple counts, for version 5 | CC BY-SA 4.0 |
+| [English Wikipedia](https://en.wikipedia.org) | word pair and triple counts, from version 5 | CC BY-SA 4.0 |
 | [fastText](https://fasttext.cc/docs/en/crawl-vectors.html) | word vectors, for how well a word fits a category | CC BY-SA 3.0 |
 
-## Calibrating decision models
-
-By default (`solve = "choice"` under `[decision]`), a decision model chooses when to solve on its own. With `solve = "threshold"`, the seat solves once the model's P(solvable) passes a threshold instead. Decision models put P(solvable) on different scales: Jev 1.14 gives a fully revealed board about 0.75, while GPT-6 Luna Decisions gives about 0.99. So each decision model gets its own threshold, picked from data:
+## Calibration
 
 ```
 uv run python -m rstlne.calibrate --models openai/gpt-6-luna-decisions,typesafe/jev-1.14 --count 50
+uv run python -m rstlne.calibrate trust --models openai/gpt-6.1-terra --logs <tournament folder>
 ```
 
-The command reveals 50 seeded puzzles step by step, asks each decision model for P(solvable) at every step, and has the solver attempt each board. A model's threshold is the lowest P(solvable) where the solver's accuracy, fit as a never decreasing curve, reaches 80%. It prints the lines to paste under `[decision.thresholds]` in `config.toml` and saves every board's result in `logs/calibration/`. 50 puzzles took about 8 minutes and a few cents.
+The first picks each decision model's solve threshold, for `solve = "threshold"` under `[decision]`; by default (`solve = "choice"`) a decision model chooses when to solve on its own. The second measures the trust and steal curves a model needs before it can sit in a hybrid, on real game boards from tournament logs.
 
 ## Configuration
 
-- `wheel.toml` holds the 24 wedges, what each round adds to the wheel, the special wedge values, and the bonus envelopes.
-- `config.toml` holds the decision seat's models and solve mode, the hybrid's trust curves, provider pins, the round count, vowel cost, solve minimum, round turn cap, model slugs, an optional temperature, the CLI pause and bonus timer, and the bot version.
+- `wheel.toml` holds the 24 wedges, what each round adds to the wheel, the special wedge values, and the bonus envelopes. [WHEEL.md](WHEEL.md) draws and explains it.
+- `config.toml` holds the bot version, the decision seat's models, the hybrids' trust curves, provider pins, the round count, vowel cost, solve minimum, turn cap, an optional temperature, and the CLI pause and bonus timer.
 - `puzzles/dev.json` holds development puzzles. Aired puzzles go in `puzzles/private.json`, which git ignores, because puzzles from the show are likely in model training data. Generated decks go in `puzzles/generated/`, also ignored, so they never leak into training data either.
 
 A puzzle looks like `{"category": "Phrase", "answer": "BETTER LATE THAN NEVER", "bonus": false}`.
@@ -173,7 +182,7 @@ Each game writes `logs/<date>-<time>-seed<N>.jsonl` with:
 - one line per move or invalid try, with the state before it, the model's raw output, the parsed action, the result, the wedge, and token usage
 - a summary with final totals, token use and cost per seat, and invalid moves by category
 
-Token use includes how many prompt tokens each provider read from its cache. Models from OpenAI, DeepSeek, and Z.AI cache on their own. Anthropic models get asked for caching on every request. Qwen's provider caches only up to a marked message, so each Qwen request marks its system prompt and its newest message. Each seat sends a session ID so OpenRouter keeps it on one provider.
+Token use includes how many prompt tokens each provider read from its cache. Each seat sends a session ID so OpenRouter keeps it on one provider, and `[providers]` in `config.toml` can pin a model to one.
 
 ## Tests
 
@@ -181,26 +190,29 @@ Token use includes how many prompt tokens each provider read from its cache. Mod
 uv run pytest
 ```
 
-The suite runs about 770 tests in under two minutes. A fake client stands in for OpenRouter, so it never makes a network call. It also never reads `data/`, and the bot falls back to letter frequency there. `uv run pytest -m slow` runs the tests that read the real word data.
+The suite runs about 1,050 tests. A fake client stands in for OpenRouter, so it never makes a network call, and it never reads `data/`. `uv run pytest -m slow` runs the few tests that read the real word data.
 
 ## Layout
 
 ```
 rstlne/engine/        the rules engine: no I/O, no network, every chance outcome from the seeded wheel
-rstlne/players/       your seat (human_cli.py), model seats (llm.py), decision seats (decision.py), hybrid seats (hybrid.py), and the bot (bot/)
+rstlne/players/       your seat, model seats, decision seats, hybrid seats, and the bot (bot/)
 rstlne/llm/           the OpenRouter chat and Decisions API clients, with retries and usage tracking
 rstlne/runner.py      the game loop: retries, forfeits, and logs
-rstlne/narrate.py     move text for the screen and the model prompts
 rstlne/cli.py         the terminal game
-rstlne/web/          the browser game: server.py (FastAPI), session.py (a game on its thread), replay.py (logs back into games), static/ (the page)
+rstlne/web/           the browser game: server.py (FastAPI), session.py, replay.py, static/ (the page)
 rstlne/tournament.py  seeded tournaments with duplicate scoring
 rstlne/bonustest.py   the bonus round alone
-rstlne/puzzlegen.py   fresh puzzles: written by one model, checked in code, judged by another
 rstlne/selfplay.py    bot self-play and tuning, no API calls
-rstlne/analysis/      analyses of finished tournament games, for the findings
-figures/              the charts in FINDINGS.md, and the script that draws them from the logs
-lineups.toml       each lineup's tournament folder, by phase
-FINDINGS.md        what the grading runs found
-documentation.md   the full game specification
-CLAUDE.md          build notes for Claude Code
+rstlne/puzzlegen.py   fresh puzzles: written by one model, checked in code, judged by another
+rstlne/decks.py       play decks: the mega deck and the aired deck
+rstlne/analysis/      analyses of finished games, and numbers.py, which builds the paper's numbers
+paper/                the paper: main.tex, sections/, numbers.json and the macros made from it
+figures/              the charts, and the script that draws them from the logs
+deploy/               the web page as an always-on systemd service
+notes/                planning notes from building the project, not kept up to date
+lineups.toml          each lineup's tournament folder, by phase
+FINDINGS.md           the results, short
+documentation.md      the full game specification
+CLAUDE.md             build notes for Claude Code
 ```

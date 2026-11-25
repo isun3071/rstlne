@@ -10,24 +10,32 @@ uv run python -m rstlne.cli --seats human,bot,hybrid:anthropic/claude-haiku-5.5
 
 `--seats` takes three seats, in order: seat 1, seat 2, seat 3. You play the seat marked `human`. The other moves print as they happen, with a short pause between them.
 
+## Or in a browser
+
+```
+uv run python -m rstlne.web
+```
+
+Then open http://127.0.0.1:8000, pick the three seats, and play with the mouse or the keyboard. Up to three people can share the screen. The page's own How to play sheet (the nav, or `?`) covers the rules in plain words and lists the keys. On a home server, `deploy/rstlne-web.service` keeps the page running for any device on the network. The [README](README.md) covers both.
+
 ## Who can sit
 
 | Seat | Who plays it | Cost |
 |---|---|---|
 | `human` | You, typing commands (below) | Free |
-| `llm:<slug>` | A chat model through OpenRouter, making every move itself, such as `llm:openai/gpt-6.1-sol` or `llm:openai/gpt-6-luna`. Any model with tool calling works. | About 0.5 to 2 cents a game |
-| `bot` | The project's own player. It reads the board with word and phrase lists and scores every move for money and its chance of winning. No API calls. `[bot] version` in `config.toml` picks the version, 4 by default. | Free |
+| `llm:<slug>` | A chat model through OpenRouter, making every move itself, such as `llm:openai/gpt-6.1-sol` or `llm:openai/gpt-6-luna`. Any model with tool calling works. | About 0.3 to 3 cents a game |
+| `bot` | The project's own player. It reads the board with word and phrase lists and scores every move for money and its chance of winning. No API calls. `[bot] version` in `config.toml` picks the version, 6 by default. | Free |
 | `hybrid:<slug>` | The bot makes every move, and on its turns asks the model to read the board. Only models with measured trust curves in `config.toml` can sit: `openai/gpt-6.1-terra`, `openai/gpt-6-luna`, `anthropic/claude-haiku-5.5`, and `deepseek/deepseek-v4.1-flash-1017`. | About 0.5 to 3 cents a game |
 | `hybrid:<slug>+trust_fit` | The full-trust hybrid: the bot takes the model's first fitting answer of a round as the answer and plays it, milking or solving, until the board or a wrong solve rules it out. On the web page, pick it under a hybrid seat. | Less than the plain hybrid: it stops asking while it holds an answer |
 | `decision`, `decision:<model>`, or `decision:<model>@<solver>` | A decision model, GPT-6 Luna Decisions by default, picks every move from the legal options, including when to solve. An LLM, Luna by default, writes the answer when it solves. `[decision]` in `config.toml` sets both; `@<solver>` names the answer writer for one seat. | Under 1 cent a game |
 
-The bot, and so the hybrid, plays at full strength only with its word data fetched once: `uv run python -m rstlne.data fetch` (about 8 minutes, 0.2 GB). Without it, the bot reads by letter frequency alone.
+The bot, and so the hybrid, plays at full strength only with its word data fetched once: `uv run python -m rstlne.data fetch` (about 8 minutes, 0.2 GB), then `uv run python -m rstlne.data fetch enwiki` for the word pair counts from English Wikipedia (about 2 CPU-hours; the [README](README.md) has the details). Without the data, the bot reads by letter frequency alone.
 
 You can repeat a seat kind, such as two `bot` seats or the same `llm:` slug twice. Each seat still plays on its own.
 
 ## Tables to try
 
-Some tables to measure yourself against. [FINDINGS.md](FINDINGS.md) has how these players fared against each other over hundreds of games:
+Some tables to measure yourself against. [FINDINGS.md](FINDINGS.md) has how these players fared against each other over thousands of games:
 
 ```
 # The bot and the strongest model tested, GPT-6.1 Sol
@@ -147,6 +155,6 @@ Options worth knowing:
 - `--pause 0` removes the pause after each move, so the game runs as fast as the models answer. `--pause 3` slows it down to read along.
 - `--seed N` replays a game's spins. Every game prints its seed at the start, so you can rerun a game you liked, or give different models the same spins.
 
-At the end you see the bonus answer, each seat's money before the bonus round, each seat's final total, and each model's calls, tokens, and cost. A game costs about 0.5 to 2 cents per model seat, and nothing for `human` and `bot` seats. Every move also goes to a log in `logs/`. Press Ctrl+C to stop a game early, and the log keeps every move up to that point.
+At the end you see the bonus answer, each seat's money before the bonus round, each seat's final total, and each model's calls, tokens, and cost. A game costs about 0.3 to 3 cents per model seat, and nothing for `human` and `bot` seats. Every move also goes to a log in `logs/`. Press Ctrl+C to stop a game early, and the log keeps every move up to that point.
 
 A single game is one sample, too few for a fair comparison. Seat order matters, and each seat sees different spins.

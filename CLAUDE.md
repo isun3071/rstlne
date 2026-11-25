@@ -8,7 +8,7 @@ A Wheel of Fortune game where LLMs and a human play at the same table. Three sea
 
 The project serves two goals. Ian plays against models from the terminal for fun. The same engine runs seeded, model only tournaments that measure how well models handle letter choice, risk, and solve timing.
 
-Build the CLI first. A local web page comes in phase 2 and reuses the engine untouched.
+The terminal game came first. The browser game (`rstlne/web/`) reuses the engine, players, runner, and log format untouched. Results go into the paper in `paper/`, and every number there comes from `paper/numbers.json`.
 
 ## Read first
 
@@ -92,6 +92,7 @@ rstlne/
   puzzlegen.py     # fresh puzzles: a generator writes, code checks, a judge confirms, nothing reused
   puzzle_examples.py # few-shot examples for the generator and judge, checked against aired puzzles
   selfplay.py      # bot self-play and tuning on a server: sharded, resumable, no API calls
+  analysis/        # analyses of finished games; numbers.py builds paper/numbers.json from every lineup
 puzzles/
   dev.json         # puzzles for development, committed
   private.json     # scored puzzles, gitignored
@@ -99,9 +100,15 @@ puzzles/
 logs/              # JSONL per game, gitignored
 data/              # the bot's fetched word data, gitignored
 tests/
+paper/             # the paper: main.tex, sections/, numbers.json, make_numbers.py (numbers.json -> numbers.tex macros)
+figures/           # the charts and make_figures.py
+deploy/            # rstlne-web.service: the web page always on, on the home server
+notes/             # planning notes from the v4 and v5 era, not kept up to date
+lineups.toml       # each lineup id's tournament folder, by phase (v6, v4)
 wheel.toml         # wheel template, round overlays, bonus envelopes
 config.toml        # model slugs, round count, card values
 documentation.md   # game specification
+FINDINGS.md        # the results, short; README.md, HOW_TO_PLAY.md and WHEEL.md are for users
 .env               # OPENROUTER_API_KEY, gitignored
 .gitignore
 ```
