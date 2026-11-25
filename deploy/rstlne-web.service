@@ -1,0 +1,21 @@
+# The web page as a systemd user service, always on, for the home network.
+#   cp deploy/rstlne-web.service ~/.config/systemd/user/
+#   sudo loginctl enable-linger "$USER"     # keep it running while logged out
+#   systemctl --user daemon-reload && systemctl --user enable --now rstlne-web
+#   systemctl --user restart rstlne-web     # after every pull
+#   journalctl --user -u rstlne-web -f      # its output
+# It listens on every address of the machine. Keep it off the public internet: model seats spend the
+# OpenRouter key in .env. At home, or over a VPN into the home network, open http://<server address>:8000.
+
+[Unit]
+Description=rstlne web page
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/rstlne
+Environment=OMP_NUM_THREADS=1
+ExecStart=%h/.local/bin/uv run python -m rstlne.web --host 0.0.0.0 --port 8000 --log-dir logs/web
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
